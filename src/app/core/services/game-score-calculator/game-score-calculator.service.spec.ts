@@ -241,13 +241,15 @@ describe('BowlingCalculatorService', () => {
       ];
 
       const result = service.calculateScoreFromFrames(frames);
-      const currentScore = result.totalScore; // Should be 19 for incomplete 10th frame
+      const currentScore = result.totalScore;
 
       const maxScore = service.calculateMaxScoreFromFrames(frames, currentScore);
 
-      // Max possible total score should be current score + max 3rd throw (1 pin)
-      // Total frames 1-9: 9*30 = 270 (all strikes with strike bonuses)
-      // Frame 10 so far: 10 + 9 = 19
+      // Max possible total score calculation:
+      // Frames 1-9: 9 strikes = 270 points (each strike gets bonus from next 2 throws)
+      // Frame 10 current: 10 + 9 = 19
+      // Frame 10 max 3rd throw: 1 pin (10 - 9 = 1)
+      // Total max: 270 + 10 + 9 + 1 = 290
       // Frame 10 max: 10 + 9 + 1 = 20 (third throw can only be 1 pin)
       // Expected max: 270 + 20 = 290
       expect(maxScore).toBe(290);

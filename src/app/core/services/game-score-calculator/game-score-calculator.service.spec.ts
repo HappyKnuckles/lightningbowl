@@ -215,4 +215,137 @@ describe('BowlingCalculatorService', () => {
   //     expect(service.calculateMaxScore()).toBe(expectedMaxScores[i]);
   //   }
   // });
+
+  describe('10th frame bonus throw max score calculation', () => {
+    it('should correctly calculate max score when 10th frame has strike then non-strike', () => {
+      // Scenario: 9 strikes, then 10th frame is X, 9, ?
+      // The third throw can only knock down 1 pin (10 - 9 = 1)
+      // Not 10 pins as the bug assumed
+      const frames = [
+        { frameIndex: 1, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 4, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 5, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 6, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 7, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1 }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 10, throwIndex: 1 }, // Strike
+            { value: 9, throwIndex: 2 }, // 9 pins
+          ],
+        },
+      ];
+
+      const result = service.calculateScoreFromFrames(frames);
+      const currentScore = result.totalScore; // Should be 19 for incomplete 10th frame
+
+      const maxScore = service.calculateMaxScoreFromFrames(frames, currentScore);
+
+      // Max possible total score should be current score + max 3rd throw (1 pin)
+      // Total frames 1-9: 9*30 = 270 (all strikes with strike bonuses)
+      // Frame 10 so far: 10 + 9 = 19
+      // Frame 10 max: 10 + 9 + 1 = 20 (third throw can only be 1 pin)
+      // Expected max: 270 + 20 = 290
+      expect(maxScore).toBe(290);
+    });
+
+    it('should correctly calculate max score when 10th frame has strike, then 5 pins', () => {
+      // Scenario: 10th frame is X, 5, ?
+      // The third throw can knock down at most 5 pins (10 - 5 = 5)
+      const frames = [
+        { frameIndex: 1, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 4, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 5, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 6, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 7, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1 }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 10, throwIndex: 1 }, // Strike
+            { value: 5, throwIndex: 2 }, // 5 pins
+          ],
+        },
+      ];
+
+      const result = service.calculateScoreFromFrames(frames);
+      const currentScore = result.totalScore;
+
+      const maxScore = service.calculateMaxScoreFromFrames(frames, currentScore);
+
+      // Max possible: Frame 10 max = 10 + 5 + 5 = 20
+      // Expected max total: 270 + 20 = 290
+      expect(maxScore).toBe(290);
+    });
+
+    it('should correctly calculate max score when 10th frame has two strikes', () => {
+      // Scenario: 10th frame is X, X, ?
+      // The third throw can knock down all 10 pins (pins reset after strike)
+      const frames = [
+        { frameIndex: 1, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 4, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 5, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 6, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 7, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1 }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 10, throwIndex: 1 }, // Strike
+            { value: 10, throwIndex: 2 }, // Strike
+          ],
+        },
+      ];
+
+      const result = service.calculateScoreFromFrames(frames);
+      const currentScore = result.totalScore;
+
+      const maxScore = service.calculateMaxScoreFromFrames(frames, currentScore);
+
+      // Max possible: 300 (perfect game)
+      expect(maxScore).toBe(300);
+    });
+
+    it('should correctly calculate max score when 10th frame has spare', () => {
+      // Scenario: 10th frame is 9, /, ?
+      // The third throw can knock down all 10 pins (pins reset after spare)
+      const frames = [
+        { frameIndex: 1, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 4, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 5, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 6, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 7, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1 }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1 }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 9, throwIndex: 1 }, // 9 pins
+            { value: 1, throwIndex: 2 }, // Spare
+          ],
+        },
+      ];
+
+      const result = service.calculateScoreFromFrames(frames);
+      const currentScore = result.totalScore;
+
+      const maxScore = service.calculateMaxScoreFromFrames(frames, currentScore);
+
+      // Frame 10 max = 9 + 1 + 10 = 20
+      // Expected max total: 270 + 20 = 290
+      expect(maxScore).toBe(290);
+    });
+  });
 });

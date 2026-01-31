@@ -163,10 +163,18 @@ export class GameScoreCalculatorService {
 
         if (secondThrow !== undefined) {
           if (firstThrow === 10) {
-            if (isPrevStrike && secondThrow !== 10) {
-              maxScore -= 20 - secondThrow;
-            } else if (!isPrevStrike && secondThrow !== 10) {
-              maxScore -= 10;
+            // Strike on first throw of 10th frame
+            if (secondThrow === 10) {
+              // Strike on second throw - pins reset, third throw can be 10
+              // No reduction needed, max is still possible
+            } else {
+              // Non-strike on second throw - third throw limited to (10 - secondThrow)
+              const maxThirdThrow = 10 - secondThrow;
+              if (isPrevStrike) {
+                maxScore -= 20 - secondThrow - maxThirdThrow;
+              } else {
+                maxScore -= 10 - maxThirdThrow;
+              }
             }
           } else if (firstThrow + secondThrow !== 10) {
             maxScore = currentTotalScore;

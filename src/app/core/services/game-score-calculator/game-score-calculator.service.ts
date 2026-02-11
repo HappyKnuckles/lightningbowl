@@ -169,11 +169,15 @@ export class GameScoreCalculatorService {
               // No reduction needed, max is still possible
             } else {
               // Non-strike on second throw - third throw limited to (10 - secondThrow)
-              const maxThirdThrow = 10 - secondThrow;
+              // Frame 9 bonus shortfall: expected 20, got (10 + secondThrow), lose (10 - secondThrow)
+              // Frame 10 max reduction: expected 30, can get 20, lose 10
+              // Total reduction: (10 - secondThrow) + 10 = 20 - secondThrow
               if (isPrevStrike) {
-                maxScore -= 20 - secondThrow - maxThirdThrow;
+                // Frame 9 was strike: loses (10 - secondThrow) from bonus + 10 from frame 10 max
+                maxScore -= 20 - secondThrow;
               } else {
-                maxScore -= 10 - maxThirdThrow;
+                // No previous strike: only lose from frame 10 max
+                maxScore -= 10;
               }
             }
           } else if (firstThrow + secondThrow === 10) {

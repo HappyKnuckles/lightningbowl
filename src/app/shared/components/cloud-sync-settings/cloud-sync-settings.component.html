@@ -16,7 +16,7 @@
     ></ion-badge>
     <ion-label>
       <h1>{{ cloudSyncService.syncStatus().isAuthenticated ? "Connected" : "Not Connected" }}</h1>
-      <p *ngIf="cloudSyncService.syncStatus().isAuthenticated">Linked to {{ getProviderDisplayName(cloudSyncService.settings().provider) }}</p>
+      <p *ngIf="cloudSyncService.syncStatus().isAuthenticated">Linked to {{ providerDisplayName() }}</p>
     </ion-label>
     <ion-button *ngIf="cloudSyncService.syncStatus().isAuthenticated" slot="end" fill="clear" color="danger" (click)="disconnect()"
       >Disconnect</ion-button
@@ -24,11 +24,11 @@
   </ion-item>
 
   <div *ngIf="!cloudSyncService.syncStatus().isAuthenticated" class="ion-padding-top" style="display: flex; flex-direction: column">
-    <ion-item lines="none" class="transparent-item">
+    <ion-item lines="none">
       <ion-select
-        [(ngModel)]="selectedProvider"
+        [ngModel]="selectedProvider()"
         interface="popover"
-        (ionChange)="updateProvider()"
+        (ionChange)="updateProvider($event)"
         label="Provider"
         label-placement="stacked"
         placeholder="Select Provider">
@@ -40,7 +40,7 @@
 
     <ion-button class="connect-btn" (click)="connectProvider()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
       <ion-icon slot="start" name="link"></ion-icon>
-      Connect {{ getProviderDisplayName(selectedProvider) }}
+      Connect {{ providerDisplayName() }}
     </ion-button>
     <p class="helper-text ion-text-center ion-margin-top">Connect to automatically backup your game history securely to the cloud.</p>
   </div>
@@ -59,7 +59,7 @@
 
       <ion-item [disabled]="!cloudSyncService.settings().enabled">
         <ion-icon name="calendar-outline" slot="start"></ion-icon>
-        <ion-select [(ngModel)]="selectedFrequency" interface="action-sheet" label="Sync Frequency" (ionChange)="updateFrequency()">
+        <ion-select [ngModel]="selectedFrequency()" interface="action-sheet" label="Sync Frequency" (ionChange)="updateFrequency($event)">
           <ion-select-option [value]="SyncFrequency.DAILY">Daily</ion-select-option>
           <ion-select-option [value]="SyncFrequency.WEEKLY">Weekly</ion-select-option>
           <ion-select-option [value]="SyncFrequency.MONTHLY">Monthly</ion-select-option>
@@ -68,7 +68,12 @@
 
       <ion-item lines="none">
         <ion-icon name="folder-outline" slot="start"></ion-icon>
-        <ion-input [(ngModel)]="folderPath" (ionBlur)="updateFolderPath()" label="Folder Path" class="ion-text-right" placeholder="e.g. Game-History">
+        <ion-input
+          [ngModel]="folderPath()"
+          (ionBlur)="updateFolderPath($event)"
+          label="Folder Path"
+          class="ion-text-right"
+          placeholder="e.g. Game-History">
         </ion-input>
       </ion-item>
     </ion-list>

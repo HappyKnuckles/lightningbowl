@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   IonHeader,
   IonToolbar,
@@ -93,7 +94,8 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
     GithubIssuesModalComponent,
   ],
 })
-export class SettingsPage implements OnInit {
+export class SettingsPage implements OnInit, AfterViewInit {
+  private destroyRef = inject(DestroyRef);
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
     { name: 'Blue', class: 'blue-option' },
@@ -137,14 +139,12 @@ export class SettingsPage implements OnInit {
   ngOnInit(): void {
     this.currentColor = this.themeService.getCurrentTheme();
     this.updateAvailable = localStorage.getItem('update') !== null ? true : false;
+  }
 
-    // Check if we should open cloud sync modal after OAuth callback
-    this.route.queryParams.subscribe((params) => {
+  ngAfterViewInit(): void {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       if (params['openCloudSync'] === 'true') {
-        // Use setTimeout to ensure the page has fully initialized
-        setTimeout(() => {
-          void this.openSyncModal();
-        }, 300);
+        void this.openSyncModal();
       }
     });
   }

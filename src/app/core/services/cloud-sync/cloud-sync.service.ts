@@ -184,36 +184,39 @@ export class CloudSyncService {
           credentials: 'include',
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+          // Clear local state
+          await this.updateSettings({
+            enabled: false,
+            connectedProvider: undefined,
+            lastSyncDate: undefined,
+            nextSyncDate: undefined,
+            folderId: undefined,
+          });
+
+          this.#syncStatus.update((status) => ({
+            ...status,
+            isAuthenticated: false,
+            error: undefined,
+            lastSync: undefined,
+            nextSync: undefined,
+          }));
+
+          this.toastService.showToast('Cloud sync disconnected', 'checkmark-outline');
+        } else {
           console.warn('Failed to revoke tokens at provider, continuing with local disconnect');
+          this.toastService.showToast('Disconnecting failed, try again.', 'bug-outline', true);
         }
       } catch (error) {
         console.warn('Error calling disconnect API:', error);
       }
     }
-
-    // Clear local state
-    await this.updateSettings({
-      enabled: false,
-      connectedProvider: undefined,
-      lastSyncDate: undefined,
-      nextSyncDate: undefined,
-      folderId: undefined,
-    });
-
-    this.#syncStatus.update((status) => ({
-      ...status,
-      isAuthenticated: false,
-      error: undefined,
-      lastSync: undefined,
-      nextSync: undefined,
-    }));
-
-    this.toastService.showToast('Cloud sync disconnected', 'checkmark-outline');
   }
 
   async syncNow(): Promise<void> {
     const settings = this.#settings();
+
+    if (this.#syncStatus().syncInProgress) return;
 
     if (!settings.enabled || !settings.connectedProvider) {
       throw new Error('Cloud sync is not configured');
@@ -255,13 +258,13 @@ export class CloudSyncService {
         syncInProgress: false,
         error: errorMessage,
       }));
-      this.toastService.showToast(`Sync failed.`, 'bug-outline', true);
+      this.toastService.showToast(`Sync failed. ${errorMessage}`, 'bug-outline', true);
       throw error;
     }
   }
 
   private async generateExcelBuffer(): Promise<ArrayBuffer> {
-    return await this.excelService.generateExcelBuffer();
+    return await this.excelService.generateExcelArrayBuffer();
   }
 
   private async uploadToCloud(buffer: ArrayBuffer, settings: CloudSyncSettings, accessToken: string): Promise<void> {
@@ -325,14 +328,9 @@ export class CloudSyncService {
 
   private async getOrCreateFolder(folderName: string, accessToken: string): Promise<string> {
     // Search for existing folder
-    const searchResponse = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(folderName)}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    );
+    const escapedFolderName = folderName.replace(/'/g, "\\'");
+    const query = `name='${escapedFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`);
 
     if (!searchResponse.ok) {
       throw new Error('Failed to search for folder');
@@ -391,8 +389,12 @@ export class CloudSyncService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Failed to upload to OneDrive');
+      try {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to upload to OneDrive');
+      } catch {
+        throw new Error('Failed to upload to OneDrive');
+      }
     }
   }
 

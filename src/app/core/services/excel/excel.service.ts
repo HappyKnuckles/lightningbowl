@@ -79,7 +79,7 @@ export class ExcelService {
     }
   }
 
-  async generateExcelBuffer(): Promise<ArrayBuffer> {
+  async generateExcelArrayBuffer(): Promise<ArrayBuffer> {
     return await this.generateExcelWorkbook();
   }
 

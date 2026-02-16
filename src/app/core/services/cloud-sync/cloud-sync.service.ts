@@ -3,8 +3,7 @@ import { CloudSyncSettings, CloudProvider, SyncFrequency, CloudSyncStatus } from
 import { ExcelService } from '../excel/excel.service';
 import { ToastService } from '../toast/toast.service';
 import { StorageService } from '../storage/storage.service';
-import { Storage } from '@ionic/storage-angular';
-import { environment } from 'src/environments/environment';
+import { CloudSyncApiService } from './cloud-sync-api.service';
 
 const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
 
@@ -32,22 +31,21 @@ export class CloudSyncService {
   });
 
   constructor(
-    private storage: Storage,
+    private storageService: StorageService,
     private excelService: ExcelService,
     private toastService: ToastService,
-    private storageService: StorageService,
+    private cloudSyncApiService: CloudSyncApiService,
   ) {
     this.init();
   }
 
   private async init(): Promise<void> {
-    await this.storage.create();
     await this.loadSettings();
     await this.checkAndSyncOnStartup();
   }
 
   private async loadSettings(): Promise<void> {
-    const savedSettings = await this.storage.get(CLOUD_SYNC_STORAGE_KEY);
+    const savedSettings = await this.storageService.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
     if (savedSettings) {
       this.#settings.set(savedSettings);
       this.#syncStatus.update((status) => ({
@@ -73,7 +71,7 @@ export class CloudSyncService {
       if (calculatedNextSync < now) {
         // First update the settings with the new frequency
         this.#settings.set(updatedSettings);
-        await this.storage.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+        await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
 
         // Then trigger immediate sync (this will update lastSyncDate and nextSyncDate)
         try {
@@ -88,7 +86,7 @@ export class CloudSyncService {
             nextSync: new Date(newNextSync),
           }));
           this.#settings.set(updatedSettings);
-          await this.storage.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+          await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
         }
         return;
       }
@@ -102,17 +100,14 @@ export class CloudSyncService {
     }
 
     this.#settings.set(updatedSettings);
-    await this.storage.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+    await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
   }
 
   async authenticateWithProvider(provider: CloudProvider): Promise<void> {
     this.#syncStatus.update((status) => ({ ...status, error: undefined }));
 
     try {
-      // Navigate browser to the OAuth backend start endpoint
-      const redirectUrl = `${window.location.origin}/auth/callback?openModal=true`;
-      const startUrl = `${environment.authBackendUrl}/${provider}/start?redirect=${encodeURIComponent(redirectUrl)}`;
-      window.location.href = startUrl;
+      this.cloudSyncApiService.authenticateWithProvider(provider);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
       this.#syncStatus.update((status) => ({ ...status, error: errorMessage }));
@@ -146,7 +141,7 @@ export class CloudSyncService {
         nextSync: new Date(nextSync),
       }));
 
-      this.toastService.showToast(`${this.getProviderDisplayName(providerEnum)} connected successfully!`, 'checkmark-circle');
+      this.toastService.showToast(`${this.cloudSyncApiService.getProviderDisplayName(providerEnum)} connected successfully!`, 'checkmark-circle');
     } else {
       const errorMessage = error || 'Authentication failed';
       this.#syncStatus.update((s) => ({ ...s, error: errorMessage }));
@@ -158,22 +153,16 @@ export class CloudSyncService {
    * Fetch a fresh access token from the OAuth backend
    */
   private async getAccessToken(provider: CloudProvider): Promise<string> {
-    const response = await fetch(`${environment.authBackendUrl}/${provider}/access-token`, {
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 404) {
-        // Session expired or not connected — clear local state
+    try {
+      return await this.cloudSyncApiService.getAccessToken(provider);
+    } catch (error) {
+      // If not authenticated, clear local state
+      if (error instanceof Error && error.message.includes('Not authenticated')) {
         await this.updateSettings({ connectedProvider: undefined, enabled: false });
         this.#syncStatus.update((s) => ({ ...s, isAuthenticated: false }));
-        throw new Error('Not authenticated. Please reconnect your cloud provider.');
       }
-      throw new Error('Failed to retrieve access token');
+      throw error;
     }
-
-    const data = await response.json();
-    return data.access_token;
   }
 
   async disconnect(): Promise<void> {
@@ -181,36 +170,29 @@ export class CloudSyncService {
 
     if (settings.connectedProvider) {
       try {
-        const response = await fetch(`${environment.authBackendUrl}/${settings.connectedProvider}/disconnect`, {
-          method: 'POST',
-          credentials: 'include',
+        await this.cloudSyncApiService.disconnect(settings.connectedProvider);
+
+        // Clear local state
+        await this.updateSettings({
+          enabled: false,
+          connectedProvider: undefined,
+          lastSyncDate: undefined,
+          nextSyncDate: undefined,
+          folderId: undefined,
         });
 
-        if (response.ok) {
-          // Clear local state
-          await this.updateSettings({
-            enabled: false,
-            connectedProvider: undefined,
-            lastSyncDate: undefined,
-            nextSyncDate: undefined,
-            folderId: undefined,
-          });
+        this.#syncStatus.update((status) => ({
+          ...status,
+          isAuthenticated: false,
+          error: undefined,
+          lastSync: undefined,
+          nextSync: undefined,
+        }));
 
-          this.#syncStatus.update((status) => ({
-            ...status,
-            isAuthenticated: false,
-            error: undefined,
-            lastSync: undefined,
-            nextSync: undefined,
-          }));
-
-          this.toastService.showToast('Cloud sync disconnected', 'checkmark-outline');
-        } else {
-          console.warn('Failed to revoke tokens at provider, continuing with local disconnect');
-          this.toastService.showToast('Disconnecting failed, try again.', 'bug-outline', true);
-        }
+        this.toastService.showToast('Cloud sync disconnected', 'checkmark-outline');
       } catch (error) {
         console.warn('Error calling disconnect API:', error);
+        this.toastService.showToast('Disconnecting failed, try again.', 'bug-outline', true);
       }
     }
   }
@@ -231,10 +213,19 @@ export class CloudSyncService {
       const accessToken = await this.getAccessToken(settings.connectedProvider);
 
       // Generate Excel file
-      const buffer = await this.generateExcelBuffer();
+      const buffer = await this.excelService.generateExcelArrayBuffer();
 
       // Upload to cloud provider
-      await this.uploadToCloud(buffer, settings, accessToken);
+      if (!settings.connectedProvider) {
+        throw new Error('No provider connected');
+      }
+
+      const folderId = await this.cloudSyncApiService.uploadFile(buffer, settings.connectedProvider, accessToken, settings);
+
+      // Update folder ID if returned (Google Drive only)
+      if (folderId && folderId !== settings.folderId) {
+        await this.updateSettings({ folderId });
+      }
 
       // Update sync status
       const now = Date.now();
@@ -262,192 +253,6 @@ export class CloudSyncService {
       }));
       this.toastService.showToast(`Sync failed. ${errorMessage}`, 'bug-outline', true);
       throw error;
-    }
-  }
-
-  private async generateExcelBuffer(): Promise<ArrayBuffer> {
-    return await this.excelService.generateExcelArrayBuffer();
-  }
-
-  private async uploadToCloud(buffer: ArrayBuffer, settings: CloudSyncSettings, accessToken: string): Promise<void> {
-    switch (settings.connectedProvider) {
-      case CloudProvider.GOOGLE_DRIVE:
-        await this.uploadToGoogleDrive(buffer, accessToken);
-        break;
-      case CloudProvider.ONEDRIVE:
-        await this.uploadToOneDrive(buffer, accessToken);
-        break;
-      case CloudProvider.DROPBOX:
-        await this.uploadToDropbox(buffer, accessToken);
-        break;
-    }
-  }
-
-  private async uploadToGoogleDrive(buffer: ArrayBuffer, accessToken: string): Promise<void> {
-    const date = new Date();
-    const formattedDate = date.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-    const fileName = `game_data_${formattedDate}.xlsx`;
-
-    // Get or create the folder
-    const settings = this.#settings();
-    const folderName = settings.folderPath || 'Lightningbowl Game-History';
-    const folderId = await this.getOrCreateFolder(folderName, accessToken);
-
-    // Update settings with folder ID
-    if (folderId !== settings.folderId) {
-      await this.updateSettings({ folderId });
-    }
-
-    // Create file metadata with parent folder
-    const metadata = {
-      name: fileName,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      parents: [folderId],
-    };
-
-    // Create multipart request
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', new Blob([buffer], { type: metadata.mimeType }));
-
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: form,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Failed to upload to Google Drive');
-    }
-  }
-
-  private async getOrCreateFolder(folderName: string, accessToken: string): Promise<string> {
-    // Search for existing folder
-    const escapedFolderName = folderName.replace(/'/g, "\\'");
-    const query = `name='${escapedFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!searchResponse.ok) {
-      throw new Error('Failed to search for folder');
-    }
-
-    const searchData = await searchResponse.json();
-
-    // If folder exists, return its ID
-    if (searchData.files && searchData.files.length > 0) {
-      return searchData.files[0].id;
-    }
-
-    // Create new folder
-    const createResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-      }),
-    });
-
-    if (!createResponse.ok) {
-      throw new Error('Failed to create folder');
-    }
-
-    const createData = await createResponse.json();
-    return createData.id;
-  }
-
-  private async uploadToOneDrive(buffer: ArrayBuffer, accessToken: string): Promise<void> {
-    const date = new Date();
-    const formattedDate = date.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-    const settings = this.#settings();
-    const folderPath = settings.folderPath || 'Lightningbowl Game-History';
-    const fileName = `game_data_${formattedDate}.xlsx`;
-
-    const encodedFolderPath = encodeURIComponent(folderPath);
-    const encodedFileName = encodeURIComponent(fileName);
-    const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodedFolderPath}/${encodedFileName}:/content`;
-
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      },
-      body: buffer,
-    });
-
-    if (!response.ok) {
-      try {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to upload to OneDrive');
-      } catch {
-        throw new Error('Failed to upload to OneDrive');
-      }
-    }
-  }
-
-  private async uploadToDropbox(buffer: ArrayBuffer, accessToken: string): Promise<void> {
-    const date = new Date();
-    const formattedDate = date.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-    const settings = this.#settings();
-    const folderPath = settings.folderPath || 'Lightningbowl Game-History';
-    const fileName = `game_data_${formattedDate}.xlsx`;
-
-    const dropboxPath = `/${folderPath}/${fileName}`;
-
-    const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify({
-          path: dropboxPath,
-          mode: 'overwrite',
-          autorename: false,
-          mute: false,
-        }),
-      },
-      body: buffer,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error_summary || 'Failed to upload to Dropbox');
-    }
-  }
-
-  private getProviderDisplayName(provider: CloudProvider): string {
-    switch (provider) {
-      case CloudProvider.GOOGLE_DRIVE:
-        return 'Google Drive';
-      case CloudProvider.ONEDRIVE:
-        return 'OneDrive';
-      case CloudProvider.DROPBOX:
-        return 'Dropbox';
-      default:
-        return provider;
     }
   }
 

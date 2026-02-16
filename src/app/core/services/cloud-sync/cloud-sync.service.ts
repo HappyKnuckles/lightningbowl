@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { CloudSyncSettings, CloudProvider, SyncFrequency, CloudSyncStatus } from '../../models/cloud-sync.model';
 import { ExcelService } from '../excel/excel.service';
 import { ToastService } from '../toast/toast.service';
+import { StorageService } from '../storage/storage.service';
 import { Storage } from '@ionic/storage-angular';
 import { environment } from 'src/environments/environment';
 
@@ -34,6 +35,7 @@ export class CloudSyncService {
     private storage: Storage,
     private excelService: ExcelService,
     private toastService: ToastService,
+    private storageService: StorageService,
   ) {
     this.init();
   }
@@ -330,7 +332,11 @@ export class CloudSyncService {
     // Search for existing folder
     const escapedFolderName = folderName.replace(/'/g, "\\'");
     const query = `name='${escapedFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`);
+    const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     if (!searchResponse.ok) {
       throw new Error('Failed to search for folder');
@@ -458,19 +464,23 @@ export class CloudSyncService {
     // Calculate if sync is needed based on frequency
     const shouldSync = this.shouldSyncNow(lastSyncDate, settings.frequency, now);
 
-    if (shouldSync) {
-      try {
-        await this.syncNow();
-      } catch (error) {
-        console.error('Automatic sync on startup failed:', error);
-      }
+    if (!shouldSync) {
+      return;
+    }
+
+    try {
+      // Wait until StorageService has finished loading game history
+      await this.storageService.gamesReady;
+      await this.syncNow();
+    } catch (error) {
+      console.error('Automatic sync on startup failed:', error);
     }
   }
 
   private shouldSyncNow(lastSyncDate: number, frequency: SyncFrequency, currentDate: number): boolean {
-    if (lastSyncDate === 0) {
-      return false; // Never synced before
-    }
+    // if (lastSyncDate === 0) {
+    //   return false; // Never synced before
+    // }
 
     const timeSinceLastSync = currentDate - lastSyncDate;
     const oneDayMs = 24 * 60 * 60 * 1000;

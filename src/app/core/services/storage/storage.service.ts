@@ -28,6 +28,10 @@ export class StorageService {
 
   #pinInputMode = signal<boolean>(true);
 
+  /** Resolves once the initial game history has been loaded into the #games signal. */
+  readonly gamesReady: Promise<void>;
+  #resolveGamesReady!: () => void;
+
   get pinInputMode() {
     return this.#pinInputMode;
   }
@@ -71,6 +75,9 @@ export class StorageService {
     private networkService: NetworkService,
     private analyticsService: AnalyticsService,
   ) {
+    this.gamesReady = new Promise<void>((resolve) => {
+      this.#resolveGamesReady = resolve;
+    });
     this.init();
 
     // const games: Game[] = [];
@@ -508,7 +515,7 @@ export class StorageService {
         this.loadAllPatterns(),
         this.loadAllBalls(undefined, weight),
         this.loadLeagues(),
-        this.loadGameHistory(),
+        this.loadGameHistory().then(() => this.#resolveGamesReady()),
         this.loadArsenal(),
         this.ballService.getBrands(),
         this.ballService.getCores(),

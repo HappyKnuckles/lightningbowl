@@ -26,5 +26,6 @@ export interface CloudSyncStatus {
   lastSync?: Date;
   nextSync?: Date;
   syncInProgress: boolean;
+  disconnectInProgress: boolean;
   error?: string;
 }

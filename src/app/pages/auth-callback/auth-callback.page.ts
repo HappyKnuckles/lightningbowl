@@ -30,10 +30,15 @@ export class AuthCallbackPage implements OnInit {
     const openModal = params['openModal'];
 
     if (provider && status) {
-      await this.cloudSyncService.handleAuthCallback(provider, status, error || undefined);
+      try {
+        await this.cloudSyncService.handleAuthCallback(provider, status, error || undefined);
+      } catch (err) {
+        console.error('Auth callback handling failed:', err);
+      }
     }
 
     // Navigate to settings page, preserving openModal param
+    // Always navigate regardless of any errors above
     const queryParams = openModal === 'true' ? { openCloudSync: 'true' } : {};
     this.router.navigate(['/tabs/settings'], { replaceUrl: true, queryParams });
   }

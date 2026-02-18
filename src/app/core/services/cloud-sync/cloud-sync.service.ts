@@ -20,6 +20,7 @@ export class CloudSyncService {
   #syncStatus = signal<CloudSyncStatus>({
     isAuthenticated: false,
     syncInProgress: false,
+    disconnectInProgress: false,
   });
 
   readonly settings = this.#settings.asReadonly();
@@ -30,13 +31,15 @@ export class CloudSyncService {
     return settings.enabled && settings.connectedProvider !== undefined;
   });
 
+  private readonly _initialized: Promise<void>;
+
   constructor(
     private storageService: StorageService,
     private excelService: ExcelService,
     private toastService: ToastService,
     private cloudSyncApiService: CloudSyncApiService,
   ) {
-    this.init();
+    this._initialized = this.init();
   }
 
   private async init(): Promise<void> {
@@ -120,16 +123,18 @@ export class CloudSyncService {
    * Called by the auth-callback page after the OAuth backend redirects back
    */
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
+    await this._initialized;
+
     if (status === 'success') {
       const providerEnum = provider as CloudProvider;
-      const currentSettings = this.#settings();
       const now = Date.now();
-      const nextSync = this.calculateNextSyncDate(currentSettings.frequency, now);
+      const nextSync = this.calculateNextSyncDate(SyncFrequency.WEEKLY, now);
 
       await this.updateSettings({
         provider: providerEnum,
         connectedProvider: providerEnum,
         enabled: true,
+        frequency: SyncFrequency.WEEKLY,
         nextSyncDate: nextSync,
       });
 
@@ -166,9 +171,12 @@ export class CloudSyncService {
   }
 
   async disconnect(): Promise<void> {
+    if (this.#syncStatus().disconnectInProgress) return;
+
     const settings = this.#settings();
 
     if (settings.connectedProvider) {
+      this.#syncStatus.update((status) => ({ ...status, disconnectInProgress: true }));
       try {
         await this.cloudSyncApiService.disconnect(settings.connectedProvider);
 
@@ -184,6 +192,7 @@ export class CloudSyncService {
         this.#syncStatus.update((status) => ({
           ...status,
           isAuthenticated: false,
+          disconnectInProgress: false,
           error: undefined,
           lastSync: undefined,
           nextSync: undefined,
@@ -192,6 +201,7 @@ export class CloudSyncService {
         this.toastService.showToast('Cloud sync disconnected', 'checkmark-outline');
       } catch (error) {
         console.warn('Error calling disconnect API:', error);
+        this.#syncStatus.update((status) => ({ ...status, disconnectInProgress: false }));
         this.toastService.showToast('Disconnecting failed, try again.', 'bug-outline', true);
       }
     }
@@ -283,9 +293,9 @@ export class CloudSyncService {
   }
 
   private shouldSyncNow(lastSyncDate: number, frequency: SyncFrequency, currentDate: number): boolean {
-    // if (lastSyncDate === 0) {
-    //   return false; // Never synced before
-    // }
+    if (lastSyncDate === 0) {
+      return false; // Never synced before — first sync is scheduled, not immediate
+    }
 
     const timeSinceLastSync = currentDate - lastSyncDate;
     const oneDayMs = 24 * 60 * 60 * 1000;

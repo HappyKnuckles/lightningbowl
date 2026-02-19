@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { AfterViewInit, Component, inject } from '@angular/core';
 import { IonContent, IonSpinner } from '@ionic/angular/standalone';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
@@ -16,12 +16,12 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
     </ion-content>
   `,
 })
-export class AuthCallbackPage implements OnInit {
+export class AuthCallbackPage implements AfterViewInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cloudSyncService = inject(CloudSyncService);
 
-  async ngOnInit(): Promise<void> {
+  async ngAfterViewInit(): Promise<void> {
     // The backend redirects here with query params: ?provider=xxx&status=success|error&error=...
     const params = this.route.snapshot.queryParams;
     const provider = params['provider'];

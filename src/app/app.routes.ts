@@ -54,6 +54,10 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'auth/callback',
+    loadComponent: () => import('./pages/auth-callback/auth-callback.page').then((m) => m.AuthCallbackPage),
+  },
+  {
     path: '',
     redirectTo: '/tabs/add',
     pathMatch: 'full',

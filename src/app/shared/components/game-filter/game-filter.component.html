@@ -152,6 +152,8 @@
     </ion-item>
   </ion-list>
 </ion-content>
-<ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" (click)="confirm()">Confirm ({{ gameFilterService.filteredGames().length }} Games)</ion-button>
+<ion-footer>
+  <ion-toolbar>
+    <ion-button class="confirm-btn" expand="block" (click)="confirm()">Confirm ({{ gameFilterService.filteredGames().length }} Games)</ion-button>
+  </ion-toolbar>
 </ion-footer>

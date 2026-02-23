@@ -26,12 +26,18 @@ export class AuthCallbackPage implements AfterViewInit {
     const params = this.route.snapshot.queryParams;
     const provider = params['provider'];
     const status = params['status'];
-    const error = params['error'];
+    const error = params['error'] || params['message'];
     const openModal = params['openModal'];
 
     if (provider && status) {
       try {
-        await this.cloudSyncService.handleAuthCallback(provider, status, error || undefined);
+        // Race the callback handling against a timeout so navigation always happens.
+        // If handleAuthCallback hangs (e.g. init or network issues), we still redirect.
+        const AUTH_TIMEOUT_MS = 8_000;
+        await Promise.race([
+          this.cloudSyncService.handleAuthCallback(provider, status, error || undefined),
+          new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Auth callback timed out')), AUTH_TIMEOUT_MS)),
+        ]);
       } catch (err) {
         console.error('Auth callback handling failed:', err);
       }

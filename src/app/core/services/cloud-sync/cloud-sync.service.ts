@@ -31,7 +31,7 @@ export class CloudSyncService {
     return settings.enabled && settings.connectedProvider !== undefined;
   });
 
-  private readonly _initialized: Promise<void>;
+  private readonly _settingsLoaded: Promise<void>;
 
   constructor(
     private storageService: StorageService,
@@ -39,12 +39,14 @@ export class CloudSyncService {
     private toastService: ToastService,
     private cloudSyncApiService: CloudSyncApiService,
   ) {
-    this._initialized = this.init();
+    this._settingsLoaded = this.init();
   }
 
   private async init(): Promise<void> {
     await this.loadSettings();
-    await this.checkAndSyncOnStartup();
+    // Fire-and-forget: startup sync runs in the background and should not
+    // block other operations like handling the OAuth callback redirect.
+    this.checkAndSyncOnStartup();
   }
 
   private async loadSettings(): Promise<void> {
@@ -123,7 +125,7 @@ export class CloudSyncService {
    * Called by the auth-callback page after the OAuth backend redirects back
    */
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
-    await this._initialized;
+    await this._settingsLoaded;
 
     if (status === 'success') {
       const providerEnum = provider as CloudProvider;

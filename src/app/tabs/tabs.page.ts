@@ -11,6 +11,8 @@ import {
   settingsOutline,
   mapOutline,
   gameControllerOutline,
+  shieldCheckmarkOutline,
+  documentTextOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -27,7 +29,16 @@ import { AsyncPipe } from '@angular/common';
 })
 export class TabsPage {
   activeMoreTab$ = new BehaviorSubject<boolean>(false);
-  readonly moreTabs = ['/tabs/arsenal', '/tabs/balls', '/tabs/pattern', '/tabs/map', '/tabs/minigame', '/tabs/settings'];
+  readonly moreTabs = [
+    '/tabs/arsenal',
+    '/tabs/balls',
+    '/tabs/pattern',
+    '/tabs/map',
+    '/tabs/minigame',
+    '/tabs/settings',
+    '/tabs/privacy-policy',
+    '/tabs/impressum',
+  ];
 
   constructor(private router: Router) {
     addIcons({
@@ -41,6 +52,8 @@ export class TabsPage {
       settingsOutline,
       bagAddOutline,
       gameControllerOutline,
+      shieldCheckmarkOutline,
+      documentTextOutline,
     });
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {

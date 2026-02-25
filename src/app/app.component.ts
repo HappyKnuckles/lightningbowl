@@ -63,6 +63,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
       void this.analyticsService.trackRouteChange(event.urlAfterRedirects);
     });
+
+    // When iOS restores the PWA WebView from bfcache (e.g., after taking a screenshot),
+    // the app can get stuck on the startup splash screen. Force a fresh reload in standalone mode.
+    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
+      if (event.persisted && window.matchMedia('(display-mode: standalone)').matches) {
+        window.location.reload();
+      }
+    });
   }
 
   ngOnDestroy(): void {

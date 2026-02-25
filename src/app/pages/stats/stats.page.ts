@@ -2,7 +2,6 @@ import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
-  OnInit,
   ViewChild,
   AfterViewInit,
   computed,
@@ -127,7 +126,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatsPage implements OnInit, AfterViewInit {
+export class StatsPage implements AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
   overallStatDefinitions = overallStatDefinitions;
   seriesStatDefinitions = seriesStatDefinitions;
@@ -207,17 +206,6 @@ export class StatsPage implements OnInit, AfterViewInit {
         this.generateCharts(true);
       }
     });
-  }
-
-  ngOnInit(): void {
-    try {
-      this.loadingService.setLoading(true);
-      // this.processDates();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      this.loadingService.setLoading(false);
-    }
   }
 
   ngAfterViewInit(): void {

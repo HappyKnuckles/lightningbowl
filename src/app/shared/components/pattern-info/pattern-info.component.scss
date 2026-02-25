@@ -41,6 +41,14 @@ ion-grid {
   .pattern-info {
     display: grid;
     width: 55%;
+
+    ion-chip:first-child {
+      margin-top: 0;
+    }
+
+    ion-chip:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 

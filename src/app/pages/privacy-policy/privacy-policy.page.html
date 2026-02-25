@@ -1,0 +1,57 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Privacy Policy</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Privacy Policy</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p><strong>Last updated:</strong> February 2025</p>
+
+      <h2>1. Introduction</h2>
+      <p>
+        Lightning Bowl ("we", "our", "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and store
+        your information when you use our application.
+      </p>
+
+      <h2>2. Data We Collect</h2>
+      <p>We collect the following data when you use Lightning Bowl:</p>
+      <ul>
+        <li><strong>Account information:</strong> When you sign in via OAuth (Google, etc.), we receive your email address and profile name.</li>
+        <li><strong>Game data:</strong> Bowling scores, game history, league data, and equipment information you enter into the app.</li>
+      </ul>
+
+      <h2>3. How We Use OAuth</h2>
+      <p>
+        OAuth is used exclusively for one-time authentication to verify your identity. After sign-in, we store a refresh token in our database solely
+        to enable cloud synchronization of your bowling data across devices. We do not use OAuth tokens for any other purpose and do not share your
+        credentials with third parties.
+      </p>
+
+      <h2>4. Data Storage</h2>
+      <p>
+        Your bowling data is stored locally on your device using IndexedDB. If you choose to enable cloud sync, your data is encrypted and stored
+        securely on our servers. Refresh tokens required for cloud sync are stored in our database and are used only to maintain your session.
+      </p>
+
+      <h2>5. Data Sharing</h2>
+      <p>We do not sell, trade, or otherwise transfer your personal data to third parties.</p>
+
+      <h2>6. Data Retention</h2>
+      <p>
+        We retain your data for as long as your account is active. You may request deletion of your account and associated data by contacting us via
+        the feedback form in the Settings page.
+      </p>
+
+      <h2>7. Your Rights</h2>
+      <p>You have the right to access, correct, or delete your personal data. To exercise these rights, please contact us through the app.</p>
+
+      <h2>8. Contact</h2>
+      <p>If you have any questions about this Privacy Policy, please contact us via the feedback form in the Settings page.</p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

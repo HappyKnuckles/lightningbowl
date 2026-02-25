@@ -4,7 +4,6 @@ import { Storage } from '@ionic/storage-angular';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { Ball } from 'src/app/core/models/ball.model';
 import { signal, computed } from '@angular/core';
-import { LoadingService } from '../loader/loading.service';
 import { BallService } from '../ball/ball.service';
 import { Pattern } from '../../models/pattern.model';
 import { PatternService } from '../pattern/pattern.service';
@@ -63,7 +62,6 @@ export class StorageService {
   constructor(
     private storage: Storage,
     private sortUtilsService: SortUtilsService,
-    private loadingService: LoadingService,
     private ballService: BallService,
     private patternService: PatternService,
     private highScoreAlertService: HighScoreAlertService,
@@ -161,7 +159,6 @@ export class StorageService {
   }
 
   async loadGameHistory(): Promise<Game[]> {
-    this.loadingService.setLoading(true);
     try {
       const gameHistory = await this.loadData<Game>('game');
       let needsUpdate = false;
@@ -212,8 +209,6 @@ export class StorageService {
     } catch (error) {
       console.error('Error loading game history:', error);
       throw error;
-    } finally {
-      this.loadingService.setLoading(false);
     }
   }
 

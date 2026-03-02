@@ -39,7 +39,7 @@
     </ion-item>
 
     <ion-button class="connect-btn" (click)="connectProvider()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
-      <ion-icon slot="start" name="link"></ion-icon>
+      <ion-icon slot="start" name="link-outline"></ion-icon>
       Connect {{ providerDisplayName() }}
     </ion-button>
     <p class="helper-text ion-text-center ion-margin-top">Connect to automatically backup your game history securely to the cloud.</p>

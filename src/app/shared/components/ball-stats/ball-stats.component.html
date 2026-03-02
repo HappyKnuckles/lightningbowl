@@ -3,7 +3,7 @@
   <div class="stat-container">
     @if (bestBall().gameCount === 0) {
       <div class="inner-stat-container">
-        <p>No Games with balls saved.</p>
+        <p>{{ emptyMessage() }}</p>
       </div>
     } @else {
       <div class="header-container">
@@ -13,7 +13,7 @@
         <span class="game-count-ratio">{{ bestBall().gameCount }} / {{ totalGames() }}</span>
       </div>
       <div class="inner-stat-container">
-        <ion-img [src]="storageService.url + bestBall().ballImage"></ion-img>
+        <ion-img [src]="(imageUrlBase() ?? storageService.url) + bestBall().ballImage"></ion-img>
         <div class="ball-stats">
           <div class="stat-line">
             <span class="stat-label">Avg:</span>

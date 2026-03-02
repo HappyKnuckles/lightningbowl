@@ -12,8 +12,9 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
 export class BallStatsComponent {
   bestBall = input.required<BestBallStats>();
   title = input.required<string>();
-
   totalGames = input.required<number>();
+  imageUrlBase = input<string>();
+  emptyMessage = input<string>('No Games with balls saved.');
 
   constructor(public storageService: StorageService) {}
 }

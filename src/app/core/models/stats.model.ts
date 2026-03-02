@@ -137,6 +137,17 @@ export interface BestBallStats {
   cleanGameCount?: number;
 }
 
+export interface BestPatternStats {
+  patternName: string;
+  patternImage: string;
+  patternAvg: number;
+  patternHighestGame: number;
+  patternLowestGame: number;
+  gameCount: number;
+  strikeRate?: number;
+  cleanGameCount?: number;
+}
+
 export interface LeaveStats {
   pins: number[];
   occurrences: number;

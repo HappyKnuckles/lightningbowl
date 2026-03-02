@@ -1,34 +1,3 @@
-<ion-list style="background: none">
-  <ion-list-header style="margin-bottom: 4px">{{ title() }}</ion-list-header>
-  <div class="stat-container">
-    @if (bestBall().gameCount === 0) {
-      <div class="inner-stat-container">
-        <p>{{ emptyMessage() }}</p>
-      </div>
-    } @else {
-      <div class="header-container">
-        <ion-list-header class="ball-name">
-          {{ bestBall().ballName }}
-        </ion-list-header>
-        <span class="game-count-ratio">{{ bestBall().gameCount }} / {{ totalGames() }}</span>
-      </div>
-      <div class="inner-stat-container">
-        <ion-img [src]="(imageUrlBase() ?? storageService.url) + bestBall().ballImage"></ion-img>
-        <div class="ball-stats">
-          <div class="stat-line">
-            <span class="stat-label">Avg:</span>
-            <span class="stat-value">{{ bestBall().ballAvg }}</span>
-          </div>
-          <div class="stat-line">
-            <span class="stat-label">High:</span>
-            <span class="stat-value">{{ bestBall().ballHighestGame }}</span>
-          </div>
-          <div class="stat-line">
-            <span class="stat-label">Low:</span>
-            <span class="stat-value">{{ bestBall().ballLowestGame }}</span>
-          </div>
-        </div>
-      </div>
-    }
-  </div>
-</ion-list>
+<app-item-stats [item]="asGeneric()" [title]="title()" [totalGames]="totalGames()" [imageUrlBase]="imageUrlBase()"
+  [emptyMessage]="emptyMessage()">
+</app-item-stats>

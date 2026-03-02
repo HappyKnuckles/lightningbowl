@@ -23,6 +23,7 @@ export class StorageService {
   #arsenal = signal<Ball[]>([]);
   #allBalls = signal<Ball[]>([]);
   #allPatterns = signal<Partial<Pattern>[]>([]);
+  #patternImageMap = signal<Record<string, string>>({});
 
   #isUsingCache = signal<boolean>(false);
 
@@ -58,6 +59,9 @@ export class StorageService {
   }
   get allPatterns() {
     return this.#allPatterns;
+  }
+  get patternImageMap() {
+    return this.#patternImageMap;
   }
 
   constructor(
@@ -337,6 +341,61 @@ export class StorageService {
     }
   }
 
+  async loadPatternImageMap(forceRefresh = false): Promise<void> {
+    const cacheKey = 'pattern_image_map';
+
+    try {
+      if (!forceRefresh) {
+        const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
+        const isCacheValid = await this.cacheService.isValid(cacheKey);
+
+        if (cached && (isCacheValid || this.networkService.isOffline)) {
+          this.#patternImageMap.set(cached);
+          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
+            this.refreshPatternImageMapInBackground(cacheKey);
+          }
+          return;
+        }
+      }
+
+      if (this.networkService.isOffline) {
+        return;
+      }
+
+      const patterns = await this.patternService.getAllPatterns();
+      const imageMap: Record<string, string> = {};
+      for (const p of patterns) {
+        if (p.title && p.chart_standard) {
+          imageMap[p.title] = p.chart_standard;
+        }
+      }
+      this.#patternImageMap.set(imageMap);
+      await this.cacheService.set(cacheKey, imageMap);
+    } catch (error) {
+      console.error('Error loading pattern image map:', error);
+      const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
+      if (cached) {
+        this.#patternImageMap.set(cached);
+      }
+    }
+  }
+
+  private async refreshPatternImageMapInBackground(cacheKey: string): Promise<void> {
+    try {
+      const patterns = await this.patternService.getAllPatterns();
+      const imageMap: Record<string, string> = {};
+      for (const p of patterns) {
+        if (p.title && p.chart_horizontal) {
+          imageMap[p.title] = p.chart_horizontal;
+        }
+      }
+      this.#patternImageMap.set(imageMap);
+      await this.cacheService.set(cacheKey, imageMap);
+    } catch (error) {
+      console.error('Background refresh failed for pattern image map:', error);
+    }
+  }
+
   savePinInputMode(pinMode: string): void {
     this.#pinInputMode.set(pinMode === 'hit');
     const mode = pinMode === 'hit' ? 'hit' : 'missing';
@@ -506,6 +565,7 @@ export class StorageService {
       this.loadPinInputMode();
       await Promise.all([
         this.loadAllPatterns(),
+        this.loadPatternImageMap(),
         this.loadAllBalls(undefined, weight),
         this.loadLeagues(),
         this.loadGameHistory(),

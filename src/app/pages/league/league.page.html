@@ -8,13 +8,13 @@
       </ion-buttons>
     } @else {
       <ion-buttons slot="end">
-        <ion-button type="button" class="action-sheet" fill="clear" strong="true" (click)="editVisibility()"> Save </ion-button>
+        <ion-button type="button" class="action-sheet" fill="clear" strong="true" (click)="editVisibility()"> {{ 'LEAGUE.SAVE' | translate }} </ion-button>
       </ion-buttons>
       <ion-buttons slot="start">
-        <ion-button type="button" class="action-sheet" fill="clear" (click)="cancelEdit()"> Cancel </ion-button>
+        <ion-button type="button" class="action-sheet" fill="clear" (click)="cancelEdit()"> {{ 'LEAGUE.CANCEL' | translate }} </ion-button>
       </ion-buttons>
     }
-    <ion-title> Leagues </ion-title>
+    <ion-title> {{ 'LEAGUE.TITLE' | translate }} </ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -24,18 +24,18 @@
   </ion-refresher>
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
-    <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
+    <ion-text class="no-game-text"> {{ 'LEAGUE.NO_GAMES' | translate }} </ion-text>
   </ng-container>
 
   <ng-template #noLeagues>
     <ng-container *ngIf="leagueKeys().length <= 0 && !loadingService.isLoading(); else content">
-      <ion-text class="no-game-text"> No leagues saved! </ion-text>
+      <ion-text class="no-game-text"> {{ 'LEAGUE.NO_LEAGUES' | translate }} </ion-text>
     </ng-container>
   </ng-template>
 
   <ng-template #content>
     @if (noLeaguesShown && !isVisibilityEdit()) {
-      <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
+      <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> {{ 'LEAGUE.NO_LEAGUES_SHOWN' | translate }} </ion-text>
     } @else {
       @for (league of leagueKeys(); track league) {
         @if (isVisibilityEdit()) {

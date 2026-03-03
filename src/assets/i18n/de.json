@@ -1,0 +1,149 @@
+{
+  "TABS": {
+    "NEW": "Neu",
+    "STATS": "Statistiken",
+    "HISTORY": "Verlauf",
+    "LEAGUES": "Ligen",
+    "MORE": "Mehr"
+  },
+  "MORE_MENU": {
+    "ARSENAL": "Arsenal",
+    "BALL_LIBRARY": "Ballbibliothek",
+    "PATTERN_LIBRARY": "Musterbibliothek",
+    "MAP": "Karte",
+    "MINIGAME": "Minispiel",
+    "SETTINGS": "Einstellungen"
+  },
+  "ADD_GAME": {
+    "TITLE_SINGLE": "Neues Spiel",
+    "TITLE_SERIES": "Neue {{mode}}",
+    "CLEAR_SCORE": "Ergebnis {{num}} löschen",
+    "CLEAR_SCORE_SINGLE": "Ergebnis löschen",
+    "SAVE_SCORE": "Ergebnis speichern",
+    "SAVE_SERIES": "Serie speichern",
+    "CLEAR_ALL": "Alles löschen",
+    "SCORE_SERIES": "Serie-Ergebnis: {{score}}",
+    "MAX_SERIES": "Max. Serie: {{score}}",
+    "YOUR_GAME": "Dein Spiel",
+    "EDIT_GAME_DATA": "Falsche Spieldaten bearbeiten",
+    "CANCEL": "Abbrechen",
+    "SAVE": "Speichern",
+    "ERROR_TITLE": "Fehler",
+    "ERROR_MESSAGE": "Du hast nicht alle Felder ausgefüllt",
+    "DISMISS": "Schließen"
+  },
+  "STATS": {
+    "TITLE": "Statistiken",
+    "NO_STATS": "Spiele einige Spiele, um deine Statistiken zu sehen!",
+    "NO_STATS_FILTER": "Keine Statistiken für diesen Filter!",
+    "OVERALL_STATS": "Gesamtstatistiken",
+    "PLAY_FREQUENCY": "Spielhäufigkeit",
+    "SCORE_ANALYSIS": "Ergebnisanalyse",
+    "SCORE_DISTRIBUTION": "Ergebnisverteilung",
+    "CONVERTED_VS_MISSED": "Umgewandelte vs. verpasste Spares",
+    "SPARE_DISTRIBUTION": "Spare-Verteilung",
+    "THROW_DISTRIBUTION": "Wurfverteilung",
+    "AVERAGE_SCORE": "Durchschnittsergebnis",
+    "SESSION_DATE": "Sitzungsdatum"
+  },
+  "HISTORY": {
+    "TITLE": "Verlauf",
+    "NO_GAMES": "Spiele einige Spiele, um deinen Verlauf zu sehen!",
+    "NO_GAMES_FILTER": "Keine Spiele für diesen Filter!",
+    "DELETE": "Löschen"
+  },
+  "LEAGUE": {
+    "TITLE": "Ligen",
+    "NO_GAMES": "Spiele einige Spiele, um deine Ligen zu sehen!",
+    "NO_LEAGUES": "Keine Ligen gespeichert!",
+    "NO_LEAGUES_SHOWN": "Keine Ligen zum Anzeigen ausgewählt!",
+    "SAVE": "Speichern",
+    "CANCEL": "Abbrechen",
+    "GAMES": "Spiele: {{count}}",
+    "AVG": "Ø: {{avg}}",
+    "HIGH": "Hoch: {{high}}",
+    "SCORE_ANALYSIS": "Ergebnisanalyse",
+    "SPARE_DIST": "Spare-Verteilung",
+    "SPARES_OVERVIEW": "Spare-Übersicht"
+  },
+  "BALLS": {
+    "TITLE": "Ballbibliothek",
+    "NO_BALLS": "Keine Bälle gefunden.",
+    "ADD_TO_ARSENAL": "Zum Arsenal hinzufügen",
+    "REMOVE_FROM_ARSENAL": "Aus dem Arsenal entfernen",
+    "CORE": "Kern:",
+    "COVERSTOCK": "Coverstock:",
+    "SEARCH_PLACEHOLDER": "Nach einem Ball suchen",
+    "POWERED_BY": "unterstützt von"
+  },
+  "ARSENAL": {
+    "TITLE": "Arsenal",
+    "NO_BALLS": "Du hast keine Bälle in deinem Arsenal. Füge einen Ball hinzu!",
+    "COMPARE_CHART": "Vergleichsdiagramm",
+    "CORE": "Kern",
+    "COVERSTOCK": "Coverstock",
+    "POWERED_BY": "unterstützt von"
+  },
+  "PATTERN": {
+    "TITLE": "Musterbibliothek",
+    "NO_PATTERNS": "Keine Muster gefunden!",
+    "DOWNLOAD_PDF": "PDF herunterladen",
+    "DOWNLOAD_KOSI": "Kosi herunterladen"
+  },
+  "MAP": {
+    "TITLE": "Bowlingbahn-Karte"
+  },
+  "MINIGAME": {
+    "TITLE": "Minispiel",
+    "HOW_TO_PLAY": "So wird gespielt:",
+    "SWIPE_INSTRUCTION": "Wische in eine Richtung – der Ball folgt deinem Finger!",
+    "AUTO_RESET": "Spiel wird nach jedem Wurf automatisch zurückgesetzt!",
+    "PINS": "Pins:",
+    "SCORE": "Ergebnis:"
+  },
+  "SETTINGS": {
+    "TITLE": "Einstellungen",
+    "YOUR_NAME": "Dein Name",
+    "COLOR_THEME": "Farbthema",
+    "PIN_INPUT_MODE": "Pin-Eingabemodus",
+    "MISSING_PINS": "Fehlende Pins",
+    "HIT_PINS": "Getroffene Pins",
+    "SPARE_NAMES": "Spare-Namen",
+    "GOAL_AVERAGE": "Zieldurchschnitt",
+    "ISSUES_FEATURES": "Probleme & Funktionen",
+    "FEEDBACK_REQUESTS": "Feedback/Anfragen",
+    "OPEN_FORM": "Formular öffnen",
+    "LOAD_UPDATE": "Update laden",
+    "UPDATE": "Aktualisieren",
+    "TEST_SERVER_MSG": "Dies ist der Testserver. Wird für experimentelle Funktionen verwendet.",
+    "LANGUAGE": "Sprache",
+    "FEEDBACK_TITLE": "Feedback/Anfrage",
+    "FEEDBACK_CONTACT": "Kontaktiere uns",
+    "FEEDBACK_EMAIL": "Deine E-Mail",
+    "FEEDBACK_MESSAGE": "Feedback",
+    "FEEDBACK_PLACEHOLDER": "Gib dein Feedback ein",
+    "FEEDBACK_INVALID_EMAIL": "Ungültige E-Mail-Adresse.",
+    "FEEDBACK_REQUIRED": "Feedback ist erforderlich.",
+    "SUBMIT_FEEDBACK": "Feedback senden",
+    "CANCEL": "Abbrechen",
+    "SPARE_NAMES_TITLE": "Spare-Namen",
+    "BACK": ""
+  },
+  "APP": {
+    "WELCOME": "Willkommen!",
+    "ENTER_NAME": "Bitte gib deinen Namen ein:",
+    "YOUR_NAME_PLACEHOLDER": "Dein Name",
+    "CONFIRM": "Bestätigen",
+    "HELLO": "Hallo {{name}}!",
+    "HI": "Hi",
+    "CHANGE_NAME": "Namen ändern",
+    "NEW_VERSION": "Neue Version verfügbar",
+    "CHANGES_MADE": "Folgende Änderungen wurden vorgenommen:",
+    "LOAD_IT": "Laden?",
+    "CANCEL": "Abbrechen",
+    "LOAD": "Laden",
+    "INSTALL_SUCCESS": "App erfolgreich installiert!",
+    "INSTALL_FAILED": "Installation fehlgeschlagen. Bitte erneut versuchen.",
+    "NAME_UPDATED": "Name zu {{name}} aktualisiert"
+  }
+}

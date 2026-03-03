@@ -33,6 +33,7 @@ import {
   refreshCircleOutline,
   chevronBackOutline,
   bugOutline,
+  languageOutline,
 } from 'ionicons/icons';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -49,6 +50,8 @@ import { AlertController, InputCustomEvent, ModalController } from '@ionic/angul
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { LanguageService } from 'src/app/core/services/language/language.service';
 
 @Component({
   selector: 'app-settings',
@@ -82,6 +85,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
     LeagueSelectorComponent,
     SpareNamesComponent,
     NgIf,
+    TranslateModule,
   ],
 })
 export class SettingsPage implements OnInit {
@@ -107,6 +111,7 @@ export class SettingsPage implements OnInit {
     private alertCtrl: AlertController,
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
+    public languageService: LanguageService,
   ) {
     addIcons({
       personCircleOutline,
@@ -119,6 +124,7 @@ export class SettingsPage implements OnInit {
       chevronBack,
       sendOutline,
       bugOutline,
+      languageOutline,
     });
   }
 
@@ -179,6 +185,10 @@ export class SettingsPage implements OnInit {
     });
 
     await alert.present();
+  }
+
+  changeLanguage(lang: string): void {
+    this.languageService.setLanguage(lang);
   }
 
   changeColor(): void {

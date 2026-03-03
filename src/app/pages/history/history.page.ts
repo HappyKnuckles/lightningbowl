@@ -44,6 +44,7 @@ import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-history',
@@ -69,6 +70,7 @@ import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-heade
     GameComponent,
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
+    TranslateModule,
   ],
 })
 export class HistoryPage {

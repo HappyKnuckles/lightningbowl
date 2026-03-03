@@ -1,0 +1,149 @@
+{
+  "TABS": {
+    "NEW": "新建",
+    "STATS": "统计",
+    "HISTORY": "历史",
+    "LEAGUES": "联赛",
+    "MORE": "更多"
+  },
+  "MORE_MENU": {
+    "ARSENAL": "球具库",
+    "BALL_LIBRARY": "保龄球库",
+    "PATTERN_LIBRARY": "油型库",
+    "MAP": "地图",
+    "MINIGAME": "小游戏",
+    "SETTINGS": "设置"
+  },
+  "ADD_GAME": {
+    "TITLE_SINGLE": "新游戏",
+    "TITLE_SERIES": "新{{mode}}",
+    "CLEAR_SCORE": "清除成绩 {{num}}",
+    "CLEAR_SCORE_SINGLE": "清除成绩",
+    "SAVE_SCORE": "保存成绩",
+    "SAVE_SERIES": "保存系列赛",
+    "CLEAR_ALL": "全部清除",
+    "SCORE_SERIES": "系列成绩: {{score}}",
+    "MAX_SERIES": "最高系列: {{score}}",
+    "YOUR_GAME": "你的游戏",
+    "EDIT_GAME_DATA": "编辑错误的游戏数据",
+    "CANCEL": "取消",
+    "SAVE": "保存",
+    "ERROR_TITLE": "错误",
+    "ERROR_MESSAGE": "你没有填写所有输入",
+    "DISMISS": "关闭"
+  },
+  "STATS": {
+    "TITLE": "统计",
+    "NO_STATS": "先玩几局游戏，就能看到你的统计数据！",
+    "NO_STATS_FILTER": "此筛选条件没有统计数据！",
+    "OVERALL_STATS": "总体统计",
+    "PLAY_FREQUENCY": "游戏频率统计",
+    "SCORE_ANALYSIS": "成绩分析",
+    "SCORE_DISTRIBUTION": "成绩分布",
+    "CONVERTED_VS_MISSED": "补中与未补比较",
+    "SPARE_DISTRIBUTION": "补中分布",
+    "THROW_DISTRIBUTION": "投球分布",
+    "AVERAGE_SCORE": "平均成绩",
+    "SESSION_DATE": "场次日期"
+  },
+  "HISTORY": {
+    "TITLE": "历史",
+    "NO_GAMES": "先玩几局游戏，就能看到你的历史记录！",
+    "NO_GAMES_FILTER": "此筛选条件没有游戏！",
+    "DELETE": "删除"
+  },
+  "LEAGUE": {
+    "TITLE": "联赛",
+    "NO_GAMES": "先玩几局游戏，就能看到你的联赛！",
+    "NO_LEAGUES": "没有保存的联赛！",
+    "NO_LEAGUES_SHOWN": "没有选择显示的联赛！",
+    "SAVE": "保存",
+    "CANCEL": "取消",
+    "GAMES": "游戏: {{count}}",
+    "AVG": "均分: {{avg}}",
+    "HIGH": "最高: {{high}}",
+    "SCORE_ANALYSIS": "成绩分析",
+    "SPARE_DIST": "补中分布",
+    "SPARES_OVERVIEW": "补中概览"
+  },
+  "BALLS": {
+    "TITLE": "保龄球库",
+    "NO_BALLS": "未找到保龄球。",
+    "ADD_TO_ARSENAL": "添加到球具库",
+    "REMOVE_FROM_ARSENAL": "从球具库移除",
+    "CORE": "球芯:",
+    "COVERSTOCK": "外壳:",
+    "SEARCH_PLACEHOLDER": "搜索保龄球",
+    "POWERED_BY": "由...提供"
+  },
+  "ARSENAL": {
+    "TITLE": "球具库",
+    "NO_BALLS": "你的球具库中没有保龄球。添加一个球来开始！",
+    "COMPARE_CHART": "比较图表",
+    "CORE": "球芯",
+    "COVERSTOCK": "外壳",
+    "POWERED_BY": "由...提供"
+  },
+  "PATTERN": {
+    "TITLE": "油型库",
+    "NO_PATTERNS": "未找到油型！",
+    "DOWNLOAD_PDF": "下载PDF",
+    "DOWNLOAD_KOSI": "下载Kosi"
+  },
+  "MAP": {
+    "TITLE": "保龄球馆地图"
+  },
+  "MINIGAME": {
+    "TITLE": "小游戏",
+    "HOW_TO_PLAY": "游戏说明：",
+    "SWIPE_INSTRUCTION": "向任意方向滑动 - 球跟随你的手指！",
+    "AUTO_RESET": "每次投球后游戏自动重置！",
+    "PINS": "球瓶:",
+    "SCORE": "成绩:"
+  },
+  "SETTINGS": {
+    "TITLE": "设置",
+    "YOUR_NAME": "你的名字",
+    "COLOR_THEME": "颜色主题",
+    "PIN_INPUT_MODE": "球瓶输入模式",
+    "MISSING_PINS": "剩余球瓶",
+    "HIT_PINS": "击倒球瓶",
+    "SPARE_NAMES": "补中名称",
+    "GOAL_AVERAGE": "目标均分",
+    "ISSUES_FEATURES": "问题与功能",
+    "FEEDBACK_REQUESTS": "反馈/请求",
+    "OPEN_FORM": "打开表单",
+    "LOAD_UPDATE": "加载更新",
+    "UPDATE": "更新",
+    "TEST_SERVER_MSG": "这是测试服务器，用于实验性功能。",
+    "LANGUAGE": "语言",
+    "FEEDBACK_TITLE": "反馈/请求",
+    "FEEDBACK_CONTACT": "联系我们",
+    "FEEDBACK_EMAIL": "你的邮箱",
+    "FEEDBACK_MESSAGE": "反馈",
+    "FEEDBACK_PLACEHOLDER": "输入你的反馈",
+    "FEEDBACK_INVALID_EMAIL": "无效的邮箱地址。",
+    "FEEDBACK_REQUIRED": "反馈是必填项。",
+    "SUBMIT_FEEDBACK": "提交反馈",
+    "CANCEL": "取消",
+    "SPARE_NAMES_TITLE": "补中名称",
+    "BACK": ""
+  },
+  "APP": {
+    "WELCOME": "欢迎！",
+    "ENTER_NAME": "请输入你的名字：",
+    "YOUR_NAME_PLACEHOLDER": "你的名字",
+    "CONFIRM": "确认",
+    "HELLO": "你好 {{name}}！",
+    "HI": "嗨",
+    "CHANGE_NAME": "更改名字",
+    "NEW_VERSION": "新版本可用",
+    "CHANGES_MADE": "进行了以下更改：",
+    "LOAD_IT": "加载？",
+    "CANCEL": "取消",
+    "LOAD": "加载",
+    "INSTALL_SUCCESS": "应用安装成功！",
+    "INSTALL_FAILED": "安装失败，请重试。",
+    "NAME_UPDATED": "名字已更新为 {{name}}"
+  }
+}

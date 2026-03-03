@@ -2,27 +2,27 @@
   <ion-tab-bar slot="bottom">
     <ion-tab-button tab="add">
       <ion-icon aria-hidden="true" name="add"></ion-icon>
-      <ion-label>New</ion-label>
+      <ion-label>{{ 'TABS.NEW' | translate }}</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="stats">
       <ion-icon aria-hidden="true" name="stats-chart-outline"></ion-icon>
-      <ion-label>Stats</ion-label>
+      <ion-label>{{ 'TABS.STATS' | translate }}</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="history">
       <ion-icon aria-hidden="true" name="receipt"></ion-icon>
-      <ion-label>History</ion-label>
+      <ion-label>{{ 'TABS.HISTORY' | translate }}</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="league">
       <ion-icon aria-hidden="true" name="medal-outline"></ion-icon>
-      <ion-label>Leagues</ion-label>
+      <ion-label>{{ 'TABS.LEAGUES' | translate }}</ion-label>
     </ion-tab-button>
 
     <ion-tab-button [class.active-tab]="activeMoreTab$ | async" id="more">
       <ion-icon name="ellipsis-horizontal"></ion-icon>
-      <ion-label>More</ion-label>
+      <ion-label>{{ 'TABS.MORE' | translate }}</ion-label>
     </ion-tab-button>
   </ion-tab-bar>
 </ion-tabs>
@@ -33,27 +33,27 @@
       <ion-list>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/arsenal'" [class.active-tab]="isActive('/tabs/arsenal')" (click)="modal.dismiss()">
           <ion-icon src="assets/svg/ball-bag-svgrepo-com.svg" slot="start"></ion-icon>
-          <ion-label>Arsenal</ion-label>
+          <ion-label>{{ 'MORE_MENU.ARSENAL' | translate }}</ion-label>
         </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/balls'" [class.active-tab]="isActive('/tabs/balls')" (click)="modal.dismiss()">
           <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-          <ion-label>Ball Library</ion-label>
+          <ion-label>{{ 'MORE_MENU.BALL_LIBRARY' | translate }}</ion-label>
         </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/pattern'" [class.active-tab]="isActive('/tabs/pattern')" (click)="modal.dismiss()">
           <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
-          <ion-label>Pattern Library</ion-label>
+          <ion-label>{{ 'MORE_MENU.PATTERN_LIBRARY' | translate }}</ion-label>
         </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/map'" [class.active-tab]="isActive('/tabs/map')" (click)="modal.dismiss()">
           <ion-icon name="map-outline" slot="start"></ion-icon>
-          <ion-label>Map</ion-label>
+          <ion-label>{{ 'MORE_MENU.MAP' | translate }}</ion-label>
         </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/minigame'" [class.active-tab]="isActive('/tabs/minigame')" (click)="modal.dismiss()">
           <ion-icon name="game-controller-outline" slot="start"></ion-icon>
-          <ion-label>Minigame</ion-label>
+          <ion-label>{{ 'MORE_MENU.MINIGAME' | translate }}</ion-label>
         </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/settings'" [class.active-tab]="isActive('/tabs/settings')" (click)="modal.dismiss()">
           <ion-icon name="settings-outline" slot="start"></ion-icon>
-          <ion-label>Settings</ion-label>
+          <ion-label>{{ 'MORE_MENU.SETTINGS' | translate }}</ion-label>
         </ion-item>
       </ion-list>
     </ion-content>

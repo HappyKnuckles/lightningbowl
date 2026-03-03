@@ -46,6 +46,7 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-arsenal',
@@ -83,6 +84,7 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    TranslateModule,
   ],
 })
 export class ArsenalPage implements OnInit {

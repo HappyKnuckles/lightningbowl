@@ -65,6 +65,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-stats',
@@ -123,6 +124,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     GenericFilterActiveComponent,
     BallStatsComponent,
     PinLeaveStatsComponent,
+    TranslateModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

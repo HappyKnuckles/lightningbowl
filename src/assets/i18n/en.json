@@ -1,0 +1,149 @@
+{
+  "TABS": {
+    "NEW": "New",
+    "STATS": "Stats",
+    "HISTORY": "History",
+    "LEAGUES": "Leagues",
+    "MORE": "More"
+  },
+  "MORE_MENU": {
+    "ARSENAL": "Arsenal",
+    "BALL_LIBRARY": "Ball Library",
+    "PATTERN_LIBRARY": "Pattern Library",
+    "MAP": "Map",
+    "MINIGAME": "Minigame",
+    "SETTINGS": "Settings"
+  },
+  "ADD_GAME": {
+    "TITLE_SINGLE": "New Game",
+    "TITLE_SERIES": "New {{mode}}",
+    "CLEAR_SCORE": "Clear Score {{num}}",
+    "CLEAR_SCORE_SINGLE": "Clear Score",
+    "SAVE_SCORE": "Save Score",
+    "SAVE_SERIES": "Save Series",
+    "CLEAR_ALL": "Clear All",
+    "SCORE_SERIES": "Score Series: {{score}}",
+    "MAX_SERIES": "Max Series: {{score}}",
+    "YOUR_GAME": "Your game",
+    "EDIT_GAME_DATA": "Edit wrong game data",
+    "CANCEL": "Cancel",
+    "SAVE": "Save",
+    "ERROR_TITLE": "Error",
+    "ERROR_MESSAGE": "You didn't fill all inputs",
+    "DISMISS": "Dismiss"
+  },
+  "STATS": {
+    "TITLE": "Stats",
+    "NO_STATS": "Start playing a few games to see your stats here!",
+    "NO_STATS_FILTER": "No stats for this filter!",
+    "OVERALL_STATS": "Overall Stats",
+    "PLAY_FREQUENCY": "Play Frequency Stats",
+    "SCORE_ANALYSIS": "Score Analysis",
+    "SCORE_DISTRIBUTION": "Score Distribution",
+    "CONVERTED_VS_MISSED": "Converted vs Missed Spares",
+    "SPARE_DISTRIBUTION": "Spare Distribution",
+    "THROW_DISTRIBUTION": "Throw Distribution",
+    "AVERAGE_SCORE": "Average Score",
+    "SESSION_DATE": "Session date"
+  },
+  "HISTORY": {
+    "TITLE": "History",
+    "NO_GAMES": "Start playing a few games to see your history here!",
+    "NO_GAMES_FILTER": "No games for this filter!",
+    "DELETE": "Delete"
+  },
+  "LEAGUE": {
+    "TITLE": "Leagues",
+    "NO_GAMES": "Start playing a few games to see your leagues here!",
+    "NO_LEAGUES": "No leagues saved!",
+    "NO_LEAGUES_SHOWN": "No leagues selected to show!",
+    "SAVE": "Save",
+    "CANCEL": "Cancel",
+    "GAMES": "Games: {{count}}",
+    "AVG": "Avg: {{avg}}",
+    "HIGH": "High: {{high}}",
+    "SCORE_ANALYSIS": "Score Analysis",
+    "SPARE_DIST": "Spare Distribution",
+    "SPARES_OVERVIEW": "Spares Overview"
+  },
+  "BALLS": {
+    "TITLE": "Ball Library",
+    "NO_BALLS": "No balls found.",
+    "ADD_TO_ARSENAL": "Add to arsenal",
+    "REMOVE_FROM_ARSENAL": "Remove from arsenal",
+    "CORE": "Core:",
+    "COVERSTOCK": "Coverstock:",
+    "SEARCH_PLACEHOLDER": "Search for a ball",
+    "POWERED_BY": "powered by"
+  },
+  "ARSENAL": {
+    "TITLE": "Arsenal",
+    "NO_BALLS": "You have no balls in your arsenal. Add a ball to get started!",
+    "COMPARE_CHART": "Compare Chart",
+    "CORE": "Core",
+    "COVERSTOCK": "Coverstock",
+    "POWERED_BY": "powered by"
+  },
+  "PATTERN": {
+    "TITLE": "Pattern Library",
+    "NO_PATTERNS": "No patterns found!",
+    "DOWNLOAD_PDF": "Download PDF",
+    "DOWNLOAD_KOSI": "Download Kosi"
+  },
+  "MAP": {
+    "TITLE": "Alley map"
+  },
+  "MINIGAME": {
+    "TITLE": "Minigame",
+    "HOW_TO_PLAY": "How to Play:",
+    "SWIPE_INSTRUCTION": "Swipe in any direction - ball follows your finger!",
+    "AUTO_RESET": "Game auto-resets after each throw!",
+    "PINS": "Pins:",
+    "SCORE": "Score:"
+  },
+  "SETTINGS": {
+    "TITLE": "Settings",
+    "YOUR_NAME": "Your name",
+    "COLOR_THEME": "Color Theme",
+    "PIN_INPUT_MODE": "Pin Input Mode",
+    "MISSING_PINS": "Missing Pins",
+    "HIT_PINS": "Hit Pins",
+    "SPARE_NAMES": "Spare Names",
+    "GOAL_AVERAGE": "Goal Average",
+    "ISSUES_FEATURES": "Issues & Features",
+    "FEEDBACK_REQUESTS": "Feedback/Requests",
+    "OPEN_FORM": "Open form",
+    "LOAD_UPDATE": "Load update",
+    "UPDATE": "Update",
+    "TEST_SERVER_MSG": "This is the test server. Used for experimental features.",
+    "LANGUAGE": "Language",
+    "FEEDBACK_TITLE": "Feedback/Request",
+    "FEEDBACK_CONTACT": "Contact Us",
+    "FEEDBACK_EMAIL": "Your email",
+    "FEEDBACK_MESSAGE": "Feedback",
+    "FEEDBACK_PLACEHOLDER": "Enter your feedback",
+    "FEEDBACK_INVALID_EMAIL": "Invalid email address.",
+    "FEEDBACK_REQUIRED": "Feedback is required.",
+    "SUBMIT_FEEDBACK": "Submit Feedback",
+    "CANCEL": "Cancel",
+    "SPARE_NAMES_TITLE": "Spare Names",
+    "BACK": ""
+  },
+  "APP": {
+    "WELCOME": "Welcome!",
+    "ENTER_NAME": "Please enter your name:",
+    "YOUR_NAME_PLACEHOLDER": "Your Name",
+    "CONFIRM": "Confirm",
+    "HELLO": "Hello {{name}}!",
+    "HI": "Hi",
+    "CHANGE_NAME": "Change Name",
+    "NEW_VERSION": "New Version Available",
+    "CHANGES_MADE": "Following changes were made:",
+    "LOAD_IT": "Load it?",
+    "CANCEL": "Cancel",
+    "LOAD": "Load",
+    "INSTALL_SUCCESS": "App installed successfully!",
+    "INSTALL_FAILED": "Installation failed. Please try again.",
+    "NAME_UPDATED": "Name updated to {{name}}"
+  }
+}

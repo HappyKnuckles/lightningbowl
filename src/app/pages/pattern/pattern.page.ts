@@ -61,6 +61,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { environment } from 'src/environments/environment';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pattern',
@@ -96,6 +97,7 @@ import { environment } from 'src/environments/environment';
     PatternInfoComponent,
     SearchBlurDirective,
     SortHeaderComponent,
+    TranslateModule,
   ],
 })
 export class PatternPage implements OnInit {

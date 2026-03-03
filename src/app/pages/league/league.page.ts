@@ -56,6 +56,7 @@ import { LongPressDirective } from 'src/app/core/directives/long-press/long-pres
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-league',
@@ -90,6 +91,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     IonSegmentContent,
     LongPressDirective,
     BallStatsComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

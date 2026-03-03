@@ -20,7 +20,7 @@
     ></ion-buttons>
     <!-- Clear Input on Upload-->
     <input type="file" id="excelUpload" class="ion-hide" (input)="handleFileUpload($event)" placeholder="Upload file" accept=".xlsx" />
-    <ion-title> Stats </ion-title>
+    <ion-title> {{ 'STATS.TITLE' | translate }} </ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
@@ -48,7 +48,7 @@
     <ion-toolbar [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'" class="ion-activatable ion-ripple-parent">
       <ion-select
         class="date-picker"
-        label="Session date"
+        [label]="'STATS.SESSION_DATE' | translate"
         toggleIcon="calendar-number-outline"
         expandedIcon="calendar-number"
         [value]="selectedDate()"
@@ -199,12 +199,12 @@
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
     <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
-      <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>
+      <ion-text class="no-game-text"> {{ 'STATS.NO_STATS' | translate }} </ion-text>
     </ng-container>
   </ng-container>
   <ng-template #checkFilteredGames>
     <ng-container *ngIf="gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()">
-      <ion-text class="no-game-text"> No stats for this filter! </ion-text>
+      <ion-text class="no-game-text"> {{ 'STATS.NO_STATS_FILTER' | translate }} </ion-text>
     </ng-container>
   </ng-template>
 </ion-content>

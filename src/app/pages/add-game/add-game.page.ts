@@ -46,6 +46,7 @@ import { BowlingGameValidationService } from 'src/app/core/services/game-utils/b
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -95,6 +96,7 @@ defineCustomElements(window);
     NgFor,
     GameGridComponent,
     GameScoreToolbarComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

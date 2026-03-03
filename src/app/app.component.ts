@@ -16,6 +16,7 @@ import { ThemeChangerService } from './core/services/theme-changer/theme-changer
 import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
 import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { AnalyticsService } from './core/services/analytics/analytics.service';
+import { LanguageService } from './core/services/language/language.service';
 
 @Component({
   selector: 'app-root',
@@ -42,7 +43,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private pwaInstallService: PwaInstallService,
     private analyticsService: AnalyticsService,
     private router: Router,
+    private languageService: LanguageService,
   ) {
+    this.languageService.initialize();
     // Initialize service worker updates for all platforms
     this.initializeApp();
     const currentTheme = this.themeService.getCurrentTheme();

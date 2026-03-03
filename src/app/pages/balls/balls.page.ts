@@ -52,6 +52,7 @@ import { BallSortOption, BallSortField, SortDirection } from 'src/app/core/model
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-balls',
@@ -88,6 +89,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     GenericFilterActiveComponent,
     SearchBlurDirective,
     SortHeaderComponent,
+    TranslateModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,9 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Ball Library</ion-title>
+    <ion-title>{{ 'BALLS.TITLE' | translate }}</ion-title>
     <ion-buttons slot="start">
       <ion-button [href]="storageService.url">
-        <div class="powered-by">powered by</div>
+        <div class="powered-by">{{ 'BALLS.POWERED_BY' | translate }}</div>
         <img
           [src]="storageService.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
@@ -51,7 +51,7 @@
 
   @if (!isPageLoading()) {
     <ng-container *ngIf="displayedBalls.length <= 0; else content">
-      <ion-text class="no-game-text"> No balls found. </ion-text>
+      <ion-text class="no-game-text"> {{ 'BALLS.NO_BALLS' | translate }} </ion-text>
     </ng-container>
 
     <ng-template #content>
@@ -113,8 +113,8 @@
               </ion-list>
             </div>
           </ion-card-content>
-          <ion-button *ngIf="isInArsenal(ball)" style="float: right" fill="clear" (click)="removeFromArsenal(ball)"> Remove from arsenal </ion-button>
-          <ion-button *ngIf="!isInArsenal(ball)" style="float: right" fill="clear" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
+              <ion-button *ngIf="isInArsenal(ball)" style="float: right" fill="clear" (click)="removeFromArsenal(ball)"> {{ 'BALLS.REMOVE_FROM_ARSENAL' | translate }} </ion-button>
+          <ion-button *ngIf="!isInArsenal(ball)" style="float: right" fill="clear" (click)="saveBallToArsenal(ball)"> {{ 'BALLS.ADD_TO_ARSENAL' | translate }} </ion-button>
         </ion-card>
       }
       <!-- Infinite Scroll -->

@@ -61,7 +61,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { environment } from 'src/environments/environment';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pattern',
@@ -143,6 +143,7 @@ export class PatternPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     addIcons({
       addOutline,
@@ -175,7 +176,7 @@ export class PatternPage implements OnInit {
       await this.loadPatterns();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballLoadError), 'bug', true);
     } finally {
       event.target.complete();
       this.isPageLoading.set(false);
@@ -199,13 +200,13 @@ export class PatternPage implements OnInit {
         this.patterns = [...this.patterns, ...patterns];
         this.currentPage++;
       } else if (this.networkService.isOffline) {
-        this.toastService.showToast('You are offline and no cached data is available.', 'information-circle-outline', true);
+        this.toastService.showToast(this.translate.instant('TOAST.OFFLINE_NO_CACHE'), 'information-circle-outline', true);
       } else {
         this.hasMoreData = false;
       }
     } catch (error) {
       console.error('Error fetching patterns:', error);
-      this.toastService.showToast(ToastMessages.patternLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternLoadError), 'bug', true);
     } finally {
       if (!event) {
         this.isPageLoading.set(false);
@@ -241,7 +242,7 @@ export class PatternPage implements OnInit {
       }, 300);
     } catch (error) {
       console.error('Error searching patterns:', error);
-      this.toastService.showToast(ToastMessages.patternLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternLoadError), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
       // this.generateChartImages();
@@ -295,7 +296,7 @@ export class PatternPage implements OnInit {
     const isFavorited = this.favoritesService.toggleFavorite(pattern.url);
 
     if (isFavorited) {
-      this.toastService.showToast(`Added ${pattern.title} to favorites`, 'heart');
+      this.toastService.showToast(this.translate.instant('TOAST.PATTERN_ADDED_FAVORITES', { name: pattern.title }), 'heart');
 
       void this.analyticsService.trackEvent('pattern_favorited', {
         pattern_title: pattern.title,
@@ -303,7 +304,7 @@ export class PatternPage implements OnInit {
         pattern_url: pattern.url,
       });
     } else {
-      this.toastService.showToast(`Removed ${pattern.title} from favorites`, 'heart-outline');
+      this.toastService.showToast(this.translate.instant('TOAST.PATTERN_REMOVED_FAVORITES', { name: pattern.title }), 'heart-outline');
 
       void this.analyticsService.trackEvent('pattern_unfavorited', {
         pattern_title: pattern.title,

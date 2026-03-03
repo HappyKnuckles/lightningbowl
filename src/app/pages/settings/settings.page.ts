@@ -50,7 +50,7 @@ import { AlertController, InputCustomEvent, ModalController } from '@ionic/angul
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { LanguageService } from 'src/app/core/services/language/language.service';
 
 @Component({
@@ -112,6 +112,7 @@ export class SettingsPage implements OnInit {
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
     public languageService: LanguageService,
+    private translate: TranslateService,
   ) {
     addIcons({
       personCircleOutline,
@@ -215,11 +216,11 @@ export class SettingsPage implements OnInit {
         await emailjs.send(environment.emailServiceID, environment.emailTemplateID, templateParams, environment.emailUserID);
         this.userEmail = '';
         this.feedbackMessage = '';
-        this.toastService.showToast(ToastMessages.feedbackUploadSuccess, 'checkmark-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.feedbackUploadSuccess), 'checkmark-outline');
         form.resetForm();
       } catch (error) {
         console.error('ERROR...', error);
-        this.toastService.showToast(ToastMessages.feedbackUploadError, 'bug-outline', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.feedbackUploadError), 'bug-outline', true);
       } finally {
         this.loadingService.setLoading(false);
       }

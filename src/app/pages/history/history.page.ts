@@ -44,7 +44,7 @@ import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-history',
@@ -107,6 +107,7 @@ export class HistoryPage {
     public gameFilterService: GameFilterService,
     private excelService: ExcelService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
     // public sortService: SortService,
   ) {
     addIcons({
@@ -145,7 +146,7 @@ export class HistoryPage {
       await this.storageService.loadGameHistory();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameLoadError), 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -159,9 +160,9 @@ export class HistoryPage {
       const file = input.files[0];
       const gameData = await this.excelService.readExcelData(file);
       await this.excelService.transformData(gameData);
-      this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileUploadSuccess), 'checkmark-outline');
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileUploadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileUploadError), 'bug', true);
       console.error(error);
     } finally {
       const input = event.target as HTMLInputElement;
@@ -181,13 +182,13 @@ export class HistoryPage {
     try {
       const gotPermission = await this.excelService.exportToExcel();
       if (gotPermission) {
-        this.toastService.showToast(ToastMessages.excelFileDownloadSuccess, 'checkmark-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.excelFileDownloadSuccess), 'checkmark-outline');
         await this.analyticsService.trackExport('excel');
       } else {
         await this.showPermissionDeniedAlert();
       }
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileDownloadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileDownloadError), 'bug', true);
       console.error('Error exporting to Excel:', error);
       await this.analyticsService.trackError('excel_export_error', error instanceof Error ? error.message : String(error));
     }

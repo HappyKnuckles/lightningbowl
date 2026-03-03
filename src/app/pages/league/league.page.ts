@@ -56,7 +56,7 @@ import { LongPressDirective } from 'src/app/core/directives/long-press/long-pres
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-league',
@@ -180,6 +180,7 @@ export class LeaguePage {
     private chartService: ChartGenerationService,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     addIcons({
       addOutline,
@@ -215,7 +216,7 @@ export class LeaguePage {
 
     if (newState) {
       this.previousLeagueSelectionState = { ...this.hiddenLeagueSelectionService.selectionState() };
-      this.toastService.showToast(ToastMessages.leagueEditMode, 'eye-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueEditMode), 'eye-outline');
     } else {
       const current = this.hiddenLeagueSelectionService.selectionState();
       const previous = this.previousLeagueSelectionState;
@@ -252,7 +253,7 @@ export class LeaguePage {
       await this.storageService.loadGameHistory();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameLoadError), 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -295,9 +296,9 @@ export class LeaguePage {
   async saveLeague(league: string): Promise<void> {
     try {
       await this.storageService.addLeague(league);
-      this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveSuccess), 'add');
     } catch (error) {
-      this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveError), 'bug', true);
       console.error('Error saving league:', error);
     }
   }
@@ -324,11 +325,11 @@ export class LeaguePage {
           handler: async (data: { league: string }) => {
             try {
               await this.storageService.addLeague(data.league);
-              this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveSuccess), 'add');
 
               void this.analyticsService.trackLeagueCreated({ name: data.league });
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveError), 'bug', true);
               console.error('Error saving league:', error);
             }
           },
@@ -354,9 +355,9 @@ export class LeaguePage {
           handler: async () => {
             try {
               await this.storageService.deleteLeague(league);
-              this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'remove-outline');
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueDeleteSuccess), 'remove-outline');
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueDeleteError, 'bug', true);
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueDeleteError), 'bug', true);
               console.error('Error deleting league:', error);
             }
           },
@@ -392,9 +393,9 @@ export class LeaguePage {
             const oldLeagueName = league;
             try {
               await this.storageService.editLeague(newLeagueName, oldLeagueName);
-              this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueEditSuccess), 'checkmark-outline');
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueEditError, 'bug', true);
+              this.toastService.showToast(this.translate.instant(ToastMessages.leagueEditError), 'bug', true);
               console.error('Error editing league:', error);
             }
           },
@@ -420,7 +421,7 @@ export class LeaguePage {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating score chart:', error);
     }
   }
@@ -438,7 +439,7 @@ export class LeaguePage {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating pin chart:', error);
     }
   }

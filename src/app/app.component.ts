@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
 import { environment } from 'src/environments/environment';
 import { LoadingService } from './core/services/loader/loading.service';
 import { ToastService } from './core/services/toast/toast.service';
@@ -44,6 +45,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private analyticsService: AnalyticsService,
     private router: Router,
     private languageService: LanguageService,
+    private translate: TranslateService,
   ) {
     this.languageService.initialize();
     // Initialize service worker updates for all platforms
@@ -106,12 +108,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
               const alert = await this.alertController.create({
                 backdropDismiss: false,
-                header: 'New Version Available',
-                subHeader: 'Following changes were made:',
+                header: this.translate.instant('APP.NEW_VERSION'),
+                subHeader: this.translate.instant('APP.CHANGES_MADE'),
                 message: sanitizedMessage || '',
                 buttons: [
                   {
-                    text: 'Cancel',
+                    text: this.translate.instant('APP.CANCEL'),
                     role: 'cancel',
                     handler: () => {
                       localStorage.setItem(lastCommitDateKey, new Date(data[0].commit.committer.date).toISOString());
@@ -119,7 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
                     },
                   },
                   {
-                    text: 'Load',
+                    text: this.translate.instant('APP.LOAD'),
                     handler: () => {
                       localStorage.setItem(lastCommitDateKey, new Date(data[0].commit.committer.date).toISOString());
                       window.location.reload();
@@ -134,18 +136,18 @@ export class AppComponent implements OnInit, OnDestroy {
             console.error('Failed to fetch the latest commits:', error);
             const alert = await this.alertController.create({
               backdropDismiss: false,
-              header: 'New Version Available',
-              message: 'A new version is available. Load it?',
+              header: this.translate.instant('APP.NEW_VERSION'),
+              message: this.translate.instant('APP.LOAD_IT'),
               buttons: [
                 {
-                  text: 'Cancel',
+                  text: this.translate.instant('APP.CANCEL'),
                   role: 'cancel',
                   handler: () => {
                     localStorage.setItem('update', 'true');
                   },
                 },
                 {
-                  text: 'Load',
+                  text: this.translate.instant('APP.LOAD'),
                   handler: () => {
                     window.location.reload();
                   },
@@ -197,24 +199,24 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private async showEnterNameAlert() {
     const alert = await this.alertController.create({
-      header: 'Welcome!',
-      message: 'Please enter your name:',
+      header: this.translate.instant('APP.WELCOME'),
+      message: this.translate.instant('APP.ENTER_NAME'),
       inputs: [
         {
           name: 'username',
           type: 'text',
-          placeholder: 'Your Name',
+          placeholder: this.translate.instant('APP.YOUR_NAME_PLACEHOLDER'),
           cssClass: 'alert-input',
         },
       ],
       buttons: [
         {
-          text: 'Confirm',
+          text: this.translate.instant('APP.CONFIRM'),
           handler: (data) => {
             const newName = data.username.trim();
             if (newName !== '') {
               this.userService.setUsername(newName);
-              this.toastService.showToast(`Name updated to ${this.userService.username()}`, 'reload-outline');
+              this.toastService.showToast(this.translate.instant('TOAST.NAME_UPDATED', { name: this.userService.username() }), 'reload-outline');
             }
           },
         },
@@ -229,12 +231,12 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       const installed = await this.pwaInstallService.triggerInstall();
       if (installed) {
-        this.toastService.showToast('App installed successfully!', 'checkmark-circle', false);
+        this.toastService.showToast(this.translate.instant('TOAST.INSTALL_SUCCESS'), 'checkmark-circle', false);
         this.showPwaInstallPrompt = false;
       }
     } catch (error) {
       console.error('Error installing PWA:', error);
-      this.toastService.showToast('Installation failed. Please try again.', 'alert-circle', true);
+      this.toastService.showToast(this.translate.instant('TOAST.INSTALL_FAILED'), 'alert-circle', true);
     }
   }
 
@@ -245,13 +247,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private async presentGreetingAlert(name: string): Promise<void> {
     const alert = await this.alertController.create({
-      header: `Hello ${name}!`,
+      header: this.translate.instant('APP.HELLO', { name }),
       buttons: [
         {
-          text: 'Hi',
+          text: this.translate.instant('APP.HI'),
         },
         {
-          text: 'Change Name',
+          text: this.translate.instant('APP.CHANGE_NAME'),
           handler: () => {
             this.showEnterNameAlert();
           },

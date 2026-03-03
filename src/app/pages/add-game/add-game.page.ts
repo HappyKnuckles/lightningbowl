@@ -46,7 +46,7 @@ import { BowlingGameValidationService } from 'src/app/core/services/game-utils/b
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -173,6 +173,7 @@ export class AddGamePage implements OnInit {
     private highScroreAlertService: HighScoreAlertService,
     private storageService: StorageService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
@@ -532,7 +533,7 @@ export class AddGamePage implements OnInit {
       );
       this.clearDraft();
     }
-    this.toastService.showToast(ToastMessages.gameResetSuccess, 'refresh-outline');
+    this.toastService.showToast(this.translate.instant(ToastMessages.gameResetSuccess), 'refresh-outline');
   }
 
   async confirm(modal: IonModal): Promise<void> {
@@ -594,12 +595,12 @@ export class AddGamePage implements OnInit {
           await this.highScroreAlertService.checkAndDisplayHighScoreAlertsForMultipleGames(savedGames, allGames);
         }
         this.hapticService.vibrate(ImpactStyle.Medium);
-        this.toastService.showToast(ToastMessages.gameSaveSuccess, 'add');
+        this.toastService.showToast(this.translate.instant(ToastMessages.gameSaveSuccess), 'add');
         return true;
       }
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameSaveError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameSaveError), 'bug', true);
       await this.analyticsService.trackError('game_save_error', error instanceof Error ? error.message : String(error));
     }
     return false;
@@ -730,7 +731,7 @@ export class AddGamePage implements OnInit {
 
   private async saveGame(game: Game, seriesConfig?: { isSeries: boolean; seriesId: string }): Promise<Game | null> {
     if (game.league === 'New') {
-      this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.selectLeague), 'bug', true);
       return null;
     }
     try {
@@ -788,10 +789,10 @@ export class AddGamePage implements OnInit {
         this.parseBowlingScores(gameText!);
         await this.analyticsService.trackOCRUsed(!!gameText);
       } else {
-        this.toastService.showToast(ToastMessages.noImage, 'bug', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.noImage), 'bug', true);
       }
     } catch (error) {
-      this.toastService.showToast(ToastMessages.imageUploadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.imageUploadError), 'bug', true);
       console.error(error);
       await this.analyticsService.trackError('ocr_error', error instanceof Error ? error.message : String(error));
     } finally {
@@ -830,7 +831,7 @@ export class AddGamePage implements OnInit {
         fileInput.click();
       } catch (error) {
         console.error('Upload Error:', error);
-        this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.unexpectedError), 'bug', true);
         resolve(undefined);
       }
     });
@@ -876,7 +877,7 @@ export class AddGamePage implements OnInit {
       this.gameData = this.transformGameService.transformGameData(parsedGame);
       this.isModalOpen = true;
     } catch (error) {
-      this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.unexpectedError), 'bug', true);
       console.error(error);
     }
   }
@@ -992,6 +993,6 @@ export class AddGamePage implements OnInit {
       this.propagateMetadataToSeries();
     }, 100);
 
-    this.toastService.showToast('Session restored successfully.', 'refresh-outline');
+    this.toastService.showToast(this.translate.instant('TOAST.SESSION_RESTORED'), 'refresh-outline');
   }
 }

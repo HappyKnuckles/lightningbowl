@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { ToastService } from '../toast/toast.service';
 
 @Injectable({
@@ -10,7 +11,10 @@ export class UserService {
     return this.#username;
   }
 
-  constructor(private toastService: ToastService) {
+  constructor(
+    private toastService: ToastService,
+    private translate: TranslateService,
+  ) {
     const storedName = localStorage.getItem('username') || '';
     this.#username.set(storedName);
   }
@@ -20,7 +24,7 @@ export class UserService {
     if (this.#username() !== newName && newName.trim() !== '') {
       localStorage.setItem('username', newName);
       this.#username.set(newName);
-      this.toastService.showToast(`Name updated to ${newName}`, 'reload-outline');
+      this.toastService.showToast(this.translate.instant('TOAST.NAME_UPDATED', { name: newName }), 'reload-outline');
     }
   }
 

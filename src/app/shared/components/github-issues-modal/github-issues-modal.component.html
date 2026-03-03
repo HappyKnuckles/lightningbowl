@@ -1,7 +1,7 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button color="medium" (click)="modal().dismiss()">
+      <ion-button color="medium" (click)="modalCtrl.dismiss()">
         <ion-icon name="chevron-back"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -22,7 +22,7 @@
     </ion-select>
   </ion-toolbar>
 </ion-header>
-<ion-content [fullscreen]="true">
+<ion-content>
   <!-- Loading State -->
   <div *ngIf="loading" style="text-align: center; padding: 40px">
     <ion-spinner></ion-spinner>

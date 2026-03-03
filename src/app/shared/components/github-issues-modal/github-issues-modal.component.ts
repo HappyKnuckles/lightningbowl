@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonModal } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import {
   IonAvatar,
   IonButton,
@@ -51,7 +51,7 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
   ],
 })
 export class GithubIssuesModalComponent implements OnInit {
-  modal = input.required<IonModal>();
+  modalCtrl = inject(ModalController);
   issues: GitHubIssue[] = [];
   loading = false;
   selectedLabels: string[] = ['']; // Empty array to show all issues by default

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import {
   IonHeader,
   IonToolbar,
@@ -45,7 +45,7 @@ import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
 import { SpareNamesComponent } from 'src/app/shared/components/spare-names/spare-names.component';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { AlertController, InputCustomEvent } from '@ionic/angular';
+import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular';
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
@@ -54,6 +54,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
   selector: 'app-settings',
   templateUrl: './settings.page.html',
   styleUrls: ['./settings.page.scss'],
+  providers: [ModalController],
   imports: [
     IonList,
     IonButtons,
@@ -80,11 +81,11 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
     ReactiveFormsModule,
     LeagueSelectorComponent,
     SpareNamesComponent,
-    GithubIssuesModalComponent,
     NgIf,
   ],
 })
 export class SettingsPage implements OnInit {
+  private modalCtrl = inject(ModalController);
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
     { name: 'Blue', class: 'blue-option' },
@@ -124,6 +125,14 @@ export class SettingsPage implements OnInit {
   ngOnInit(): void {
     this.currentColor = this.themeService.getCurrentTheme();
     this.updateAvailable = localStorage.getItem('update') !== null ? true : false;
+  }
+
+  async openGithubIssueModal(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: GithubIssuesModalComponent,
+    });
+
+    await modal.present();
   }
 
   changeName(event: InputCustomEvent): void {

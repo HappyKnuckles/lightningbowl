@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, AfterViewInit, DestroyRef, inject } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {

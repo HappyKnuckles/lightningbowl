@@ -182,16 +182,23 @@ export class GameScoreCalculatorService {
             }
           } else if (firstThrow + secondThrow === 10) {
             // Spare in 10th frame - pins reset, third throw can be 10
-            // Max for 10th frame is 20 (spare + 10), not 30 (three strikes)
-            // Need to account for:
-            // 1. Bonus from frame 9 (if it was a spare)
-            // 2. The 10th frame's max contribution difference (30 - 20 = 10)
-            if (isPrevSpare && !isPrevStrike) {
-              // Frame 9 was spare, expecting 10 as bonus but got firstThrow
-              maxScore -= 10 - firstThrow;
+            // Account for bonus shortfalls and frame 10 max (20 instead of 30)
+            if (isPrevPrevStrike && isPrevStrike) {
+              // Frames 8 and 9 were strikes:
+              // Frame 8 loses (10 - firstThrow) from bonus + frame 9 loses 10 + frame 10 loses 10
+              // Total: (10 - firstThrow) + 10 + 10 = 30 - firstThrow
+              maxScore -= 30 - firstThrow;
+            } else if (isPrevStrike) {
+              // Only frame 9 was a strike:
+              // Frame 9 loses 10 from bonus (got 10, expected 20) + frame 10 loses 10
+              maxScore -= 20;
+            } else if (isPrevSpare) {
+              // Frame 9 was spare: loses (10 - firstThrow) from bonus + frame 10 loses 10
+              maxScore -= 20 - firstThrow;
+            } else {
+              // Frame 9 was open: only frame 10 max reduction
+              maxScore -= 10;
             }
-            // 10th frame max is 20, not 30
-            maxScore -= 10;
           } else {
             // Open frame (no strike, no spare) - no third throw earned
             maxScore = currentTotalScore;

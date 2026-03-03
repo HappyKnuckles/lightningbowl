@@ -1,4 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, DestroyRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   IonHeader,
   IonToolbar,
@@ -19,6 +21,7 @@ import {
   IonModal,
   IonButtons,
   IonList,
+  IonNote,
 } from '@ionic/angular/standalone';
 import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
@@ -33,8 +36,9 @@ import {
   refreshCircleOutline,
   chevronBackOutline,
   bugOutline,
+  cloudUploadOutline,
 } from 'ionicons/icons';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf, DatePipe } from '@angular/common';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
 import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
@@ -49,6 +53,8 @@ import { AlertController, InputCustomEvent, ModalController } from '@ionic/angul
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
+import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 
 @Component({
   selector: 'app-settings',
@@ -75,16 +81,19 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
     IonHeader,
     IonSelect,
     IonSelectOption,
+    IonNote,
     NgClass,
     NgFor,
+    NgIf,
+    DatePipe,
     FormsModule,
     ReactiveFormsModule,
     LeagueSelectorComponent,
     SpareNamesComponent,
-    NgIf,
   ],
 })
-export class SettingsPage implements OnInit {
+export class SettingsPage implements OnInit, AfterViewInit {
+  private destroyRef = inject(DestroyRef);
   private modalCtrl = inject(ModalController);
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
@@ -107,6 +116,8 @@ export class SettingsPage implements OnInit {
     private alertCtrl: AlertController,
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
+    public cloudSyncService: CloudSyncService,
+    private route: ActivatedRoute,
   ) {
     addIcons({
       personCircleOutline,
@@ -119,12 +130,29 @@ export class SettingsPage implements OnInit {
       chevronBack,
       sendOutline,
       bugOutline,
+      cloudUploadOutline,
     });
   }
 
   ngOnInit(): void {
     this.currentColor = this.themeService.getCurrentTheme();
     this.updateAvailable = localStorage.getItem('update') !== null ? true : false;
+  }
+
+  ngAfterViewInit(): void {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      if (params['openCloudSync'] === 'true') {
+        void this.openSyncModal();
+      }
+    });
+  }
+
+  async openSyncModal() {
+    const modal = await this.modalCtrl.create({
+      component: CloudSyncSettingsComponent,
+    });
+
+    return await modal.present();
   }
 
   async openGithubIssueModal(): Promise<void> {

@@ -31,41 +31,7 @@ export class ExcelService {
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
   async exportToExcel(): Promise<boolean> {
     try {
-      const gameData = this.getGameDataForExport(this.storageService.games());
-      const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
-        this.statsService.currentStats(),
-      );
-
-      const workbook = new ExcelJS.Workbook();
-      const gameWorksheet = workbook.addWorksheet('Game History');
-      const statsWorksheet = workbook.addWorksheet('Statistics');
-
-      // Game History Table
-      this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
-
-      // Stats Tables
-      const sections = [
-        { name: 'OverallStats', start: 'A1', headers: ['Overall', 'Value'], data: overall },
-        { name: 'SparesStats', start: 'D1', headers: ['Spares', 'Value'], data: spares },
-        { name: 'ThrowStats', start: 'G1', headers: ['Throw', 'Value'], data: throwStats },
-        { name: 'PinStats', start: 'J1', headers: ['Pin', 'Value'], data: pinStats },
-        { name: 'StrikeStats', start: 'M1', headers: ['Strike', 'Value'], data: strike },
-        { name: 'SpecialStats', start: 'P1', headers: ['Special', 'Value'], data: special },
-        { name: 'PlayFrequency', start: 'S1', headers: ['Frequency', 'Value'], data: playFrequency },
-        { name: 'SeriesStats', start: 'V1', headers: ['Series', 'Value'], data: series },
-      ];
-
-      sections.forEach(({ name, start, headers, data }) => {
-        this.addTable(statsWorksheet, name, start, headers, data);
-      });
-
-      // Set column widths for each section
-      sections.forEach(({ headers, data }, idx) => {
-        const startColIndex = idx * 3; // each section is 2 cols + 1-col gap
-        this.setColumnWidths(statsWorksheet, headers, data, startColIndex + 1);
-      });
-
-      this.setColumnWidths(gameWorksheet, Object.keys(gameData[0]), gameData, 1);
+      const buffer = await this.generateExcelWorkbook();
 
       const date = new Date();
       const formattedDate = date.toLocaleString('de-DE', {
@@ -100,7 +66,6 @@ export class ExcelService {
         }
       }
 
-      const buffer = await workbook.xlsx.writeBuffer();
       await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
 
       if (isPlatform('mobileweb')) {
@@ -112,6 +77,10 @@ export class ExcelService {
       console.error('Error exporting to Excel:', error);
       throw new Error(`Export failed: ${error}`);
     }
+  }
+
+  async generateExcelArrayBuffer(): Promise<ArrayBuffer> {
+    return await this.generateExcelWorkbook();
   }
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
@@ -272,6 +241,52 @@ export class ExcelService {
     } catch (error) {
       console.error('Error transforming data:', error);
       throw new Error(`Data transformation failed: ${error}`);
+    }
+  }
+
+  private async generateExcelWorkbook(): Promise<ArrayBuffer> {
+    try {
+      const gameData = this.getGameDataForExport(this.storageService.games());
+      const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
+        this.statsService.currentStats(),
+      );
+
+      const workbook = new ExcelJS.Workbook();
+      const gameWorksheet = workbook.addWorksheet('Game History');
+      const statsWorksheet = workbook.addWorksheet('Statistics');
+
+      // Game History Table
+      this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
+
+      // Stats Tables
+      const sections = [
+        { name: 'OverallStats', start: 'A1', headers: ['Overall', 'Value'], data: overall },
+        { name: 'SparesStats', start: 'D1', headers: ['Spares', 'Value'], data: spares },
+        { name: 'ThrowStats', start: 'G1', headers: ['Throw', 'Value'], data: throwStats },
+        { name: 'PinStats', start: 'J1', headers: ['Pin', 'Value'], data: pinStats },
+        { name: 'StrikeStats', start: 'M1', headers: ['Strike', 'Value'], data: strike },
+        { name: 'SpecialStats', start: 'P1', headers: ['Special', 'Value'], data: special },
+        { name: 'PlayFrequency', start: 'S1', headers: ['Frequency', 'Value'], data: playFrequency },
+        { name: 'SeriesStats', start: 'V1', headers: ['Series', 'Value'], data: series },
+      ];
+
+      sections.forEach(({ name, start, headers, data }) => {
+        this.addTable(statsWorksheet, name, start, headers, data);
+      });
+
+      // Set column widths for each section
+      sections.forEach(({ headers, data }, idx) => {
+        const startColIndex = idx * 3; // each section is 2 cols + 1-col gap
+        this.setColumnWidths(statsWorksheet, headers, data, startColIndex + 1);
+      });
+
+      this.setColumnWidths(gameWorksheet, Object.keys(gameData[0]), gameData, 1);
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      return buffer;
+    } catch (error) {
+      console.error('Error generating Excel workbook:', error);
+      throw new Error(`Excel generation failed: ${error}`);
     }
   }
 

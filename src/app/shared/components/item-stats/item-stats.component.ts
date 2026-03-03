@@ -17,5 +17,5 @@ export class ItemStatsComponent {
   imageUrlBase = input<string>();
   emptyMessage = input<string>('No data saved.');
 
-  constructor(public storageService: StorageService) { }
+  constructor(public storageService: StorageService) {}
 }

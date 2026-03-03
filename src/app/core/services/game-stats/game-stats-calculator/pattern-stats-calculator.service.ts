@@ -7,7 +7,7 @@ import { StorageService } from '../../storage/storage.service';
   providedIn: 'root',
 })
 export class PatternStatsCalculatorService {
-  constructor(private storageService: StorageService) { }
+  constructor(private storageService: StorageService) {}
 
   private _calculateAllPatternStats(gameHistory: Game[]): Record<string, BestPatternStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);

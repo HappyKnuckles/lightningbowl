@@ -1,17 +1,16 @@
-import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { computed, Injectable, signal } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { Ball } from 'src/app/core/models/ball.model';
-import { signal, computed } from '@angular/core';
-import { LoadingService } from '../loader/loading.service';
-import { BallService } from '../ball/ball.service';
+import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from '../../models/pattern.model';
-import { PatternService } from '../pattern/pattern.service';
-import { HighScoreAlertService } from '../high-score-alert/high-score-alert.service';
-import { CacheService } from '../cache/cache.service';
-import { NetworkService } from '../network/network.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { BallService } from '../ball/ball.service';
+import { CacheService } from '../cache/cache.service';
+import { HighScoreAlertService } from '../high-score-alert/high-score-alert.service';
+import { LoadingService } from '../loader/loading.service';
+import { NetworkService } from '../network/network.service';
+import { PatternService } from '../pattern/pattern.service';
+import { SortUtilsService } from '../sort-utils/sort-utils.service';
 
 @Injectable({
   providedIn: 'root',
@@ -23,6 +22,7 @@ export class StorageService {
   #arsenal = signal<Ball[]>([]);
   #allBalls = signal<Ball[]>([]);
   #allPatterns = signal<Partial<Pattern>[]>([]);
+  #patternImageMap = signal<Record<string, string>>({});
 
   #isUsingCache = signal<boolean>(false);
 
@@ -58,6 +58,9 @@ export class StorageService {
   }
   get allPatterns() {
     return this.#allPatterns;
+  }
+  get patternImageMap() {
+    return this.#patternImageMap;
   }
 
   constructor(
@@ -337,6 +340,61 @@ export class StorageService {
     }
   }
 
+  async loadPatternImageMap(forceRefresh = false): Promise<void> {
+    const cacheKey = 'pattern_image_map';
+
+    try {
+      if (!forceRefresh) {
+        const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
+        const isCacheValid = await this.cacheService.isValid(cacheKey);
+
+        if (cached && (isCacheValid || this.networkService.isOffline)) {
+          this.#patternImageMap.set(cached);
+          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
+            this.refreshPatternImageMapInBackground(cacheKey);
+          }
+          return;
+        }
+      }
+
+      if (this.networkService.isOffline) {
+        return;
+      }
+
+      const patterns = await this.patternService.getAllPatterns();
+      const imageMap: Record<string, string> = {};
+      for (const p of patterns) {
+        if (p.title && p.chart_horizontal) {
+          imageMap[p.title] = p.chart_horizontal;
+        }
+      }
+      this.#patternImageMap.set(imageMap);
+      await this.cacheService.set(cacheKey, imageMap);
+    } catch (error) {
+      console.error('Error loading pattern image map:', error);
+      const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
+      if (cached) {
+        this.#patternImageMap.set(cached);
+      }
+    }
+  }
+
+  private async refreshPatternImageMapInBackground(cacheKey: string): Promise<void> {
+    try {
+      const patterns = await this.patternService.getAllPatterns();
+      const imageMap: Record<string, string> = {};
+      for (const p of patterns) {
+        if (p.title && p.chart_horizontal) {
+          imageMap[p.title] = p.chart_horizontal;
+        }
+      }
+      this.#patternImageMap.set(imageMap);
+      await this.cacheService.set(cacheKey, imageMap);
+    } catch (error) {
+      console.error('Background refresh failed for pattern image map:', error);
+    }
+  }
+
   savePinInputMode(pinMode: string): void {
     this.#pinInputMode.set(pinMode === 'hit');
     const mode = pinMode === 'hit' ? 'hit' : 'missing';
@@ -506,6 +564,7 @@ export class StorageService {
       this.loadPinInputMode();
       await Promise.all([
         this.loadAllPatterns(),
+        this.loadPatternImageMap(),
         this.loadAllBalls(undefined, weight),
         this.loadLeagues(),
         this.loadGameHistory(),

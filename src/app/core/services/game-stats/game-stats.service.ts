@@ -1,6 +1,6 @@
 import { computed, Injectable, Signal } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, LeaveStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
+import { BestBallStats, BestPatternStats, LeaveStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { StorageService } from '../storage/storage.service';
@@ -8,6 +8,7 @@ import { StorageService } from '../storage/storage.service';
 import { StatsPersistenceService } from './stats-persistance.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-calculator.service';
+import { PatternStatsCalculatorService } from './game-stats-calculator/pattern-stats-calculator.service';
 import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
 import { PinStatsCalculatorService } from './game-stats-calculator/pin-stats-calculator.service';
 
@@ -21,6 +22,7 @@ export class GameStatsService {
     private overallStatsCalculatorService: OverallStatsCalculatorService,
     private seriesStatsCalculatorService: SeriesStatsCalculatorService,
     private ballStatsCalculatorService: BallStatsCalculatorService,
+    private patternStatsCalculatorService: PatternStatsCalculatorService,
     private pinStatsCalculatorService: PinStatsCalculatorService,
     private statsPersistenceService: StatsPersistenceService,
   ) {}
@@ -41,6 +43,20 @@ export class GameStatsService {
   });
   get mostPlayedBallStats(): Signal<BestBallStats> {
     return this.#mostPlayedBallStats;
+  }
+
+  #bestPatternStats: Signal<BestPatternStats> = computed(() => {
+    return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
+  });
+  get bestPatternStats(): Signal<BestPatternStats> {
+    return this.#bestPatternStats;
+  }
+
+  #mostPlayedPatternStats: Signal<BestPatternStats> = computed(() => {
+    return this.patternStatsCalculatorService.calculateMostPlayedPattern(this.gameFilterService.filteredGames());
+  });
+  get mostPlayedPatternStats(): Signal<BestPatternStats> {
+    return this.#mostPlayedPatternStats;
   }
 
   #allLeaves: Signal<LeaveStats[]> = computed(() => {

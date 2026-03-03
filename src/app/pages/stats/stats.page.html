@@ -96,6 +96,14 @@
           [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
           [totalGames]="statsService.currentStats().totalGames"></app-ball-stats>
+        <app-pattern-stats
+          [title]="'Most played pattern'"
+          [bestPattern]="statsService.mostPlayedPatternStats()"
+          [totalGames]="statsService.currentStats().totalGames"></app-pattern-stats>
+        <app-pattern-stats
+          [title]="'Best pattern'"
+          [bestPattern]="statsService.bestPatternStats()"
+          [totalGames]="statsService.currentStats().totalGames"></app-pattern-stats>
         <app-stat-display
           [title]="'Series Stats'"
           [statDefinitions]="seriesStatDefinitions"

@@ -72,7 +72,6 @@ defineCustomElements(window);
   selector: 'app-add-game',
   templateUrl: 'add-game.page.html',
   styleUrls: ['add-game.page.scss'],
-  standalone: true,
   providers: [ModalController],
   imports: [
     IonHeader,
@@ -576,23 +575,12 @@ export class AddGamePage implements OnInit {
     }
 
     try {
-      const savePromises = games.map((game) =>
-        this.saveGame(
-          game.frames,
-          game.frameScores,
-          game.totalScore,
-          game.isPractice,
-          game.league || '',
-          isSeries,
-          seriesId,
-          game.note || '',
-          game.patterns || [],
-          game.balls || [],
-          this.isPinInputMode,
-          game.gameId,
-          game.date,
-        ),
-      );
+      const seriesConfig = isSeries ? { isSeries, seriesId } : undefined;
+      const savePromises = games.map((game) => {
+        // Apply isPinMode to the game before saving
+        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
+        return this.saveGame(gameWithPinMode, seriesConfig);
+      });
 
       const savedGames = (await Promise.all(savePromises)).filter((g): g is Game => g !== null);
 
@@ -738,41 +726,13 @@ export class AddGamePage implements OnInit {
     }
   }
 
-  private async saveGame(
-    frames: Frame[],
-    frameScores: number[],
-    totalScore: number,
-    isPractice: boolean,
-    league: string,
-    isSeries: boolean,
-    seriesId: string,
-    note: string,
-    patterns: string[],
-    balls: string[],
-    isPinMode: boolean,
-    gameId?: string,
-    date?: number,
-  ): Promise<Game | null> {
-    if (league === 'New') {
+  private async saveGame(game: Game, seriesConfig?: { isSeries: boolean; seriesId: string }): Promise<Game | null> {
+    if (game.league === 'New') {
       this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
       return null;
     }
     try {
-      const gameData = this.transformGameService.transformGameData(
-        frames,
-        frameScores,
-        totalScore,
-        isPractice,
-        league,
-        isSeries,
-        seriesId,
-        note,
-        patterns,
-        balls,
-        gameId,
-        date,
-        isPinMode,
-      );
+      const gameData = this.transformGameService.transformGameData(game, seriesConfig);
       await this.storageService.saveGameToLocalStorage(gameData);
       this.analyticsService.trackGameSaved({ score: gameData.totalScore });
       return gameData;
@@ -895,8 +855,23 @@ export class AddGamePage implements OnInit {
     try {
       const { frames, frameScores, totalScore } = this.gameUtilsService.parseBowlingScores(input, this.userService.username());
       const framesAsFrameArray = numberArraysToFrames(frames);
-      this.gameData = this.transformGameService.transformGameData(framesAsFrameArray, frameScores, totalScore, false, '', false, '', '', [], []);
-      this.gameData.isPractice = true;
+
+      // Build a game object for transformation
+      const parsedGame: Game = {
+        gameId: '',
+        date: 0,
+        frames: framesAsFrameArray,
+        frameScores,
+        totalScore,
+        isPractice: true,
+        isPinMode: false,
+        isClean: false,
+        isPerfect: false,
+        patterns: [],
+        balls: [],
+      };
+
+      this.gameData = this.transformGameService.transformGameData(parsedGame);
       this.isModalOpen = true;
     } catch (error) {
       this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);

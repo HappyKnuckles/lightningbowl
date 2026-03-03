@@ -119,7 +119,6 @@ interface MonthHeader {
     BallSelectComponent,
     PinDeckFrameRowComponent,
   ],
-  standalone: true,
 })
 export class GameComponent implements OnInit {
   // DOM Elements

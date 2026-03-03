@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, DestroyRef, inject } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -60,7 +60,6 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
   selector: 'app-settings',
   templateUrl: './settings.page.html',
   styleUrls: ['./settings.page.scss'],
-  standalone: true,
   providers: [ModalController],
   imports: [
     IonList,
@@ -91,11 +90,11 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
     ReactiveFormsModule,
     LeagueSelectorComponent,
     SpareNamesComponent,
-    GithubIssuesModalComponent,
   ],
 })
 export class SettingsPage implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
+  private modalCtrl = inject(ModalController);
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
     { name: 'Blue', class: 'blue-option' },
@@ -118,7 +117,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
     public cloudSyncService: CloudSyncService,
-    public modalCtrl: ModalController,
     private route: ActivatedRoute,
   ) {
     addIcons({
@@ -155,6 +153,14 @@ export class SettingsPage implements OnInit, AfterViewInit {
     });
 
     return await modal.present();
+  }
+
+  async openGithubIssueModal(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: GithubIssuesModalComponent,
+    });
+
+    await modal.present();
   }
 
   changeName(event: InputCustomEvent): void {

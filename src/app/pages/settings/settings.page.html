@@ -66,7 +66,7 @@
     </ion-item>
 
     <!-- Issues & Features Section -->
-    <ion-item button id="github-issues-modal">
+    <ion-item button (click)="openGithubIssueModal()">
       <ion-icon name="bug-outline" slot="start"></ion-icon>
       <ion-label>Issues & Features</ion-label>
     </ion-item>
@@ -112,12 +112,6 @@
     <ion-content [fullscreen]="true">
       <app-spare-names></app-spare-names>
     </ion-content>
-  </ng-template>
-</ion-modal>
-
-<ion-modal trigger="github-issues-modal" #githubIssuesModal>
-  <ng-template>
-    <app-github-issues-modal [modal]="githubIssuesModal"></app-github-issues-modal>
   </ng-template>
 </ion-modal>
 

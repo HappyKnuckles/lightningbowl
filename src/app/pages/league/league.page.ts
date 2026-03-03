@@ -61,7 +61,6 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
   selector: 'app-league',
   templateUrl: './league.page.html',
   styleUrls: ['./league.page.scss'],
-  standalone: true,
   imports: [
     IonRefresher,
     IonModal,

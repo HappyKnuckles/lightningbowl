@@ -11,7 +11,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-file-header-buttons',
-  standalone: true,
   imports: [IonButtons, IonSpinner, IonButton, IonIcon, NgIf],
   templateUrl: './file-header-buttons.component.html',
   styleUrl: './file-header-buttons.component.css',

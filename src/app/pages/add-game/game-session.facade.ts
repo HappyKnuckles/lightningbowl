@@ -291,25 +291,14 @@ export class GameSessionFacade {
     // 2. Transform and Save
     try {
       const savedGameObjects: Game[] = [];
+      const seriesConfig = config.isSeries ? { isSeries: config.isSeries, seriesId: config.seriesId } : undefined;
 
       for (const game of gamesToSave) {
         if (game.league === 'New') continue; // Skip invalid league selections
 
-        const gameData = this.transformerService.transformGameData(
-          game.frames,
-          game.frameScores,
-          game.totalScore,
-          game.isPractice,
-          game.league || '',
-          config.isSeries,
-          config.seriesId,
-          game.note || '',
-          game.patterns || [],
-          game.balls || [],
-          game.gameId,
-          game.date,
-          config.isPinMode,
-        );
+        // Apply isPinMode to the game before transformation
+        const gameWithPinMode: Game = { ...game, isPinMode: config.isPinMode };
+        const gameData = this.transformerService.transformGameData(gameWithPinMode, seriesConfig);
 
         await this.storageService.saveGameToLocalStorage(gameData);
         savedGameObjects.push(gameData);

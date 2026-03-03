@@ -5,7 +5,6 @@ import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-pattern-info',
-  standalone: true,
   imports: [IonChip, IonLabel, IonGrid, IonRow, IonCol],
   templateUrl: './pattern-info.component.html',
   styleUrl: './pattern-info.component.scss',

@@ -32,6 +32,11 @@
                 "input": "src/assets",
                 "output": "assets"
               },
+              {
+                "glob": "**/*",
+                "input": "public/.well-known",
+                "output": ".well-known"
+              },
               "src/robots.txt",
               "src/sitemap.xml",
               "src/manifest.webmanifest"

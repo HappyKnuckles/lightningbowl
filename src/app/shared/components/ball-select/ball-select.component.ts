@@ -12,28 +12,12 @@ import {
   IonList,
   IonAvatar,
   IonItem,
-  IonImg,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 
 @Component({
   selector: 'app-ball-select',
-  standalone: true,
-  imports: [
-    IonImg,
-    IonItem,
-    IonAvatar,
-    IonList,
-    IonLabel,
-    IonTitle,
-    IonHeader,
-    IonContent,
-    IonCheckbox,
-    IonButton,
-    IonToolbar,
-    IonFooter,
-    IonButtons,
-  ],
+  imports: [IonItem, IonAvatar, IonList, IonLabel, IonTitle, IonHeader, IonContent, IonCheckbox, IonButton, IonToolbar, IonFooter, IonButtons],
   templateUrl: './ball-select.component.html',
   styleUrls: ['./ball-select.component.scss'],
 })

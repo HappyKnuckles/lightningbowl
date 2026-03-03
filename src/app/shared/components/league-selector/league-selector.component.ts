@@ -47,7 +47,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
     ReactiveFormsModule,
     IonSelectOption,
   ],
-  standalone: true,
 })
 export class LeagueSelectorComponent {
   @Input() isAddPage = false;

@@ -21,7 +21,6 @@ import { AnalyticsService } from './core/services/analytics/analytics.service';
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
-  standalone: true,
   imports: [IonApp, NgIf, IonBackdrop, IonSpinner, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {

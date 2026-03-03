@@ -13,7 +13,10 @@
         <span class="game-count-ratio">{{ item().gameCount }} / {{ totalGames() }}</span>
       </div>
       <div class="inner-stat-container">
-        <ion-img [src]="(imageUrlBase() ?? storageService.url) + item().image"></ion-img>
+        <ion-img
+          [class.round]="roundImage()"
+          [class.pattern-img]="!roundImage()"
+          [src]="(imageUrlBase() ?? storageService.url) + item().image"></ion-img>
         <div class="item-stats">
           <div class="stat-line">
             <span class="stat-label">Avg:</span>

@@ -1,17 +1,16 @@
-import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { computed, Injectable, signal } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { Ball } from 'src/app/core/models/ball.model';
-import { signal, computed } from '@angular/core';
-import { LoadingService } from '../loader/loading.service';
-import { BallService } from '../ball/ball.service';
+import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from '../../models/pattern.model';
-import { PatternService } from '../pattern/pattern.service';
-import { HighScoreAlertService } from '../high-score-alert/high-score-alert.service';
-import { CacheService } from '../cache/cache.service';
-import { NetworkService } from '../network/network.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { BallService } from '../ball/ball.service';
+import { CacheService } from '../cache/cache.service';
+import { HighScoreAlertService } from '../high-score-alert/high-score-alert.service';
+import { LoadingService } from '../loader/loading.service';
+import { NetworkService } from '../network/network.service';
+import { PatternService } from '../pattern/pattern.service';
+import { SortUtilsService } from '../sort-utils/sort-utils.service';
 
 @Injectable({
   providedIn: 'root',
@@ -365,8 +364,8 @@ export class StorageService {
       const patterns = await this.patternService.getAllPatterns();
       const imageMap: Record<string, string> = {};
       for (const p of patterns) {
-        if (p.title && p.chart_standard) {
-          imageMap[p.title] = p.chart_standard;
+        if (p.title && p.chart_horizontal) {
+          imageMap[p.title] = p.chart_horizontal;
         }
       }
       this.#patternImageMap.set(imageMap);

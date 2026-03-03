@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
+import { IonImg, IonList, IonListHeader } from '@ionic/angular/standalone';
 import { GenericItemStats } from 'src/app/core/models/stats.model';
-import { IonImg, IonListHeader, IonList } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 
 @Component({
@@ -16,6 +16,7 @@ export class ItemStatsComponent {
   totalGames = input.required<number>();
   imageUrlBase = input<string>();
   emptyMessage = input<string>('No data saved.');
+  roundImage = input<boolean>(true);
 
   constructor(public storageService: StorageService) {}
 }

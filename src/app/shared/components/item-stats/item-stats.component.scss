@@ -1,11 +1,28 @@
 ion-img {
-  width: 100px;
-  height: 100px;
-  margin-left: 55px;
   margin-bottom: 4px;
 
-  &::part(image) {
-    border-radius: 50%;
+  &.round {
+    width: 100px;
+    height: 100px;
+    margin-left: 55px;
+
+    &::part(image) {
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &.pattern-img {
+    flex: 1;
+    min-width: 0;
+    margin-left: 16px;
+
+    &::part(image) {
+      border-radius: 8px;
+      object-fit: contain;
+      width: 100%;
+      height: auto;
+    }
   }
 }
 
@@ -14,7 +31,6 @@ ion-img {
   grid-template-columns: 1fr 2fr 1fr;
   align-items: baseline;
   text-align: center;
-  max-height: 35px;
 
   .item-name {
     grid-column: 2;

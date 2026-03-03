@@ -47,6 +47,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/minigame/minigame.page').then((m) => m.MinigamePage),
       },
       {
+        path: 'privacy-policy',
+        loadComponent: () => import('./pages/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
+      },
+      {
+        path: 'impressum',
+        loadComponent: () => import('./pages/impressum/impressum.page').then((m) => m.ImpressumPage),
+      },
+      {
         path: '',
         redirectTo: '/tabs/add',
         pathMatch: 'full',

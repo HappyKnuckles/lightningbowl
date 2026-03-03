@@ -7,7 +7,6 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
   selector: 'app-ball-list',
   templateUrl: './ball-list.component.html',
   styleUrls: ['./ball-list.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonTitle, IonToolbar, IonHeader, IonLabel, IonList, IonImg, IonAvatar, IonItem, IonContent],
 })

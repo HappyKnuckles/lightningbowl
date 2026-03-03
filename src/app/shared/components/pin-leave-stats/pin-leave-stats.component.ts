@@ -5,7 +5,6 @@ import { LeaveStats } from 'src/app/core/models/stats.model';
 
 @Component({
   selector: 'app-pin-leave-stats',
-  standalone: true,
   imports: [IonList, IonListHeader, IonItem, IonLabel, PinDeckComponent],
   templateUrl: './pin-leave-stats.component.html',
   styleUrl: './pin-leave-stats.component.scss',

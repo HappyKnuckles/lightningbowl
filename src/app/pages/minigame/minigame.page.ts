@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonCard, IonCardContent, IonIcon, IonButtons } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonIcon, IonButtons } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -52,8 +52,7 @@ interface Arrow {
   selector: 'app-bowling-minigame',
   templateUrl: './minigame.page.html',
   styleUrls: ['./minigame.page.scss'],
-  standalone: true,
-  imports: [IonButtons, CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonCard, IonCardContent, IonIcon],
+  imports: [IonButtons, CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonIcon],
 })
 export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('gameCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;

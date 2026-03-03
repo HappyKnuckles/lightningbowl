@@ -5,7 +5,6 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
 
 @Component({
   selector: 'app-ball-stats',
-  standalone: true,
   imports: [IonList, IonListHeader, IonImg],
   templateUrl: './ball-stats.component.html',
   styleUrl: './ball-stats.component.scss',

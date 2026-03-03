@@ -13,7 +13,6 @@ import {
   IonButtons,
   IonAccordionGroup,
   IonRefresherContent,
-  IonSpinner,
 } from '@ionic/angular/standalone';
 import { Filesystem } from '@capacitor/filesystem';
 import { addIcons } from 'ionicons';
@@ -50,10 +49,8 @@ import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-heade
   selector: 'app-history',
   templateUrl: 'history.page.html',
   styleUrls: ['history.page.scss'],
-  standalone: true,
   providers: [DatePipe, ModalController],
   imports: [
-    IonSpinner,
     IonRefresherContent,
     IonButtons,
     IonHeader,

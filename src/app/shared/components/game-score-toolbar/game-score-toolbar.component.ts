@@ -6,7 +6,6 @@ import { NgStyle } from '@angular/common';
   selector: 'app-game-score-toolbar',
   templateUrl: './game-score-toolbar.component.html',
   styleUrls: ['./game-score-toolbar.component.scss'],
-  standalone: true,
   imports: [IonButton, NgStyle],
 })
 export class GameScoreToolbarComponent {

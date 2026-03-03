@@ -20,7 +20,6 @@ export interface FilterConfig {
 
 @Component({
   selector: 'app-generic-filter-active',
-  standalone: true,
   imports: [IonChip, NgIf, NgFor, DatePipe],
   templateUrl: './generic-filter-active.component.html',
   styleUrl: './generic-filter-active.component.scss',

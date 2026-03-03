@@ -72,7 +72,6 @@ defineCustomElements(window);
   selector: 'app-add-game',
   templateUrl: 'add-game.page.html',
   styleUrls: ['add-game.page.scss'],
-  standalone: true,
   providers: [ModalController],
   imports: [
     IonHeader,

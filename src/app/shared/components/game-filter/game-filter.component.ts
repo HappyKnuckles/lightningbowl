@@ -37,7 +37,6 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
   selector: 'app-game-filter',
   templateUrl: './game-filter.component.html',
   styleUrls: ['./game-filter.component.scss'],
-  standalone: true,
   imports: [
     IonList,
     IonFooter,

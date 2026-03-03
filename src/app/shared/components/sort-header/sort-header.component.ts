@@ -10,7 +10,6 @@ import { SortOption, BallSortField, PatternSortField, GameSortField } from 'src/
   selector: 'app-sort-header',
   templateUrl: './sort-header.component.html',
   styleUrls: ['./sort-header.component.scss'],
-  standalone: true,
   imports: [CommonModule, FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
 })
 export class SortHeaderComponent implements OnInit {

@@ -26,7 +26,6 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 
 @Component({
   selector: 'app-generic-typeahead',
-  standalone: true,
   imports: [
     IonButton,
     IonButtons,

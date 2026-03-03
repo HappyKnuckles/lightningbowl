@@ -70,7 +70,6 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
   selector: 'app-stats',
   templateUrl: 'stats.page.html',
   styleUrls: ['stats.page.scss'],
-  standalone: true,
   providers: [DecimalPipe, DatePipe, ModalController],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   animations: [

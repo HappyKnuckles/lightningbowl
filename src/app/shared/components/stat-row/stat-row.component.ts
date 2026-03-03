@@ -10,7 +10,6 @@ import { UtilsService } from 'src/app/core/services/utils/utils.service';
   selector: 'app-stat-row',
   templateUrl: './stat-row.component.html',
   styleUrls: ['./stat-row.component.scss'],
-  standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [NgIf, IonText, IonIcon, ConditionalNumberPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,

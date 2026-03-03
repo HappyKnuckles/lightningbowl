@@ -28,7 +28,6 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
   selector: 'app-game-grid',
   templateUrl: './game-grid.component.html',
   styleUrls: ['./game-grid.component.scss'],
-  standalone: true,
   imports: [
     NgFor,
     IonList,

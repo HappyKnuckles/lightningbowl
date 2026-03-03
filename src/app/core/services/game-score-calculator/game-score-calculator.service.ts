@@ -163,12 +163,44 @@ export class GameScoreCalculatorService {
 
         if (secondThrow !== undefined) {
           if (firstThrow === 10) {
-            if (isPrevStrike && secondThrow !== 10) {
-              maxScore -= 20 - secondThrow;
-            } else if (!isPrevStrike && secondThrow !== 10) {
+            // Strike on first throw of 10th frame
+            if (secondThrow === 10) {
+              // Strike on second throw - pins reset, third throw can be 10
+              // No reduction needed, max is still possible
+            } else {
+              // Non-strike on second throw - third throw limited to (10 - secondThrow)
+              // Frame 9 bonus shortfall: expected 20, got (10 + secondThrow), lose (10 - secondThrow)
+              // Frame 10 max reduction: expected 30, can get 20, lose 10
+              // Total reduction: (10 - secondThrow) + 10 = 20 - secondThrow
+              if (isPrevStrike) {
+                // Frame 9 was strike: loses (10 - secondThrow) from bonus + 10 from frame 10 max
+                maxScore -= 20 - secondThrow;
+              } else {
+                // No previous strike: only lose from frame 10 max
+                maxScore -= 10;
+              }
+            }
+          } else if (firstThrow + secondThrow === 10) {
+            // Spare in 10th frame - pins reset, third throw can be 10
+            // Account for bonus shortfalls and frame 10 max (20 instead of 30)
+            if (isPrevPrevStrike && isPrevStrike) {
+              // Frames 8 and 9 were strikes:
+              // Frame 8 loses (10 - firstThrow) from bonus + frame 9 loses 10 + frame 10 loses 10
+              // Total: (10 - firstThrow) + 10 + 10 = 30 - firstThrow
+              maxScore -= 30 - firstThrow;
+            } else if (isPrevStrike) {
+              // Only frame 9 was a strike:
+              // Frame 9 loses 10 from bonus (got 10, expected 20) + frame 10 loses 10
+              maxScore -= 20;
+            } else if (isPrevSpare) {
+              // Frame 9 was spare: loses (10 - firstThrow) from bonus + frame 10 loses 10
+              maxScore -= 20 - firstThrow;
+            } else {
+              // Frame 9 was open: only frame 10 max reduction
               maxScore -= 10;
             }
-          } else if (firstThrow + secondThrow !== 10) {
+          } else {
+            // Open frame (no strike, no spare) - no third throw earned
             maxScore = currentTotalScore;
           }
           continue;

@@ -59,7 +59,6 @@ if (L.Icon?.Default?.prototype) {
 
 @Component({
   selector: 'app-alley-map',
-  standalone: true,
   imports: [IonTitle, IonSearchbar, IonContent, IonHeader, IonToolbar],
   templateUrl: './alley-map.page.html',
   styleUrls: ['./alley-map.page.css'],

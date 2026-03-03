@@ -16,7 +16,6 @@ enum SpareNames {
 
 @Component({
   selector: 'app-spare-names',
-  standalone: true,
   imports: [IonButton, NgIf],
   templateUrl: './spare-names.component.html',
   styleUrl: './spare-names.component.scss',

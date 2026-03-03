@@ -11,11 +11,9 @@ import {
   IonButton,
   IonIcon,
   IonContent,
-  IonFooter,
   IonSegment,
   IonSegmentButton,
   IonLabel,
-  IonImg,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { close, flash, wifiOutline, notifications, phonePortrait, download, shareOutline, checkmark, add, checkmarkCircle } from 'ionicons/icons';
@@ -24,9 +22,7 @@ import { close, flash, wifiOutline, notifications, phonePortrait, download, shar
   selector: 'app-pwa-install-prompt',
   templateUrl: './pwa-install-prompt.component.html',
   styleUrls: ['./pwa-install-prompt.component.scss'],
-  standalone: true,
   imports: [
-    IonImg,
     IonLabel,
     IonSegmentButton,
     IonSegment,
@@ -41,7 +37,6 @@ import { close, flash, wifiOutline, notifications, phonePortrait, download, shar
     IonButton,
     IonIcon,
     IonContent,
-    IonFooter,
   ],
 })
 export class PwaInstallPromptComponent implements OnInit {

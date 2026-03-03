@@ -162,14 +162,14 @@ ion-item {
 .grid-container {
   display: grid;
   grid-template-columns: repeat(5, minmax(30px, 1fr));
-
-  @media (min-width: 720px) {
-    grid-template-columns: repeat(10, minmax(30px, 1fr));
-  }
   gap: 6px;
   margin: 5px 5px 10px;
   max-width: 100%;
   justify-items: center;
+
+  @media (min-width: 720px) {
+    grid-template-columns: repeat(10, minmax(30px, 1fr));
+  }
 
   ion-input:not(.frame-scores) {
     color: var(--ion-input-color);

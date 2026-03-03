@@ -10,7 +10,6 @@ import { UtilsService } from 'src/app/core/services/utils/utils.service';
   selector: 'app-spare-display',
   templateUrl: './spare-display.component.html',
   styleUrls: ['./spare-display.component.scss'],
-  standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [IonText, IonCol, IonRow, IonIcon, IonGrid, NgIf, NgStyle, CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,

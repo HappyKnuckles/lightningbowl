@@ -57,7 +57,6 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
   selector: 'app-balls',
   templateUrl: './balls.page.html',
   styleUrls: ['./balls.page.scss'],
-  standalone: true,
   providers: [ModalController],
   imports: [
     IonSkeletonText,

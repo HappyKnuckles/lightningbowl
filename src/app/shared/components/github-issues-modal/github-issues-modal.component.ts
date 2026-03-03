@@ -1,27 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonModal } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import {
-  IonContent,
-  IonItem,
+  IonAvatar,
   IonButton,
-  IonSelect,
-  IonSelectOption,
-  IonList,
+  IonButtons,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
-  IonSpinner,
-  IonIcon,
   IonChip,
-  IonAvatar,
-  IonImg,
-  IonButtons,
-  IonToolbar,
+  IonContent,
   IonHeader,
+  IonIcon,
+  IonSelect,
+  IonSelectOption,
+  IonSpinner,
   IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
@@ -32,13 +29,11 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
   selector: 'app-github-issues-modal',
   templateUrl: './github-issues-modal.component.html',
   styleUrls: ['./github-issues-modal.component.scss'],
-  standalone: true,
   imports: [
     IonTitle,
     IonHeader,
     IonToolbar,
     IonButtons,
-    IonImg,
     IonAvatar,
     IonChip,
     IonIcon,
@@ -47,18 +42,16 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
     IonCardTitle,
     IonCardHeader,
     IonCard,
-    IonList,
     IonSelectOption,
     IonSelect,
     IonButton,
-    IonItem,
     IonContent,
     CommonModule,
     FormsModule,
   ],
 })
 export class GithubIssuesModalComponent implements OnInit {
-  modal = input.required<IonModal>();
+  modalCtrl = inject(ModalController);
   issues: GitHubIssue[] = [];
   loading = false;
   selectedLabels: string[] = ['']; // Empty array to show all issues by default

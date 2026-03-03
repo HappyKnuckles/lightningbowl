@@ -111,8 +111,8 @@ export function generateBallDistributionChart(
               title: (items) => (items[0]?.raw as { name: string }).name || '',
               label: (context) => {
                 const dp = context.raw as ScatterDataPoint & { cover: string };
-                const x = dp.x;
-                const y = dp.y;
+                const x = dp.x ?? 0;
+                const y = dp.y ?? 0;
 
                 let rollCat: string;
                 if (y < 2.52) {

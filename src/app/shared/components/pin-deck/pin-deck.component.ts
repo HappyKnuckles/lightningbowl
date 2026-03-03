@@ -9,7 +9,6 @@ interface Pin {
 
 @Component({
   selector: 'app-pin-deck',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './pin-deck.component.html',
   styleUrl: './pin-deck.component.scss',

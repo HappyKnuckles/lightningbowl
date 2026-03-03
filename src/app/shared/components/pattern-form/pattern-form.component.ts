@@ -3,7 +3,6 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonButton,
-  IonLabel,
   IonItem,
   IonInput,
   IonIcon,
@@ -26,7 +25,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-pattern-form',
-  standalone: true,
   imports: [
     IonFooter,
     IonContent,
@@ -37,7 +35,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
     CommonModule,
     IonInput,
     IonItem,
-    IonLabel,
     IonButton,
     IonIcon,
     ReactiveFormsModule,

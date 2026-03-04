@@ -39,9 +39,11 @@
               <ion-label class="game-info">
                 <p>{{ game.date | date: "MM.dd.yyyy" }}</p>
                 <h2 class="title">Game {{ gameCount()! - $index }}</h2>
-                <p class="score" *ngIf="game.league && !isLeaguePage()">League/Tournament: {{ game.league }}</p>
-                <p class="score" *ngIf="game.patterns && game.patterns.length > 0">Patterns: {{ game.patterns.join(", ") }}</p>
-                <p class="score">Score: {{ game.totalScore }}</p>
+                <p class="score" *ngIf="game.league && !isLeaguePage()">{{ "GAME.LEAGUE_TOURNAMENT_COLON" | translate: { value: game.league } }}</p>
+                <p class="score" *ngIf="game.patterns && game.patterns.length > 0">
+                  {{ "GAME.PATTERNS" | translate: { value: game.patterns.join(", ") } }}
+                </p>
+                <p class="score">{{ "GAME.SCORE" | translate: { score: game.totalScore } }}</p>
                 <!-- <div class="score">{{game.date | date}}</div> -->
               </ion-label>
             </ion-item>
@@ -165,8 +167,8 @@
                 </ion-item>
                 <ion-item class="pattern" button [id]="'selectPatternHistory' + $index">
                   <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
-                  <ion-label>Patterns</ion-label>
-                  <span class="ion-text-right"> {{ game.patterns.join(", ") || "None" }}</span>
+                  <ion-label>{{ "GAME_GRID.PATTERNS" | translate }}</ion-label>
+                  <span class="ion-text-right"> {{ game.patterns.join(", ") || ("COMMON.NONE" | translate) }}</span>
                 </ion-item>
                 <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + $index">
                   <ng-template>
@@ -190,7 +192,7 @@
                       {{ ball.ball_name }}
                     </ion-select-option>
                   </ion-select> -->
-                  <ion-label>Balls</ion-label>
+                  <ion-label>{{ "GAME_GRID.BALLS" | translate }}</ion-label>
                   <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
                 </ion-item>
                 <ion-modal

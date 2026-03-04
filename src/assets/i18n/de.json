@@ -281,7 +281,9 @@
   },
   "GAME_GRID": {
     "NOTE": "Notiz",
-    "NOTE_PLACEHOLDER": "z.B. Knieschmerzen, trockene Bahnen..."
+    "NOTE_PLACEHOLDER": "z.B. Knieschmerzen, trockene Bahnen...",
+    "PATTERNS": "Muster",
+    "BALLS": "Bälle"
   },
   "PATTERN_FORM": {
     "TITLE": "Titel",
@@ -304,7 +306,10 @@
     "END_DIST": "Endabstand"
   },
   "GAME": {
-    "LEAGUE_TOURNAMENT": "Liga/Turnier"
+    "LEAGUE_TOURNAMENT": "Liga/Turnier",
+    "PATTERNS": "Muster: {{value}}",
+    "SCORE": "Ergebnis: {{score}}",
+    "LEAGUE_TOURNAMENT_COLON": "Liga/Turnier: {{value}}"
   },
   "BALL_SELECT": {
     "TITLE": "Bälle",

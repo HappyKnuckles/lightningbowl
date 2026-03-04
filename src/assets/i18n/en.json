@@ -281,7 +281,9 @@
   },
   "GAME_GRID": {
     "NOTE": "Note",
-    "NOTE_PLACEHOLDER": "e.g. knee pain, dry lanes..."
+    "NOTE_PLACEHOLDER": "e.g. knee pain, dry lanes...",
+    "PATTERNS": "Patterns",
+    "BALLS": "Balls"
   },
   "PATTERN_FORM": {
     "TITLE": "Title",
@@ -304,7 +306,10 @@
     "END_DIST": "End Dist"
   },
   "GAME": {
-    "LEAGUE_TOURNAMENT": "League/Tournament"
+    "LEAGUE_TOURNAMENT": "League/Tournament",
+    "PATTERNS": "Patterns: {{value}}",
+    "SCORE": "Score: {{score}}",
+    "LEAGUE_TOURNAMENT_COLON": "League/Tournament: {{value}}"
   },
   "BALL_SELECT": {
     "TITLE": "Balls",

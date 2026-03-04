@@ -281,7 +281,9 @@
   },
   "GAME_GRID": {
     "NOTE": "Nota",
-    "NOTE_PLACEHOLDER": "p.ej. dolor de rodilla, pistas secas..."
+    "NOTE_PLACEHOLDER": "p.ej. dolor de rodilla, pistas secas...",
+    "PATTERNS": "Patrones",
+    "BALLS": "Bolas"
   },
   "PATTERN_FORM": {
     "TITLE": "Título",
@@ -304,7 +306,10 @@
     "END_DIST": "Dist. fin"
   },
   "GAME": {
-    "LEAGUE_TOURNAMENT": "Liga/Torneo"
+    "LEAGUE_TOURNAMENT": "Liga/Torneo",
+    "PATTERNS": "Patrones: {{value}}",
+    "SCORE": "Puntuación: {{score}}",
+    "LEAGUE_TOURNAMENT_COLON": "Liga/Torneo: {{value}}"
   },
   "BALL_SELECT": {
     "TITLE": "Bolas",

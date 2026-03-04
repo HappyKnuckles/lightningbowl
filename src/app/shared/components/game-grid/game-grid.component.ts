@@ -23,7 +23,7 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-game-grid',
@@ -126,6 +126,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
     public utilsService: UtilsService,
     private platform: Platform,
     private patternService: PatternService,
+    private translate: TranslateService,
   ) {
     this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
@@ -333,7 +334,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
   // --- Template Getters ---
   getSelectedBallsText(): string {
     const balls = this.currentGame?.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
+    return balls.length > 0 ? balls.join(', ') : this.translate.instant('COMMON.NONE');
   }
 
   isNumber(value: unknown): boolean {

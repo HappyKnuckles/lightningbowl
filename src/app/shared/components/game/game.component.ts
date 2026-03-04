@@ -748,6 +748,6 @@ export class GameComponent implements OnInit {
 
   getSelectedBallsText(game: Game): string {
     const balls = game.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
+    return balls.length > 0 ? balls.join(', ') : this.translate.instant('COMMON.NONE');
   }
 }

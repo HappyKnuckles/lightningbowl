@@ -194,8 +194,8 @@
       </ion-item>
       <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
       <ion-item [id]="patternModalId()" button [disabled]="storageService.allPatterns().length === 0">
-        <ion-label>Patterns</ion-label>
-        <span class="ion-text-right">{{ currentGame.patterns.join(", ") || "None" }}</span>
+        <ion-label>{{ "GAME_GRID.PATTERNS" | translate }}</ion-label>
+        <span class="ion-text-right">{{ currentGame.patterns.join(", ") || ("COMMON.NONE" | translate) }}</span>
       </ion-item>
       <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
         <ng-template>
@@ -214,7 +214,7 @@
         detail="true"
         detailIcon="chevron-expand-outline"
         [disabled]="storageService.arsenal().length === 0">
-        <ion-label>Balls</ion-label>
+        <ion-label>{{ "GAME_GRID.BALLS" | translate }}</ion-label>
         <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
       </ion-item>
       <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal [trigger]="ballSelectorId()" class="ball-modal">

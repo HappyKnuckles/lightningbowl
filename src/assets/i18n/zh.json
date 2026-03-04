@@ -281,7 +281,9 @@
   },
   "GAME_GRID": {
     "NOTE": "备注",
-    "NOTE_PLACEHOLDER": "例如：膝盖疼痛、球道干燥..."
+    "NOTE_PLACEHOLDER": "例如：膝盖疼痛、球道干燥...",
+    "PATTERNS": "球道图案",
+    "BALLS": "球"
   },
   "PATTERN_FORM": {
     "TITLE": "标题",
@@ -304,7 +306,10 @@
     "END_DIST": "结束距离"
   },
   "GAME": {
-    "LEAGUE_TOURNAMENT": "联赛/锦标赛"
+    "LEAGUE_TOURNAMENT": "联赛/锦标赛",
+    "PATTERNS": "图案: {{value}}",
+    "SCORE": "分数: {{score}}",
+    "LEAGUE_TOURNAMENT_COLON": "联赛/锦标赛: {{value}}"
   },
   "BALL_SELECT": {
     "TITLE": "保龄球",

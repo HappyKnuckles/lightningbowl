@@ -44,7 +44,25 @@
     "SPARE_DISTRIBUTION": "Distribución de spares",
     "THROW_DISTRIBUTION": "Distribución de lanzamientos",
     "AVERAGE_SCORE": "Puntuación media",
-    "SESSION_DATE": "Fecha de sesión"
+    "SESSION_DATE": "Fecha de sesión",
+    "SPECIAL_STATS": "Estadísticas especiales",
+    "MOST_USED_BALL": "Bola más usada",
+    "BEST_BALL": "Mejor bola",
+    "SERIES_STATS": "Estadísticas de series",
+    "THROW_STATS": "Estadísticas de lanzamiento",
+    "STRIKE_STATS": "Estadísticas de strike",
+    "SPARE_STATS": "Estadísticas de spare",
+    "SPARE_CONVERSION": "Conversión de spares por conteo de pines",
+    "PIN_STATS": "Estadísticas de pines",
+    "STRONGEST_SPARES": "Spares más fuertes",
+    "WEAKEST_SPARES": "Spares más débiles",
+    "MOST_COMMON_LEAVES": "Dejes más comunes",
+    "SEGMENT_OVERALL": "General",
+    "SEGMENT_THROWS": "Lanzamientos",
+    "SEGMENT_SPARES": "Spares",
+    "SEGMENT_PINS": "Pines",
+    "SEGMENT_SESSIONS": "Sesiones",
+    "PLAY_FREQUENCY_STATS": "Estadísticas de frecuencia de juego"
   },
   "HISTORY": {
     "TITLE": "Historial",
@@ -287,5 +305,10 @@
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "Liga/Torneo"
+  },
+  "BALL_SELECT": {
+    "TITLE": "Bolas",
+    "CANCEL": "Cancelar",
+    "OK": "OK"
   }
 }

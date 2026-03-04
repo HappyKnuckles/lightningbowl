@@ -44,7 +44,25 @@
     "SPARE_DISTRIBUTION": "Spare-Verteilung",
     "THROW_DISTRIBUTION": "Wurfverteilung",
     "AVERAGE_SCORE": "Durchschnittsergebnis",
-    "SESSION_DATE": "Sitzungsdatum"
+    "SESSION_DATE": "Sitzungsdatum",
+    "SPECIAL_STATS": "Spezial-Statistiken",
+    "MOST_USED_BALL": "Meistgenutzter Ball",
+    "BEST_BALL": "Bester Ball",
+    "SERIES_STATS": "Serien-Statistiken",
+    "THROW_STATS": "Wurf-Statistiken",
+    "STRIKE_STATS": "Strike-Statistiken",
+    "SPARE_STATS": "Spare-Statistiken",
+    "SPARE_CONVERSION": "Spare-Konvertierung nach Pin-Anzahl",
+    "PIN_STATS": "Pin-Statistiken",
+    "STRONGEST_SPARES": "Stärkste Spares",
+    "WEAKEST_SPARES": "Schwächste Spares",
+    "MOST_COMMON_LEAVES": "Häufigste Liegenbleiber",
+    "SEGMENT_OVERALL": "Gesamt",
+    "SEGMENT_THROWS": "Würfe",
+    "SEGMENT_SPARES": "Spares",
+    "SEGMENT_PINS": "Pins",
+    "SEGMENT_SESSIONS": "Sitzungen",
+    "PLAY_FREQUENCY_STATS": "Spielhäufigkeits-Statistiken"
   },
   "HISTORY": {
     "TITLE": "Verlauf",
@@ -287,5 +305,10 @@
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "Liga/Turnier"
+  },
+  "BALL_SELECT": {
+    "TITLE": "Bälle",
+    "CANCEL": "Abbrechen",
+    "OK": "OK"
   }
 }

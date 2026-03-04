@@ -44,7 +44,25 @@
     "SPARE_DISTRIBUTION": "Spare Distribution",
     "THROW_DISTRIBUTION": "Throw Distribution",
     "AVERAGE_SCORE": "Average Score",
-    "SESSION_DATE": "Session date"
+    "SESSION_DATE": "Session date",
+    "SPECIAL_STATS": "Special Stats",
+    "MOST_USED_BALL": "Most used ball",
+    "BEST_BALL": "Best ball",
+    "SERIES_STATS": "Series Stats",
+    "THROW_STATS": "Throw Stats",
+    "STRIKE_STATS": "Strike Stats",
+    "SPARE_STATS": "Spare Stats",
+    "SPARE_CONVERSION": "Spare Conversion by Pin Count",
+    "PIN_STATS": "Pin Stats",
+    "STRONGEST_SPARES": "Strongest Spares",
+    "WEAKEST_SPARES": "Weakest Spares",
+    "MOST_COMMON_LEAVES": "Most Common Leaves",
+    "SEGMENT_OVERALL": "Overall",
+    "SEGMENT_THROWS": "Throws",
+    "SEGMENT_SPARES": "Spares",
+    "SEGMENT_PINS": "Pins",
+    "SEGMENT_SESSIONS": "Sessions",
+    "PLAY_FREQUENCY_STATS": "Play Frequency Stats"
   },
   "HISTORY": {
     "TITLE": "History",
@@ -287,5 +305,10 @@
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "League/Tournament"
+  },
+  "BALL_SELECT": {
+    "TITLE": "Balls",
+    "CANCEL": "Cancel",
+    "OK": "OK"
   }
 }

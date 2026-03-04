@@ -44,7 +44,25 @@
     "SPARE_DISTRIBUTION": "补中分布",
     "THROW_DISTRIBUTION": "投球分布",
     "AVERAGE_SCORE": "平均成绩",
-    "SESSION_DATE": "场次日期"
+    "SESSION_DATE": "场次日期",
+    "SPECIAL_STATS": "特殊统计",
+    "MOST_USED_BALL": "最常用球",
+    "BEST_BALL": "最佳球",
+    "SERIES_STATS": "系列统计",
+    "THROW_STATS": "投球统计",
+    "STRIKE_STATS": "全中统计",
+    "SPARE_STATS": "补中统计",
+    "SPARE_CONVERSION": "按瓶数的补中转换率",
+    "PIN_STATS": "球瓶统计",
+    "STRONGEST_SPARES": "最强补中",
+    "WEAKEST_SPARES": "最弱补中",
+    "MOST_COMMON_LEAVES": "最常见余瓶",
+    "SEGMENT_OVERALL": "总览",
+    "SEGMENT_THROWS": "投球",
+    "SEGMENT_SPARES": "补中",
+    "SEGMENT_PINS": "球瓶",
+    "SEGMENT_SESSIONS": "场次",
+    "PLAY_FREQUENCY_STATS": "游戏频率统计"
   },
   "HISTORY": {
     "TITLE": "历史",
@@ -287,5 +305,10 @@
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "联赛/锦标赛"
+  },
+  "BALL_SELECT": {
+    "TITLE": "保龄球",
+    "CANCEL": "取消",
+    "OK": "确认"
   }
 }

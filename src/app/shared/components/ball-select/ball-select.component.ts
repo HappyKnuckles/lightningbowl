@@ -13,11 +13,26 @@ import {
   IonAvatar,
   IonItem,
 } from '@ionic/angular/standalone';
+import { TranslateModule } from '@ngx-translate/core';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 
 @Component({
   selector: 'app-ball-select',
-  imports: [IonItem, IonAvatar, IonList, IonLabel, IonTitle, IonHeader, IonContent, IonCheckbox, IonButton, IonToolbar, IonFooter, IonButtons],
+  imports: [
+    IonItem,
+    IonAvatar,
+    IonList,
+    IonLabel,
+    IonTitle,
+    IonHeader,
+    IonContent,
+    IonCheckbox,
+    IonButton,
+    IonToolbar,
+    IonFooter,
+    IonButtons,
+    TranslateModule,
+  ],
   templateUrl: './ball-select.component.html',
   styleUrls: ['./ball-select.component.scss'],
 })

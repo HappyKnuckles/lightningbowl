@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AlertController, IonApp, IonBackdrop, IonSpinner, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Subscription } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { NgIf } from '@angular/common';
 import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';
@@ -199,6 +200,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async showEnterNameAlert() {
+    await firstValueFrom(this.translate.get('APP.WELCOME'));
     const alert = await this.alertController.create({
       header: this.translate.instant('APP.WELCOME'),
       message: this.translate.instant('APP.ENTER_NAME'),
@@ -247,6 +249,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async presentGreetingAlert(name: string): Promise<void> {
+    await firstValueFrom(this.translate.get('APP.HELLO'));
     const alert = await this.alertController.create({
       header: this.translate.instant('APP.HELLO', { name }),
       buttons: [

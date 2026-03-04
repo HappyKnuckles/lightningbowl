@@ -158,7 +158,10 @@ export class ArsenalPage implements OnInit {
             handler: async () => {
               try {
                 await this.storageService.removeFromArsenal(ball);
-                this.toastService.showToast(this.translate.instant('TOAST.BALL_REMOVED_FROM_ARSENAL', { name: ball.ball_name }), 'checkmark-outline');
+                this.toastService.showToast(
+                  this.translate.instant(ToastMessages.ballRemovedFromArsenal, { name: ball.ball_name }),
+                  'checkmark-outline',
+                );
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
                 this.toastService.showToast(this.translate.instant(ToastMessages.ballDeleteError), 'bug', true);
@@ -194,12 +197,12 @@ export class ArsenalPage implements OnInit {
           await this.storageService.saveBallToArsenal(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
-          this.toastService.showToast(this.translate.instant('TOAST.BALL_ADD_FAILED', { name: ball.ball_name }), 'bug', true);
+          this.toastService.showToast(this.translate.instant(ToastMessages.ballAddFailed, { name: ball.ball_name }), 'bug', true);
         }
       });
 
       const ball_names = ball.map((ball) => ball.ball_name).join(', ');
-      this.toastService.showToast(this.translate.instant('TOAST.BALLS_ADDED_TO_ARSENAL', { names: ball_names }), 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballsAddedToArsenal, { names: ball_names }), 'checkmark-outline');
     } catch (error) {
       console.error('Error saving balls to arsenal:', error);
       this.toastService.showToast(this.translate.instant(ToastMessages.ballSaveError), 'bug', true);
@@ -221,11 +224,11 @@ export class ArsenalPage implements OnInit {
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
       } else {
-        this.toastService.showToast(this.translate.instant('TOAST.NO_SIMILAR_BALLS_CORE', { name: ball.core_name }), 'information-circle-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.noSimilarBallsCore, { name: ball.core_name }), 'information-circle-outline');
       }
     } catch (error) {
       console.error('Error fetching core balls:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.ERROR_FETCHING_BALLS_CORE', { name: ball.core_name }), 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCore, { name: ball.core_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -242,13 +245,13 @@ export class ArsenalPage implements OnInit {
         await this.coverstockModal.present();
       } else {
         this.toastService.showToast(
-          this.translate.instant('TOAST.NO_SIMILAR_BALLS_COVERSTOCK', { name: ball.coverstock_name }),
+          this.translate.instant(ToastMessages.noSimilarBallsCoverstock, { name: ball.coverstock_name }),
           'information-circle-outline',
         );
       }
     } catch (error) {
       console.error('Error fetching coverstock balls:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.ERROR_FETCHING_BALLS_COVERSTOCK', { name: ball.coverstock_name }), 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCoverstock, { name: ball.coverstock_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

@@ -993,6 +993,6 @@ export class AddGamePage implements OnInit {
       this.propagateMetadataToSeries();
     }, 100);
 
-    this.toastService.showToast(this.translate.instant('TOAST.SESSION_RESTORED'), 'refresh-outline');
+    this.toastService.showToast(this.translate.instant(ToastMessages.sessionRestored), 'refresh-outline');
   }
 }

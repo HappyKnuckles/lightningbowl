@@ -17,6 +17,7 @@ import { ThemeChangerService } from './core/services/theme-changer/theme-changer
 import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
 import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { AnalyticsService } from './core/services/analytics/analytics.service';
+import { ToastMessages } from './core/constants/toast-messages.constants';
 import { LanguageService } from './core/services/language/language.service';
 
 @Component({
@@ -216,7 +217,7 @@ export class AppComponent implements OnInit, OnDestroy {
             const newName = data.username.trim();
             if (newName !== '') {
               this.userService.setUsername(newName);
-              this.toastService.showToast(this.translate.instant('TOAST.NAME_UPDATED', { name: this.userService.username() }), 'reload-outline');
+              this.toastService.showToast(this.translate.instant(ToastMessages.nameUpdated, { name: this.userService.username() }), 'reload-outline');
             }
           },
         },
@@ -231,12 +232,12 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       const installed = await this.pwaInstallService.triggerInstall();
       if (installed) {
-        this.toastService.showToast(this.translate.instant('TOAST.INSTALL_SUCCESS'), 'checkmark-circle', false);
+        this.toastService.showToast(this.translate.instant(ToastMessages.installSuccess), 'checkmark-circle', false);
         this.showPwaInstallPrompt = false;
       }
     } catch (error) {
       console.error('Error installing PWA:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.INSTALL_FAILED'), 'alert-circle', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.installFailed), 'alert-circle', true);
     }
   }
 

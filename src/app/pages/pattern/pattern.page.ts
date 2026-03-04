@@ -200,7 +200,7 @@ export class PatternPage implements OnInit {
         this.patterns = [...this.patterns, ...patterns];
         this.currentPage++;
       } else if (this.networkService.isOffline) {
-        this.toastService.showToast(this.translate.instant('TOAST.OFFLINE_NO_CACHE'), 'information-circle-outline', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.offlineNoCache), 'information-circle-outline', true);
       } else {
         this.hasMoreData = false;
       }
@@ -296,7 +296,7 @@ export class PatternPage implements OnInit {
     const isFavorited = this.favoritesService.toggleFavorite(pattern.url);
 
     if (isFavorited) {
-      this.toastService.showToast(this.translate.instant('TOAST.PATTERN_ADDED_FAVORITES', { name: pattern.title }), 'heart');
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternAddedFavorites, { name: pattern.title }), 'heart');
 
       void this.analyticsService.trackEvent('pattern_favorited', {
         pattern_title: pattern.title,
@@ -304,7 +304,7 @@ export class PatternPage implements OnInit {
         pattern_url: pattern.url,
       });
     } else {
-      this.toastService.showToast(this.translate.instant('TOAST.PATTERN_REMOVED_FAVORITES', { name: pattern.title }), 'heart-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternRemovedFavorites, { name: pattern.title }), 'heart-outline');
 
       void this.analyticsService.trackEvent('pattern_unfavorited', {
         pattern_title: pattern.title,

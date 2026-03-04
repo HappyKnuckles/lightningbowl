@@ -270,7 +270,7 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       await this.storageService.removeFromArsenal(ball);
-      this.toastService.showToast(this.translate.instant('TOAST.BALL_REMOVED', { name: ball.ball_name }), 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballRemoved, { name: ball.ball_name }), 'checkmark-outline');
     } catch (error) {
       console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);
       this.toastService.showToast(this.translate.instant(ToastMessages.ballDeleteError), 'bug', true);
@@ -281,7 +281,7 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       await this.storageService.saveBallToArsenal(ball);
-      this.toastService.showToast(this.translate.instant('TOAST.BALL_ADDED', { name: ball.ball_name }), 'add');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballAdded, { name: ball.ball_name }), 'add');
     } catch (error) {
       console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);
       this.toastService.showToast(this.translate.instant(ToastMessages.ballSaveError), 'bug', true);
@@ -335,7 +335,7 @@ export class BallsPage implements OnInit {
         this.balls.set([...this.balls(), ...response]);
         this.currentPage++;
       } else if (this.networkService.isOffline) {
-        this.toastService.showToast(this.translate.instant('TOAST.OFFLINE_NO_CACHE'), 'information-circle-outline', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.offlineNoCache), 'information-circle-outline', true);
       } else {
         this.hasMoreData = false;
       }
@@ -390,11 +390,11 @@ export class BallsPage implements OnInit {
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
       } else {
-        this.toastService.showToast(this.translate.instant('TOAST.NO_SIMILAR_BALLS_CORE', { name: ball.core_name }), 'information-circle-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.noSimilarBallsCore, { name: ball.core_name }), 'information-circle-outline');
       }
     } catch (error) {
       console.error('Error fetching core balls:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.ERROR_FETCHING_BALLS_CORE', { name: ball.core_name }), 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCore, { name: ball.core_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -409,13 +409,13 @@ export class BallsPage implements OnInit {
         await this.coverstockModal.present();
       } else {
         this.toastService.showToast(
-          this.translate.instant('TOAST.NO_SIMILAR_BALLS_COVERSTOCK', { name: ball.coverstock_name }),
+          this.translate.instant(ToastMessages.noSimilarBallsCoverstock, { name: ball.coverstock_name }),
           'information-circle-outline',
         );
       }
     } catch (error) {
       console.error('Error fetching coverstock balls:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.ERROR_FETCHING_BALLS_COVERSTOCK', { name: ball.coverstock_name }), 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCoverstock, { name: ball.coverstock_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -440,13 +440,13 @@ export class BallsPage implements OnInit {
         });
       } else {
         this.toastService.showToast(
-          this.translate.instant('TOAST.NO_BALLS_SIMILAR_REACTION', { name: ball.ball_name }),
+          this.translate.instant(ToastMessages.noSimilarBallsReaction, { name: ball.ball_name }),
           'information-circle-outline',
         );
       }
     } catch (error) {
       console.error('Error fetching similar reaction balls:', error);
-      this.toastService.showToast(this.translate.instant('TOAST.ERROR_FETCHING_BALLS_REACTION'), 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsReaction), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -481,7 +481,7 @@ export class BallsPage implements OnInit {
     const isFavorited = this.favoritesService.toggleBallFavorite(ball.ball_id, ball.core_weight);
 
     if (isFavorited) {
-      this.toastService.showToast(this.translate.instant('TOAST.BALL_ADDED_FAVORITES', { name: ball.ball_name }), 'heart');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballAddedFavorites, { name: ball.ball_name }), 'heart');
 
       void this.analyticsService.trackEvent('ball_favorited', {
         ball_name: ball.ball_name,
@@ -489,7 +489,7 @@ export class BallsPage implements OnInit {
         ball_id: ball.ball_id,
       });
     } else {
-      this.toastService.showToast(this.translate.instant('TOAST.BALL_REMOVED_FAVORITES', { name: ball.ball_name }), 'heart-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballRemovedFavorites, { name: ball.ball_name }), 'heart-outline');
 
       void this.analyticsService.trackEvent('ball_unfavorited', {
         ball_name: ball.ball_name,

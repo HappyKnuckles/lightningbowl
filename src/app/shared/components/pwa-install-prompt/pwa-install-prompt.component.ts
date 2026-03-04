@@ -18,6 +18,8 @@ import {
 import { addIcons } from 'ionicons';
 import { close, flash, wifiOutline, notifications, phonePortrait, download, shareOutline, checkmark, add, checkmarkCircle } from 'ionicons/icons';
 
+import { TranslateModule } from '@ngx-translate/core';
+
 @Component({
   selector: 'app-pwa-install-prompt',
   templateUrl: './pwa-install-prompt.component.html',
@@ -37,6 +39,7 @@ import { close, flash, wifiOutline, notifications, phonePortrait, download, shar
     IonButton,
     IonIcon,
     IonContent,
+    TranslateModule,
   ],
 })
 export class PwaInstallPromptComponent implements OnInit {

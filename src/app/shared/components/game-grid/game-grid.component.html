@@ -224,13 +224,13 @@
       </ion-modal>
       <ion-item lines="none">
         <ion-textarea
-          label="Note"
+          [label]="'GAME_GRID.NOTE' | translate"
           type="text"
           [value]="currentGame.note || ''"
           (ionInput)="onNoteChange($any($event).detail.value)"
           name="note"
           [autoGrow]="true"
-          placeholder="today knee pain, lanes dry af, i fucking suck today"></ion-textarea>
+          [placeholder]="'GAME_GRID.NOTE_PLACEHOLDER' | translate"></ion-textarea>
       </ion-item>
     </ion-list>
   </div>

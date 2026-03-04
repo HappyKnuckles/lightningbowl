@@ -1,11 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button color="medium" (click)="cancel()">Cancel</ion-button>
+      <ion-button color="medium" (click)="cancel()">{{ "COMMON.CANCEL" | translate }}</ion-button>
     </ion-buttons>
-    <ion-title>Filter</ion-title>
+    <ion-title>{{ "FILTER.TITLE" | translate }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="reset()" [strong]="true">Reset</ion-button>
+      <ion-button (click)="reset()" [strong]="true">{{ "COMMON.RESET" | translate }}</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -15,26 +15,26 @@
     <ion-item>
       <!-- TODO make this a typeahead component-->
       <ion-select
-        label="Brands"
+        [label]="'BALL_FILTER.BRANDS' | translate"
         name="brands"
         multiple="true"
-        placeholder="All"
+        [placeholder]="'COMMON.ALL' | translate"
         [ngModel]="ballFilterService.filters().brands"
         (ionChange)="updateFilter('brands', $event.detail.value)">
         <ion-select-option *ngFor="let brand of ballService.brands()" [value]="brand.brand_name">{{ brand.brand_name }}</ion-select-option>
       </ion-select>
     </ion-item>
     <ion-item button id="select-coverstocks">
-      <ion-label>Coverstocks</ion-label>
+      <ion-label>{{ "BALL_FILTER.COVERSTOCKS" | translate }}</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
         {{ ballFilterService.filters().coverstocks.join(", ") }}
       </p>
     </ion-item>
     <ion-item>
       <ion-select
-        label="Coverstock types"
+        [label]="'BALL_FILTER.COVERSTOCK_TYPES' | translate"
         name="coverstockTypes"
-        placeholder="All"
+        [placeholder]="'COMMON.ALL' | translate"
         [ngModel]="ballFilterService.filters().coverstockTypes"
         (ionChange)="updateFilter('coverstockTypes', $event.detail.value)"
         multiple="true">
@@ -42,16 +42,16 @@
       </ion-select>
     </ion-item>
     <ion-item button id="select-cores">
-      <ion-label>Cores</ion-label>
+      <ion-label>{{ "BALL_FILTER.CORES" | translate }}</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
         {{ ballFilterService.filters().cores.join(", ") }}
       </p>
     </ion-item>
     <ion-item>
       <ion-select
-        label="Core type"
+        [label]="'BALL_FILTER.CORE_TYPE' | translate"
         name="coreType"
-        placeholder="All"
+        [placeholder]="'COMMON.ALL' | translate"
         [ngModel]="ballFilterService.filters().coreType"
         (ionChange)="updateFilter('coreType', $event.detail.value)">
         <ion-select-option *ngFor="let coreType of coreTypes" [value]="coreType">{{ coreType }}</ion-select-option>
@@ -59,9 +59,9 @@
     </ion-item>
     <ion-item>
       <ion-select
-        label="Market"
+        [label]="'BALL_FILTER.MARKET' | translate"
         name="market"
-        placeholder="All"
+        [placeholder]="'COMMON.ALL' | translate"
         [ngModel]="ballFilterService.filters().market"
         (ionChange)="updateFilter('market', $event.detail.value)">
         <ion-select-option *ngFor="let market of markets" [value]="market">{{ market }}</ion-select-option>
@@ -69,7 +69,7 @@
     </ion-item>
     <ion-item>
       <ion-select
-        label="Weight"
+        [label]="'BALL_FILTER.WEIGHT' | translate"
         name="weight"
         placeholder="15"
         [ngModel]="ballFilterService.filters().weight"
@@ -84,7 +84,7 @@
         name="minRg"
         clearOnEdit="true"
         inputmode="decimal"
-        label="RG range"
+        [label]="'BALL_FILTER.RG_RANGE' | translate"
         (ionChange)="updateFilter('minRg', $event.detail.value?.replace(',', '.'))"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
@@ -104,7 +104,7 @@
         name="minDiff"
         clearOnEdit="true"
         inputmode="decimal"
-        label="Diff range"
+        [label]="'BALL_FILTER.DIFF_RANGE' | translate"
         (ionChange)="updateFilter('minDiff', $event.detail.value?.replace(',', '.'))"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
@@ -118,20 +118,22 @@
         (ionChange)="updateFilter('maxDiff', $event.detail.value?.replace(',', '.'))"></ion-input>
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="ballFilterService.filters().inArsenal" (ionChange)="updateFilter('inArsenal', $event.detail.checked)"
-        >Only arsenal</ion-toggle
-      >
+      <ion-toggle [ngModel]="ballFilterService.filters().inArsenal" (ionChange)="updateFilter('inArsenal', $event.detail.checked)">{{
+        "BALL_FILTER.ONLY_ARSENAL" | translate
+      }}</ion-toggle>
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="ballFilterService.filters().availability" (ionChange)="updateFilter('availability', $event.detail.checked)"
-        >Exclude discontinued</ion-toggle
-      >
+      <ion-toggle [ngModel]="ballFilterService.filters().availability" (ionChange)="updateFilter('availability', $event.detail.checked)">{{
+        "BALL_FILTER.EXCLUDE_DISCONTINUED" | translate
+      }}</ion-toggle>
     </ion-item>
     <!-- TODO Releasedate, availability-->
   </ion-list>
 </ion-content>
 <ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" (click)="confirm()">Confirm ({{ ballFilterService.filteredBalls().length }} Balls)</ion-button>
+  <ion-button class="confirm-btn" (click)="confirm()">{{
+    "BALL_FILTER.CONFIRM_BALLS" | translate: { count: ballFilterService.filteredBalls().length }
+  }}</ion-button>
 </ion-footer>
 
 <ion-modal [presentingElement]="presentingElement" trigger="select-cores">

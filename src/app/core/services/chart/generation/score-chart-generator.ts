@@ -13,6 +13,7 @@ export function generateScoreChart(
   viewMode?: 'week' | 'game' | 'session' | 'monthly' | 'yearly',
   onToggleView?: () => void,
   isReload?: boolean,
+  labels?: { averageOverTime: string; differenceFromAvg: string; gamesPlayed: string },
 ): Chart {
   try {
     const currentViewMode = viewMode || 'game';
@@ -44,7 +45,7 @@ export function generateScoreChart(
             const ci = legend.chart;
             const meta = ci.getDatasetMeta(index);
             meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : !meta.hidden;
-            const gamesPlayedIndex = ci.data.datasets.findIndex((dataset: ChartDataset) => dataset.label === 'Games played');
+            const gamesPlayedIndex = ci.data.datasets.findIndex((dataset: ChartDataset) => dataset.label === (labels?.gamesPlayed ?? 'Games played'));
             if (gamesPlayedIndex !== -1) {
               const gamesPlayedMeta = ci.getDatasetMeta(gamesPlayedIndex);
               if (ci.options.scales && ci.options.scales['y1']) {
@@ -76,7 +77,7 @@ export function generateScoreChart(
           labels: gameLabels,
           datasets: [
             {
-              label: 'Average over time',
+              label: labels?.averageOverTime ?? 'Average over time',
               data: overallAverages,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
@@ -84,7 +85,7 @@ export function generateScoreChart(
               pointHitRadius: 10,
             },
             {
-              label: 'Difference from average',
+              label: labels?.differenceFromAvg ?? 'Difference from average',
               data: differences,
               backgroundColor: 'rgba(255, 99, 132, 0.2)',
               borderColor: 'rgba(255, 99, 132, 1)',
@@ -92,7 +93,7 @@ export function generateScoreChart(
               pointHitRadius: 10,
             },
             {
-              label: 'Games played',
+              label: labels?.gamesPlayed ?? 'Games played',
               data: gamesPlayedDaily,
               type: 'bar',
               backgroundColor: 'rgba(153, 102, 255, 0.1)',
@@ -126,6 +127,7 @@ export function generateScoreDistributionChart(
   games: Game[],
   existingChartInstance: Chart | undefined,
   isReload?: boolean,
+  labels?: { scoreDistribution: string },
 ): Chart {
   try {
     const ctx = scoreDistributionChart.nativeElement;
@@ -185,7 +187,7 @@ export function generateScoreDistributionChart(
           labels: finalLabels,
           datasets: [
             {
-              label: 'Score Distribution',
+              label: labels?.scoreDistribution ?? 'Score Distribution',
               data: finalData,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
@@ -230,6 +232,7 @@ export function generateAverageScoreChart(
   viewMode?: 'session' | 'weekly' | 'monthly' | 'yearly',
   onToggleView?: () => void,
   isReload?: boolean,
+  labels?: { averageScore: string; gamesPlayed: string },
 ): Chart {
   try {
     const currentViewMode = viewMode || 'monthly';
@@ -261,7 +264,7 @@ export function generateAverageScoreChart(
             const ci = legend.chart;
             const meta = ci.getDatasetMeta(index);
             meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : !meta.hidden;
-            const gamesPlayedIndex = ci.data.datasets.findIndex((dataset: ChartDataset) => dataset.label === 'Games played');
+            const gamesPlayedIndex = ci.data.datasets.findIndex((dataset: ChartDataset) => dataset.label === (labels?.gamesPlayed ?? 'Games played'));
             if (gamesPlayedIndex !== -1) {
               const gamesPlayedMeta = ci.getDatasetMeta(gamesPlayedIndex);
               if (ci.options.scales && ci.options.scales['y1']) {
@@ -292,7 +295,7 @@ export function generateAverageScoreChart(
           labels: gameLabels,
           datasets: [
             {
-              label: 'Average score',
+              label: labels?.averageScore ?? 'Average score',
               data: averages,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
@@ -300,7 +303,7 @@ export function generateAverageScoreChart(
               pointHitRadius: 10,
             },
             {
-              label: 'Games played',
+              label: labels?.gamesPlayed ?? 'Games played',
               data: gamesPlayedDaily,
               type: 'bar',
               backgroundColor: 'rgba(153, 102, 255, 0.1)',

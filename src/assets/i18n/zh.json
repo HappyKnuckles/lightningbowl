@@ -63,7 +63,11 @@
     "SEGMENT_PINS": "球瓶",
     "SEGMENT_SESSIONS": "场次",
     "PLAY_FREQUENCY_STATS": "游戏频率统计",
-    "NO_BALL_GAMES": "没有保存球的游戏记录。"
+    "NO_BALL_GAMES": "没有保存球的游戏记录。",
+    "OCCURRENCES": "出现次数",
+    "PICKUPS": "补中次数",
+    "PICKUP_PCT": "补中率",
+    "NO_STATS_AVAILABLE": "暂无统计数据。"
   },
   "HISTORY": {
     "TITLE": "历史",
@@ -81,19 +85,38 @@
     "GAMES": "游戏: {{count}}",
     "AVG": "均分: {{avg}}",
     "HIGH": "最高: {{high}}",
-    "SCORE_ANALYSIS": "成绩分析",
+    "SCORE_ANALYSIS": "得分分析",
     "SPARE_DIST": "补中分布",
-    "SPARES_OVERVIEW": "补中概览"
+    "SPARES_OVERVIEW": "补中概览",
+    "SEGMENT_OVERALL": "总体",
+    "SEGMENT_SPARES": "补中",
+    "SEGMENT_GAMES": "游戏",
+    "OVERALL_STATS": "总体统计",
+    "MOST_USED_BALL": "最常用的球",
+    "BEST_BALL": "最佳球",
+    "SPARE_STATS": "补中统计",
+    "SPARE_DISTRIBUTION": "补中分布"
   },
   "BALLS": {
     "TITLE": "保龄球库",
     "NO_BALLS": "未找到保龄球。",
     "ADD_TO_ARSENAL": "添加到球具库",
     "REMOVE_FROM_ARSENAL": "从球具库移除",
-    "CORE": "球芯:",
-    "COVERSTOCK": "外壳:",
-    "SEARCH_PLACEHOLDER": "搜索保龄球",
-    "POWERED_BY": "由...提供"
+    "CORE": "核心",
+    "COVERSTOCK": "球面",
+    "SEARCH_PLACEHOLDER": "搜索球",
+    "POWERED_BY": "由...提供",
+    "LOADING_MORE": "加载更多球...",
+    "SIMILAR_REACTION_TO": "与以下球相似：",
+    "EARLY_ROLL": "早期滚动",
+    "MEDIUM_ROLL": "中期滚动",
+    "LATE_ROLL": "晚期滚动",
+    "LOW_FLARE": "低扩散",
+    "MEDIUM_FLARE": "中扩散",
+    "HIGH_FLARE": "高扩散",
+    "COVERSTOCK_WITH_NAME": "球面：{{name}}",
+    "CORE_WITH_NAME": "核心：{{name}}",
+    "SIMILAR_REACTION_TO_NAME": "与{{ballName}}相似"
   },
   "ARSENAL": {
     "TITLE": "球具库",
@@ -107,7 +130,8 @@
     "TITLE": "油型库",
     "NO_PATTERNS": "未找到油型！",
     "DOWNLOAD_PDF": "下载PDF",
-    "DOWNLOAD_KOSI": "下载Kosi"
+    "DOWNLOAD_KOSI": "下载Kosi",
+    "SEARCH_PLACEHOLDER": "搜索油型"
   },
   "MAP": {
     "TITLE": "保龄球馆地图"
@@ -293,7 +317,8 @@
     "NOTE": "备注",
     "NOTE_PLACEHOLDER": "例如：膝盖疼痛、球道干燥...",
     "PATTERNS": "球道图案",
-    "BALLS": "球"
+    "BALLS": "球",
+    "PRACTICE": "练习"
   },
   "PATTERN_FORM": {
     "TITLE": "标题",
@@ -313,7 +338,8 @@
     "TANK": "油罐",
     "TOTAL_OIL": "总油量",
     "START_DIST": "起始距离",
-    "END_DIST": "结束距离"
+    "END_DIST": "结束距离",
+    "TITLE_HEADER": "添加油型"
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "联赛/锦标赛",
@@ -506,5 +532,33 @@
     "TIME_WEEKS_AGO": "{{count}}周前",
     "TIME_MONTHS_AGO": "{{count}}个月前",
     "TIME_YEARS_AGO": "{{count}}年前"
+  },
+  "SPARE_DISPLAY": {
+    "COUNT": "计数",
+    "COUNT_TOOLTIP": "这是你第一球投完后剩余的瓶数。",
+    "MISS": "未中",
+    "HIT": "命中",
+    "RATE": "转化率",
+    "OVERALL": "总体",
+    "ONE_PIN": "1瓶",
+    "N_PINS": "{{count}}瓶"
+  },
+  "CHART": {
+    "AVERAGE_OVER_TIME": "随时间平均分",
+    "DIFFERENCE_FROM_AVG": "与平均分差值",
+    "GAMES_PLAYED": "已打局数",
+    "SCORE_DISTRIBUTION": "分数分布",
+    "AVERAGE_SCORE": "平均分",
+    "CONVERTED": "已转化",
+    "MISSED": "未转化",
+    "ONE_PIN": "1瓶",
+    "N_PINS": "{{count}}瓶",
+    "APPEARANCE_COUNT": "出现次数",
+    "HIT_COUNT": "命中次数",
+    "SPARE": "补中",
+    "STRIKE": "全中",
+    "OPEN": "未补",
+    "PERCENTAGE": "百分比",
+    "BOWLING_BALLS": "保龄球"
   }
 }

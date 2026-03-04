@@ -2,10 +2,11 @@ import { Component, input } from '@angular/core';
 import { IonItem, IonLabel, IonList, IonListHeader } from '@ionic/angular/standalone';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { LeaveStats } from 'src/app/core/models/stats.model';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pin-leave-stats',
-  imports: [IonList, IonListHeader, IonItem, IonLabel, PinDeckComponent],
+  imports: [IonList, IonListHeader, IonItem, IonLabel, PinDeckComponent, TranslateModule],
   templateUrl: './pin-leave-stats.component.html',
   styleUrl: './pin-leave-stats.component.scss',
 })

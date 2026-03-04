@@ -5,16 +5,22 @@
       <ion-row class="stat-header stats">
         <ion-col [id]="'tooltip' + id">
           <ion-text
-            >Count
+            >{{ "SPARE_DISPLAY.COUNT" | translate }}
             <ion-icon name="information-circle-outline"></ion-icon>
           </ion-text>
         </ion-col>
         <ion-popover [trigger]="'tooltip' + id">
-          <ion-text class="tooltip">This is the pin count you left standing after your first throw.</ion-text>
+          <ion-text class="tooltip">{{ "SPARE_DISPLAY.COUNT_TOOLTIP" | translate }}</ion-text>
         </ion-popover>
-        <ion-col><ion-text>Miss</ion-text></ion-col>
-        <ion-col><ion-text>Hit</ion-text></ion-col>
-        <ion-col><ion-text>Rate</ion-text></ion-col>
+        <ion-col
+          ><ion-text>{{ "SPARE_DISPLAY.MISS" | translate }}</ion-text></ion-col
+        >
+        <ion-col
+          ><ion-text>{{ "SPARE_DISPLAY.HIT" | translate }}</ion-text></ion-col
+        >
+        <ion-col
+          ><ion-text>{{ "SPARE_DISPLAY.RATE" | translate }}</ion-text></ion-col
+        >
       </ion-row>
       <ion-row *ngFor="let i of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" class="stats">
         <ion-col>

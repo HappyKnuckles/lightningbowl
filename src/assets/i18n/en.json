@@ -63,7 +63,11 @@
     "SEGMENT_PINS": "Pins",
     "SEGMENT_SESSIONS": "Sessions",
     "PLAY_FREQUENCY_STATS": "Play Frequency Stats",
-    "NO_BALL_GAMES": "No games with balls saved."
+    "NO_BALL_GAMES": "No games with balls saved.",
+    "OCCURRENCES": "Occurrences",
+    "PICKUPS": "Pickups",
+    "PICKUP_PCT": "Pickup %",
+    "NO_STATS_AVAILABLE": "No stats available."
   },
   "HISTORY": {
     "TITLE": "History",
@@ -83,17 +87,36 @@
     "HIGH": "High: {{high}}",
     "SCORE_ANALYSIS": "Score Analysis",
     "SPARE_DIST": "Spare Distribution",
-    "SPARES_OVERVIEW": "Spares Overview"
+    "SPARES_OVERVIEW": "Spares Overview",
+    "SEGMENT_OVERALL": "Overall",
+    "SEGMENT_SPARES": "Spares",
+    "SEGMENT_GAMES": "Games",
+    "OVERALL_STATS": "Overall Stats",
+    "MOST_USED_BALL": "Most used ball",
+    "BEST_BALL": "Best ball",
+    "SPARE_STATS": "Spare Stats",
+    "SPARE_DISTRIBUTION": "Spare Distribution"
   },
   "BALLS": {
     "TITLE": "Ball Library",
     "NO_BALLS": "No balls found.",
     "ADD_TO_ARSENAL": "Add to arsenal",
     "REMOVE_FROM_ARSENAL": "Remove from arsenal",
-    "CORE": "Core:",
-    "COVERSTOCK": "Coverstock:",
+    "CORE": "Core",
+    "COVERSTOCK": "Coverstock",
     "SEARCH_PLACEHOLDER": "Search for a ball",
-    "POWERED_BY": "powered by"
+    "POWERED_BY": "powered by",
+    "LOADING_MORE": "Loading more balls...",
+    "SIMILAR_REACTION_TO": "Similar reaction to",
+    "EARLY_ROLL": "Early Roll",
+    "MEDIUM_ROLL": "Medium Roll",
+    "LATE_ROLL": "Late Roll",
+    "LOW_FLARE": "Low Flare",
+    "MEDIUM_FLARE": "Medium Flare",
+    "HIGH_FLARE": "High Flare",
+    "COVERSTOCK_WITH_NAME": "Coverstock: {{name}}",
+    "CORE_WITH_NAME": "Core: {{name}}",
+    "SIMILAR_REACTION_TO_NAME": "Similar reaction to {{ballName}}"
   },
   "ARSENAL": {
     "TITLE": "Arsenal",
@@ -107,7 +130,8 @@
     "TITLE": "Pattern Library",
     "NO_PATTERNS": "No patterns found!",
     "DOWNLOAD_PDF": "Download PDF",
-    "DOWNLOAD_KOSI": "Download Kosi"
+    "DOWNLOAD_KOSI": "Download Kosi",
+    "SEARCH_PLACEHOLDER": "Search for a pattern"
   },
   "MAP": {
     "TITLE": "Alley map"
@@ -293,7 +317,8 @@
     "NOTE": "Note",
     "NOTE_PLACEHOLDER": "e.g. knee pain, dry lanes...",
     "PATTERNS": "Patterns",
-    "BALLS": "Balls"
+    "BALLS": "Balls",
+    "PRACTICE": "Practice"
   },
   "PATTERN_FORM": {
     "TITLE": "Title",
@@ -313,7 +338,8 @@
     "TANK": "Tank",
     "TOTAL_OIL": "Total Oil",
     "START_DIST": "Start Dist",
-    "END_DIST": "End Dist"
+    "END_DIST": "End Dist",
+    "TITLE_HEADER": "Add Pattern"
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "League/Tournament",
@@ -506,5 +532,33 @@
     "TIME_WEEKS_AGO": "{{count}} week(s) ago",
     "TIME_MONTHS_AGO": "{{count}} month(s) ago",
     "TIME_YEARS_AGO": "{{count}} year(s) ago"
+  },
+  "SPARE_DISPLAY": {
+    "COUNT": "Count",
+    "COUNT_TOOLTIP": "This is the pin count you left standing after your first throw.",
+    "MISS": "Miss",
+    "HIT": "Hit",
+    "RATE": "Rate",
+    "OVERALL": "Overall",
+    "ONE_PIN": "1 Pin",
+    "N_PINS": "{{count}} Pins"
+  },
+  "CHART": {
+    "AVERAGE_OVER_TIME": "Average over time",
+    "DIFFERENCE_FROM_AVG": "Difference from average",
+    "GAMES_PLAYED": "Games played",
+    "SCORE_DISTRIBUTION": "Score Distribution",
+    "AVERAGE_SCORE": "Average score",
+    "CONVERTED": "Converted",
+    "MISSED": "Missed",
+    "ONE_PIN": "1 Pin",
+    "N_PINS": "{{count}} Pins",
+    "APPEARANCE_COUNT": "Appearance Count",
+    "HIT_COUNT": "Hit Count",
+    "SPARE": "Spare",
+    "STRIKE": "Strike",
+    "OPEN": "Open",
+    "PERCENTAGE": "Percentage",
+    "BOWLING_BALLS": "Bowling Balls"
   }
 }

@@ -188,9 +188,9 @@
   <div style="margin: 0 5px">
     <ion-list lines="full" style="border-radius: 7px">
       <ion-item>
-        <ion-checkbox [checked]="currentGame.isPractice" name="isPractice" #checkbox (ionChange)="onIsPracticeChange($any($event.target).checked)"
-          >Practice</ion-checkbox
-        >
+        <ion-checkbox [checked]="currentGame.isPractice" name="isPractice" #checkbox (ionChange)="onIsPracticeChange($any($event.target).checked)">{{
+          "GAME_GRID.PRACTICE" | translate
+        }}</ion-checkbox>
       </ion-item>
       <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
       <ion-item [id]="patternModalId()" button [disabled]="storageService.allPatterns().length === 0">

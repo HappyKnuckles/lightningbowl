@@ -63,7 +63,11 @@
     "SEGMENT_PINS": "Pins",
     "SEGMENT_SESSIONS": "Sitzungen",
     "PLAY_FREQUENCY_STATS": "Spielhäufigkeits-Statistiken",
-    "NO_BALL_GAMES": "Keine Spiele mit gespeicherten Bällen."
+    "NO_BALL_GAMES": "Keine Spiele mit gespeicherten Bällen.",
+    "OCCURRENCES": "Vorkommen",
+    "PICKUPS": "Abräumer",
+    "PICKUP_PCT": "Abräum %",
+    "NO_STATS_AVAILABLE": "Keine Statistiken verfügbar."
   },
   "HISTORY": {
     "TITLE": "Verlauf",
@@ -81,19 +85,38 @@
     "GAMES": "Spiele: {{count}}",
     "AVG": "Ø: {{avg}}",
     "HIGH": "Hoch: {{high}}",
-    "SCORE_ANALYSIS": "Ergebnisanalyse",
+    "SCORE_ANALYSIS": "Score-Analyse",
     "SPARE_DIST": "Spare-Verteilung",
-    "SPARES_OVERVIEW": "Spare-Übersicht"
+    "SPARES_OVERVIEW": "Spare-Übersicht",
+    "SEGMENT_OVERALL": "Gesamt",
+    "SEGMENT_SPARES": "Spares",
+    "SEGMENT_GAMES": "Spiele",
+    "OVERALL_STATS": "Gesamtstatistik",
+    "MOST_USED_BALL": "Meist genutzter Ball",
+    "BEST_BALL": "Bester Ball",
+    "SPARE_STATS": "Spare-Statistik",
+    "SPARE_DISTRIBUTION": "Spare-Verteilung"
   },
   "BALLS": {
     "TITLE": "Ballbibliothek",
     "NO_BALLS": "Keine Bälle gefunden.",
     "ADD_TO_ARSENAL": "Zum Arsenal hinzufügen",
     "REMOVE_FROM_ARSENAL": "Aus dem Arsenal entfernen",
-    "CORE": "Kern:",
-    "COVERSTOCK": "Coverstock:",
-    "SEARCH_PLACEHOLDER": "Nach einem Ball suchen",
-    "POWERED_BY": "unterstützt von"
+    "CORE": "Kern",
+    "COVERSTOCK": "Oberfläche",
+    "SEARCH_PLACEHOLDER": "Ball suchen",
+    "POWERED_BY": "unterstützt von",
+    "LOADING_MORE": "Weitere Bälle laden...",
+    "SIMILAR_REACTION_TO": "Ähnliche Reaktion wie",
+    "EARLY_ROLL": "Frühes Rollen",
+    "MEDIUM_ROLL": "Mittleres Rollen",
+    "LATE_ROLL": "Spätes Rollen",
+    "LOW_FLARE": "Geringes Flare",
+    "MEDIUM_FLARE": "Mittleres Flare",
+    "HIGH_FLARE": "Hohes Flare",
+    "COVERSTOCK_WITH_NAME": "Oberfläche: {{name}}",
+    "CORE_WITH_NAME": "Kern: {{name}}",
+    "SIMILAR_REACTION_TO_NAME": "Ähnliche Reaktion wie {{ballName}}"
   },
   "ARSENAL": {
     "TITLE": "Arsenal",
@@ -107,7 +130,8 @@
     "TITLE": "Musterbibliothek",
     "NO_PATTERNS": "Keine Muster gefunden!",
     "DOWNLOAD_PDF": "PDF herunterladen",
-    "DOWNLOAD_KOSI": "Kosi herunterladen"
+    "DOWNLOAD_KOSI": "Kosi herunterladen",
+    "SEARCH_PLACEHOLDER": "Muster suchen"
   },
   "MAP": {
     "TITLE": "Bowlingbahn-Karte"
@@ -293,7 +317,8 @@
     "NOTE": "Notiz",
     "NOTE_PLACEHOLDER": "z.B. Knieschmerzen, trockene Bahnen...",
     "PATTERNS": "Muster",
-    "BALLS": "Bälle"
+    "BALLS": "Bälle",
+    "PRACTICE": "Training"
   },
   "PATTERN_FORM": {
     "TITLE": "Titel",
@@ -313,7 +338,8 @@
     "TANK": "Tank",
     "TOTAL_OIL": "Gesamtöl",
     "START_DIST": "Startabstand",
-    "END_DIST": "Endabstand"
+    "END_DIST": "Endabstand",
+    "TITLE_HEADER": "Muster hinzufügen"
   },
   "GAME": {
     "LEAGUE_TOURNAMENT": "Liga/Turnier",
@@ -506,5 +532,33 @@
     "TIME_WEEKS_AGO": "vor {{count}} Woche(n)",
     "TIME_MONTHS_AGO": "vor {{count}} Monat(en)",
     "TIME_YEARS_AGO": "vor {{count}} Jahr(en)"
+  },
+  "SPARE_DISPLAY": {
+    "COUNT": "Anzahl",
+    "COUNT_TOOLTIP": "Dies ist die Anzahl der stehenden Pins nach deinem ersten Wurf.",
+    "MISS": "Fehler",
+    "HIT": "Treffer",
+    "RATE": "Rate",
+    "OVERALL": "Gesamt",
+    "ONE_PIN": "1 Pin",
+    "N_PINS": "{{count}} Pins"
+  },
+  "CHART": {
+    "AVERAGE_OVER_TIME": "Durchschnitt über Zeit",
+    "DIFFERENCE_FROM_AVG": "Abweichung vom Durchschnitt",
+    "GAMES_PLAYED": "Gespielte Spiele",
+    "SCORE_DISTRIBUTION": "Score-Verteilung",
+    "AVERAGE_SCORE": "Durchschnittlicher Score",
+    "CONVERTED": "Getroffen",
+    "MISSED": "Verfehlt",
+    "ONE_PIN": "1 Pin",
+    "N_PINS": "{{count}} Pins",
+    "APPEARANCE_COUNT": "Anzahl Vorkommen",
+    "HIT_COUNT": "Trefferzahl",
+    "SPARE": "Spare",
+    "STRIKE": "Strike",
+    "OPEN": "Open",
+    "PERCENTAGE": "Prozentsatz",
+    "BOWLING_BALLS": "Bowling-Bälle"
   }
 }

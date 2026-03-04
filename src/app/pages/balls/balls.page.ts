@@ -359,11 +359,11 @@ export class BallsPage implements OnInit {
     }
 
     if (rg < 2.52) {
-      return 'Early Roll';
+      return this.translate.instant('BALLS.EARLY_ROLL');
     } else if (rg < 2.58) {
-      return 'Medium Roll';
+      return this.translate.instant('BALLS.MEDIUM_ROLL');
     } else {
-      return 'Late Roll';
+      return this.translate.instant('BALLS.LATE_ROLL');
     }
   }
 
@@ -374,11 +374,11 @@ export class BallsPage implements OnInit {
     }
 
     if (diff < 0.035) {
-      return 'Low Flare';
+      return this.translate.instant('BALLS.LOW_FLARE');
     } else if (diff < 0.05) {
-      return 'Medium Flare';
+      return this.translate.instant('BALLS.MEDIUM_FLARE');
     } else {
-      return 'High Flare';
+      return this.translate.instant('BALLS.HIGH_FLARE');
     }
   }
 

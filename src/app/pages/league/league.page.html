@@ -123,7 +123,7 @@
             <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged(league, $event)">
               @for (segment of segments; track segment) {
                 <ion-segment-button [value]="segment" [contentId]="segment + '-' + league">
-                  <ion-label class="segment-label">{{ segment }}</ion-label>
+                  <ion-label class="segment-label">{{ "LEAGUE.SEGMENT_" + segment.toUpperCase() | translate }}</ion-label>
                 </ion-segment-button>
               }
             </ion-segment>
@@ -136,19 +136,19 @@
               <section class="tab">
                 <app-stat-display
                   [statDefinitions]="statDefinitions"
-                  [title]="'Overall Stats'"
+                  [title]="'LEAGUE.OVERALL_STATS' | translate"
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
                 <app-ball-stats
-                  [title]="'Most used ball'"
+                  [title]="'LEAGUE.MOST_USED_BALL' | translate"
                   [bestBall]="mostPlayedBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
                 <app-ball-stats
-                  [title]="'Best ball'"
+                  [title]="'LEAGUE.BEST_BALL' | translate"
                   [bestBall]="bestBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
-                <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
+                <ion-list-header style="margin-bottom: 4px"> {{ "LEAGUE.SCORE_ANALYSIS" | translate }}</ion-list-header>
                 <div class="stat-container">
                   <canvas #scoreChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
                 </div>
@@ -157,10 +157,14 @@
 
             <ion-segment-content id="Spares-{{ league }}">
               <section class="tab">
-                <ion-list-header>Spares Overview</ion-list-header>
-                <app-spare-display [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
+                <ion-list-header>{{ "LEAGUE.SPARES_OVERVIEW" | translate }}</ion-list-header>
+                <app-spare-display
+                  [title]="'LEAGUE.SPARE_STATS' | translate"
+                  [prevStats]="overallStats()"
+                  [stats]="statsByLeague()[league]"
+                  id="league-spareStats">
                 </app-spare-display>
-                <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
+                <ion-list-header style="margin-bottom: 4px"> {{ "LEAGUE.SPARE_DISTRIBUTION" | translate }}</ion-list-header>
                 <div class="stat-container">
                   <canvas #pinChart style="width: 300px; height: 300px; max-height: 700px"></canvas>
                 </div>

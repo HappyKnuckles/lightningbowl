@@ -66,6 +66,7 @@ import { BowlingGameValidationService } from 'src/app/core/services/game-utils/b
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface MonthHeader {
   name: string;
@@ -118,6 +119,7 @@ interface MonthHeader {
     GenericTypeaheadComponent,
     BallSelectComponent,
     PinDeckFrameRowComponent,
+    TranslateModule,
   ],
 })
 export class GameComponent implements OnInit {
@@ -227,6 +229,7 @@ export class GameComponent implements OnInit {
     private validationService: BowlingGameValidationService,
     private gameUtilsService: GameUtilsService,
     private gameScoreCalculatorService: GameScoreCalculatorService,
+    private translate: TranslateService,
   ) {
     addIcons({
       trashOutline,
@@ -314,10 +317,10 @@ export class GameComponent implements OnInit {
           handler: async () => {
             try {
               await this.storageService.deleteGame(gameId);
-              this.toastService.showToast(ToastMessages.gameDeleteSuccess, 'remove-outline');
+              this.toastService.showToast(this.translate.instant(ToastMessages.gameDeleteSuccess), 'remove-outline');
             } catch (error) {
               console.error('Error deleting game:', error);
-              this.toastService.showToast(ToastMessages.gameDeleteError, 'bug', true);
+              this.toastService.showToast(this.translate.instant(ToastMessages.gameDeleteError), 'bug', true);
             }
           },
         },
@@ -415,11 +418,11 @@ export class GameComponent implements OnInit {
           url: fileUri.uri,
           dialogTitle: 'Share Game Score',
         });
-        this.toastService.showToast(ToastMessages.screenshotShareSuccess, 'share-social-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.screenshotShareSuccess), 'share-social-outline');
       }
     } catch (error) {
       console.error('Error taking screenshot and sharing', error);
-      this.toastService.showToast(ToastMessages.screenshotShareError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.screenshotShareError), 'bug', true);
     } finally {
       this.renderer.setStyle(childNode, 'width', originalWidth);
       this.accordionGroup.value = accordionGroupValues;
@@ -508,7 +511,7 @@ export class GameComponent implements OnInit {
 
       if (!this.isGameValid(updatedGame)) {
         this.hapticService.vibrate(ImpactStyle.Heavy);
-        this.toastService.showToast(ToastMessages.invalidInput, 'bug', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.invalidInput), 'bug', true);
         return;
       }
 
@@ -538,7 +541,7 @@ export class GameComponent implements OnInit {
         await this.storageService.saveGameToLocalStorage(updatedGame);
       }
 
-      this.toastService.showToast(ToastMessages.gameUpdateSuccess, 'refresh-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameUpdateSuccess), 'refresh-outline');
       this.isEditMode[game.gameId] = false;
       this.hapticService.vibrate(ImpactStyle.Light);
 
@@ -550,7 +553,7 @@ export class GameComponent implements OnInit {
       delete this.editedGameStates[game.gameId];
       delete this.delayedCloseMap[game.gameId];
     } catch (error) {
-      this.toastService.showToast(ToastMessages.gameUpdateError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameUpdateError), 'bug', true);
       console.error('Error saving game edit:', error);
     }
   }

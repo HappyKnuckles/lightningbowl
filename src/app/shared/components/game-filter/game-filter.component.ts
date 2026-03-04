@@ -32,6 +32,7 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-game-filter',
@@ -59,6 +60,7 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
     CommonModule,
     IonSelectOption,
     BallSelectComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

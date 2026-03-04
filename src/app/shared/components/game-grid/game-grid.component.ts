@@ -23,6 +23,7 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-game-grid',
@@ -47,6 +48,7 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
     BallSelectComponent,
     PinInputComponent,
     PinDeckFrameRowComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

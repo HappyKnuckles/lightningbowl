@@ -141,10 +141,7 @@
     "CHANGES_MADE": "进行了以下更改：",
     "LOAD_IT": "加载？",
     "CANCEL": "取消",
-    "LOAD": "加载",
-    "INSTALL_SUCCESS": "应用安装成功！",
-    "INSTALL_FAILED": "安装失败，请重试。",
-    "NAME_UPDATED": "名字已更新为 {{name}}"
+    "LOAD": "加载"
   },
   "TOAST": {
     "NO_IMAGE": "未上传图片。",

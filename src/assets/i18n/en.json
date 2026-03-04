@@ -141,10 +141,7 @@
     "CHANGES_MADE": "Following changes were made:",
     "LOAD_IT": "Load it?",
     "CANCEL": "Cancel",
-    "LOAD": "Load",
-    "INSTALL_SUCCESS": "App installed successfully!",
-    "INSTALL_FAILED": "Installation failed. Please try again.",
-    "NAME_UPDATED": "Name updated to {{name}}"
+    "LOAD": "Load"
   },
   "TOAST": {
     "NO_IMAGE": "No image uploaded.",

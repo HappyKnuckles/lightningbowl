@@ -141,10 +141,7 @@
     "CHANGES_MADE": "Se realizaron los siguientes cambios:",
     "LOAD_IT": "¿Cargar?",
     "CANCEL": "Cancelar",
-    "LOAD": "Cargar",
-    "INSTALL_SUCCESS": "¡Aplicación instalada exitosamente!",
-    "INSTALL_FAILED": "La instalación falló. Por favor, inténtelo de nuevo.",
-    "NAME_UPDATED": "Nombre actualizado a {{name}}"
+    "LOAD": "Cargar"
   },
   "TOAST": {
     "NO_IMAGE": "No se subió ninguna imagen.",

@@ -159,7 +159,7 @@
                     (ngModelChange)="updateSeries(game, game.league)"
                     [label]="'GAME.LEAGUE_TOURNAMENT' | translate"
                     [value]="game.league">
-                    <ion-select-option [value]="''">None</ion-select-option>
+                    <ion-select-option [value]="''">{{ "COMMON.NONE" | translate }}</ion-select-option>
                     <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
                   </ion-select>
                 </ion-item>

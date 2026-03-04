@@ -1,4 +1,4 @@
-import { ElementRef, Injectable } from '@angular/core';
+import { ElementRef, inject, Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { Ball } from '../../models/ball.model';
@@ -8,11 +8,14 @@ import { generatePinChart, generateSpareDistributionChart } from './generation/p
 import { generateThrowChart } from './generation/throw-chart-generator';
 import { generateBallDistributionChart } from './generation/ball-distribution-chart-generator';
 import { Chart } from 'chart.js';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChartGenerationService {
+  private translate = inject(TranslateService);
+
   /**
    * Generate score chart showing average over time and difference from average
    */
@@ -24,7 +27,11 @@ export class ChartGenerationService {
     onToggleView?: () => void,
     isReload?: boolean,
   ): Chart {
-    return generateScoreChart(scoreChart, games, existingChartInstance, viewMode, onToggleView, isReload);
+    return generateScoreChart(scoreChart, games, existingChartInstance, viewMode, onToggleView, isReload, {
+      averageOverTime: this.translate.instant('CHART.AVERAGE_OVER_TIME'),
+      differenceFromAvg: this.translate.instant('CHART.DIFFERENCE_FROM_AVG'),
+      gamesPlayed: this.translate.instant('CHART.GAMES_PLAYED'),
+    });
   }
 
   /**
@@ -36,7 +43,9 @@ export class ChartGenerationService {
     existingChartInstance: Chart | undefined,
     isReload?: boolean,
   ): Chart {
-    return generateScoreDistributionChart(scoreDistributionChart, games, existingChartInstance, isReload);
+    return generateScoreDistributionChart(scoreDistributionChart, games, existingChartInstance, isReload, {
+      scoreDistribution: this.translate.instant('CHART.SCORE_DISTRIBUTION'),
+    });
   }
 
   /**
@@ -50,14 +59,23 @@ export class ChartGenerationService {
     onToggleView?: () => void,
     isReload?: boolean,
   ): Chart {
-    return generateAverageScoreChart(scoreChart, games, existingChartInstance, viewMode, onToggleView, isReload);
+    return generateAverageScoreChart(scoreChart, games, existingChartInstance, viewMode, onToggleView, isReload, {
+      averageScore: this.translate.instant('CHART.AVERAGE_SCORE'),
+      gamesPlayed: this.translate.instant('CHART.GAMES_PLAYED'),
+    });
   }
 
   /**
    * Generate pin chart (radar) showing spare conversion rates
    */
   generatePinChart(pinChart: ElementRef, stats: Stats, existingChartInstance: Chart | undefined, isReload?: boolean): Chart {
-    return generatePinChart(pinChart, stats, existingChartInstance, isReload);
+    return generatePinChart(pinChart, stats, existingChartInstance, isReload, {
+      converted: this.translate.instant('CHART.CONVERTED'),
+      missed: this.translate.instant('CHART.MISSED'),
+      pinLabels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) =>
+        n === 1 ? this.translate.instant('CHART.ONE_PIN') : this.translate.instant('CHART.N_PINS', { count: n }),
+      ),
+    });
   }
 
   /**
@@ -69,14 +87,22 @@ export class ChartGenerationService {
     existingChartInstance: Chart | undefined,
     isReload?: boolean,
   ): Chart {
-    return generateSpareDistributionChart(spareDistributionChart, stats, existingChartInstance, isReload);
+    return generateSpareDistributionChart(spareDistributionChart, stats, existingChartInstance, isReload, {
+      appearanceCount: this.translate.instant('CHART.APPEARANCE_COUNT'),
+      hitCount: this.translate.instant('CHART.HIT_COUNT'),
+    });
   }
 
   /**
    * Generate throw chart (radar) showing strike, spare, and open percentages
    */
   generateThrowChart(throwChart: ElementRef, stats: Stats, existingChartInstance: Chart | undefined, isReload?: boolean): Chart {
-    return generateThrowChart(throwChart, stats, existingChartInstance, isReload);
+    return generateThrowChart(throwChart, stats, existingChartInstance, isReload, {
+      spare: this.translate.instant('CHART.SPARE'),
+      strike: this.translate.instant('CHART.STRIKE'),
+      open: this.translate.instant('CHART.OPEN'),
+      percentage: this.translate.instant('CHART.PERCENTAGE'),
+    });
   }
 
   /**
@@ -88,6 +114,8 @@ export class ChartGenerationService {
     existingChartInstance: Chart | undefined,
     isReload?: boolean,
   ): Chart {
-    return generateBallDistributionChart(ballDistributionChartCanvas, balls, existingChartInstance, isReload);
+    return generateBallDistributionChart(ballDistributionChartCanvas, balls, existingChartInstance, isReload, {
+      bowlingBalls: this.translate.instant('CHART.BOWLING_BALLS'),
+    });
   }
 }

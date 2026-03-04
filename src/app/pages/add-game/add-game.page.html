@@ -7,7 +7,7 @@
     </ion-buttons>
     <input type="file" id="upload" class="ion-hide" accept="image/*" />
     <ion-title (click)="presentActionSheet()" style="cursor: pointer">
-      New {{ selectedMode === "Single" ? "Game" : selectedMode }}
+      {{ selectedMode === 'Single' ? ('ADD_GAME.TITLE_SINGLE' | translate) : ('ADD_GAME.TITLE_SERIES' | translate: {mode: selectedMode}) }}
       <ion-icon [name]="sheetOpen ? 'chevron-up' : 'chevron-down'" size="small" style="vertical-align: middle"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
@@ -28,7 +28,7 @@
   }
 </ion-header>
 
-<ion-alert [isOpen]="isAlertOpen" header="Error" message="You didn't fill all inputs" [buttons]="['Dismiss']" (didDismiss)="isAlertOpen = false">
+<ion-alert [isOpen]="isAlertOpen" [header]="'ADD_GAME.ERROR_TITLE' | translate" [message]="'ADD_GAME.ERROR_MESSAGE' | translate" [buttons]="[('ADD_GAME.DISMISS' | translate)]" (didDismiss)="isAlertOpen = false">
 </ion-alert>
 
 <app-game-score-toolbar
@@ -92,7 +92,7 @@
       <ion-grid *ngIf="selectedMode !== 'Single'">
         <ion-row class="button-row">
           <ion-col>
-            <ion-button (click)="clearFrames(i)">Clear Score {{ i + 1 }}</ion-button>
+            <ion-button (click)="clearFrames(i)">{{ 'ADD_GAME.CLEAR_SCORE' | translate: {num: i + 1} }}</ion-button>
           </ion-col>
         </ion-row>
       </ion-grid>
@@ -102,25 +102,25 @@
   <ion-grid *ngIf="selectedMode === 'Single'">
     <ion-row class="button-row">
       <ion-col>
-        <ion-button (click)="clearFrames()">Clear Score</ion-button>
+        <ion-button (click)="clearFrames()">{{ 'ADD_GAME.CLEAR_SCORE_SINGLE' | translate }}</ion-button>
       </ion-col>
       <ion-col>
-        <ion-button (click)="calculateScore()">Save Score</ion-button>
+        <ion-button (click)="calculateScore()">{{ 'ADD_GAME.SAVE_SCORE' | translate }}</ion-button>
       </ion-col>
     </ion-row>
   </ion-grid>
 
   <ion-grid *ngIf="selectedMode !== 'Single'">
     <ion-row>
-      <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
-      <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>
+      <ion-col class="middle count">{{ 'ADD_GAME.SCORE_SERIES' | translate: {score: seriesCurrentScore()} }}</ion-col>
+      <ion-col class="middle count">{{ 'ADD_GAME.MAX_SERIES' | translate: {score: seriesMaxscore()} }}</ion-col>
     </ion-row>
     <ion-row class="button-row">
       <ion-col>
-        <ion-button (click)="clearFrames()">Clear All</ion-button>
+        <ion-button (click)="clearFrames()">{{ 'ADD_GAME.CLEAR_ALL' | translate }}</ion-button>
       </ion-col>
       <ion-col>
-        <ion-button (click)="calculateScore()">Save Series</ion-button>
+        <ion-button (click)="calculateScore()">{{ 'ADD_GAME.SAVE_SERIES' | translate }}</ion-button>
       </ion-col>
     </ion-row>
   </ion-grid>
@@ -132,16 +132,16 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button (click)="modal.dismiss()">Cancel</ion-button>
+          <ion-button (click)="modal.dismiss()">{{ 'ADD_GAME.CANCEL' | translate }}</ion-button>
         </ion-buttons>
-        <ion-title>Your game</ion-title>
+        <ion-title>{{ 'ADD_GAME.YOUR_GAME' | translate }}</ion-title>
         <ion-buttons slot="end">
-          <ion-button (click)="confirm(modal)" [strong]="true" [disabled]="!isGameValid(gameData)">Save</ion-button>
+          <ion-button (click)="confirm(modal)" [strong]="true" [disabled]="!isGameValid(gameData)">{{ 'ADD_GAME.SAVE' | translate }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <h2 class="ion-text-center">Edit wrong game data</h2>
+      <h2 class="ion-text-center">{{ 'ADD_GAME.EDIT_GAME_DATA' | translate }}</h2>
       <app-game-grid
         #modalGrid
         [ballSelectorId]="gameData.gameId + '-modal-ball-selector'"

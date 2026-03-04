@@ -6,7 +6,13 @@ import { calculatePinChartDataForRadar } from '../data-calculation/chart-data-ca
 /**
  * Generate pin chart (radar) showing spare conversion rates
  */
-export function generatePinChart(pinChart: ElementRef, stats: Stats, existingChartInstance: Chart | undefined, isReload?: boolean): Chart {
+export function generatePinChart(
+  pinChart: ElementRef,
+  stats: Stats,
+  existingChartInstance: Chart | undefined,
+  isReload?: boolean,
+  labels?: { converted: string; missed: string; pinLabels: string[] },
+): Chart {
   try {
     const { filteredSpareRates, filteredMissedCounts } = calculatePinChartDataForRadar(stats);
     const ctx = pinChart.nativeElement;
@@ -24,10 +30,10 @@ export function generatePinChart(pinChart: ElementRef, stats: Stats, existingCha
       return new Chart(ctx, {
         type: 'radar',
         data: {
-          labels: ['1 Pin', '2 Pins', '3 Pins', '4 Pins', '5 Pins', '6 Pins', '7 Pins', '8 Pins', '9 Pins', '10 Pins'],
+          labels: labels?.pinLabels ?? ['1 Pin', '2 Pins', '3 Pins', '4 Pins', '5 Pins', '6 Pins', '7 Pins', '8 Pins', '9 Pins', '10 Pins'],
           datasets: [
             {
-              label: 'Converted',
+              label: labels?.converted ?? 'Converted',
               data: filteredSpareRates,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
@@ -35,7 +41,7 @@ export function generatePinChart(pinChart: ElementRef, stats: Stats, existingCha
               pointHitRadius: 10,
             },
             {
-              label: 'Missed',
+              label: labels?.missed ?? 'Missed',
               data: filteredMissedCounts,
               backgroundColor: 'rgba(255, 99, 132, 0.2)',
               borderColor: 'rgba(255, 99, 132, 1)',
@@ -134,6 +140,7 @@ export function generateSpareDistributionChart(
   stats: Stats,
   existingChartInstance: Chart | undefined,
   isReload?: boolean,
+  labels?: { appearanceCount: string; hitCount: string },
 ): Chart {
   try {
     const ctx = spareDistributionChart.nativeElement;
@@ -159,14 +166,14 @@ export function generateSpareDistributionChart(
           labels: pinCounts,
           datasets: [
             {
-              label: 'Appearance Count',
+              label: labels?.appearanceCount ?? 'Appearance Count',
               data: appearanceCounts,
               backgroundColor: 'rgba(153, 102, 255, 0.1)',
               borderColor: 'rgba(153, 102, 255, .5)',
               borderWidth: 1,
             },
             {
-              label: 'Hit Count',
+              label: labels?.hitCount ?? 'Hit Count',
               data: hitCounts,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',

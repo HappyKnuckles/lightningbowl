@@ -8,7 +8,7 @@
       <div class="inner-stat-container">
         <div class="leave-container">
           <div class="leave-stats">
-            <p>No stats available.</p>
+            <p>{{ "STATS.NO_STATS_AVAILABLE" | translate }}</p>
           </div>
         </div>
       </div>
@@ -21,15 +21,15 @@
             </div>
             <div class="leave-stats">
               <ion-label>
-                <h3>Occurrences</h3>
+                <h3>{{ "STATS.OCCURRENCES" | translate }}</h3>
                 <p>{{ leave.occurrences }}</p>
               </ion-label>
               <ion-label>
-                <h3>Pickups</h3>
+                <h3>{{ "STATS.PICKUPS" | translate }}</h3>
                 <p>{{ leave.pickups }}</p>
               </ion-label>
               <ion-label>
-                <h3>Pickup %</h3>
+                <h3>{{ "STATS.PICKUP_PCT" | translate }}</h3>
                 <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
               </ion-label>
             </div>

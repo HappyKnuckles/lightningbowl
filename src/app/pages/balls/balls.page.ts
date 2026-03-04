@@ -52,6 +52,7 @@ import { BallSortOption, BallSortField, SortDirection } from 'src/app/core/model
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-balls',
@@ -88,6 +89,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     GenericFilterActiveComponent,
     SearchBlurDirective,
     SortHeaderComponent,
+    TranslateModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -190,6 +192,7 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline });
     this.searchSubject.subscribe((query) => {
@@ -250,7 +253,7 @@ export class BallsPage implements OnInit {
       await this.loadBalls();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballLoadError), 'bug', true);
     } finally {
       event.target.complete();
       this.isPageLoading.set(false);
@@ -267,10 +270,10 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       await this.storageService.removeFromArsenal(ball);
-      this.toastService.showToast(`${ball.ball_name} removed from Arsenal.`, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballRemoved, { name: ball.ball_name }), 'checkmark-outline');
     } catch (error) {
       console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);
-      this.toastService.showToast(ToastMessages.ballDeleteError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballDeleteError), 'bug', true);
     }
   }
 
@@ -278,10 +281,10 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       await this.storageService.saveBallToArsenal(ball);
-      this.toastService.showToast(`${ball.ball_name} added to Arsenal.`, 'add');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballAdded, { name: ball.ball_name }), 'add');
     } catch (error) {
       console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);
-      this.toastService.showToast(ToastMessages.ballSaveError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballSaveError), 'bug', true);
     }
   }
 
@@ -332,13 +335,13 @@ export class BallsPage implements OnInit {
         this.balls.set([...this.balls(), ...response]);
         this.currentPage++;
       } else if (this.networkService.isOffline) {
-        this.toastService.showToast('You are offline and no cached data is available.', 'information-circle-outline', true);
+        this.toastService.showToast(this.translate.instant(ToastMessages.offlineNoCache), 'information-circle-outline', true);
       } else {
         this.hasMoreData = false;
       }
     } catch (error) {
       console.error('Error fetching balls:', error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballLoadError), 'bug', true);
     } finally {
       if (!event) {
         this.loadingService.setLoading(false);
@@ -356,11 +359,11 @@ export class BallsPage implements OnInit {
     }
 
     if (rg < 2.52) {
-      return 'Early Roll';
+      return this.translate.instant('BALLS.EARLY_ROLL');
     } else if (rg < 2.58) {
-      return 'Medium Roll';
+      return this.translate.instant('BALLS.MEDIUM_ROLL');
     } else {
-      return 'Late Roll';
+      return this.translate.instant('BALLS.LATE_ROLL');
     }
   }
 
@@ -371,11 +374,11 @@ export class BallsPage implements OnInit {
     }
 
     if (diff < 0.035) {
-      return 'Low Flare';
+      return this.translate.instant('BALLS.LOW_FLARE');
     } else if (diff < 0.05) {
-      return 'Medium Flare';
+      return this.translate.instant('BALLS.MEDIUM_FLARE');
     } else {
-      return 'High Flare';
+      return this.translate.instant('BALLS.HIGH_FLARE');
     }
   }
 
@@ -387,11 +390,11 @@ export class BallsPage implements OnInit {
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
       } else {
-        this.toastService.showToast(`No similar balls found for core: ${ball.core_name}.`, 'information-circle-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.noSimilarBallsCore, { name: ball.core_name }), 'information-circle-outline');
       }
     } catch (error) {
       console.error('Error fetching core balls:', error);
-      this.toastService.showToast(`Error fetching balls for core ${ball.core_name}`, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCore, { name: ball.core_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -405,11 +408,14 @@ export class BallsPage implements OnInit {
       if (this.coverstockBalls.length > 0) {
         await this.coverstockModal.present();
       } else {
-        this.toastService.showToast(`No similar balls found for coverstock: ${ball.coverstock_name}.`, 'information-circle-outline');
+        this.toastService.showToast(
+          this.translate.instant(ToastMessages.noSimilarBallsCoverstock, { name: ball.coverstock_name }),
+          'information-circle-outline',
+        );
       }
     } catch (error) {
       console.error('Error fetching coverstock balls:', error);
-      this.toastService.showToast(`Error fetching balls for coverstock ${ball.coverstock_name}`, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCoverstock, { name: ball.coverstock_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -433,11 +439,14 @@ export class BallsPage implements OnInit {
           similar_count: this.movementBalls.length,
         });
       } else {
-        this.toastService.showToast(`No balls found with similar reaction to ${ball.ball_name}.`, 'information-circle-outline');
+        this.toastService.showToast(
+          this.translate.instant(ToastMessages.noSimilarBallsReaction, { name: ball.ball_name }),
+          'information-circle-outline',
+        );
       }
     } catch (error) {
       console.error('Error fetching similar reaction balls:', error);
-      this.toastService.showToast(`Error fetching balls with similar reaction`, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsReaction), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -472,7 +481,7 @@ export class BallsPage implements OnInit {
     const isFavorited = this.favoritesService.toggleBallFavorite(ball.ball_id, ball.core_weight);
 
     if (isFavorited) {
-      this.toastService.showToast(`Added ${ball.ball_name} to favorites`, 'heart');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballAddedFavorites, { name: ball.ball_name }), 'heart');
 
       void this.analyticsService.trackEvent('ball_favorited', {
         ball_name: ball.ball_name,
@@ -480,7 +489,7 @@ export class BallsPage implements OnInit {
         ball_id: ball.ball_id,
       });
     } else {
-      this.toastService.showToast(`Removed ${ball.ball_name} from favorites`, 'heart-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballRemovedFavorites, { name: ball.ball_name }), 'heart-outline');
 
       void this.analyticsService.trackEvent('ball_unfavorited', {
         ball_name: ball.ball_name,

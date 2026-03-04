@@ -6,7 +6,13 @@ import { calculateThrowChartDataPercentages } from '../data-calculation/chart-da
 /**
  * Generate throw chart (radar) showing strike, spare, and open percentages
  */
-export function generateThrowChart(throwChart: ElementRef, stats: Stats, existingChartInstance: Chart | undefined, isReload?: boolean): Chart {
+export function generateThrowChart(
+  throwChart: ElementRef,
+  stats: Stats,
+  existingChartInstance: Chart | undefined,
+  isReload?: boolean,
+  labels?: { spare: string; strike: string; open: string; percentage: string },
+): Chart {
   try {
     const { opens, spares, strikes } = calculateThrowChartDataPercentages(stats);
     const ctx = throwChart.nativeElement;
@@ -23,10 +29,10 @@ export function generateThrowChart(throwChart: ElementRef, stats: Stats, existin
       return new Chart(ctx, {
         type: 'radar',
         data: {
-          labels: ['Spare', 'Strike', 'Open'],
+          labels: [labels?.spare ?? 'Spare', labels?.strike ?? 'Strike', labels?.open ?? 'Open'],
           datasets: [
             {
-              label: 'Percentage',
+              label: labels?.percentage ?? 'Percentage',
               data: [spares, strikes, opens],
               backgroundColor: 'rgba(54, 162, 235, 0.2)',
               borderColor: 'rgb(54, 162, 235)',

@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Arsenal</ion-title>
+    <ion-title>{{ 'ARSENAL.TITLE' | translate }}</ion-title>
     <ion-buttons slot="end">
       <ion-button class="action-sheet" id="addBall">
         <ion-icon slot="icon-only" name="add"></ion-icon>
@@ -20,8 +20,8 @@
   @if (storageService.arsenal().length > 0) {
     <ion-toolbar>
       <ion-segment [(ngModel)]="selectedSegment">
-        <ion-segment-button value="arsenal" contentId="arsenal">Arsenal</ion-segment-button>
-        <ion-segment-button value="compare" contentId="compare">Compare Chart</ion-segment-button>
+        <ion-segment-button value="arsenal" contentId="arsenal">{{ 'ARSENAL.TITLE' | translate }}</ion-segment-button>
+        <ion-segment-button value="compare" contentId="compare">{{ 'ARSENAL.COMPARE_CHART' | translate }}</ion-segment-button>
       </ion-segment>
     </ion-toolbar>
   }
@@ -73,7 +73,7 @@
   </ion-segment-view>
 
   <ng-container *ngIf="storageService.arsenal().length <= 0">
-    <ion-text class="no-game-text"> You have no balls in your arsenal. Add a ball to get started! </ion-text>
+    <ion-text class="no-game-text"> {{ 'ARSENAL.NO_BALLS' | translate }} </ion-text>
   </ng-container>
   <!-- <ng-template #content>
     <ion-list>
@@ -132,7 +132,7 @@
           aria-label="View coverstock balls">
           <ion-ripple-effect></ion-ripple-effect>
           <ion-list-header>
-            <ion-label>Coverstock</ion-label>
+            <ion-label>{{ 'ARSENAL.COVERSTOCK' | translate }}</ion-label>
           </ion-list-header>
           <div class="coverstock-container">
             <div class="coverstock-image">
@@ -158,7 +158,7 @@
           aria-label="View core balls">
           <ion-ripple-effect></ion-ripple-effect>
           <ion-list-header>
-            <ion-label>Core</ion-label>
+            <ion-label>{{ 'ARSENAL.CORE' | translate }}</ion-label>
           </ion-list-header>
           <div class="core-container">
             <div class="core-image">

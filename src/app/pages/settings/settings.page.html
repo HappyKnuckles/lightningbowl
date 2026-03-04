@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Settings</ion-title>
+    <ion-title>{{ "SETTINGS.TITLE" | translate }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -10,7 +10,7 @@
       <ion-icon name="person-circle-outline" slot="start"></ion-icon>
       <ion-input
         class="ion-text-right"
-        label="Your name"
+        [label]="'SETTINGS.YOUR_NAME' | translate"
         type="text"
         [value]="userService.username()"
         placeholder="{{ userService.username() }}"
@@ -21,14 +21,14 @@
     <ion-item>
       <ion-icon name="color-palette-outline" slot="start"></ion-icon>
       <ion-select
-        label="Color Theme"
+        [label]="'SETTINGS.COLOR_THEME' | translate"
         interface="popover"
         [(ngModel)]="currentColor"
         [ngClass]="currentColor?.toLowerCase()"
         placeholder="{{ currentColor }}"
         (ionChange)="changeColor()">
         <ion-select-option *ngFor="let color of optionsWithClasses; let i = index" [value]="color.name" [ngClass]="color.class">
-          {{ color.name }}
+          {{ "SETTINGS.THEME_" + color.name.toUpperCase() | translate }}
         </ion-select-option>
       </ion-select>
     </ion-item>
@@ -36,12 +36,12 @@
     <ion-item>
       <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
       <ion-select
-        label="Pin Input Mode"
+        [label]="'SETTINGS.PIN_INPUT_MODE' | translate"
         interface="action-sheet"
         [value]="storageService.pinInputMode() ? 'hit' : 'missing'"
         (ionChange)="savePinInputMode($event.detail.value)">
-        <ion-select-option value="missing">Missing Pins</ion-select-option>
-        <ion-select-option value="hit">Hit Pins</ion-select-option>
+        <ion-select-option value="missing">{{ "SETTINGS.MISSING_PINS" | translate }}</ion-select-option>
+        <ion-select-option value="hit">{{ "SETTINGS.HIT_PINS" | translate }}</ion-select-option>
       </ion-select>
     </ion-item>
 
@@ -49,13 +49,13 @@
 
     <ion-item button id="spare-names-modal">
       <ion-icon src="/assets/svg/pin.svg" slot="start"></ion-icon>
-      <ion-label>Spare Names</ion-label>
+      <ion-label>{{ "SETTINGS.SPARE_NAMES" | translate }}</ion-label>
     </ion-item>
 
     <ion-item>
       <ion-icon src="/assets/svg/target-82-svgrepo-com.svg" slot="start"></ion-icon>
       <ion-input
-        label="Goal Average"
+        [label]="'SETTINGS.GOAL_AVERAGE' | translate"
         class="ion-text-right"
         (ionChange)="getGameCountForAverage($event)"
         placeholder="230"
@@ -65,27 +65,41 @@
         clearOnEdit="true"></ion-input>
     </ion-item>
 
+    <ion-item>
+      <ion-icon name="language-outline" slot="start"></ion-icon>
+      <ion-select
+        [label]="'SETTINGS.LANGUAGE' | translate"
+        interface="popover"
+        [value]="languageService.getCurrentLanguage()"
+        (ionChange)="changeLanguage($event.detail.value)">
+        <ion-select-option value="en">English</ion-select-option>
+        <ion-select-option value="de">Deutsch</ion-select-option>
+        <ion-select-option value="es">Español</ion-select-option>
+        <ion-select-option value="zh">中文</ion-select-option>
+      </ion-select>
+    </ion-item>
+
     <!-- Issues & Features Section -->
     <ion-item button (click)="openGithubIssueModal()">
       <ion-icon name="bug-outline" slot="start"></ion-icon>
-      <ion-label>Issues & Features</ion-label>
+      <ion-label>{{ "SETTINGS.ISSUES_FEATURES" | translate }}</ion-label>
     </ion-item>
 
     <ion-item id="feedback-modal" class="ion-activatable ripple-parent rectangle">
       <ion-icon name="mail-outline" slot="start"></ion-icon>
-      <ion-label>Feedback/Requests</ion-label>
-      <p class="link">Open form</p>
+      <ion-label>{{ "SETTINGS.FEEDBACK_REQUESTS" | translate }}</ion-label>
+      <p class="link">{{ "SETTINGS.OPEN_FORM" | translate }}</p>
     </ion-item>
 
     <ion-item (click)="updateApp()" button [detail]="false" *ngIf="updateAvailable">
       <ion-icon name="refresh-circle-outline" slot="start"></ion-icon>
-      <ion-label>Load update</ion-label>
-      <ion-button slot="end"> Update </ion-button>
+      <ion-label>{{ "SETTINGS.LOAD_UPDATE" | translate }}</ion-label>
+      <ion-button slot="end"> {{ "SETTINGS.UPDATE" | translate }} </ion-button>
     </ion-item>
   </ion-list>
 
   @if (isTestEnvironment) {
-    <div style="text-align: center; margin-top: 90%; color: gray; font-size: 13px">This is the test server. Used for experimental features.</div>
+    <div style="text-align: center; margin-top: 90%; color: gray; font-size: 13px">{{ "SETTINGS.TEST_SERVER_MSG" | translate }}</div>
   }
 </ion-content>
 
@@ -98,7 +112,7 @@
             <ion-icon name="chevron-back"></ion-icon>
           </ion-button>
         </ion-buttons>
-        <ion-title>Spare Names</ion-title>
+        <ion-title>{{ "SETTINGS.SPARE_NAMES_TITLE" | translate }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
@@ -112,26 +126,26 @@
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button color="medium" (click)="feedback.dismiss()">Cancel</ion-button>
+          <ion-button color="medium" (click)="feedback.dismiss()">{{ "SETTINGS.CANCEL" | translate }}</ion-button>
         </ion-buttons>
-        <ion-title>Feedback/Request</ion-title>
+        <ion-title>{{ "SETTINGS.FEEDBACK_TITLE" | translate }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-card>
         <ion-card-header>
-          <ion-card-title>Contact Us</ion-card-title>
+          <ion-card-title>{{ "SETTINGS.FEEDBACK_CONTACT" | translate }}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <form #feedbackForm="ngForm" (ngSubmit)="submitFeedback(feedbackForm)">
             <ion-item>
               <ion-input
-                label="Your email"
+                [label]="'SETTINGS.FEEDBACK_EMAIL' | translate"
                 pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,4}$"
                 labelPlacement="floating"
                 type="email"
                 placeholder="email@domain.com"
-                errorText="Invalid email address."
+                [errorText]="'SETTINGS.FEEDBACK_INVALID_EMAIL' | translate"
                 [(ngModel)]="userEmail"
                 name="userEmail"
                 required></ion-input>
@@ -141,18 +155,20 @@
               <ion-textarea
                 maxlength="500"
                 counter="true"
-                label="Feedback"
+                [label]="'SETTINGS.FEEDBACK_MESSAGE' | translate"
                 labelPlacement="floating"
-                placeholder="Enter your feedback"
+                [placeholder]="'SETTINGS.FEEDBACK_PLACEHOLDER' | translate"
                 [(ngModel)]="feedbackMessage"
                 name="feedbackMessage"
                 [autoGrow]="true"
                 required
                 #feedbackInput="ngModel"
-                errorText="Feedback is required."></ion-textarea>
+                [errorText]="'SETTINGS.FEEDBACK_REQUIRED' | translate"></ion-textarea>
             </ion-item>
 
-            <ion-button expand="full" color="primary" type="submit" [disabled]="feedbackForm.invalid"> Submit Feedback </ion-button>
+            <ion-button expand="full" color="primary" type="submit" [disabled]="feedbackForm.invalid">
+              {{ "SETTINGS.SUBMIT_FEEDBACK" | translate }}
+            </ion-button>
           </form>
         </ion-card-content>
       </ion-card>

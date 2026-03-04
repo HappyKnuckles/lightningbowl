@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Pattern Library</ion-title>
+    <ion-title>{{ "PATTERN.TITLE" | translate }}</ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <app-sort-header
         #sortHeader
@@ -19,7 +19,7 @@
     <ion-searchbar
       appSearchBlur
       (ionInput)="searchPatterns($event)"
-      placeholder="Search for a pattern"
+      [placeholder]="'PATTERN.SEARCH_PLACEHOLDER' | translate"
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
   </ion-toolbar>
@@ -64,7 +64,7 @@
     }
   } @else {
     <ng-container *ngIf="patterns.length <= 0; else allPatterns">
-      <ion-text class="no-game-text"> No patterns found! </ion-text>
+      <ion-text class="no-game-text"> {{ "PATTERN.NO_PATTERNS" | translate }} </ion-text>
     </ng-container>
     <ng-template #allPatterns>
       @for (pattern of displayedPatterns; track pattern.url; let i = $index) {
@@ -156,11 +156,11 @@
               <ion-content>
                 <ion-item button [href]="pattern.pdf_url" target="_blank">
                   <ion-icon name="document-outline" slot="start"></ion-icon>
-                  <ion-label>Download PDF</ion-label>
+                  <ion-label>{{ "PATTERN.DOWNLOAD_PDF" | translate }}</ion-label>
                 </ion-item>
                 <ion-item button [href]="pattern.kosi_url" target="_blank">
                   <ion-icon name="link-outline" slot="start"></ion-icon>
-                  <ion-label>Download Kosi</ion-label>
+                  <ion-label>{{ "PATTERN.DOWNLOAD_KOSI" | translate }}</ion-label>
                 </ion-item>
               </ion-content>
             </ng-template>

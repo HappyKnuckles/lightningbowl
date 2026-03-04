@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>{{ 'SETTINGS.TITLE' | translate }}</ion-title>
+    <ion-title>{{ "SETTINGS.TITLE" | translate }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -28,7 +28,7 @@
         placeholder="{{ currentColor }}"
         (ionChange)="changeColor()">
         <ion-select-option *ngFor="let color of optionsWithClasses; let i = index" [value]="color.name" [ngClass]="color.class">
-          {{ color.name }}
+          {{ "SETTINGS.THEME_" + color.name.toUpperCase() | translate }}
         </ion-select-option>
       </ion-select>
     </ion-item>
@@ -40,8 +40,8 @@
         interface="action-sheet"
         [value]="storageService.pinInputMode() ? 'hit' : 'missing'"
         (ionChange)="savePinInputMode($event.detail.value)">
-        <ion-select-option value="missing">{{ 'SETTINGS.MISSING_PINS' | translate }}</ion-select-option>
-        <ion-select-option value="hit">{{ 'SETTINGS.HIT_PINS' | translate }}</ion-select-option>
+        <ion-select-option value="missing">{{ "SETTINGS.MISSING_PINS" | translate }}</ion-select-option>
+        <ion-select-option value="hit">{{ "SETTINGS.HIT_PINS" | translate }}</ion-select-option>
       </ion-select>
     </ion-item>
 
@@ -49,7 +49,7 @@
 
     <ion-item button id="spare-names-modal">
       <ion-icon src="/assets/svg/pin.svg" slot="start"></ion-icon>
-      <ion-label>{{ 'SETTINGS.SPARE_NAMES' | translate }}</ion-label>
+      <ion-label>{{ "SETTINGS.SPARE_NAMES" | translate }}</ion-label>
     </ion-item>
 
     <ion-item>
@@ -82,24 +82,24 @@
     <!-- Issues & Features Section -->
     <ion-item button (click)="openGithubIssueModal()">
       <ion-icon name="bug-outline" slot="start"></ion-icon>
-      <ion-label>{{ 'SETTINGS.ISSUES_FEATURES' | translate }}</ion-label>
+      <ion-label>{{ "SETTINGS.ISSUES_FEATURES" | translate }}</ion-label>
     </ion-item>
 
     <ion-item id="feedback-modal" class="ion-activatable ripple-parent rectangle">
       <ion-icon name="mail-outline" slot="start"></ion-icon>
-      <ion-label>{{ 'SETTINGS.FEEDBACK_REQUESTS' | translate }}</ion-label>
-      <p class="link">{{ 'SETTINGS.OPEN_FORM' | translate }}</p>
+      <ion-label>{{ "SETTINGS.FEEDBACK_REQUESTS" | translate }}</ion-label>
+      <p class="link">{{ "SETTINGS.OPEN_FORM" | translate }}</p>
     </ion-item>
 
     <ion-item (click)="updateApp()" button [detail]="false" *ngIf="updateAvailable">
       <ion-icon name="refresh-circle-outline" slot="start"></ion-icon>
-      <ion-label>{{ 'SETTINGS.LOAD_UPDATE' | translate }}</ion-label>
-      <ion-button slot="end"> {{ 'SETTINGS.UPDATE' | translate }} </ion-button>
+      <ion-label>{{ "SETTINGS.LOAD_UPDATE" | translate }}</ion-label>
+      <ion-button slot="end"> {{ "SETTINGS.UPDATE" | translate }} </ion-button>
     </ion-item>
   </ion-list>
 
   @if (isTestEnvironment) {
-    <div style="text-align: center; margin-top: 90%; color: gray; font-size: 13px">{{ 'SETTINGS.TEST_SERVER_MSG' | translate }}</div>
+    <div style="text-align: center; margin-top: 90%; color: gray; font-size: 13px">{{ "SETTINGS.TEST_SERVER_MSG" | translate }}</div>
   }
 </ion-content>
 
@@ -112,7 +112,7 @@
             <ion-icon name="chevron-back"></ion-icon>
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ 'SETTINGS.SPARE_NAMES_TITLE' | translate }}</ion-title>
+        <ion-title>{{ "SETTINGS.SPARE_NAMES_TITLE" | translate }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
@@ -126,15 +126,15 @@
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button color="medium" (click)="feedback.dismiss()">{{ 'SETTINGS.CANCEL' | translate }}</ion-button>
+          <ion-button color="medium" (click)="feedback.dismiss()">{{ "SETTINGS.CANCEL" | translate }}</ion-button>
         </ion-buttons>
-        <ion-title>{{ 'SETTINGS.FEEDBACK_TITLE' | translate }}</ion-title>
+        <ion-title>{{ "SETTINGS.FEEDBACK_TITLE" | translate }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-card>
         <ion-card-header>
-          <ion-card-title>{{ 'SETTINGS.FEEDBACK_CONTACT' | translate }}</ion-card-title>
+          <ion-card-title>{{ "SETTINGS.FEEDBACK_CONTACT" | translate }}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <form #feedbackForm="ngForm" (ngSubmit)="submitFeedback(feedbackForm)">
@@ -166,7 +166,9 @@
                 [errorText]="'SETTINGS.FEEDBACK_REQUIRED' | translate"></ion-textarea>
             </ion-item>
 
-            <ion-button expand="full" color="primary" type="submit" [disabled]="feedbackForm.invalid"> {{ 'SETTINGS.SUBMIT_FEEDBACK' | translate }} </ion-button>
+            <ion-button expand="full" color="primary" type="submit" [disabled]="feedbackForm.invalid">
+              {{ "SETTINGS.SUBMIT_FEEDBACK" | translate }}
+            </ion-button>
           </form>
         </ion-card-content>
       </ion-card>

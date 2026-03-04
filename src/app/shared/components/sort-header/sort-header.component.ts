@@ -5,12 +5,26 @@ import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { swapVertical } from 'ionicons/icons';
 import { SortOption, BallSortField, PatternSortField, GameSortField } from 'src/app/core/models/sort.model';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-sort-header',
   templateUrl: './sort-header.component.html',
   styleUrls: ['./sort-header.component.scss'],
-  imports: [CommonModule, FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonButton,
+    IonIcon,
+    IonPopover,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonRadioGroup,
+    IonRadio,
+    IonCheckbox,
+    TranslateModule,
+  ],
 })
 export class SortHeaderComponent implements OnInit {
   sortOptions = model.required<SortOption<BallSortField | PatternSortField | GameSortField>[]>();

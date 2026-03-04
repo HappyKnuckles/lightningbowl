@@ -5,20 +5,20 @@
         <ion-icon name="chevron-back"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Issues & Features</ion-title>
+    <ion-title>{{ "ISSUES.TITLE" | translate }}</ion-title>
     <!-- Filter Section -->
   </ion-toolbar>
   <ion-toolbar>
     <ion-select
-      label="Filter by Labels"
+      [label]="'ISSUES.FILTER_BY_LABELS' | translate"
       multiple="true"
       [(ngModel)]="selectedLabels"
       (ionChange)="onLabelFilterChange()"
-      placeholder="Select labels to filter">
-      <ion-select-option value="">All</ion-select-option>
-      <ion-select-option value="feature">Feature</ion-select-option>
-      <ion-select-option value="bug">Bug</ion-select-option>
-      <ion-select-option value="enhancement">Enhancement</ion-select-option>
+      [placeholder]="'ISSUES.SELECT_LABELS' | translate">
+      <ion-select-option value="">{{ "COMMON.ALL" | translate }}</ion-select-option>
+      <ion-select-option value="feature">{{ "ISSUES.LABEL_FEATURE" | translate }}</ion-select-option>
+      <ion-select-option value="bug">{{ "ISSUES.LABEL_BUG" | translate }}</ion-select-option>
+      <ion-select-option value="enhancement">{{ "ISSUES.LABEL_ENHANCEMENT" | translate }}</ion-select-option>
     </ion-select>
   </ion-toolbar>
 </ion-header>
@@ -26,7 +26,7 @@
   <!-- Loading State -->
   <div *ngIf="loading" style="text-align: center; padding: 40px">
     <ion-spinner></ion-spinner>
-    <p>Loading issues...</p>
+    <p>{{ "ISSUES.LOADING" | translate }}</p>
   </div>
 
   <!-- Error State -->
@@ -37,14 +37,14 @@
     </p>
     <ion-button fill="clear" size="small" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" target="_blank" style="margin-top: 16px">
       <ion-icon name="open-outline" slot="start"></ion-icon>
-      View Issues on GitHub
+      {{ "ISSUES.VIEW_ON_GITHUB" | translate }}
     </ion-button>
   </div>
 
   <!-- Empty State -->
   <div *ngIf="!loading && !error && issues.length === 0" style="text-align: center; padding: 40px">
     <ion-icon name="document-outline" size="large" color="medium"></ion-icon>
-    <p style="margin-top: 16px">No issues found for the selected filters.</p>
+    <p style="margin-top: 16px">{{ "ISSUES.NO_ISSUES" | translate }}</p>
   </div>
 
   <!-- Issues List -->
@@ -76,14 +76,14 @@
           {{ issue.body }}
         </p>
         <ng-template #noDescription>
-          <p style="font-style: italic; color: var(--ion-color-medium)">No description provided.</p>
+          <p style="font-style: italic; color: var(--ion-color-medium)">{{ "ISSUES.NO_DESCRIPTION" | translate }}</p>
         </ng-template>
 
         <div class="issue-meta">
-          <span class="created-date">Created {{ getRelativeTime(issue.created_at) }}</span>
+          <span class="created-date">{{ "ISSUES.CREATED" | translate }} {{ getRelativeTime(issue.created_at) }}</span>
           <ion-button fill="clear" size="small" [href]="issue.html_url" target="_blank">
             <ion-icon name="open-outline" slot="start"></ion-icon>
-            View on GitHub
+            {{ "ISSUES.VIEW_ON_GITHUB_LINK" | translate }}
           </ion-button>
         </div>
       </ion-card-content>

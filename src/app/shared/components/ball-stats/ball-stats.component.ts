@@ -2,10 +2,11 @@ import { Component, input } from '@angular/core';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { IonImg, IonListHeader, IonList } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-ball-stats',
-  imports: [IonList, IonListHeader, IonImg],
+  imports: [IonList, IonListHeader, IonImg, TranslateModule],
   templateUrl: './ball-stats.component.html',
   styleUrl: './ball-stats.component.scss',
 })

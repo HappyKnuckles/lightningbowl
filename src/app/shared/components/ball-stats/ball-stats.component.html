@@ -3,7 +3,7 @@
   <div class="stat-container">
     @if (bestBall().gameCount === 0) {
       <div class="inner-stat-container">
-        <p>No Games with balls saved.</p>
+        <p>{{ "STATS.NO_BALL_GAMES" | translate }}</p>
       </div>
     } @else {
       <div class="header-container">
@@ -16,15 +16,15 @@
         <ion-img [src]="storageService.url + bestBall().ballImage"></ion-img>
         <div class="ball-stats">
           <div class="stat-line">
-            <span class="stat-label">Avg:</span>
+            <span class="stat-label">{{ "COMMON.AVG" | translate }}:</span>
             <span class="stat-value">{{ bestBall().ballAvg }}</span>
           </div>
           <div class="stat-line">
-            <span class="stat-label">High:</span>
+            <span class="stat-label">{{ "COMMON.HIGH" | translate }}:</span>
             <span class="stat-value">{{ bestBall().ballHighestGame }}</span>
           </div>
           <div class="stat-line">
-            <span class="stat-label">Low:</span>
+            <span class="stat-label">{{ "COMMON.LOW" | translate }}:</span>
             <span class="stat-value">{{ bestBall().ballLowestGame }}</span>
           </div>
         </div>

@@ -24,6 +24,7 @@ import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-github-issues-modal',
@@ -48,6 +49,7 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
     IonContent,
     CommonModule,
     FormsModule,
+    TranslateModule,
   ],
 })
 export class GithubIssuesModalComponent implements OnInit {
@@ -57,7 +59,10 @@ export class GithubIssuesModalComponent implements OnInit {
   selectedLabels: string[] = ['']; // Empty array to show all issues by default
   error: string | null = null;
 
-  constructor(private gitHubService: GitHubService) {
+  constructor(
+    private gitHubService: GitHubService,
+    private translate: TranslateService,
+  ) {
     addIcons({
       documentOutline,
       openOutline,
@@ -77,8 +82,7 @@ export class GithubIssuesModalComponent implements OnInit {
     } catch (error) {
       console.error('Failed to load issues:', error);
       this.issues = [];
-      this.error =
-        'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.';
+      this.error = this.translate.instant('ISSUES.LOAD_ERROR');
     } finally {
       this.loading = false;
     }
@@ -102,20 +106,20 @@ export class GithubIssuesModalComponent implements OnInit {
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
     if (diffInDays === 0) {
-      return 'today';
+      return this.translate.instant('ISSUES.TIME_TODAY');
     } else if (diffInDays === 1) {
-      return 'yesterday';
+      return this.translate.instant('ISSUES.TIME_YESTERDAY');
     } else if (diffInDays < 7) {
-      return `${diffInDays} days ago`;
+      return this.translate.instant('ISSUES.TIME_DAYS_AGO', { count: diffInDays });
     } else if (diffInDays < 30) {
       const weeks = Math.floor(diffInDays / 7);
-      return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+      return this.translate.instant('ISSUES.TIME_WEEKS_AGO', { count: weeks });
     } else if (diffInDays < 365) {
       const months = Math.floor(diffInDays / 30);
-      return months === 1 ? '1 month ago' : `${months} months ago`;
+      return this.translate.instant('ISSUES.TIME_MONTHS_AGO', { count: months });
     } else {
       const years = Math.floor(diffInDays / 365);
-      return years === 1 ? '1 year ago' : `${years} years ago`;
+      return this.translate.instant('ISSUES.TIME_YEARS_AGO', { count: years });
     }
   }
 

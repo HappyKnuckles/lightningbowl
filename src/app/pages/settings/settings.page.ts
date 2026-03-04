@@ -194,7 +194,10 @@ export class SettingsPage implements OnInit {
 
   changeColor(): void {
     this.themeService.saveColorTheme(this.currentColor!);
-    this.toastService.showToast(`Changed theme to ${this.currentColor}.`, 'checkmark-outline');
+    this.toastService.showToast(
+      this.translate.instant('TOAST.THEME_CHANGED', { theme: this.translate.instant('SETTINGS.THEME_' + this.currentColor!.toUpperCase()) }),
+      'checkmark-outline',
+    );
 
     void this.analyticsService.trackThemeChanged(this.currentColor!);
   }

@@ -4,6 +4,15 @@ import { Game } from 'src/app/core/models/game.model';
 import { UtilsService } from '../utils/utils.service';
 import { StorageService } from '../storage/storage.service';
 
+export type CalendarMode = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall';
+
+export interface CalendarDateRange {
+  start: Date;
+  end: Date;
+  label: string;
+  mode: CalendarMode;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -22,15 +31,42 @@ export class GameFilterService {
     endDate: '',
   };
 
+  // Calendar navigation state
+  calendarMode = signal<CalendarMode>('monthly');
+  calendarOffset = signal<number>(0);
+
+  calendarDateRange = computed<CalendarDateRange>(() => {
+    return this.calculateCalendarDateRange(this.calendarMode(), this.calendarOffset());
+  });
+
+  calendarLabel = computed(() => this.calendarDateRange().label);
+
+  nextPeriod(): void {
+    if (this.calendarMode() !== 'overall') {
+      this.calendarOffset.update((o) => o + 1);
+    }
+  }
+
+  prevPeriod(): void {
+    if (this.calendarMode() !== 'overall') {
+      this.calendarOffset.update((o) => o - 1);
+    }
+  }
+
+  setCalendarMode(mode: CalendarMode): void {
+    this.calendarMode.set(mode);
+    this.calendarOffset.set(0);
+  }
+
   activeFilterCount: Signal<number> = computed(() => {
     return Object.keys(this.filters()).reduce((count, key) => {
+      // Date range is handled by calendar navigation, not counted as an active filter
+      if (key === 'startDate' || key === 'endDate' || key === 'timeRange') {
+        return count;
+      }
       const filterValue = this.filters()[key as keyof GameFilter];
       const defaultValue = this.defaultFilters[key as keyof GameFilter];
-      if (key === 'startDate' || key === 'endDate') {
-        if (!this.utilsService.areDatesEqual(filterValue as string, defaultValue as string)) {
-          return count + 1;
-        }
-      } else if (Array.isArray(filterValue) && Array.isArray(defaultValue)) {
+      if (Array.isArray(filterValue) && Array.isArray(defaultValue)) {
         if (!this.utilsService.areArraysEqual(filterValue, defaultValue)) {
           return count + 1;
         }
@@ -44,7 +80,8 @@ export class GameFilterService {
   #filteredGames = computed(() => {
     const games = this.storageService.games();
     const filters = this.filters();
-    return this.filterGames(games, filters);
+    const calRange = this.calendarMode() === 'overall' ? null : this.calendarDateRange();
+    return this.filterGames(games, filters, calRange);
   });
   get filteredGames() {
     return this.#filteredGames;
@@ -62,16 +99,17 @@ export class GameFilterService {
     this.setDefaultFilters();
   }
 
-  filterGames(games: Game[], filters: GameFilter): Game[] {
-    const filteredGames = games.filter((game) => {
-      const formatDate = (date: string) => date.split('T')[0];
-      const gameDate = formatDate(new Date(game.date).toISOString());
-      const startDate = formatDate(filters.startDate!);
-      const endDate = formatDate(filters.endDate!);
+  filterGames(games: Game[], filters: GameFilter, calendarRange?: CalendarDateRange | null): Game[] {
+    return games.filter((game) => {
+      // Apply calendar date range filter when provided
+      if (calendarRange) {
+        const gameDate = new Date(game.date);
+        if (gameDate < calendarRange.start || gameDate > calendarRange.end) {
+          return false;
+        }
+      }
 
       return (
-        gameDate >= startDate &&
-        gameDate <= endDate &&
         game.totalScore >= filters.minScore &&
         game.totalScore <= filters.maxScore &&
         (filters.excludePractice ? !game.isPractice : true) &&
@@ -82,7 +120,6 @@ export class GameFilterService {
         (filters.balls.includes('all') || filters.balls.length === 0 || game.balls!.some((ball) => filters.balls.includes(ball)))
       );
     });
-    return filteredGames;
   }
 
   saveFilters(): void {
@@ -94,18 +131,53 @@ export class GameFilterService {
   }
 
   setDefaultFilters(): void {
-    const startDate = localStorage.getItem('first-game');
-    const defaultStartDate = startDate ? new Date(parseInt(startDate)).toISOString() : new Date(0).toISOString();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
-
-    this.defaultFilters = {
-      ...this.defaultFilters,
-      startDate: defaultStartDate,
-      endDate: endDate.toISOString(),
-    };
-
     this.filters.set(this.loadInitialFilters());
+  }
+
+  private calculateCalendarDateRange(mode: CalendarMode, offset: number): CalendarDateRange {
+    const now = new Date();
+
+    switch (mode) {
+      case 'daily': {
+        const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+        const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
+        const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
+        const label = day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        return { start, end, label, mode };
+      }
+      case 'weekly': {
+        const cur = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dayOfWeek = cur.getDay();
+        const weekStart = new Date(cur);
+        weekStart.setDate(cur.getDate() - dayOfWeek + offset * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        const start = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate(), 0, 0, 0, 0);
+        const end = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), 23, 59, 59, 999);
+        const label = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        return { start, end, label, mode };
+      }
+      case 'monthly': {
+        const year = now.getFullYear();
+        const month = now.getMonth() + offset;
+        const firstDay = new Date(year, month, 1, 0, 0, 0, 0);
+        const lastDay = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        const label = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        return { start: firstDay, end: lastDay, label, mode };
+      }
+      case 'yearly': {
+        const year = now.getFullYear() + offset;
+        const start = new Date(year, 0, 1, 0, 0, 0, 0);
+        const end = new Date(year, 11, 31, 23, 59, 59, 999);
+        return { start, end, label: year.toString(), mode };
+      }
+      case 'overall':
+      default: {
+        const start = new Date(0);
+        const end = new Date(9999, 11, 31);
+        return { start, end, label: 'All Time', mode: 'overall' };
+      }
+    }
   }
 
   private loadInitialFilters(): GameFilter {

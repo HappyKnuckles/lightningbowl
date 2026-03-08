@@ -6,19 +6,13 @@
       <ion-badge>{{ gameFilterService.filteredGames().length }}</ion-badge>
     </ion-title>
     <ion-buttons slot="end" class="action-sheet">
-      <!-- <app-sort-header
-        [id]="'game-sort-header'"
-        [sortOptions]="sortService.GAME_SORT_OPTIONS"
-        [selectedSort]="currentSortOption"
-        storageKey="games-sort-option"
-        (sortChanged)="onSortChanged($event)">
-      </app-sort-header> -->
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
         <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+  <app-calendar-navigator></app-calendar-navigator>
   <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
     <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
     </app-generic-filter-active>

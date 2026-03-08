@@ -65,6 +65,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { CalendarNavigatorComponent } from 'src/app/shared/components/calendar-navigator/calendar-navigator.component';
 
 @Component({
   selector: 'app-stats',
@@ -123,6 +124,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     GenericFilterActiveComponent,
     BallStatsComponent,
     PinLeaveStatsComponent,
+    CalendarNavigatorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -140,7 +142,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
-    this.storageService.games().forEach((game) => {
+    this.gameFilterService.filteredGames().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
       dateSet.add(date.getTime());

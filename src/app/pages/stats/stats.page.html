@@ -28,6 +28,7 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+  <app-calendar-navigator></app-calendar-navigator>
   @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)" scrollable="true">

@@ -49,16 +49,6 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     label: 'Patterns',
     type: 'array',
   },
-  {
-    key: 'dateRange',
-    label: 'Time Range',
-    type: 'date',
-    isRange: true,
-    rangeKeys: {
-      min: 'startDate',
-      max: 'endDate',
-    },
-  },
 ];
 
 export const BALL_FILTER_CONFIGS: FilterConfig[] = [

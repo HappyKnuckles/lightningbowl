@@ -13,6 +13,9 @@ export interface CalendarDateRange {
   mode: CalendarMode;
 }
 
+const MS_PER_DAY = 86_400_000;
+const MS_PER_WEEK = MS_PER_DAY * 7;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -41,21 +44,108 @@ export class GameFilterService {
 
   calendarLabel = computed(() => this.calendarDateRange().label);
 
+  calendarModeIcon = computed<string>(() => {
+    switch (this.calendarMode()) {
+      case 'daily':
+        return 'today-outline';
+      case 'weekly':
+        return 'calendar-clear-outline';
+      case 'monthly':
+        return 'calendar-outline';
+      case 'yearly':
+        return 'calendar-number-outline';
+      case 'overall':
+        return 'infinite-outline';
+    }
+  });
+
+  /** True when there are games before the current period (prev button enabled). */
+  hasPrevPeriod = computed<boolean>(() => {
+    if (this.calendarMode() === 'overall') return false;
+    const range = this.calendarDateRange();
+    return this.storageService.games().some((g) => new Date(g.date) < range.start);
+  });
+
+  /** True when we are not yet at the current period (next button enabled). */
+  hasNextPeriod = computed<boolean>(() => {
+    if (this.calendarMode() === 'overall') return false;
+    return this.calendarOffset() < 0;
+  });
+
   nextPeriod(): void {
-    if (this.calendarMode() !== 'overall') {
-      this.calendarOffset.update((o) => o + 1);
+    if (this.calendarMode() === 'overall' || this.calendarOffset() >= 0) return;
+    const games = this.storageService.games();
+    const currentRange = this.calendarDateRange();
+    const now = new Date();
+
+    // Find the oldest game that falls AFTER the current period end (up to now)
+    const laterGames = games
+      .map((g) => new Date(g.date))
+      .filter((d) => d > currentRange.end && d <= now)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    if (laterGames.length > 0) {
+      this.goToPeriodContaining(laterGames[0]);
+    } else {
+      // No later games – jump to current period
+      this.calendarOffset.set(0);
     }
   }
 
   prevPeriod(): void {
-    if (this.calendarMode() !== 'overall') {
-      this.calendarOffset.update((o) => o - 1);
+    if (this.calendarMode() === 'overall') return;
+    const games = this.storageService.games();
+    const currentRange = this.calendarDateRange();
+
+    // Find the most recent game that falls BEFORE the current period start
+    const earlierGames = games
+      .map((g) => new Date(g.date))
+      .filter((d) => d < currentRange.start)
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    if (earlierGames.length > 0) {
+      this.goToPeriodContaining(earlierGames[0]);
     }
+    // If no earlier games, button is disabled so nothing happens
   }
 
   setCalendarMode(mode: CalendarMode): void {
     this.calendarMode.set(mode);
     this.calendarOffset.set(0);
+  }
+
+  /** Navigate to the period that contains the given date (capped at current period). */
+  goToPeriodContaining(date: Date): void {
+    const now = new Date();
+    const mode = this.calendarMode();
+    let offset = 0;
+
+    switch (mode) {
+      case 'daily': {
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        offset = Math.round((target.getTime() - today.getTime()) / MS_PER_DAY);
+        break;
+      }
+      case 'weekly': {
+        const todaySunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        const targetSunday = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+        offset = Math.round((targetSunday.getTime() - todaySunday.getTime()) / MS_PER_WEEK);
+        break;
+      }
+      case 'monthly': {
+        offset = (date.getFullYear() - now.getFullYear()) * 12 + (date.getMonth() - now.getMonth());
+        break;
+      }
+      case 'yearly': {
+        offset = date.getFullYear() - now.getFullYear();
+        break;
+      }
+      default:
+        return;
+    }
+
+    this.calendarOffset.set(Math.min(offset, 0));
   }
 
   activeFilterCount: Signal<number> = computed(() => {

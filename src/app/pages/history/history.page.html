@@ -6,6 +6,9 @@
       <ion-badge>{{ gameFilterService.filteredGames().length }}</ion-badge>
     </ion-title>
     <ion-buttons slot="end" class="action-sheet">
+      <ion-button fill="clear" (click)="openCalendarModeSheet()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+        <ion-icon slot="icon-only" [name]="gameFilterService.calendarModeIcon()"></ion-icon>
+      </ion-button>
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
         <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>

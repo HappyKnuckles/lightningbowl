@@ -1,0 +1,44 @@
+<ion-toolbar class="period-nav-toolbar" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+  <ion-buttons slot="start">
+    <ion-button fill="clear" (click)="prevPeriod()" [disabled]="gameFilterService.calendarMode() === 'overall' || !gameFilterService.hasPrevPeriod()">
+      <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+    </ion-button>
+  </ion-buttons>
+
+  <div
+    class="period-label ion-activatable"
+    [class.period-label--clickable]="gameFilterService.calendarMode() !== 'overall'"
+    (click)="openDatePicker()">
+    {{ gameFilterService.calendarLabel() }}
+    <ion-ripple-effect></ion-ripple-effect>
+  </div>
+
+  <ion-buttons slot="end">
+    <ion-button fill="clear" (click)="nextPeriod()" [disabled]="gameFilterService.calendarMode() === 'overall' || !gameFilterService.hasNextPeriod()">
+      <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+    </ion-button>
+  </ion-buttons>
+</ion-toolbar>
+
+<!-- Date Picker Modal -->
+<ion-modal #datePickerModal [keepContentsMounted]="false">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Select Period</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="datePickerModal.dismiss()">Close</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-datetime
+        [presentation]="datePickerPresentation"
+        [max]="todayIso"
+        [value]="currentPeriodIso"
+        (ionChange)="onDatePickerChange($event)"
+        locale="en-US">
+      </ion-datetime>
+    </ion-content>
+  </ng-template>
+</ion-modal>

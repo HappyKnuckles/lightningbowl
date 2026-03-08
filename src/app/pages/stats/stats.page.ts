@@ -34,10 +34,20 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
-import { calendarNumber, calendarNumberOutline, filterOutline, cloudUploadOutline, cloudDownloadOutline } from 'ionicons/icons';
+import {
+  calendarNumber,
+  calendarNumberOutline,
+  filterOutline,
+  cloudUploadOutline,
+  cloudDownloadOutline,
+  todayOutline,
+  calendarClearOutline,
+  calendarOutline,
+  infiniteOutline,
+} from 'ionicons/icons';
 import { SessionStats } from 'src/app/core/models/stats.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { AlertController, ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
+import { AlertController, ActionSheetController, ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import {
@@ -65,6 +75,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { CalendarNavigatorComponent } from 'src/app/shared/components/calendar-navigator/calendar-navigator.component';
 
 @Component({
   selector: 'app-stats',
@@ -123,6 +134,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     GenericFilterActiveComponent,
     BallStatsComponent,
     PinLeaveStatsComponent,
+    CalendarNavigatorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -140,7 +152,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
-    this.storageService.games().forEach((game) => {
+    this.gameFilterService.filteredGames().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
       dateSet.add(date.getTime());
@@ -193,6 +205,7 @@ export class StatsPage implements OnInit, AfterViewInit {
     public gameFilterService: GameFilterService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
+    private actionSheetCtrl: ActionSheetController,
     private sortUtilsService: SortUtilsService,
     private utilsService: UtilsService,
     private chartService: ChartGenerationService,
@@ -200,7 +213,17 @@ export class StatsPage implements OnInit, AfterViewInit {
     private excelService: ExcelService,
     private alertController: AlertController,
   ) {
-    addIcons({ cloudUploadOutline, cloudDownloadOutline, filterOutline, calendarNumberOutline, calendarNumber });
+    addIcons({
+      cloudUploadOutline,
+      cloudDownloadOutline,
+      filterOutline,
+      calendarNumberOutline,
+      calendarNumber,
+      todayOutline,
+      calendarClearOutline,
+      calendarOutline,
+      infiniteOutline,
+    });
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {
         this.generateCharts(true);
@@ -236,6 +259,21 @@ export class StatsPage implements OnInit, AfterViewInit {
         this.generateCharts(true);
       }
     });*/
+  }
+
+  async openCalendarModeSheet(): Promise<void> {
+    const sheet = await this.actionSheetCtrl.create({
+      header: 'View by',
+      buttons: [
+        { text: 'Day', icon: 'today-outline', handler: () => this.gameFilterService.setCalendarMode('daily') },
+        { text: 'Week', icon: 'calendar-clear-outline', handler: () => this.gameFilterService.setCalendarMode('weekly') },
+        { text: 'Month', icon: 'calendar-outline', handler: () => this.gameFilterService.setCalendarMode('monthly') },
+        { text: 'Year', icon: 'calendar-number-outline', handler: () => this.gameFilterService.setCalendarMode('yearly') },
+        { text: 'All Time', icon: 'infinite-outline', handler: () => this.gameFilterService.setCalendarMode('overall') },
+        { text: 'Cancel', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {

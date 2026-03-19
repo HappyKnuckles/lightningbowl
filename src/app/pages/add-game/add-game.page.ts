@@ -20,6 +20,8 @@ import {
   IonSegmentView,
   IonSegmentContent,
   IonLabel,
+  IonRefresher,
+  IonRefresherContent,
 } from '@ionic/angular/standalone';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Game, Frame, createEmptyGame, numberArraysToFrames, cloneFrames, createThrow, Throw } from 'src/app/core/models/game.model';
@@ -81,6 +83,8 @@ defineCustomElements(window);
     IonTitle,
     IonAlert,
     IonContent,
+    IonRefresher,
+    IonRefresherContent,
     IonGrid,
     IonRow,
     IonCol,
@@ -193,6 +197,20 @@ export class AddGamePage implements OnInit {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
+  }
+
+  async handleRefresh(event: any): Promise<void> {
+    try {
+      this.hapticService.vibrate(ImpactStyle.Medium);
+      // Force refresh allPatterns to allow pattern selection if it failed initially
+      await this.storageService.loadAllPatterns(true);
+      this.toastService.showToast('Data refreshed', 'checkmark-outline');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      this.toastService.showToast('Failed to refresh data. Please try again.', 'bug', true);
+    } finally {
+      event.target.complete();
+    }
   }
 
   // PIN INPUT MODE

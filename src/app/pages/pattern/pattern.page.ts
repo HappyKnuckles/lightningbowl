@@ -173,7 +173,7 @@ export class PatternPage implements OnInit {
       await this.loadPatterns();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(ToastMessages.patternLoadError, 'bug', true);
     } finally {
       event.target.complete();
       this.isPageLoading.set(false);

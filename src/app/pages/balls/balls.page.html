@@ -50,11 +50,20 @@
   </ion-refresher>
 
   @if (!isPageLoading()) {
-    <ng-container *ngIf="displayedBalls.length <= 0; else content">
+    <!-- Check if allBalls is empty (failed to load) -->
+    @if (storageService.allBalls().length === 0 && displayedBalls.length === 0) {
+      <ion-card style="margin: 20px; text-align: center">
+        <ion-card-header>
+          <ion-card-title>Unable to load ball data</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Ball database could not be loaded. This may be due to a network error.</p>
+          <p style="margin-top: 10px"><strong>Pull down to refresh</strong> and try again.</p>
+        </ion-card-content>
+      </ion-card>
+    } @else if (displayedBalls.length <= 0) {
       <ion-text class="no-game-text"> No balls found. </ion-text>
-    </ng-container>
-
-    <ng-template #content>
+    } @else {
       @for (ball of displayedBalls; track ball.ball_id) {
         <ion-card role="article">
           <ion-card-header>
@@ -121,7 +130,7 @@
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadBalls($event)" *ngIf="hasMoreData">
         <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more balls..."></ion-infinite-scroll-content>
       </ion-infinite-scroll>
-    </ng-template>
+    }
   } @else {
     @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
       <ion-card>

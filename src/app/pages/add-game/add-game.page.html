@@ -58,6 +58,9 @@
 </div>
 
 <ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
   <ion-segment-view>
     <ion-segment-content *ngFor="let segment of segments; let i = index" [id]="segment">
       <app-game-grid

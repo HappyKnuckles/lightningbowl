@@ -246,7 +246,10 @@ export class BallsPage implements OnInit {
       if (this.isFilterActive()) {
         this.filterDisplayCount = 100;
       }
-      await Promise.all([this.storageService.loadAllBalls(), this.storageService.loadArsenal()]);
+      // Force refresh to bypass cache and refetch from network
+      const ballFilter = localStorage.getItem('ball-filter');
+      const weight = ballFilter ? parseInt(JSON.parse(ballFilter).weight, 10) : 15;
+      await Promise.all([this.storageService.loadAllBalls(undefined, weight, true), this.storageService.loadArsenal()]);
       await this.loadBalls();
     } catch (error) {
       console.error(error);

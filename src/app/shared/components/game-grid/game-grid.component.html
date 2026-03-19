@@ -197,6 +197,13 @@
         <ion-label>Patterns</ion-label>
         <span class="ion-text-right">{{ currentGame.patterns.join(", ") || "None" }}</span>
       </ion-item>
+      @if (storageService.allPatterns().length === 0) {
+        <ion-item lines="none">
+          <ion-label class="ion-text-wrap" style="font-size: 0.85em; color: var(--ion-color-medium)">
+            Pattern data unavailable. Pull down to refresh on any page to retry loading.
+          </ion-label>
+        </ion-item>
+      }
       <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
         <ng-template>
           <app-generic-typeahead

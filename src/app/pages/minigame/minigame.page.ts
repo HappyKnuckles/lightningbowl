@@ -86,9 +86,17 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   private readonly LANE_HEIGHT = 600;
   private readonly PIN_WIDTH = 24;
   private readonly PIN_HEIGHT = 50;
-  private readonly GRAVITY = 0.5;
-  private readonly FRICTION = 0.98;
-  private readonly CURVE_FORCE = 0.175; // 15% reduction from 0.25 (0.25 * 0.85)
+
+  // Realistic physics constants
+  private readonly GRAVITY = 0.35; // Realistic gravity for pin falling
+  private readonly LANE_FRICTION = 0.985; // Realistic lane friction (wood surface)
+  private readonly PIN_FRICTION = 0.95; // Pin-to-surface friction
+  private readonly AIR_RESISTANCE = 0.998; // Minimal air resistance on ball
+  private readonly CURVE_FORCE = 0.15; // Realistic hook potential
+
+  // Realistic masses (for momentum calculations)
+  private readonly BALL_MASS = 16; // Standard 16 lb bowling ball
+  private readonly PIN_MASS = 3.6; // Standard pin weight (3 lbs 6 oz)
 
   // Touch/mouse tracking
   private isDragging = false;
@@ -296,41 +304,41 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     const deltaY = this.aimY - this.startY;
     const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // 15% reduction in speed for more controlled movement
-    const speedMultiplier = 0.068; // Reduced from 0.08 by 15% (0.08 * 0.85 = 0.068)
+    // Realistic ball speed mapping - typical bowling ball travels 15-22 mph
+    const speedMultiplier = 0.07; // Adjusted for realistic ball speed
 
     // Direct mapping of finger movement to ball velocity
     this.ball.velocityX = deltaX * speedMultiplier;
     this.ball.velocityY = deltaY * speedMultiplier;
 
-    // Ensure minimum forward speed if user swipes mostly horizontally
-    if (Math.abs(this.ball.velocityY) < 0.85) {
-      this.ball.velocityY = -0.85; // Reduced minimum forward movement (15% less)
+    // Ensure realistic minimum forward speed (simulating a proper release)
+    if (Math.abs(this.ball.velocityY) < 1.2) {
+      this.ball.velocityY = -1.2; // Minimum forward momentum
     }
 
-    // Improved curve detection - only curve if gesture shows actual curvature
+    // Realistic curve/hook mechanics - simulate rev rate and axis rotation
     let curveAmount = 0;
 
-    if (totalDistance > 25) {
-      // Require meaningful gesture length
-      // Only apply curve if there's significant horizontal movement AND it's not a straight horizontal swipe
-      const minHorizontalMovement = 15;
+    if (totalDistance > 30) {
+      // Require meaningful gesture length for hook
+      const minHorizontalMovement = 20;
       const verticalComponent = Math.abs(deltaY);
 
-      // Check if this is actually a curved gesture, not just horizontal movement
-      if (Math.abs(deltaX) > minHorizontalMovement && verticalComponent > Math.abs(deltaX) * 0.3) {
-        // This gesture has both horizontal and sufficient vertical movement - could be curved
-        const curveSensitivity = 0.017; // 15% reduction from 0.02 (0.02 * 0.85 = 0.017)
-        curveAmount = deltaX * curveSensitivity;
+      // Hook requires both lateral movement and forward motion (like real bowling release)
+      if (Math.abs(deltaX) > minHorizontalMovement && verticalComponent > Math.abs(deltaX) * 0.5) {
+        // Calculate hook based on release angle - more realistic
+        const releaseAngle = Math.abs(deltaX) / verticalComponent;
+        const curveSensitivity = 0.022; // Realistic hook sensitivity
+        curveAmount = deltaX * curveSensitivity * (1 + releaseAngle * 0.3);
       }
-      // If it's mostly horizontal (low vertical component), no curve is applied
     }
 
     this.ball.curve = curveAmount;
-    this.ball.spinning = Math.abs(curveAmount) > 0.01; // Only spin if there's meaningful curve
+    this.ball.spinning = Math.abs(curveAmount) > 0.015; // Realistic spin threshold
 
-    // Reset distance tracking for new throw
+    // Reset distance and state for new throw
     this.ball.distanceTraveled = 0;
+    this.ball.inGutter = false;
   }
 
   private gameLoop() {
@@ -346,13 +354,11 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       this.updateParticles();
       this.checkCollisions();
 
-      // TODO 2 second timer after ball reaches certain Y then finish, state not setting
-      // need to adjust pin fall for this
-      // Check if ball has passed the pins (y < 0) or gone off screen
+      // Check if ball has passed the pins or stopped moving
       if (
         this.ball.y < -100 ||
         this.ball.y > this.LANE_HEIGHT + 50 ||
-        (Math.abs(this.ball.velocityX) < 0.015 && Math.abs(this.ball.velocityY) < 0.015)
+        (Math.abs(this.ball.velocityX) < 0.02 && Math.abs(this.ball.velocityY) < 0.02)
       ) {
         this.gameState = 'finished';
         this.calculateScore();
@@ -375,7 +381,7 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       this.ball.trail.push({ x: this.ball.x, y: this.ball.y, alpha: 1.0 });
 
       // Limit trail length
-      if (this.ball.trail.length > 15) {
+      if (this.ball.trail.length > 20) {
         this.ball.trail.shift();
       }
 
@@ -385,109 +391,131 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    // Apply curve only after breakpoint distance - with good curve strength
-    if (this.ball.spinning && this.ball.distanceTraveled > this.ball.curveStartDistance) {
-      // Calculate curve intensity based on distance past breakpoint
-      const curveProgress = Math.min((this.ball.distanceTraveled - this.ball.curveStartDistance) / 100, 1.0);
-      // Good curve strength like before, but with slight speed dependency to prevent infinite curve
-      const speedFactor = Math.max(speed / 4.0, 0.3); // Minimum 30% curve strength
-      const curveMultiplier = curveProgress * 0.6 * speedFactor; // Restored good curve strength
+    // Realistic hook physics - ball hooks in the backend (after oil transition)
+    // Oil pattern simulation: front part has less friction (oil), backend has more friction
+    const oilTransitionDistance = 100; // Simulates oil pattern transition point
 
-      // Negative curve value for correct direction (left swipe = left curve)
-      this.ball.velocityX += -this.ball.curve * this.CURVE_FORCE * curveMultiplier;
+    if (this.ball.spinning && this.ball.distanceTraveled > this.ball.curveStartDistance) {
+      // Calculate how far into the backend we are
+      const backendDistance = this.ball.distanceTraveled - oilTransitionDistance;
+
+      if (backendDistance > 0) {
+        // In the backend (dry part) - hook intensifies
+        const hookProgress = Math.min(backendDistance / 120, 1.0);
+
+        // Hook strength depends on ball speed (slower = more hook, like real bowling)
+        const speedFactor = Math.max(0.4, 1.0 - speed / 8.0); // Slower balls hook more
+
+        // Rev rate simulation - spinning creates hook
+        const revRateEffect = Math.abs(this.ball.curve) * 1.2;
+
+        // Apply hook force (negative for proper direction)
+        const hookForce = -this.ball.curve * this.CURVE_FORCE * hookProgress * speedFactor * revRateEffect;
+        this.ball.velocityX += hookForce;
+      }
     }
 
     // Update position
     this.ball.x += this.ball.velocityX;
     this.ball.y += this.ball.velocityY;
 
-    // Apply normal friction - not too strong
-    this.ball.velocityX *= 0.996; // Reduced friction so curve works better
-    this.ball.velocityY *= 0.997; // Light friction on forward movement
+    // Realistic friction and air resistance
+    this.ball.velocityX *= this.LANE_FRICTION; // Lane friction affects lateral movement
+    this.ball.velocityY *= this.AIR_RESISTANCE; // Minimal air resistance on forward motion
 
-    // Curve effect decays very slowly so it continues working
+    // Realistic lane behavior - lateral friction is higher than forward
+    this.ball.velocityX *= 0.99; // Additional lateral friction
+
+    // Rev rate decay (spin gradually decreases)
     if (this.ball.spinning) {
-      this.ball.curve *= 0.9995; // Very slow curve decay
+      this.ball.curve *= 0.997; // Gradual rev rate decay
     }
 
     // Gutter mechanics - realistic bowling lane behavior
     const gutterWidth = 18;
-    const gutterBoundaryLeft = gutterWidth + this.ball.radius / 2; // Gutter starts when ball is halfway over
+    const gutterBoundaryLeft = gutterWidth + this.ball.radius / 2;
     const gutterBoundaryRight = this.LANE_WIDTH - gutterWidth - this.ball.radius / 2;
 
     if (!this.ball.inGutter) {
-      // Check if ball is entering gutter (halfway over the boundary)
+      // Check if ball is entering gutter
       if (this.ball.x < gutterBoundaryLeft || this.ball.x > gutterBoundaryRight) {
         this.ball.inGutter = true;
-        this.hapticService.vibrate(ImpactStyle.Medium); // Gutter entry feedback
+        this.hapticService.vibrate(ImpactStyle.Medium);
 
         // Position ball in center of gutter
         if (this.ball.x < gutterBoundaryLeft) {
-          this.ball.x = gutterWidth / 2; // Left gutter center
+          this.ball.x = gutterWidth / 2;
         } else {
-          this.ball.x = this.LANE_WIDTH - gutterWidth / 2; // Right gutter center
+          this.ball.x = this.LANE_WIDTH - gutterWidth / 2;
         }
 
-        // Reduce horizontal velocity significantly when entering gutter
-        this.ball.velocityX *= 0.3;
-        // Stop curve when in gutter
+        // Realistic gutter entry - significant energy loss
+        this.ball.velocityX *= 0.25;
+        this.ball.velocityY *= 0.85; // Some forward momentum loss
         this.ball.curve = 0;
         this.ball.spinning = false;
       }
     } else {
-      // Ball is in gutter - keep it there and let it roll to the end
-      // Constrain ball to gutter bounds
+      // Ball is in gutter - constrain and minimal movement
       if (this.ball.x < gutterWidth / 2) {
-        this.ball.x = gutterWidth / 2; // Left gutter
+        this.ball.x = gutterWidth / 2;
       } else if (this.ball.x > this.LANE_WIDTH - gutterWidth / 2) {
-        this.ball.x = this.LANE_WIDTH - gutterWidth / 2; // Right gutter
+        this.ball.x = this.LANE_WIDTH - gutterWidth / 2;
       }
 
-      // Very minimal horizontal movement in gutter
-      this.ball.velocityX *= 0.95;
+      // Gutter friction
+      this.ball.velocityX *= 0.93;
     }
   }
 
   private updatePins() {
     this.pins.forEach((pin, index) => {
       if (pin.fallen) {
-        // Apply physics to fallen pins
+        // Apply physics to fallen pins - they fly/tumble based on impact
         pin.x += pin.velocityX;
         pin.y += pin.velocityY;
 
         // Check for collisions with other pins during movement
         this.checkMovingPinCollisions(pin, index);
 
-        // Apply friction - pins lose energy over time
-        pin.velocityX *= this.FRICTION;
-        pin.velocityY *= this.FRICTION;
+        // Realistic pin friction - wood on wood, pins slow down in all directions
+        pin.velocityX *= this.PIN_FRICTION;
+        pin.velocityY *= this.PIN_FRICTION;
 
-        // Apply gravity effect (pins fall down)
-        pin.velocityY += this.GRAVITY * 0.15;
-
-        // Update falling animation with more realistic physics
-        if (pin.fallingAngle < Math.PI / 2) {
-          // Falling speed based on current velocity
-          const fallingSpeed = Math.sqrt(pin.velocityX * pin.velocityX + pin.velocityY * pin.velocityY);
-          pin.fallingAngle += 0.1 + fallingSpeed * 0.02; // Faster pins fall faster
+        // Realistic falling animation - angular velocity based on linear velocity
+        if (pin.fallingAngle < Math.PI / 1.8) {
+          const angularMomentum = Math.sqrt(pin.velocityX * pin.velocityX + pin.velocityY * pin.velocityY);
+          // Falling speed related to momentum
+          pin.fallingAngle += 0.08 + angularMomentum * 0.025;
         }
 
-        // Keep pins within reasonable bounds
-        if (pin.x < 0) {
-          pin.x = 0;
-          pin.velocityX = Math.abs(pin.velocityX) * 0.3; // Bounce off edges with energy loss
+        // Boundary constraints - pins bounce off lane edges and stay in pin deck area
+        const gutterWidth = 18;
+        const minX = gutterWidth;
+        const maxX = this.LANE_WIDTH - gutterWidth;
+
+        if (pin.x < minX) {
+          pin.x = minX;
+          pin.velocityX = Math.abs(pin.velocityX) * 0.3; // Bounce off left edge
         }
-        if (pin.x > this.LANE_WIDTH) {
-          pin.x = this.LANE_WIDTH;
-          pin.velocityX = -Math.abs(pin.velocityX) * 0.3;
-        }
-        if (pin.y > this.LANE_HEIGHT) {
-          pin.y = this.LANE_HEIGHT;
-          pin.velocityY = -Math.abs(pin.velocityY) * 0.2; // Less bouncy on lane surface
+        if (pin.x > maxX) {
+          pin.x = maxX;
+          pin.velocityX = -Math.abs(pin.velocityX) * 0.3; // Bounce off right edge
         }
 
-        // Stop very slow pins to prevent infinite tiny movements
-        if (Math.abs(pin.velocityX) < 0.1 && Math.abs(pin.velocityY) < 0.1) {
+        // Keep pins in the pin deck area (top part of lane)
+        // Pins fly around but don't go past the foul line
+        if (pin.y < -20) {
+          pin.y = -20;
+          pin.velocityY = Math.abs(pin.velocityY) * 0.2; // Bounce back from back wall
+        }
+        if (pin.y > 200) {
+          pin.y = 200;
+          pin.velocityY = -Math.abs(pin.velocityY) * 0.2; // Bounce back toward pin area
+        }
+
+        // Stop nearly motionless pins
+        if (Math.abs(pin.velocityX) < 0.05 && Math.abs(pin.velocityY) < 0.05) {
           pin.velocityX = 0;
           pin.velocityY = 0;
         }
@@ -502,62 +530,66 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       const dx = otherPin.x - movingPin.x;
       const dy = otherPin.y - movingPin.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const collisionDistance = this.PIN_WIDTH + 3; // Slightly larger collision area
+      const collisionDistance = this.PIN_WIDTH + 3;
 
       if (distance < collisionDistance && distance > 0) {
         // Collision detected!
         const movingSpeed = Math.sqrt(movingPin.velocityX * movingPin.velocityX + movingPin.velocityY * movingPin.velocityY);
 
-        if (!otherPin.fallen && movingSpeed > 0.5) {
+        if (!otherPin.fallen && movingSpeed > 0.7) {
           // Moving pin knocks down standing pin
           otherPin.fallen = true;
 
-          // Calculate collision angle and transfer momentum
+          // Realistic collision physics with scatter
           const collisionAngle = Math.atan2(dy, dx);
-          const momentumTransfer = movingSpeed * 0.6;
+          const momentumTransfer = movingSpeed * 0.75; // Increased for better pin action
 
-          otherPin.velocityX = Math.cos(collisionAngle) * momentumTransfer + movingPin.velocityX * 0.3;
-          otherPin.velocityY = Math.sin(collisionAngle) * momentumTransfer + movingPin.velocityY * 0.3;
+          otherPin.velocityX = Math.cos(collisionAngle) * momentumTransfer + movingPin.velocityX * 0.4;
+          otherPin.velocityY = Math.sin(collisionAngle) * momentumTransfer + movingPin.velocityY * 0.4;
 
-          // Slow down the moving pin
-          movingPin.velocityX *= 0.7;
-          movingPin.velocityY *= 0.7;
+          // Add scatter for realistic pin action
+          const scatter = movingSpeed * 0.15;
+          otherPin.velocityX += (Math.random() - 0.5) * scatter;
+          otherPin.velocityY += (Math.random() - 0.5) * scatter;
+
+          // Energy loss in collision
+          movingPin.velocityX *= 0.65;
+          movingPin.velocityY *= 0.65;
 
           this.pinsKnocked++;
           this.hapticService.vibrate(ImpactStyle.Light);
           this.createParticles(otherPin.x, otherPin.y);
         } else if (otherPin.fallen) {
-          // Both pins are fallen - prevent overlap by pushing them apart
+          // Both pins fallen - elastic collision with scatter
           const overlap = collisionDistance - distance;
           if (overlap > 0) {
             const separationX = (dx / distance) * overlap * 0.5;
             const separationY = (dy / distance) * overlap * 0.5;
 
-            // Push pins apart
+            // Separate pins
             movingPin.x -= separationX;
             movingPin.y -= separationY;
             otherPin.x += separationX;
             otherPin.y += separationY;
 
-            // Exchange some momentum for realistic collision
+            // Realistic elastic collision - exchange momentum with variation
             const tempVelX = movingPin.velocityX * 0.4;
             const tempVelY = movingPin.velocityY * 0.4;
-            movingPin.velocityX += otherPin.velocityX * 0.2 - tempVelX;
-            movingPin.velocityY += otherPin.velocityY * 0.2 - tempVelY;
+            movingPin.velocityX += otherPin.velocityX * 0.3 - tempVelX;
+            movingPin.velocityY += otherPin.velocityY * 0.3 - tempVelY;
             otherPin.velocityX += tempVelX;
             otherPin.velocityY += tempVelY;
           }
         } else {
-          // Moving pin hits standing pin but not enough speed to knock it down
-          // Just push the moving pin back slightly to prevent overlap
+          // Insufficient speed - just prevent overlap
           const pushBackX = (dx / distance) * (collisionDistance - distance) * 0.5;
           const pushBackY = (dy / distance) * (collisionDistance - distance) * 0.5;
           movingPin.x -= pushBackX;
           movingPin.y -= pushBackY;
 
-          // Reduce moving pin's velocity
-          movingPin.velocityX *= 0.8;
-          movingPin.velocityY *= 0.8;
+          // Friction effect
+          movingPin.velocityX *= 0.75;
+          movingPin.velocityY *= 0.75;
         }
       }
     });
@@ -589,42 +621,42 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   private hitPin(pin: Pin, dx: number, dy: number, distance: number) {
     pin.fallen = true;
 
-    // Calculate ball's momentum and entry angle
+    // Calculate ball's momentum using realistic mass
     const ballSpeed = Math.sqrt(this.ball.velocityX * this.ball.velocityX + this.ball.velocityY * this.ball.velocityY);
 
     // Calculate impact angle (angle from pin to ball)
     const impactAngle = Math.atan2(-dy, -dx);
 
-    // Transfer momentum based on entry angle and ball speed
-    const momentumTransfer = ballSpeed * 0.6; // 60% of ball momentum transfers
-    const angleInfluence = 0.8; // How much impact angle affects direction
+    // Realistic momentum transfer using conservation of momentum
+    // Pins fly dramatically when hit by heavy ball
+    const momentumRatio = this.BALL_MASS / (this.BALL_MASS + this.PIN_MASS);
+    const energyTransfer = ballSpeed * momentumRatio * 0.85; // 85% efficiency - pins fly with force
 
-    // Pin velocity based on impact angle and ball momentum
-    pin.velocityX = Math.cos(impactAngle) * momentumTransfer * angleInfluence + this.ball.velocityX * 0.4; // 40% from ball's actual velocity
-    pin.velocityY = Math.sin(impactAngle) * momentumTransfer * angleInfluence + this.ball.velocityY * 0.4;
+    // Pin velocity based on impact angle and realistic physics
+    const directionFactor = 0.9; // Strong directional impact
+    pin.velocityX = Math.cos(impactAngle) * energyTransfer * directionFactor + this.ball.velocityX * 0.4;
+    pin.velocityY = Math.sin(impactAngle) * energyTransfer * directionFactor + this.ball.velocityY * 0.4;
 
-    // Add some controlled randomness for realism (less than before)
-    pin.velocityX += (Math.random() - 0.5) * 1.5;
-    pin.velocityY += (Math.random() - 0.5) * 1.5;
+    // Add realistic scatter effect - pins fly in various directions
+    const scatterAmount = ballSpeed * 0.25; // Increased scatter for dramatic pin action
+    pin.velocityX += (Math.random() - 0.5) * scatterAmount;
+    pin.velocityY += (Math.random() - 0.5) * scatterAmount;
 
-    // Calculate ball deflection based on collision physics
-    const ballMass = 16; // Standard bowling ball weight
-    const pinMass = 3.5; // Standard pin weight
-    const totalMass = ballMass + pinMass;
-
-    // Conservation of momentum - ball deflection
-    const deflectionFactor = pinMass / totalMass;
+    // Realistic ball deflection using conservation of momentum
+    const deflectionRatio = this.PIN_MASS / (this.BALL_MASS + this.PIN_MASS);
     const normalX = dx / distance;
     const normalY = dy / distance;
 
-    // Apply deflection to ball
-    this.ball.velocityX += normalX * ballSpeed * deflectionFactor * 0.3;
-    this.ball.velocityY += normalY * ballSpeed * deflectionFactor * 0.3;
+    // Ball deflects based on mass ratio and impact
+    this.ball.velocityX += normalX * ballSpeed * deflectionRatio * 0.4;
+    this.ball.velocityY += normalY * ballSpeed * deflectionRatio * 0.4;
 
-    // Ball loses some energy in the collision but maintains most of its momentum
-    this.ball.velocityX *= 0.88; // Less energy loss for more realistic carry
-    this.ball.velocityY *= 0.92;
-    this.ball.curve *= 0.95; // Slight curve reduction
+    // Ball maintains most momentum through the pins (realistic carry)
+    this.ball.velocityX *= 0.9; // 10% energy loss
+    this.ball.velocityY *= 0.93; // Less forward energy loss
+
+    // Hook continues after pin impact (reduced but not eliminated)
+    this.ball.curve *= 0.92;
 
     this.hapticService.vibrate(ImpactStyle.Heavy);
     this.pinsKnocked++;
@@ -662,25 +694,30 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     if (distance < minDistance && distance > 0) {
       const movingPinSpeed = Math.sqrt(movingPin.velocityX * movingPin.velocityX + movingPin.velocityY * movingPin.velocityY);
 
-      // Only knock down if moving pin has sufficient speed
-      if (movingPinSpeed > 0.8) {
+      // Realistic pin knock-down threshold
+      if (movingPinSpeed > 1.0) {
         standingPin.fallen = true;
 
         // Calculate collision angle
         const collisionAngle = Math.atan2(dy, dx);
 
-        // Transfer momentum based on collision physics
-        const momentumTransfer = movingPinSpeed * 0.7;
+        // Realistic momentum transfer - pins scatter when hit
+        const momentumTransfer = movingPinSpeed * 0.75; // 75% transfer for dramatic pin action
         standingPin.velocityX = Math.cos(collisionAngle) * momentumTransfer;
         standingPin.velocityY = Math.sin(collisionAngle) * momentumTransfer;
 
-        // Add some spin effect from the moving pin
-        standingPin.velocityX += movingPin.velocityX * 0.3;
-        standingPin.velocityY += movingPin.velocityY * 0.3;
+        // Add component of moving pin's velocity for realistic scatter
+        standingPin.velocityX += movingPin.velocityX * 0.4;
+        standingPin.velocityY += movingPin.velocityY * 0.4;
 
-        // Slow down the moving pin
-        movingPin.velocityX *= 0.7;
-        movingPin.velocityY *= 0.7;
+        // Add scatter variation
+        const pinScatter = movingPinSpeed * 0.15;
+        standingPin.velocityX += (Math.random() - 0.5) * pinScatter;
+        standingPin.velocityY += (Math.random() - 0.5) * pinScatter;
+
+        // Moving pin loses energy in collision
+        movingPin.velocityX *= 0.65;
+        movingPin.velocityY *= 0.65;
 
         this.pinsKnocked++;
         this.hapticService.vibrate(ImpactStyle.Light);
@@ -913,15 +950,19 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createParticles(x: number, y: number) {
-    for (let i = 0; i < 8; i++) {
+    // Create more realistic pin impact particles
+    for (let i = 0; i < 10; i++) {
+      const angle = (Math.PI * 2 * i) / 10 + (Math.random() - 0.5) * 0.5;
+      const speed = 2 + Math.random() * 4;
+
       this.particles.push({
         x,
         y,
-        velocityX: (Math.random() - 0.5) * 8,
-        velocityY: (Math.random() - 0.5) * 8,
-        life: 30 + Math.random() * 20,
-        maxLife: 50,
-        color: `hsl(${Math.random() * 60 + 15}, 80%, 60%)`, // Random warm colors
+        velocityX: Math.cos(angle) * speed,
+        velocityY: Math.sin(angle) * speed,
+        life: 35 + Math.random() * 25,
+        maxLife: 60,
+        color: `hsl(${Math.random() * 40 + 10}, 75%, 65%)`, // Warm colors for wood impact
       });
     }
   }
@@ -930,8 +971,12 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.particles = this.particles.filter((particle) => {
       particle.x += particle.velocityX;
       particle.y += particle.velocityY;
-      particle.velocityX *= 0.95;
-      particle.velocityY *= 0.95;
+
+      // Realistic particle physics - gravity and air resistance
+      particle.velocityX *= 0.96; // Air resistance
+      particle.velocityY *= 0.96;
+      particle.velocityY += 0.15; // Gravity pulls particles down
+
       particle.life--;
 
       return particle.life > 0;

@@ -28,6 +28,10 @@ export class StorageService {
 
   #pinInputMode = signal<boolean>(true);
 
+  /** Resolves once the initial game history has been loaded into the #games signal. */
+  readonly gamesReady: Promise<void>;
+  #resolveGamesReady!: () => void;
+
   get pinInputMode() {
     return this.#pinInputMode;
   }
@@ -71,6 +75,9 @@ export class StorageService {
     private networkService: NetworkService,
     private analyticsService: AnalyticsService,
   ) {
+    this.gamesReady = new Promise<void>((resolve) => {
+      this.#resolveGamesReady = resolve;
+    });
     this.init();
 
     // const games: Game[] = [];
@@ -508,7 +515,7 @@ export class StorageService {
         this.loadAllPatterns(),
         this.loadAllBalls(undefined, weight),
         this.loadLeagues(),
-        this.loadGameHistory(),
+        this.loadGameHistory().then(() => this.#resolveGamesReady()),
         this.loadArsenal(),
         this.ballService.getBrands(),
         this.ballService.getCores(),
@@ -540,7 +547,19 @@ export class StorageService {
     }
   }
 
-  private async save(key: string, data: unknown) {
+  /**
+   * Generic storage access methods for use by other services
+   */
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      return await this.storage.get(key);
+    } catch (error) {
+      console.error(`Error getting data for key "${key}":`, error);
+      throw error;
+    }
+  }
+
+  async set(key: string, data: unknown): Promise<void> {
     try {
       await this.storage.set(key, data);
     } catch (error) {
@@ -549,12 +568,26 @@ export class StorageService {
     }
   }
 
-  private async delete(key: string) {
+  async remove(key: string): Promise<void> {
     try {
       await this.storage.remove(key);
     } catch (error) {
       console.error(`Error deleting data for key "${key}":`, error);
       throw error;
     }
+  }
+
+  /**
+   * @deprecated Use set() instead
+   */
+  private async save(key: string, data: unknown) {
+    await this.set(key, data);
+  }
+
+  /**
+   * @deprecated Use remove() instead
+   */
+  private async delete(key: string) {
+    await this.remove(key);
   }
 }

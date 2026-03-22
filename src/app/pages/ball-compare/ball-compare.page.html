@@ -1,0 +1,147 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Ball Compare</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openAddBallModal()" [disabled]="selectedBalls().length >= maxBalls">
+        <ion-icon slot="icon-only" name="add"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  @if (selectedBalls().length === 0) {
+    <div class="empty-state">
+      <ion-icon name="scale-outline" class="empty-icon"></ion-icon>
+      <ion-text>
+        <h2>Compare Bowling Balls</h2>
+        <p>
+          Tap the <strong>+</strong> button to add up to {{ maxBalls }} balls and compare their specs, hook potential, and lane condition
+          recommendations.
+        </p>
+      </ion-text>
+      <ion-button fill="outline" (click)="openAddBallModal()">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Add Ball
+      </ion-button>
+    </div>
+  } @else {
+    <!-- Radar comparison chart -->
+    <div class="chart-section">
+      <canvas #chartCanvas class="radar-canvas"></canvas>
+    </div>
+
+    <div class="compare-grid">
+      @for (ball of selectedBalls(); track ball.ball_id) {
+        <ion-card class="ball-card">
+          <ion-button class="remove-btn" fill="clear" size="small" (click)="removeBall(ball)">
+            <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+
+          <div class="ball-image-wrapper">
+            <ion-img [src]="storageService.url + ball.thumbnail_image" [alt]="ball.ball_name"></ion-img>
+          </div>
+
+          <ion-card-header>
+            <ion-card-subtitle>{{ ball.brand_name }} ({{ ball.release_date }})</ion-card-subtitle>
+            <ion-card-title>{{ ball.ball_name }}</ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            <div class="chips-row">
+              <ion-chip class="small-chip">{{ ball.core_weight }}lbs</ion-chip>
+              <ion-chip class="small-chip">{{ ball.core_type }}</ion-chip>
+              <ion-chip class="small-chip" [ngClass]="'coverstock-' + getCoverstockClass(ball.coverstock_type)">
+                {{ ball.coverstock_type }}
+              </ion-chip>
+            </div>
+
+            @let metrics = getBallMetrics(ball);
+
+            <div class="metrics-section">
+              <!-- Hook Potential -->
+              <div class="metric">
+                <div class="metric-header">
+                  <span class="metric-label">Hook Potential</span>
+                  <span class="metric-value">{{ metrics.hookLabel }}</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar" [style.width.%]="metrics.hookScore" [style.background]="getMetricBarColor(metrics.hookScore)"></div>
+                </div>
+              </div>
+
+              <!-- Length / Roll Timing -->
+              <div class="metric">
+                <div class="metric-header">
+                  <span class="metric-label">Length (RG: {{ ball.core_rg || "N/A" }})</span>
+                  <span class="metric-value">{{ metrics.lengthLabel }}</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar" [style.width.%]="metrics.lengthScore" [style.background]="'var(--ion-color-primary)'"></div>
+                </div>
+              </div>
+
+              <!-- Flare Potential -->
+              <div class="metric">
+                <div class="metric-header">
+                  <span class="metric-label">Flare (Diff: {{ ball.core_diff || "N/A" }})</span>
+                  <span class="metric-value">{{ metrics.flareLabel }}</span>
+                </div>
+                <div class="metric-bar-bg">
+                  <div class="metric-bar" [style.width.%]="metrics.flareScore" [style.background]="getMetricBarColor(metrics.flareScore)"></div>
+                </div>
+              </div>
+
+              @if (ball.core_int_diff) {
+                <div class="spec-row">
+                  <span class="spec-label">Int. Diff</span>
+                  <span class="spec-value">{{ ball.core_int_diff }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="lane-condition">
+              <span class="lane-label">Best For:</span>
+              <ion-chip [color]="metrics.laneConditionColor" class="lane-chip">
+                {{ metrics.laneCondition }}
+              </ion-chip>
+            </div>
+
+            <div class="coverstock-detail">
+              <div class="spec-row">
+                <span class="spec-label">Coverstock</span>
+                <span class="spec-value">{{ ball.coverstock_name }}</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Finish</span>
+                <span class="spec-value">{{ ball.factory_finish }}</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      }
+    </div>
+
+    @if (selectedBalls().length < maxBalls) {
+      <div class="add-more-row">
+        <ion-button fill="outline" size="small" (click)="openAddBallModal()">
+          <ion-icon slot="start" name="add"></ion-icon>
+          Add Another Ball
+        </ion-button>
+      </div>
+    }
+  }
+</ion-content>
+
+<!-- Single typeahead modal (programmatically opened) -->
+<ion-modal #addBallModal [presentingElement]="presentingElement">
+  <ng-template>
+    <app-generic-typeahead
+      [items]="storageService.allBalls()"
+      [config]="ballTypeaheadConfig"
+      [prevSelectedItems]="selectedBallIds()"
+      (selectedItemsChange)="onBallSelectionChange($event)">
+    </app-generic-typeahead>
+  </ng-template>
+</ion-modal>
+

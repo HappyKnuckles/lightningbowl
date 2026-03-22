@@ -39,6 +39,15 @@
           <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
           <ion-label>Ball Library</ion-label>
         </ion-item>
+        <ion-item
+          class="tab-btn"
+          button
+          [routerLink]="'/tabs/ball-compare'"
+          [class.active-tab]="isActive('/tabs/ball-compare')"
+          (click)="modal.dismiss()">
+          <ion-icon name="scale-outline" slot="start"></ion-icon>
+          <ion-label>Ball Compare</ion-label>
+        </ion-item>
         <ion-item class="tab-btn" button [routerLink]="'/tabs/pattern'" [class.active-tab]="isActive('/tabs/pattern')" (click)="modal.dismiss()">
           <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
           <ion-label>Pattern Library</ion-label>

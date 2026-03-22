@@ -2,7 +2,7 @@
   <ion-toolbar>
     <ion-title>Ball Compare</ion-title>
     <ion-buttons slot="end">
-      <ion-button id="addBallCompare" [disabled]="selectedBalls().length >= maxBalls">
+      <ion-button (click)="openAddBallModal()" [disabled]="selectedBalls().length >= maxBalls">
         <ion-icon slot="icon-only" name="add"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -20,12 +20,17 @@
           recommendations.
         </p>
       </ion-text>
-      <ion-button id="addBallCompareEmpty" fill="outline">
+      <ion-button fill="outline" (click)="openAddBallModal()">
         <ion-icon slot="start" name="add"></ion-icon>
         Add Ball
       </ion-button>
     </div>
   } @else {
+    <!-- Radar comparison chart -->
+    <div class="chart-section">
+      <canvas #chartCanvas class="radar-canvas"></canvas>
+    </div>
+
     <div class="compare-grid">
       @for (ball of selectedBalls(); track ball.ball_id) {
         <ion-card class="ball-card">
@@ -119,7 +124,7 @@
 
     @if (selectedBalls().length < maxBalls) {
       <div class="add-more-row">
-        <ion-button id="addBallCompareMore" fill="outline" size="small">
+        <ion-button fill="outline" size="small" (click)="openAddBallModal()">
           <ion-icon slot="start" name="add"></ion-icon>
           Add Another Ball
         </ion-button>
@@ -128,8 +133,8 @@
   }
 </ion-content>
 
-<!-- Typeahead modal for first add -->
-<ion-modal [presentingElement]="presentingElement" trigger="addBallCompare">
+<!-- Single typeahead modal (programmatically opened) -->
+<ion-modal #addBallModal [presentingElement]="presentingElement">
   <ng-template>
     <app-generic-typeahead
       [items]="storageService.allBalls()"
@@ -140,26 +145,3 @@
   </ng-template>
 </ion-modal>
 
-<!-- Typeahead modal for empty state add -->
-<ion-modal [presentingElement]="presentingElement" trigger="addBallCompareEmpty">
-  <ng-template>
-    <app-generic-typeahead
-      [items]="storageService.allBalls()"
-      [config]="ballTypeaheadConfig"
-      [prevSelectedItems]="selectedBallIds()"
-      (selectedItemsChange)="onBallSelectionChange($event)">
-    </app-generic-typeahead>
-  </ng-template>
-</ion-modal>
-
-<!-- Typeahead modal for add more -->
-<ion-modal [presentingElement]="presentingElement" trigger="addBallCompareMore">
-  <ng-template>
-    <app-generic-typeahead
-      [items]="storageService.allBalls()"
-      [config]="ballTypeaheadConfig"
-      [prevSelectedItems]="selectedBallIds()"
-      (selectedItemsChange)="onBallSelectionChange($event)">
-    </app-generic-typeahead>
-  </ng-template>
-</ion-modal>

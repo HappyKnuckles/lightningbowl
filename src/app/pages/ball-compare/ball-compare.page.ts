@@ -142,9 +142,9 @@ export class BallComparePage implements OnInit {
     const isUrethane = coverstockType.includes('urethane');
 
     // Parse factory finish: extract grit number and detect polish
-    const gritMatch = factoryFinish.match(/(\d{3,4})/);
+    const gritMatch = factoryFinish.match(/(\d{3,4})(?:\s*[-\s]?grit)?/i);
     const finishGrit = gritMatch ? parseInt(gritMatch[1], 10) : null;
-    const isPolished = factoryFinish.includes('polish') || factoryFinish.includes('shine') || factoryFinish.includes('gloss');
+    const isPolished = ['polish', 'shine', 'gloss'].some((term) => factoryFinish.includes(term));
 
     // ── HOOK SCORE (0-100) ──────────────────────────────────────────────────
     // Coverstock is the dominant driver of hook potential.

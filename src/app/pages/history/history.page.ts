@@ -26,13 +26,18 @@ import {
   filterOutline,
   medalOutline,
   swapVertical,
+  todayOutline,
+  calendarClearOutline,
+  calendarOutline,
+  calendarNumberOutline,
+  infiniteOutline,
 } from 'ionicons/icons';
 import { NgIf, DatePipe } from '@angular/common';
 import { ImpactStyle } from '@capacitor/haptics';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ModalController, RefresherCustomEvent } from '@ionic/angular';
+import { ActionSheetController, ModalController, RefresherCustomEvent } from '@ionic/angular';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
@@ -44,6 +49,7 @@ import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
+import { CalendarNavigatorComponent } from 'src/app/shared/components/calendar-navigator/calendar-navigator.component';
 
 @Component({
   selector: 'app-history',
@@ -69,6 +75,7 @@ import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-heade
     GameComponent,
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
+    CalendarNavigatorComponent,
   ],
 })
 export class HistoryPage {
@@ -102,6 +109,7 @@ export class HistoryPage {
     public loadingService: LoadingService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
+    private actionSheetCtrl: ActionSheetController,
     public gameFilterService: GameFilterService,
     private excelService: ExcelService,
     private analyticsService: AnalyticsService,
@@ -117,6 +125,11 @@ export class HistoryPage {
       documentTextOutline,
       medalOutline,
       swapVertical,
+      todayOutline,
+      calendarClearOutline,
+      calendarOutline,
+      calendarNumberOutline,
+      infiniteOutline,
     });
   }
 
@@ -135,6 +148,21 @@ export class HistoryPage {
     });
 
     return await modal.present();
+  }
+
+  async openCalendarModeSheet(): Promise<void> {
+    const sheet = await this.actionSheetCtrl.create({
+      header: 'View by',
+      buttons: [
+        { text: 'Day', icon: 'today-outline', handler: () => this.gameFilterService.setCalendarMode('daily') },
+        { text: 'Week', icon: 'calendar-clear-outline', handler: () => this.gameFilterService.setCalendarMode('weekly') },
+        { text: 'Month', icon: 'calendar-outline', handler: () => this.gameFilterService.setCalendarMode('monthly') },
+        { text: 'Year', icon: 'calendar-number-outline', handler: () => this.gameFilterService.setCalendarMode('yearly') },
+        { text: 'All Time', icon: 'infinite-outline', handler: () => this.gameFilterService.setCalendarMode('overall') },
+        { text: 'Cancel', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {

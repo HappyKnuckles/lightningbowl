@@ -2,7 +2,7 @@ import { computed, Injectable, Signal, signal } from '@angular/core';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { UtilsService } from '../utils/utils.service';
-import { StorageService } from '../storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 
 @Injectable({
   providedIn: 'root',
@@ -42,7 +42,7 @@ export class GameFilterService {
   });
 
   #filteredGames = computed(() => {
-    const games = this.storageService.games();
+    const games = this.gamesStore.games();
     const filters = this.filters();
     return this.filterGames(games, filters);
   });
@@ -57,7 +57,7 @@ export class GameFilterService {
 
   constructor(
     private utilsService: UtilsService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
   ) {
     this.setDefaultFilters();
   }

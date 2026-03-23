@@ -1,7 +1,7 @@
 import { TypeaheadConfig } from './typeahead-config.interface';
 import { Ball, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 export function createBallCoreTypeaheadConfig(): TypeaheadConfig<Core> {
   return {
@@ -43,7 +43,7 @@ export function createBallCoverstockTypeaheadConfig(): TypeaheadConfig<Coverstoc
   };
 }
 
-export function createBallTypeaheadConfig(storageService: StorageService): TypeaheadConfig<Ball> {
+export function createBallTypeaheadConfig(ballsStore: BallsStore): TypeaheadConfig<Ball> {
   return {
     title: 'New Ball',
     searchPlaceholder: 'Search for balls',
@@ -64,7 +64,7 @@ export function createBallTypeaheadConfig(storageService: StorageService): Typea
     valueKey: 'ball_id',
     searchMode: 'local',
     showImages: true,
-    imageUrlGenerator: (ball: Ball) => storageService.url + ball.thumbnail_image,
+    imageUrlGenerator: (ball: Ball) => ballsStore.url + ball.thumbnail_image,
     customDisplayFormatter: (item: Ball, fieldKey: string) => {
       if (fieldKey === 'brand_name_with_date') {
         return `${item.brand_name} (${item.release_date})`;

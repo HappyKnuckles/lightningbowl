@@ -82,7 +82,7 @@
     [canSpare]="canSpare()"
     [canUndo]="canUndo()"
     [isGameComplete]="isGameComplete()"
-    [selectHitPins]="storageService.pinInputMode()"
+    [selectHitPins]="settingsStore.pinInputMode()"
     (throwConfirmed)="onPinThrowConfirmed($event)"
     (undoRequested)="onPinUndoRequested()">
   </app-pin-input>
@@ -193,14 +193,14 @@
         >
       </ion-item>
       <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
-      <ion-item [id]="patternModalId()" button [disabled]="storageService.allPatterns().length === 0">
+      <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
         <ion-label>Patterns</ion-label>
         <span class="ion-text-right">{{ currentGame.patterns.join(", ") || "None" }}</span>
       </ion-item>
       <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
         <ng-template>
           <app-generic-typeahead
-            [items]="storageService.allPatterns()"
+            [items]="patternsStore.allPatterns()"
             [config]="patternTypeaheadConfig"
             [prevSelectedItems]="currentGame.patterns || []"
             (selectedItemsChange)="onPatternChanged($event)">
@@ -213,7 +213,7 @@
         button
         detail="true"
         detailIcon="chevron-expand-outline"
-        [disabled]="storageService.arsenal().length === 0">
+        [disabled]="ballsStore.arsenal().length === 0">
         <ion-label>Balls</ion-label>
         <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
       </ion-item>

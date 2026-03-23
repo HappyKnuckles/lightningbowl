@@ -5,7 +5,9 @@ import { isPlatform } from '@ionic/angular';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { Game } from 'src/app/core/models/game.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
@@ -21,7 +23,9 @@ type ExcelRow = Record<string, ExcelCellValue>;
 export class ExcelService {
   constructor(
     private hapticService: HapticService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
+    private ballsStore: BallsStore,
+    private leaguesStore: LeaguesStore,
     private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
@@ -31,7 +35,7 @@ export class ExcelService {
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
   async exportToExcel(): Promise<boolean> {
     try {
-      const gameData = this.getGameDataForExport(this.storageService.games());
+      const gameData = this.getGameDataForExport(this.gamesStore.games());
       const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
         this.statsService.currentStats(),
       );
@@ -257,17 +261,17 @@ export class ExcelService {
       }
 
       for (const league of leagueMap.values()) {
-        await this.storageService.addLeague(league);
+        await this.leaguesStore.addLeague(league);
       }
 
       for (const ball of ballMap.values()) {
-        const ballToAdd = this.storageService.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.storageService.arsenal().some((b) => b.ball_name === ball)) {
-          await this.storageService.saveBallToArsenal(ballToAdd);
+        const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
+        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+          await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
       const sortedGames = this.sortUtils.sortGameHistoryByDate(gameData);
-      await this.storageService.saveGamesToLocalStorage(sortedGames);
+      await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       this.gameFilterService.setDefaultFilters();
     } catch (error) {
       console.error('Error transforming data:', error);

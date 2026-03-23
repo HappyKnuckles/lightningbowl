@@ -13,7 +13,7 @@
         <span class="game-count-ratio">{{ bestBall().gameCount }} / {{ totalGames() }}</span>
       </div>
       <div class="inner-stat-container">
-        <ion-img [src]="storageService.url + bestBall().ballImage"></ion-img>
+        <ion-img [src]="ballsStore.url + bestBall().ballImage"></ion-img>
         <div class="ball-stats">
           <div class="stat-line">
             <span class="stat-label">Avg:</span>

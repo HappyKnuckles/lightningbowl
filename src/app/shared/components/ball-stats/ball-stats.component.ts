@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { IonImg, IonListHeader, IonList } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-ball-stats',
@@ -15,5 +15,5 @@ export class BallStatsComponent {
 
   totalGames = input.required<number>();
 
-  constructor(public storageService: StorageService) {}
+  constructor(public ballsStore: BallsStore) {}
 }

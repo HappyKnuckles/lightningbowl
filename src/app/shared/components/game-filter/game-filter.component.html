@@ -128,7 +128,7 @@
       button
       detail="true"
       detailIcon="chevron-expand-outline"
-      [disabled]="storageService.arsenal().length === 0">
+      [disabled]="gamesStore.games().length === 0">
       <ion-label>Balls</ion-label>
       <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
     </ion-item>

@@ -33,7 +33,8 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ModalController, RefresherCustomEvent } from '@ionic/angular';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { AppFacade } from 'src/app/core/stores/app.facade';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
@@ -98,7 +99,8 @@ export class HistoryPage {
   constructor(
     private alertController: AlertController,
     private toastService: ToastService,
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    private appFacade: AppFacade,
     public loadingService: LoadingService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
@@ -140,7 +142,7 @@ export class HistoryPage {
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
-      await this.storageService.loadGameHistory();
+      await this.gamesStore.loadGameHistory();
     } catch (error) {
       console.error(error);
       this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
@@ -215,7 +217,7 @@ export class HistoryPage {
   }
 
   async deleteAll(): Promise<void> {
-    await this.storageService.deleteAllData();
+    await this.appFacade.deleteAllData();
     window.dispatchEvent(new Event('dataDeleted'));
   }
 }

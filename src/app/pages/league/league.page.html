@@ -23,7 +23,7 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <!-- Show this message if there are no game history items and it's not loading -->
-  <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
+  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
     <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
   </ng-container>
 

@@ -2,10 +2,10 @@
   <ion-toolbar>
     <ion-title>Ball Library</ion-title>
     <ion-buttons slot="start">
-      <ion-button [href]="storageService.url">
+      <ion-button [href]="ballsStore.url">
         <div class="powered-by">powered by</div>
         <img
-          [src]="storageService.url + '/sites/default/files/logo/bowwwl-logo.svg'"
+          [src]="ballsStore.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
           title="bowwwl.com"
           style="height: 1.5rem; min-width: 80px" />
@@ -87,7 +87,7 @@
             </ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for' + ' ' + ball.ball_name"></ion-img>
+            <ion-img [src]="ballsStore.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for' + ' ' + ball.ball_name"></ion-img>
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">

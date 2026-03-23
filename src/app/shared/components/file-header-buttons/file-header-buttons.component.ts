@@ -6,7 +6,8 @@ import { IonIcon, IonButton, IonSpinner, IonButtons } from '@ionic/angular/stand
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
@@ -16,7 +17,8 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
   styleUrl: './file-header-buttons.component.css',
 })
 export class FileHeaderButtonsComponent {
-  storageService = inject(StorageService);
+  gamesStore = inject(GamesStore);
+  ballsStore = inject(BallsStore);
   loadingService = inject(LoadingService);
   excelService = inject(ExcelService);
   toastService = inject(ToastService);

@@ -29,7 +29,7 @@ import {
   IonListHeader,
   IonRippleEffect,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { Ball } from 'src/app/core/models/ball.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { addIcons } from 'ionicons';
@@ -93,15 +93,15 @@ export class ArsenalPage implements OnInit {
   presentingElement?: HTMLElement;
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
-    this.storageService
+    this.ballsStore
       .allBalls()
-      .filter((ball) => !this.storageService.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
   constructor(
-    public storageService: StorageService,
+    public ballsStore: BallsStore,
     private hapticService: HapticService,
     private alertController: AlertController,
     private loadingService: LoadingService,
@@ -120,7 +120,7 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.storageService);
+    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
   }
 
   private generateBallDistributionChart(): void {
@@ -130,7 +130,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.storageService.arsenal(),
+        this.ballsStore.arsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -154,7 +154,7 @@ export class ArsenalPage implements OnInit {
             text: 'Delete',
             handler: async () => {
               try {
-                await this.storageService.removeFromArsenal(ball);
+                await this.ballsStore.removeFromArsenal(ball);
                 this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
@@ -175,20 +175,20 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.storageService.arsenal();
+    const arsenal = this.ballsStore.arsenal();
     const [movedItem] = arsenal.splice(event.detail.from, 1);
     arsenal.splice(event.detail.to, 0, movedItem);
 
     arsenal.forEach((ball, idx) => (ball.position = idx + 1));
 
-    await Promise.all(arsenal.map((ball) => this.storageService.saveBallToArsenal(ball)));
+    await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
   }
 
   saveBallToArsenal(ball: Ball[]): void {
     try {
       ball.forEach(async (ball) => {
         try {
-          await this.storageService.saveBallToArsenal(ball);
+          await this.ballsStore.saveBallToArsenal(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
           this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);

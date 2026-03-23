@@ -3,7 +3,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { BestBallStats, LeaveStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GameFilterService } from '../game-filter/game-filter.service';
-import { StorageService } from '../storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 
 import { StatsPersistenceService } from './stats-persistance.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
@@ -17,7 +17,7 @@ import { PinStatsCalculatorService } from './game-stats-calculator/pin-stats-cal
 export class GameStatsService {
   constructor(
     private gameFilterService: GameFilterService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
     private overallStatsCalculatorService: OverallStatsCalculatorService,
     private seriesStatsCalculatorService: SeriesStatsCalculatorService,
     private ballStatsCalculatorService: BallStatsCalculatorService,
@@ -77,7 +77,7 @@ export class GameStatsService {
   }
 
   #overallStats: Signal<Stats> = computed(() => {
-    const games = this.storageService.games();
+    const games = this.gamesStore.games();
     return this.calculateBowlingStats(games) as Stats;
   });
   get overallStats(): Signal<Stats> {
@@ -85,7 +85,7 @@ export class GameStatsService {
   }
 
   get seriesStats(): SeriesStats {
-    this.seriesStatsCalculatorService.calculateSeriesStats(this.storageService.games());
+    this.seriesStatsCalculatorService.calculateSeriesStats(this.gamesStore.games());
     return this.seriesStatsCalculatorService.seriesStats;
   }
 

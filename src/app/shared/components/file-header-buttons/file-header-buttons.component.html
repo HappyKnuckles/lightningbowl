@@ -5,16 +5,16 @@
     class="action-sheet"
     slot="start"
     fill="clear"
-    [disabled]="storageService.allBalls().length === 0"
+    [disabled]="ballsStore.allBalls().length === 0"
     (click)="openExcelFileInput()">
-    <ion-spinner style="position: absolute" *ngIf="storageService.allBalls().length === 0" name="crescent"></ion-spinner>
+    <ion-spinner style="position: absolute" *ngIf="ballsStore.allBalls().length === 0" name="crescent"></ion-spinner>
     <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
   </ion-button>
   <ion-button
     (click)="exportToExcel()"
     class="action-sheet"
     fill="clear"
-    [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+    [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
     <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon> </ion-button
 ></ion-buttons>
 <!-- Clear Input on Upload-->

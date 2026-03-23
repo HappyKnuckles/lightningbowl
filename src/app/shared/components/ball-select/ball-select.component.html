@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Balls</ion-title>
+    <ion-title>{{ "BALL_SELECT.TITLE" | translate }}</ion-title>
   </ion-toolbar>
 </ion-header>
 <ion-content>
@@ -23,8 +23,8 @@
 <ion-footer>
   <ion-toolbar>
     <ion-buttons slot="end" class="modal-buttons">
-      <ion-button (click)="cancelBallSelection()" fill="clear" class="modal-button cancel-button">Cancel</ion-button>
-      <ion-button (click)="confirmBallSelection()" fill="clear" class="modal-button ok-button">OK</ion-button>
+      <ion-button (click)="cancelBallSelection()" fill="clear" class="modal-button cancel-button">{{ "BALL_SELECT.CANCEL" | translate }}</ion-button>
+      <ion-button (click)="confirmBallSelection()" fill="clear" class="modal-button ok-button">{{ "BALL_SELECT.OK" | translate }}</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-footer>

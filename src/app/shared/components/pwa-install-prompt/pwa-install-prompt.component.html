@@ -2,13 +2,15 @@
   <ng-template>
     <ion-header>
       <ion-toolbar>
-        <ion-title>Install Lightning Bowl</ion-title>
+        <ion-title>{{ "PWA_INSTALL.TITLE" | translate }}</ion-title>
         <ion-buttons slot="start">
-          <ion-button fill="clear" type="reset" (click)="onDismiss()"> Cancel </ion-button>
+          <ion-button fill="clear" type="reset" (click)="onDismiss()"> {{ "PWA_INSTALL.CANCEL" | translate }} </ion-button>
         </ion-buttons>
         <ion-buttons slot="end">
-          <ion-button *ngIf="!isIOS" strong="true" (click)="onInstall()" [disabled]="!canInstall"> Install! </ion-button>
-          <ion-button *ngIf="isIOS" strong="true" type="submit" (click)="onDismiss()"> Got it! </ion-button>
+          <ion-button *ngIf="!isIOS" strong="true" (click)="onInstall()" [disabled]="!canInstall">
+            {{ "PWA_INSTALL.INSTALL" | translate }}
+          </ion-button>
+          <ion-button *ngIf="isIOS" strong="true" type="submit" (click)="onDismiss()"> {{ "PWA_INSTALL.GOT_IT" | translate }} </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -19,28 +21,28 @@
           <img src="assets/icons/android/android-launchericon-192-192.png" alt="Lightning Bowl Icon" class="app-icon" />
           <div class="app-info">
             <h2>Lightning Bowl</h2>
-            <p>Your ultimate bowling companion</p>
+            <p>{{ "PWA_INSTALL.SUBTITLE" | translate }}</p>
           </div>
         </div>
 
         <div class="benefits-section">
-          <h3>Why install Lightning Bowl?</h3>
+          <h3>{{ "PWA_INSTALL.WHY_INSTALL" | translate }}</h3>
           <div class="benefits-grid">
             <div class="benefit-item">
               <ion-icon name="flash" color="primary"></ion-icon>
-              <span>Quick Access</span>
+              <span>{{ "PWA_INSTALL.BENEFIT_QUICK_ACCESS" | translate }}</span>
             </div>
             <div class="benefit-item">
               <ion-icon name="wifi-outline" color="primary"></ion-icon>
-              <span>Works Offline</span>
+              <span>{{ "PWA_INSTALL.BENEFIT_WORKS_OFFLINE" | translate }}</span>
             </div>
             <div class="benefit-item">
               <ion-icon name="notifications" color="primary"></ion-icon>
-              <span>Push Notifications</span>
+              <span>{{ "PWA_INSTALL.BENEFIT_PUSH_NOTIFICATIONS" | translate }}</span>
             </div>
             <div class="benefit-item">
               <ion-icon name="phone-portrait" color="primary"></ion-icon>
-              <span>Native Experience</span>
+              <span>{{ "PWA_INSTALL.BENEFIT_NATIVE_EXPERIENCE" | translate }}</span>
             </div>
           </div>
         </div>
@@ -72,19 +74,19 @@
         </ion-modal>
 
         <div class="screenshots-section">
-          <h3>App Screenshots</h3>
+          <h3>{{ "PWA_INSTALL.SCREENSHOTS_TITLE" | translate }}</h3>
           <div class="screenshots-carousel">
             <div class="screenshot-container">
               <button type="button" class="screenshot-button" (click)="openImageModal('start-screen')" (keyup.enter)="openImageModal('start-screen')">
                 <img src="assets/screenshots/start.png" alt="Start Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Track your games</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_TRACK_GAMES" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button type="button" class="screenshot-button" (click)="openImageModal('stats-screen')" (keyup.enter)="openImageModal('stats-screen')">
                 <img src="assets/screenshots/stats.png" alt="Statistics Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">View detailed stats</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_VIEW_STATS" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button
@@ -94,7 +96,7 @@
                 (keyup.enter)="openImageModal('history-screen')">
                 <img src="assets/screenshots/history.png" alt="History Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Browse game history</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_GAME_HISTORY" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button
@@ -104,7 +106,7 @@
                 (keyup.enter)="openImageModal('arsenal-screen')">
                 <img src="assets/screenshots/arsenal.png" alt="Arsenal Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Manage your arsenals</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_ARSENALS" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button
@@ -114,13 +116,13 @@
                 (keyup.enter)="openImageModal('history-screen')">
                 <img src="assets/screenshots/history.png" alt="History Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Browse game history</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_GAME_HISTORY" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button type="button" class="screenshot-button" (click)="openImageModal('balls-screen')" (keyup.enter)="openImageModal('balls-screen')">
                 <img src="assets/screenshots/balls.png" alt="Balls Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Browse balls</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_BROWSE_BALLS" | translate }}</p>
             </div>
             <div class="screenshot-container">
               <button
@@ -130,26 +132,26 @@
                 (keyup.enter)="openImageModal('pattern-screen')">
                 <img src="assets/screenshots/pattern.png" alt="Pattern Page" class="screenshot" />
               </button>
-              <p class="screenshot-caption">Browse patterns</p>
+              <p class="screenshot-caption">{{ "PWA_INSTALL.CAPTION_BROWSE_PATTERNS" | translate }}</p>
             </div>
           </div>
         </div>
 
         <div class="instructions-section">
           <div *ngIf="!isIOS">
-            <h3>How to install:</h3>
+            <h3>{{ "PWA_INSTALL.HOW_TO_INSTALL" | translate }}</h3>
             <div class="install-steps">
               <div class="step">
                 <span class="step-number">1</span>
-                <p>Tap "Install" in the upper right corner</p>
+                <p>{{ "PWA_INSTALL.STEP1_ANDROID" | translate }}</p>
               </div>
               <div class="step">
                 <span class="step-number">2</span>
-                <p>Confirm installation in the popup</p>
+                <p>{{ "PWA_INSTALL.STEP2_ANDROID" | translate }}</p>
               </div>
               <div class="step">
                 <span class="step-number">3</span>
-                <p>Find the app on your home screen</p>
+                <p>{{ "PWA_INSTALL.STEP3_ANDROID" | translate }}</p>
               </div>
             </div>
           </div>
@@ -157,9 +159,9 @@
           <div class="instruction-section" *ngIf="isIOS">
             <div class="ios-header">
               <ion-icon name="phone-portrait" color="primary" class="ios-icon"></ion-icon>
-              <h3>Install on iOS Safari</h3>
+              <h3>{{ "PWA_INSTALL.IOS_TITLE" | translate }}</h3>
             </div>
-            <p class="ios-description">Follow these simple steps to add Lightning Bowl to your home screen for the best mobile experience:</p>
+            <p class="ios-description">{{ "PWA_INSTALL.IOS_DESCRIPTION" | translate }}</p>
 
             <div class="install-steps">
               <div class="step">
@@ -168,8 +170,8 @@
                   <ion-icon name="share-outline" class="step-icon"></ion-icon>
                 </div>
                 <div class="step-content">
-                  <h4>Find the Share Button</h4>
-                  <p>Tap the <strong>Share</strong> button at the bottom of your Safari browser</p>
+                  <h4>{{ "PWA_INSTALL.IOS_STEP1_TITLE" | translate }}</h4>
+                  <p>{{ "PWA_INSTALL.IOS_STEP1_DESC" | translate }}</p>
                 </div>
               </div>
 
@@ -182,8 +184,8 @@
                     style="border: 1px solid var(--ion-color-primary); border-radius: 4px; font-size: 1.2rem"></ion-icon>
                 </div>
                 <div class="step-content">
-                  <h4>Add to Home Screen</h4>
-                  <p>Scroll down in the share menu and tap <strong>"Add to Home Screen"</strong></p>
+                  <h4>{{ "PWA_INSTALL.IOS_STEP2_TITLE" | translate }}</h4>
+                  <p>{{ "PWA_INSTALL.IOS_STEP2_DESC" | translate }}</p>
                 </div>
               </div>
 
@@ -192,19 +194,19 @@
                   <span class="step-number">3</span>
                 </div>
                 <div class="step-content">
-                  <h4>Complete Installation</h4>
-                  <p>Tap <strong>"Add"</strong> in the top right corner to finish installing</p>
+                  <h4>{{ "PWA_INSTALL.IOS_STEP3_TITLE" | translate }}</h4>
+                  <p>{{ "PWA_INSTALL.IOS_STEP3_DESC" | translate }}</p>
                 </div>
               </div>
             </div>
 
             <div class="ios-benefits">
-              <h4>After installation, you'll enjoy:</h4>
+              <h4>{{ "PWA_INSTALL.IOS_AFTER_TITLE" | translate }}</h4>
               <ul>
-                <li>App icon on your home screen</li>
-                <li>Full-screen experience without Safari UI</li>
-                <li>Faster loading and better performance</li>
-                <li>Works offline</li>
+                <li>{{ "PWA_INSTALL.IOS_BENEFIT1" | translate }}</li>
+                <li>{{ "PWA_INSTALL.IOS_BENEFIT2" | translate }}</li>
+                <li>{{ "PWA_INSTALL.IOS_BENEFIT3" | translate }}</li>
+                <li>{{ "PWA_INSTALL.IOS_BENEFIT4" | translate }}</li>
               </ul>
             </div>
           </div>

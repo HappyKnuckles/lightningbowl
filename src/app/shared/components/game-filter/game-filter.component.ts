@@ -32,6 +32,7 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-game-filter',
@@ -59,6 +60,7 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
     CommonModule,
     IonSelectOption,
     BallSelectComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -84,6 +86,7 @@ export class GameFilterComponent implements OnInit {
     public storageService: StorageService,
     private utilsService: UtilsService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     addIcons({ chevronExpandOutline });
   }
@@ -103,9 +106,9 @@ export class GameFilterComponent implements OnInit {
   getSelectedBallsText(): string {
     const balls = this.gameFilterService.filters().balls || [];
     if (balls.length === 1 && balls[0] === 'all') {
-      return 'All';
+      return this.translate.instant('COMMON.ALL');
     }
-    return balls.length > 0 ? balls.join(', ') : 'All';
+    return balls.length > 0 ? balls.join(', ') : this.translate.instant('COMMON.ALL');
   }
 
   startDateChange(event: CustomEvent): void {

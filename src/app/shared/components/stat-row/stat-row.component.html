@@ -1,7 +1,7 @@
 <div class="stats">
-  <ion-text [id]="id + '-tooltip'">{{ label }}: <ion-icon *ngIf="toolTip" name="information-circle-outline"></ion-icon> </ion-text>
+  <ion-text [id]="id + '-tooltip'">{{ label | translate }}: <ion-icon *ngIf="toolTip" name="information-circle-outline"></ion-icon> </ion-text>
   <ion-popover *ngIf="toolTip" [trigger]="id + '-tooltip'" size="cover" class="tooltip-popover">
-    <ion-text class="tooltip">{{ toolTip }}</ion-text>
+    <ion-text class="tooltip">{{ toolTip | translate }}</ion-text>
   </ion-popover>
   <ion-text class="value" [id]="id">
     @if (secondaryStat !== undefined) {

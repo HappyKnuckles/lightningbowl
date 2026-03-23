@@ -5,6 +5,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { addIcons } from 'ionicons';
 import { refresh } from 'ionicons/icons';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface Particle {
   x: number;
@@ -52,7 +53,7 @@ interface Arrow {
   selector: 'app-bowling-minigame',
   templateUrl: './minigame.page.html',
   styleUrls: ['./minigame.page.scss'],
-  imports: [IonButtons, CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonIcon],
+  imports: [IonButtons, CommonModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButton, IonIcon, TranslateModule],
 })
 export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('gameCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;

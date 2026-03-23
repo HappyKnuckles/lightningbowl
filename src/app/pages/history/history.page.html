@@ -2,7 +2,7 @@
   <ion-toolbar>
     <app-file-header-buttons></app-file-header-buttons>
     <ion-title>
-      History
+      {{ 'HISTORY.TITLE' | translate }}
       <ion-badge>{{ gameFilterService.filteredGames().length }}</ion-badge>
     </ion-title>
     <ion-buttons slot="end" class="action-sheet">
@@ -32,11 +32,11 @@
 
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
-    <ion-text class="no-game-text"> Start playing a few games to see your history here! </ion-text>
+    <ion-text class="no-game-text"> {{ 'HISTORY.NO_GAMES' | translate }} </ion-text>
   </ng-container>
   <ng-template #checkFilteredGames>
     <ng-container *ngIf="gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading(); else content">
-      <ion-text class="no-game-text"> No games for this filter! </ion-text>
+      <ion-text class="no-game-text"> {{ 'HISTORY.NO_GAMES_FILTER' | translate }} </ion-text>
     </ng-container>
   </ng-template>
   <!-- Main content to display when there is game history or when loading is done -->

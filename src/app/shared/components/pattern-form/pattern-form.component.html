@@ -5,7 +5,7 @@
         <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Add Pattern</ion-title>
+    <ion-title>{{ "PATTERN_FORM.TITLE_HEADER" | translate }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="reset()" [strong]="true"> Reset </ion-button>
     </ion-buttons>
@@ -17,35 +17,56 @@
     <h4 class="ion-padding">Pattern Data</h4>
     <ion-list lines="full">
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Title" formControlName="title"></ion-input>
+        <ion-input class="ion-text-right" placeholder="" [label]="'PATTERN_FORM.TITLE' | translate" formControlName="title"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="30" label="Distance" formControlName="distance" type="number"></ion-input>
+        <ion-input
+          class="ion-text-right"
+          placeholder="30"
+          [label]="'PATTERN_FORM.DISTANCE' | translate"
+          formControlName="distance"
+          type="number"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="2.00" label="Ratio" formControlName="ratio"></ion-input>
+        <ion-input class="ion-text-right" placeholder="2.00" [label]="'PATTERN_FORM.RATIO' | translate" formControlName="ratio"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="12.74" label="Oil Forward" formControlName="forward" type="number"></ion-input>
+        <ion-input
+          class="ion-text-right"
+          placeholder="12.74"
+          [label]="'PATTERN_FORM.OIL_FORWARD' | translate"
+          formControlName="forward"
+          type="number"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="10.31" label="Oil Reverse" formControlName="reverse" type="number"></ion-input>
+        <ion-input
+          class="ion-text-right"
+          placeholder="10.31"
+          [label]="'PATTERN_FORM.OIL_REVERSE' | translate"
+          formControlName="reverse"
+          type="number"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Volume" formControlName="volume" readonly="true" type="number"></ion-input>
+        <ion-input
+          class="ion-text-right"
+          placeholder=""
+          [label]="'PATTERN_FORM.VOLUME' | translate"
+          formControlName="volume"
+          readonly="true"
+          type="number"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="20" label="Pump" formControlName="pump" type="number"></ion-input>
+        <ion-input class="ion-text-right" placeholder="20" [label]="'PATTERN_FORM.PUMP' | translate" formControlName="pump" type="number"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Tanks" formControlName="tanks"></ion-input>
+        <ion-input class="ion-text-right" placeholder="" [label]="'PATTERN_FORM.TANKS' | translate" formControlName="tanks"></ion-input>
       </ion-item>
     </ion-list>
 
@@ -60,34 +81,50 @@
         </div>
         <ion-list lines="full">
           <ion-item>
-            <ion-input class="ion-text-right ion-text-capitalize" placeholder="2L" label="Start" formControlName="start"></ion-input>
+            <ion-input
+              class="ion-text-right ion-text-capitalize"
+              placeholder="2L"
+              [label]="'PATTERN_FORM.START' | translate"
+              formControlName="start"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right ion-text-capitalize" placeholder="2R" label="Stop" formControlName="stop"></ion-input>
+            <ion-input
+              class="ion-text-right ion-text-capitalize"
+              placeholder="2R"
+              [label]="'PATTERN_FORM.STOP' | translate"
+              formControlName="stop"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="1" label="Load" formControlName="load"></ion-input>
+            <ion-input class="ion-text-right" placeholder="1" [label]="'PATTERN_FORM.LOAD' | translate" formControlName="load"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="25" label="Mics" formControlName="mics"></ion-input>
+            <ion-input class="ion-text-right" placeholder="25" [label]="'PATTERN_FORM.MICS' | translate" formControlName="mics"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="18" label="Speed" formControlName="speed"></ion-input>
+            <ion-input class="ion-text-right" placeholder="18" [label]="'PATTERN_FORM.SPEED' | translate" formControlName="speed"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="3" label="Buffer" formControlName="buf"></ion-input>
+            <ion-input class="ion-text-right" placeholder="3" [label]="'PATTERN_FORM.BUFFER' | translate" formControlName="buf"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" label="Tank" formControlName="tank"></ion-input>
+            <ion-input class="ion-text-right" [label]="'PATTERN_FORM.TANK' | translate" formControlName="tank"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="20" label="Total Oil" formControlName="total_oil"></ion-input>
+            <ion-input class="ion-text-right" placeholder="20" [label]="'PATTERN_FORM.TOTAL_OIL' | translate" formControlName="total_oil"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="0" label="Start Dist" formControlName="distance_start"></ion-input>
+            <ion-input
+              class="ion-text-right"
+              placeholder="0"
+              [label]="'PATTERN_FORM.START_DIST' | translate"
+              formControlName="distance_start"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="22" label="End Dist" formControlName="distance_end"></ion-input>
+            <ion-input
+              class="ion-text-right"
+              placeholder="22"
+              [label]="'PATTERN_FORM.END_DIST' | translate"
+              formControlName="distance_end"></ion-input>
           </ion-item>
         </ion-list>
       </div>
@@ -105,34 +142,50 @@
         </div>
         <ion-list lines="full">
           <ion-item>
-            <ion-input class="ion-text-right ion-text-capitalize" placeholder="2L" label="Start" formControlName="start"></ion-input>
+            <ion-input
+              class="ion-text-right ion-text-capitalize"
+              placeholder="2L"
+              [label]="'PATTERN_FORM.START' | translate"
+              formControlName="start"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right ion-text-capitalize" placeholder="2R" label="Stop" formControlName="stop"></ion-input>
+            <ion-input
+              class="ion-text-right ion-text-capitalize"
+              placeholder="2R"
+              [label]="'PATTERN_FORM.STOP' | translate"
+              formControlName="stop"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="1" label="Load" formControlName="load"></ion-input>
+            <ion-input class="ion-text-right" placeholder="1" [label]="'PATTERN_FORM.LOAD' | translate" formControlName="load"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="25" label="Mics" formControlName="mics"></ion-input>
+            <ion-input class="ion-text-right" placeholder="25" [label]="'PATTERN_FORM.MICS' | translate" formControlName="mics"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="18" label="Speed" formControlName="speed"></ion-input>
+            <ion-input class="ion-text-right" placeholder="18" [label]="'PATTERN_FORM.SPEED' | translate" formControlName="speed"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="3" label="Buffer" formControlName="buf"></ion-input>
+            <ion-input class="ion-text-right" placeholder="3" [label]="'PATTERN_FORM.BUFFER' | translate" formControlName="buf"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" label="Tank" formControlName="tank"></ion-input>
+            <ion-input class="ion-text-right" [label]="'PATTERN_FORM.TANK' | translate" formControlName="tank"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="20" label="Total Oil" formControlName="total_oil"></ion-input>
+            <ion-input class="ion-text-right" placeholder="20" [label]="'PATTERN_FORM.TOTAL_OIL' | translate" formControlName="total_oil"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="0" label="Start Dist" formControlName="distance_start"></ion-input>
+            <ion-input
+              class="ion-text-right"
+              placeholder="0"
+              [label]="'PATTERN_FORM.START_DIST' | translate"
+              formControlName="distance_start"></ion-input>
           </ion-item>
           <ion-item>
-            <ion-input class="ion-text-right" placeholder="22" label="End Dist" formControlName="distance_end"></ion-input>
+            <ion-input
+              class="ion-text-right"
+              placeholder="22"
+              [label]="'PATTERN_FORM.END_DIST' | translate"
+              formControlName="distance_end"></ion-input>
           </ion-item>
         </ion-list>
       </div>

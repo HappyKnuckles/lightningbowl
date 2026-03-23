@@ -19,6 +19,7 @@ import {
 import { IonSelectCustomEvent } from '@ionic/core';
 import { addIcons } from 'ionicons';
 import { addOutline, medalOutline, createOutline } from 'ionicons/icons';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
@@ -46,6 +47,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
     FormsModule,
     ReactiveFormsModule,
     IonSelectOption,
+    TranslateModule,
   ],
 })
 export class LeagueSelectorComponent {
@@ -74,6 +76,7 @@ export class LeagueSelectorComponent {
     private alertController: AlertController,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {
     // this.leagueSubscriptions.add(
     //   merge(this.storageService.newLeagueAdded, this.storageService.leagueDeleted, this.storageService.leagueChanged).subscribe(() => {
@@ -99,12 +102,12 @@ export class LeagueSelectorComponent {
       this.selectedLeague = this.newLeague;
       this.leagueChanged.emit(this.selectedLeague);
       this.newLeague = '';
-      this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveSuccess), 'add');
       this.isModalOpen = false;
       this.analyticsService.trackLeagueCreated({ name: this.selectedLeague });
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueSaveError), 'bug', true);
     }
   }
 
@@ -118,11 +121,11 @@ export class LeagueSelectorComponent {
       await this.storageService.editLeague(this.newLeague, this.leagueToChange);
       this.newLeague = '';
       this.leagueToChange = '';
-      this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueEditSuccess), 'checkmark-outline');
       this.isModalOpen = false;
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueEditError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueEditError), 'bug', true);
     }
   }
 
@@ -131,11 +134,11 @@ export class LeagueSelectorComponent {
       for (const league of this.leaguesToDelete) {
         await this.storageService.deleteLeague(league);
       }
-      this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueDeleteSuccess), 'checkmark-outline');
       this.isModalOpen = false;
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueDeleteError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.leagueDeleteError), 'bug', true);
     }
   }
 

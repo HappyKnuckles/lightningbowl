@@ -5,13 +5,14 @@ import { ConditionalNumberPipe } from '../../pipes/number-pipe/conditional-numbe
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-stat-row',
   templateUrl: './stat-row.component.html',
   styleUrls: ['./stat-row.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [NgIf, IonText, IonIcon, ConditionalNumberPipe],
+  imports: [NgIf, IonText, IonIcon, ConditionalNumberPipe, TranslateModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatRowComponent implements OnChanges {

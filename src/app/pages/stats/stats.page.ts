@@ -65,6 +65,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-stats',
@@ -123,6 +124,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     GenericFilterActiveComponent,
     BallStatsComponent,
     PinLeaveStatsComponent,
+    TranslateModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -199,6 +201,7 @@ export class StatsPage implements OnInit, AfterViewInit {
     private toastService: ToastService,
     private excelService: ExcelService,
     private alertController: AlertController,
+    private translate: TranslateService,
   ) {
     addIcons({ cloudUploadOutline, cloudDownloadOutline, filterOutline, calendarNumberOutline, calendarNumber });
     effect(() => {
@@ -245,7 +248,7 @@ export class StatsPage implements OnInit, AfterViewInit {
       this.generateCharts(true);
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.gameLoadError), 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -266,9 +269,9 @@ export class StatsPage implements OnInit, AfterViewInit {
       const file = input.files[0];
       const gameData = await this.excelService.readExcelData(file);
       await this.excelService.transformData(gameData);
-      this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileUploadSuccess), 'checkmark-outline');
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileUploadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileUploadError), 'bug', true);
       console.error(error);
     } finally {
       const input = event.target as HTMLInputElement;
@@ -288,12 +291,12 @@ export class StatsPage implements OnInit, AfterViewInit {
     try {
       const gotPermission = await this.excelService.exportToExcel();
       if (gotPermission) {
-        this.toastService.showToast(ToastMessages.excelFileDownloadSuccess, 'checkmark-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.excelFileDownloadSuccess), 'checkmark-outline');
       } else {
         await this.showPermissionDeniedAlert();
       }
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileDownloadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.excelFileDownloadError), 'bug', true);
       console.error('Error exporting to Excel:', error);
     }
   }
@@ -350,7 +353,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating score chart:', error);
     }
   }
@@ -399,7 +402,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating average score chart:', error);
     }
   }
@@ -417,7 +420,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating score distribution chart:', error);
     }
   }
@@ -435,7 +438,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating spare distribution chart:', error);
     }
   }
@@ -448,7 +451,7 @@ export class StatsPage implements OnInit, AfterViewInit {
 
       this.pinChartInstance = this.chartService.generatePinChart(this.pinChart, this.statsService.currentStats(), this.pinChartInstance!, isReload);
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating pin chart:', error);
     }
   }
@@ -466,7 +469,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
       console.error('Error generating throw chart:', error);
     }
   }

@@ -1,7 +1,7 @@
 <ion-header [translucent]="true">
   <ion-toolbar style="display: flex; align-items: flex-start">
     <ion-title size="small">
-      {{ title || (isCoverstock ? "Coverstock: " + balls[0].coverstock_name : "Core: " + balls[0].core_name) }}
+      {{ getTitle() }}
     </ion-title>
   </ion-toolbar>
 </ion-header>

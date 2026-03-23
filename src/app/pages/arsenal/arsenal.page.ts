@@ -46,6 +46,7 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-arsenal',
@@ -83,6 +84,7 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    TranslateModule,
   ],
 })
 export class ArsenalPage implements OnInit {
@@ -109,6 +111,7 @@ export class ArsenalPage implements OnInit {
     public modalCtrl: ModalController,
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
+    private translate: TranslateService,
   ) {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline });
     effect(() => {
@@ -135,7 +138,7 @@ export class ArsenalPage implements OnInit {
       );
     } catch (error) {
       console.error('Error generating ball distribution chart:', error);
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.chartGenerationError), 'bug', true);
     }
   }
 
@@ -155,10 +158,13 @@ export class ArsenalPage implements OnInit {
             handler: async () => {
               try {
                 await this.storageService.removeFromArsenal(ball);
-                this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
+                this.toastService.showToast(
+                  this.translate.instant(ToastMessages.ballRemovedFromArsenal, { name: ball.ball_name }),
+                  'checkmark-outline',
+                );
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
-                this.toastService.showToast(ToastMessages.ballDeleteError, 'bug', true);
+                this.toastService.showToast(this.translate.instant(ToastMessages.ballDeleteError), 'bug', true);
               }
             },
           },
@@ -168,7 +174,7 @@ export class ArsenalPage implements OnInit {
       await alert.present();
     } catch (error) {
       console.error('Error displaying removal alert:', error);
-      this.toastService.showToast(ToastMessages.unexpectedError, 'warning', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.unexpectedError), 'warning', true);
     }
   }
 
@@ -191,15 +197,15 @@ export class ArsenalPage implements OnInit {
           await this.storageService.saveBallToArsenal(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
-          this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);
+          this.toastService.showToast(this.translate.instant(ToastMessages.ballAddFailed, { name: ball.ball_name }), 'bug', true);
         }
       });
 
       const ball_names = ball.map((ball) => ball.ball_name).join(', ');
-      this.toastService.showToast(`Balls added to arsenal: ${ball_names}`, 'checkmark-outline');
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballsAddedToArsenal, { names: ball_names }), 'checkmark-outline');
     } catch (error) {
       console.error('Error saving balls to arsenal:', error);
-      this.toastService.showToast(ToastMessages.ballSaveError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballSaveError), 'bug', true);
     }
   }
 
@@ -218,11 +224,11 @@ export class ArsenalPage implements OnInit {
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
       } else {
-        this.toastService.showToast(`No similar balls found for core: ${ball.core_name}.`, 'information-circle-outline');
+        this.toastService.showToast(this.translate.instant(ToastMessages.noSimilarBallsCore, { name: ball.core_name }), 'information-circle-outline');
       }
     } catch (error) {
       console.error('Error fetching core balls:', error);
-      this.toastService.showToast(`Error fetching balls for core ${ball.core_name}`, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCore, { name: ball.core_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }
@@ -238,11 +244,14 @@ export class ArsenalPage implements OnInit {
       if (this.coverstockBalls.length > 0) {
         await this.coverstockModal.present();
       } else {
-        this.toastService.showToast(`No similar balls found for coverstock: ${ball.coverstock_name}.`, 'information-circle-outline');
+        this.toastService.showToast(
+          this.translate.instant(ToastMessages.noSimilarBallsCoverstock, { name: ball.coverstock_name }),
+          'information-circle-outline',
+        );
       }
     } catch (error) {
       console.error('Error fetching coverstock balls:', error);
-      this.toastService.showToast(`Error fetching balls for coverstock ${ball.coverstock_name}`, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.errorFetchingBallsCoverstock, { name: ball.coverstock_name }), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

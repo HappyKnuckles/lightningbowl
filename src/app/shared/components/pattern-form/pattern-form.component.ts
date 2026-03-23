@@ -22,6 +22,7 @@ import { ForwardsData, Pattern, ReverseData } from 'src/app/core/models/pattern.
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pattern-form',
@@ -38,6 +39,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
     IonButton,
     IonIcon,
     ReactiveFormsModule,
+    TranslateModule,
   ],
   templateUrl: './pattern-form.component.html',
   styleUrl: './pattern-form.component.scss',
@@ -50,6 +52,7 @@ export class PatternFormComponent implements OnInit {
     private loadingService: LoadingService,
     private toastService: ToastService,
     private modalCtrl: ModalController,
+    private translate: TranslateService,
   ) {
     addIcons({ chevronBack, trashOutline, close });
   }
@@ -229,11 +232,11 @@ export class PatternFormComponent implements OnInit {
     try {
       this.loadingService.setLoading(true);
       await this.patternService.addPattern(pattern);
-      this.toastService.showToast(ToastMessages.patternAddSuccess, 'checkmark');
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternAddSuccess), 'checkmark');
       this.cancel();
     } catch (error) {
       console.error('Error adding pattern:', error);
-      this.toastService.showToast(ToastMessages.patternAddError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.patternAddError), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

@@ -1,11 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button color="medium" (click)="cancel()">Cancel</ion-button>
+      <ion-button color="medium" (click)="cancel()">{{ "COMMON.CANCEL" | translate }}</ion-button>
     </ion-buttons>
-    <ion-title>Filter</ion-title>
+    <ion-title>{{ "FILTER.TITLE" | translate }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="reset()" [strong]="true">Reset</ion-button>
+      <ion-button (click)="reset()" [strong]="true">{{ "COMMON.RESET" | translate }}</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -18,7 +18,7 @@
         name="minScore"
         clearOnEdit="true"
         inputmode="numeric"
-        label="Score range"
+        [label]="'FILTER.SCORE_RANGE' | translate"
         (ionChange)="updateFilter('minScore', $event.detail.value)"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
@@ -32,19 +32,23 @@
         (ionChange)="updateFilter('maxScore', $event.detail.value)"></ion-input>
     </ion-item>
     <ion-item>
-      <ion-select name="timeRange" label="Time Range" (ionChange)="startDateChange($event)" [ngModel]="gameFilterService.filters().timeRange">
-        <ion-select-option [value]="0">Today</ion-select-option>
-        <ion-select-option [value]="1">Last week</ion-select-option>
-        <ion-select-option [value]="2">Last month</ion-select-option>
-        <ion-select-option [value]="3">Last 3 months</ion-select-option>
-        <ion-select-option [value]="4">Last 6 months</ion-select-option>
-        <ion-select-option [value]="5">Last year</ion-select-option>
-        <ion-select-option [value]="6">All time</ion-select-option>
+      <ion-select
+        name="timeRange"
+        [label]="'FILTER.TIME_RANGE' | translate"
+        (ionChange)="startDateChange($event)"
+        [ngModel]="gameFilterService.filters().timeRange">
+        <ion-select-option [value]="0">{{ "FILTER.TODAY" | translate }}</ion-select-option>
+        <ion-select-option [value]="1">{{ "FILTER.LAST_WEEK" | translate }}</ion-select-option>
+        <ion-select-option [value]="2">{{ "FILTER.LAST_MONTH" | translate }}</ion-select-option>
+        <ion-select-option [value]="3">{{ "FILTER.LAST_3_MONTHS" | translate }}</ion-select-option>
+        <ion-select-option [value]="4">{{ "FILTER.LAST_6_MONTHS" | translate }}</ion-select-option>
+        <ion-select-option [value]="5">{{ "FILTER.LAST_YEAR" | translate }}</ion-select-option>
+        <ion-select-option [value]="6">{{ "FILTER.ALL_TIME" | translate }}</ion-select-option>
       </ion-select>
     </ion-item>
     @defer {
       <ion-item>
-        <ion-label style="flex: 2">Advanced time range</ion-label>
+        <ion-label style="flex: 2">{{ "FILTER.ADVANCED_TIME_RANGE" | translate }}</ion-label>
         <ion-datetime-button datetime="datetime-min"></ion-datetime-button>
         <ion-label class="ion-text-center" style="margin: 0">-</ion-label>
         <ion-datetime-button datetime="datetime-max"></ion-datetime-button>
@@ -97,28 +101,28 @@
         [ngModel]="gameFilterService.filters().excludePractice"
         name="isPractice"
         (ionChange)="updateFilter('excludePractice', $event.detail.checked)"
-        >Exclude practice games</ion-toggle
+        >{{ "FILTER.EXCLUDE_PRACTICE" | translate }}</ion-toggle
       >
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="gameFilterService.filters().isPerfect" name="isPerfect" (ionChange)="updateFilter('isPerfect', $event.detail.checked)"
-        >Only perfect games</ion-toggle
-      >
+      <ion-toggle [ngModel]="gameFilterService.filters().isPerfect" name="isPerfect" (ionChange)="updateFilter('isPerfect', $event.detail.checked)">{{
+        "FILTER.ONLY_PERFECT" | translate
+      }}</ion-toggle>
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="gameFilterService.filters().isClean" name="isClean" (ionChange)="updateFilter('isClean', $event.detail.checked)"
-        >Only clean games</ion-toggle
-      >
+      <ion-toggle [ngModel]="gameFilterService.filters().isClean" name="isClean" (ionChange)="updateFilter('isClean', $event.detail.checked)">{{
+        "FILTER.ONLY_CLEAN" | translate
+      }}</ion-toggle>
     </ion-item>
     <ion-item>
       <ion-select
         name="league"
         [ngModel]="gameFilterService.filters().leagues"
-        label="League"
+        [label]="'FILTER.LEAGUE' | translate"
         multiple="true"
         (ionChange)="updateFilter('leagues', $event.detail.value)">
-        <ion-select-option value="all">All</ion-select-option>
-        <ion-select-option value="">None</ion-select-option>
+        <ion-select-option value="all">{{ "COMMON.ALL" | translate }}</ion-select-option>
+        <ion-select-option value="">{{ "COMMON.NONE" | translate }}</ion-select-option>
         <ion-select-option *ngFor="let league of leagues" [value]="league">{{ league }}</ion-select-option>
       </ion-select>
     </ion-item>
@@ -129,7 +133,7 @@
       detail="true"
       detailIcon="chevron-expand-outline"
       [disabled]="storageService.arsenal().length === 0">
-      <ion-label>Balls</ion-label>
+      <ion-label>{{ "FILTER.BALLS" | translate }}</ion-label>
       <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
     </ion-item>
     <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal trigger="ball-filter" class="ball-modal">
@@ -142,16 +146,18 @@
       <ion-select
         name="patterns"
         [ngModel]="gameFilterService.filters().patterns"
-        label="Patterns"
+        [label]="'FILTER.PATTERNS' | translate"
         multiple="true"
         (ionChange)="updateFilter('patterns', $event.detail.value)">
-        <ion-select-option value="all">All</ion-select-option>
-        <ion-select-option value="">None</ion-select-option>
+        <ion-select-option value="all">{{ "COMMON.ALL" | translate }}</ion-select-option>
+        <ion-select-option value="">{{ "COMMON.NONE" | translate }}</ion-select-option>
         <ion-select-option *ngFor="let league of patterns()" [value]="league">{{ league }}</ion-select-option>
       </ion-select>
     </ion-item>
   </ion-list>
 </ion-content>
 <ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" (click)="confirm()">Confirm ({{ gameFilterService.filteredGames().length }} Games)</ion-button>
+  <ion-button class="confirm-btn" (click)="confirm()">{{
+    "FILTER.CONFIRM_GAMES" | translate: { count: gameFilterService.filteredGames().length }
+  }}</ion-button>
 </ion-footer>

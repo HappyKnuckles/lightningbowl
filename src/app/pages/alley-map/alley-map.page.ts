@@ -4,6 +4,7 @@ import { IonToolbar, IonHeader, IonContent, IonSearchbar, IonTitle } from '@ioni
 import * as L from 'leaflet';
 import { SearchbarCustomEvent } from '@ionic/angular';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 // Type definitions for Overpass API
 interface OverpassTags {
@@ -59,7 +60,7 @@ if (L.Icon?.Default?.prototype) {
 
 @Component({
   selector: 'app-alley-map',
-  imports: [IonTitle, IonSearchbar, IonContent, IonHeader, IonToolbar],
+  imports: [IonTitle, IonSearchbar, IonContent, IonHeader, IonToolbar, TranslateModule],
   templateUrl: './alley-map.page.html',
   styleUrls: ['./alley-map.page.css'],
 })

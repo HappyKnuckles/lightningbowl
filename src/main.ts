@@ -4,7 +4,7 @@ import { PreloadAllModules, provideRouter, RouteReuseStrategy, withPreloading } 
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
+import { withInterceptorsFromDi, provideHttpClient, HttpClient } from '@angular/common/http';
 import { IonicStorageModule } from '@ionic/storage-angular';
 import { AppComponent } from './app/app.component';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -12,6 +12,12 @@ import { inject } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { routes } from './app/app.routes';
 import { StorageService } from './app/core/services/storage/storage.service';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+
+export function createTranslateLoader(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}
 
 if (environment.production) {
   // Track app start time
@@ -27,7 +33,18 @@ if (environment.production) {
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    importProvidersFrom(BrowserModule, IonicStorageModule.forRoot()),
+    importProvidersFrom(
+      BrowserModule,
+      IonicStorageModule.forRoot(),
+      TranslateModule.forRoot({
+        defaultLanguage: 'en',
+        loader: {
+          provide: TranslateLoader,
+          useFactory: createTranslateLoader,
+          deps: [HttpClient],
+        },
+      }),
+    ),
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideAnimationsAsync(),
     provideIonicAngular({ innerHTMLTemplatesEnabled: true }),

@@ -13,6 +13,7 @@ export function generateBallDistributionChart(
   balls: Ball[],
   existingChartInstance: Chart | undefined,
   isReload?: boolean,
+  labels?: { bowlingBalls: string },
 ): Chart {
   try {
     const baseUrl = 'https://bowwwl.com';
@@ -49,7 +50,7 @@ export function generateBallDistributionChart(
     }
 
     const dataset = {
-      label: 'Bowling Balls',
+      label: labels?.bowlingBalls ?? 'Bowling Balls',
       data: dataPoints,
       pointStyle: pointImages,
       pointHitRadius: 35,

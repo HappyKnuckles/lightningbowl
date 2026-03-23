@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Minigame</ion-title>
+    <ion-title>{{ 'MINIGAME.TITLE' | translate }}</ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <ion-button expand="block" color="primary" (click)="resetGame()" class="reset-button">
         <ion-icon name="refresh" slot="icon-only"></ion-icon>
@@ -34,10 +34,10 @@
 
   <!-- Instructions -->
   <div class="instructions">
-    <h3>How to Play:</h3>
+    <h3>{{ 'MINIGAME.HOW_TO_PLAY' | translate }}</h3>
     <ul>
-      <li>Swipe in any direction - ball follows your finger!</li>
-      <li>Game auto-resets after each throw!</li>
+      <li>{{ 'MINIGAME.SWIPE_INSTRUCTION' | translate }}</li>
+      <li>{{ 'MINIGAME.AUTO_RESET' | translate }}</li>
     </ul>
   </div>
 </ion-content>

@@ -31,6 +31,7 @@ import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig } fr
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import { Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 @Component({
   selector: 'app-ball-filter',
   templateUrl: './ball-filter.component.html',
@@ -57,6 +58,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     CommonModule,
     IonSelectOption,
     GenericTypeaheadComponent,
+    TranslateModule,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -77,6 +79,7 @@ export class BallFilterComponent implements OnInit {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private analyticsService: AnalyticsService,
+    private translate: TranslateService,
   ) {}
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page')!;
@@ -138,7 +141,7 @@ export class BallFilterComponent implements OnInit {
       await this.storageService.loadAllBalls(undefined, weight);
     } catch (error) {
       console.error('Error loading balls:', error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(this.translate.instant(ToastMessages.ballLoadError), 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

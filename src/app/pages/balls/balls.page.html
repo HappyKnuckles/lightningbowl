@@ -1,9 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Ball Library</ion-title>
+    <ion-title>{{ "BALLS.TITLE" | translate }}</ion-title>
     <ion-buttons slot="start">
       <ion-button [href]="storageService.url">
-        <div class="powered-by">powered by</div>
+        <div class="powered-by">{{ "BALLS.POWERED_BY" | translate }}</div>
         <img
           [src]="storageService.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
@@ -34,7 +34,7 @@
       appSearchBlur
       [value]="searchTerm()"
       (ionInput)="searchBalls($event)"
-      placeholder="Search for a ball"
+      [placeholder]="'BALLS.SEARCH_PLACEHOLDER' | translate"
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
   </ion-toolbar>
@@ -51,7 +51,7 @@
 
   @if (!isPageLoading()) {
     <ng-container *ngIf="displayedBalls.length <= 0; else content">
-      <ion-text class="no-game-text"> No balls found. </ion-text>
+      <ion-text class="no-game-text"> {{ "BALLS.NO_BALLS" | translate }} </ion-text>
     </ng-container>
 
     <ng-template #content>
@@ -91,7 +91,7 @@
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">
-                  <h2 class="title">Core:</h2>
+                  <h2 class="title">{{ "BALLS.CORE" | translate }}:</h2>
                   <ion-icon name="open-outline"></ion-icon>
                 </div>
                 <p class="info">{{ ball.core_name }}</p>
@@ -103,7 +103,7 @@
               </ion-list>
               <ion-list lines="none" (click)="getSameCoverstockBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="coverstock">
-                  <h2 class="title">Coverstock:</h2>
+                  <h2 class="title">{{ "BALLS.COVERSTOCK" | translate }}:</h2>
                   <ion-icon name="open-outline"></ion-icon>
                 </div>
                 <p class="info">{{ ball.coverstock_type }}</p>
@@ -113,13 +113,17 @@
               </ion-list>
             </div>
           </ion-card-content>
-          <ion-button *ngIf="isInArsenal(ball)" style="float: right" fill="clear" (click)="removeFromArsenal(ball)"> Remove from arsenal </ion-button>
-          <ion-button *ngIf="!isInArsenal(ball)" style="float: right" fill="clear" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
+          <ion-button *ngIf="isInArsenal(ball)" style="float: right" fill="clear" (click)="removeFromArsenal(ball)">
+            {{ "BALLS.REMOVE_FROM_ARSENAL" | translate }}
+          </ion-button>
+          <ion-button *ngIf="!isInArsenal(ball)" style="float: right" fill="clear" (click)="saveBallToArsenal(ball)">
+            {{ "BALLS.ADD_TO_ARSENAL" | translate }}
+          </ion-button>
         </ion-card>
       }
       <!-- Infinite Scroll -->
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadBalls($event)" *ngIf="hasMoreData">
-        <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more balls..."></ion-infinite-scroll-content>
+        <ion-infinite-scroll-content loadingSpinner="crescent" [loadingText]="'BALLS.LOADING_MORE' | translate"></ion-infinite-scroll-content>
       </ion-infinite-scroll>
     </ng-template>
   } @else {
@@ -183,7 +187,7 @@
     <app-ball-list
       [balls]="movementBalls.slice(1, 10)"
       [isCoverstock]="false"
-      [title]="'Similar reaction to ' + movementBalls[0]!.ball_name"
+      [title]="'BALLS.SIMILAR_REACTION_TO_NAME' | translate: { ballName: movementBalls[0]!.ball_name }"
       (ballSelected)="onBallSelected($event)"></app-ball-list>
   </ng-template>
 </ion-modal>

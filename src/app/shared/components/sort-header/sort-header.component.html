@@ -6,12 +6,14 @@
   <ng-template>
     <ion-list #sortList>
       <ion-item *ngIf="favoritesFirstStorageKey" lines="full">
-        <ion-checkbox justify="space-between" [checked]="favoritesFirst" (ionChange)="onFavoritesFirstChange($event)">Favorites first</ion-checkbox>
+        <ion-checkbox justify="space-between" [checked]="favoritesFirst" (ionChange)="onFavoritesFirstChange($event)">{{
+          "SORT.FAVORITES_FIRST" | translate
+        }}</ion-checkbox>
       </ion-item>
       <ion-radio-group [(ngModel)]="selectedSortKey" (ngModelChange)="onSortChange($event)">
         <ion-item *ngFor="let option of sortOptions()" (click)="selectOption(option)" [id]="'sort-item-' + getSortKey(option)">
           <ion-radio slot="start" [value]="getSortKey(option)"></ion-radio>
-          <ion-label>{{ option.label }}</ion-label>
+          <ion-label>{{ option.label | translate }}</ion-label>
         </ion-item>
       </ion-radio-group>
     </ion-list>

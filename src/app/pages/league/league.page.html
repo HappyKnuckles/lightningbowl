@@ -8,13 +8,15 @@
       </ion-buttons>
     } @else {
       <ion-buttons slot="end">
-        <ion-button type="button" class="action-sheet" fill="clear" strong="true" (click)="editVisibility()"> Save </ion-button>
+        <ion-button type="button" class="action-sheet" fill="clear" strong="true" (click)="editVisibility()">
+          {{ "LEAGUE.SAVE" | translate }}
+        </ion-button>
       </ion-buttons>
       <ion-buttons slot="start">
-        <ion-button type="button" class="action-sheet" fill="clear" (click)="cancelEdit()"> Cancel </ion-button>
+        <ion-button type="button" class="action-sheet" fill="clear" (click)="cancelEdit()"> {{ "LEAGUE.CANCEL" | translate }} </ion-button>
       </ion-buttons>
     }
-    <ion-title> Leagues </ion-title>
+    <ion-title> {{ "LEAGUE.TITLE" | translate }} </ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -24,18 +26,20 @@
   </ion-refresher>
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
-    <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
+    <ion-text class="no-game-text"> {{ "LEAGUE.NO_GAMES" | translate }} </ion-text>
   </ng-container>
 
   <ng-template #noLeagues>
     <ng-container *ngIf="leagueKeys().length <= 0 && !loadingService.isLoading(); else content">
-      <ion-text class="no-game-text"> No leagues saved! </ion-text>
+      <ion-text class="no-game-text"> {{ "LEAGUE.NO_LEAGUES" | translate }} </ion-text>
     </ng-container>
   </ng-template>
 
   <ng-template #content>
     @if (noLeaguesShown && !isVisibilityEdit()) {
-      <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
+      <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
+        {{ "LEAGUE.NO_LEAGUES_SHOWN" | translate }}
+      </ion-text>
     } @else {
       @for (league of leagueKeys(); track league) {
         @if (isVisibilityEdit()) {
@@ -45,9 +49,9 @@
                 <ion-checkbox [checked]="selectionState[league]" (ionChange)="updateLeagueSelection(league, $event.detail.checked)">
                   <ion-label class="game-info">
                     <h2 class="title">{{ league }}</h2>
-                    <p class="score">Games: {{ gamesByLeague()[league].length || 0 }}</p>
-                    <p class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</p>
-                    <p class="score">High: {{ statsByLeague()[league].highGame }}</p>
+                    <p class="score">{{ "LEAGUE.GAMES" | translate: { count: gamesByLeague()[league].length || 0 } }}</p>
+                    <p class="score">{{ "LEAGUE.AVG" | translate: { avg: (statsByLeague()[league].averageScore | number: "1.1-2") } }}</p>
+                    <p class="score">{{ "LEAGUE.HIGH" | translate: { high: statsByLeague()[league].highGame } }}</p>
                   </ion-label>
                 </ion-checkbox>
               </ion-item>
@@ -60,9 +64,9 @@
                 <ion-item (click)="loadingService.setLoading(true)" button [id]="league" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
                   <ion-label class="game-info">
                     <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
+                    <div class="score">{{ "LEAGUE.GAMES" | translate: { count: gamesByLeague()[league].length || 0 } }}</div>
+                    <div class="score">{{ "LEAGUE.AVG" | translate: { avg: (statsByLeague()[league].averageScore | number: "1.1-2") } }}</div>
+                    <div class="score">{{ "LEAGUE.HIGH" | translate: { high: statsByLeague()[league].highGame } }}</div>
                   </ion-label>
                 </ion-item>
               </div>
@@ -83,9 +87,9 @@
                 <ion-item (click)="loadingService.setLoading(true)" button [id]="league" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
                   <ion-label class="game-info">
                     <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
+                    <div class="score">{{ "LEAGUE.GAMES" | translate: { count: gamesByLeague()[league].length || 0 } }}</div>
+                    <div class="score">{{ "LEAGUE.AVG" | translate: { avg: (statsByLeague()[league].averageScore | number: "1.1-2") } }}</div>
+                    <div class="score">{{ "LEAGUE.HIGH" | translate: { high: statsByLeague()[league].highGame } }}</div>
                   </ion-label>
                 </ion-item>
               </ion-item-sliding>
@@ -119,7 +123,7 @@
             <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged(league, $event)">
               @for (segment of segments; track segment) {
                 <ion-segment-button [value]="segment" [contentId]="segment + '-' + league">
-                  <ion-label class="segment-label">{{ segment }}</ion-label>
+                  <ion-label class="segment-label">{{ "LEAGUE.SEGMENT_" + segment.toUpperCase() | translate }}</ion-label>
                 </ion-segment-button>
               }
             </ion-segment>
@@ -132,19 +136,19 @@
               <section class="tab">
                 <app-stat-display
                   [statDefinitions]="statDefinitions"
-                  [title]="'Overall Stats'"
+                  [title]="'LEAGUE.OVERALL_STATS' | translate"
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
                 <app-ball-stats
-                  [title]="'Most used ball'"
+                  [title]="'LEAGUE.MOST_USED_BALL' | translate"
                   [bestBall]="mostPlayedBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
                 <app-ball-stats
-                  [title]="'Best ball'"
+                  [title]="'LEAGUE.BEST_BALL' | translate"
                   [bestBall]="bestBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
-                <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
+                <ion-list-header style="margin-bottom: 4px"> {{ "LEAGUE.SCORE_ANALYSIS" | translate }}</ion-list-header>
                 <div class="stat-container">
                   <canvas #scoreChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
                 </div>
@@ -153,10 +157,14 @@
 
             <ion-segment-content id="Spares-{{ league }}">
               <section class="tab">
-                <ion-list-header>Spares Overview</ion-list-header>
-                <app-spare-display [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
+                <ion-list-header>{{ "LEAGUE.SPARES_OVERVIEW" | translate }}</ion-list-header>
+                <app-spare-display
+                  [title]="'LEAGUE.SPARE_STATS' | translate"
+                  [prevStats]="overallStats()"
+                  [stats]="statsByLeague()[league]"
+                  id="league-spareStats">
                 </app-spare-display>
-                <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
+                <ion-list-header style="margin-bottom: 4px"> {{ "LEAGUE.SPARE_DISTRIBUTION" | translate }}</ion-list-header>
                 <div class="stat-container">
                   <canvas #pinChart style="width: 300px; height: 300px; max-height: 700px"></canvas>
                 </div>

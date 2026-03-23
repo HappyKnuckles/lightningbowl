@@ -1,10 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { LeagueSelectorComponent } from './league-selector.component';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-const mockStorageService = {
-  getItem: jasmine.createSpy('getItem').and.returnValue(Promise.resolve(null)),
-  setItem: jasmine.createSpy('setItem').and.returnValue(Promise.resolve()),
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+
+const mockLeaguesStore = {
+  leagues: jasmine.createSpy('leagues').and.returnValue([]),
+  addLeague: jasmine.createSpy('addLeague').and.returnValue(Promise.resolve()),
+};
+
+const mockAppFacade = {
+  editLeague: jasmine.createSpy('editLeague').and.returnValue(Promise.resolve()),
 };
 
 describe('LeagueSelectorComponent', () => {
@@ -14,7 +20,10 @@ describe('LeagueSelectorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LeagueSelectorComponent],
-      providers: [{ provide: StorageService, useValue: mockStorageService }],
+      providers: [
+        { provide: LeaguesStore, useValue: mockLeaguesStore },
+        { provide: AppFacade, useValue: mockAppFacade },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LeagueSelectorComponent);

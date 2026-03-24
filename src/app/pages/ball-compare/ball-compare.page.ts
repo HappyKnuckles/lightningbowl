@@ -20,6 +20,8 @@ import {
   IonChip,
   IonSegment,
   IonSegmentButton,
+  IonSegmentView,
+  IonSegmentContent,
 } from '@ionic/angular/standalone';
 import { Ball } from 'src/app/core/models/ball.model';
 import { addIcons } from 'ionicons';
@@ -76,6 +78,8 @@ const CHART_COLORS = [
     IonChip,
     IonSegment,
     IonSegmentButton,
+    IonSegmentView,
+    IonSegmentContent,
     GenericTypeaheadComponent,
   ],
 })
@@ -86,8 +90,8 @@ export class BallComparePage implements OnInit {
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
 
   selectedBalls = signal<Ball[]>([]);
-  // model() is used here for two-way binding with [(ngModel)] on the IonSegment (same pattern as arsenal page)
-  ballSource = model<'all' | 'arsenal'>('all');
+  // model() used for two-way binding with [(ngModel)] on IonSegment (same pattern as arsenal page)
+  selectedSegment = model<'compare' | 'chart'>('compare');
   presentingElement?: HTMLElement;
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
 
@@ -95,29 +99,28 @@ export class BallComparePage implements OnInit {
 
   selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
 
-  /** Ball pool driven by the active segment */
-  availableBalls = computed<Ball[]>(() => (this.ballSource() === 'arsenal' ? this.storageService.arsenal() : this.storageService.allBalls()));
-
+  private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   private chartInstance: Chart | null = null;
 
   constructor() {
     addIcons({ add, closeOutline, scaleOutline });
+
+    // Re-render chart when balls change or when switching to chart segment
     effect(() => {
-      // Re-render chart whenever selected balls change
       const balls = this.selectedBalls();
-      if (balls.length > 0) {
-        // Use a short timeout so the canvas is rendered before we draw
+      const segment = this.selectedSegment();
+      if (balls.length > 0 && segment === 'chart') {
         setTimeout(() => this.renderComparisonChart(), 50);
-      } else {
+      } else if (balls.length === 0) {
         this.chartInstance?.destroy();
         this.chartInstance = null;
       }
     });
 
-    // When the source segment changes, remove any selected balls that are no longer in the pool
+    // Persist selected ball IDs to localStorage whenever they change
     effect(() => {
-      const poolIds = new Set(this.availableBalls().map((p) => p.ball_id));
-      this.selectedBalls.update((balls) => balls.filter((b) => poolIds.has(b.ball_id)));
+      const ids = this.selectedBallIds();
+      localStorage.setItem(BallComparePage.STORAGE_KEY, JSON.stringify(ids));
     });
   }
 
@@ -128,6 +131,31 @@ export class BallComparePage implements OnInit {
       title: 'Select Balls to Compare',
       maxSelections: this.maxBalls,
     };
+    this.restoreSelectedBalls();
+  }
+
+  private restoreSelectedBalls(attempt = 0): void {
+    try {
+      const raw = localStorage.getItem(BallComparePage.STORAGE_KEY);
+      if (!raw) return;
+      const ids: string[] = JSON.parse(raw);
+      if (!Array.isArray(ids) || ids.length === 0) return;
+
+      const allBalls = this.storageService.allBalls();
+      if (allBalls.length === 0) {
+        // Retry up to 15 times (~3 s) while the ball library loads
+        if (attempt < 15) {
+          setTimeout(() => this.restoreSelectedBalls(attempt + 1), 200);
+        }
+        return;
+      }
+      const restored = ids.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+      if (restored.length > 0) {
+        this.selectedBalls.set(restored);
+      }
+    } catch {
+      // Ignore malformed storage data
+    }
   }
 
   openAddBallModal(): void {
@@ -135,8 +163,8 @@ export class BallComparePage implements OnInit {
   }
 
   onBallSelectionChange(ballIds: string[]): void {
-    const pool = this.availableBalls();
-    const selected = ballIds.map((id) => pool.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    const allBalls = this.storageService.allBalls();
+    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.selectedBalls.set(selected);
   }
 

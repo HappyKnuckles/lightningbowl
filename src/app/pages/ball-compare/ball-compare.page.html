@@ -7,6 +7,12 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="ballSource">
+      <ion-segment-button value="all">All Balls</ion-segment-button>
+      <ion-segment-button value="arsenal">My Arsenal</ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
@@ -15,15 +21,21 @@
       <ion-icon name="scale-outline" class="empty-icon"></ion-icon>
       <ion-text>
         <h2>Compare Bowling Balls</h2>
-        <p>
-          Tap the <strong>+</strong> button to add up to {{ maxBalls }} balls and compare their specs, hook potential, and lane condition
-          recommendations.
-        </p>
+        @if (ballSource() === "arsenal" && storageService.arsenal().length === 0) {
+          <p>Your arsenal is empty. Add balls to your arsenal first, or switch to <strong>All Balls</strong> mode.</p>
+        } @else {
+          <p>
+            Tap the <strong>+</strong> button to add up to {{ maxBalls }} balls and compare their specs, hook potential, and lane condition
+            recommendations.
+          </p>
+        }
       </ion-text>
-      <ion-button fill="outline" (click)="openAddBallModal()">
-        <ion-icon slot="start" name="add"></ion-icon>
-        Add Ball
-      </ion-button>
+      @if (ballSource() !== "arsenal" || storageService.arsenal().length > 0) {
+        <ion-button fill="outline" (click)="openAddBallModal()">
+          <ion-icon slot="start" name="add"></ion-icon>
+          Add Ball
+        </ion-button>
+      }
     </div>
   } @else {
     <!-- Radar comparison chart -->
@@ -137,11 +149,10 @@
 <ion-modal #addBallModal [presentingElement]="presentingElement">
   <ng-template>
     <app-generic-typeahead
-      [items]="storageService.allBalls()"
+      [items]="availableBalls()"
       [config]="ballTypeaheadConfig"
       [prevSelectedItems]="selectedBallIds()"
       (selectedItemsChange)="onBallSelectionChange($event)">
     </app-generic-typeahead>
   </ng-template>
 </ion-modal>
-

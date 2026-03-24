@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, signal, inject, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, computed, OnInit, signal, inject, ViewChild, ElementRef, effect, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -18,6 +18,8 @@ import {
   IonCardTitle,
   IonCardSubtitle,
   IonChip,
+  IonSegment,
+  IonSegmentButton,
 } from '@ionic/angular/standalone';
 import { Ball } from 'src/app/core/models/ball.model';
 import { addIcons } from 'ionicons';
@@ -72,6 +74,8 @@ const CHART_COLORS = [
     IonCardTitle,
     IonCardSubtitle,
     IonChip,
+    IonSegment,
+    IonSegmentButton,
     GenericTypeaheadComponent,
   ],
 })
@@ -82,12 +86,17 @@ export class BallComparePage implements OnInit {
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
 
   selectedBalls = signal<Ball[]>([]);
+  // model() is used here for two-way binding with [(ngModel)] on the IonSegment (same pattern as arsenal page)
+  ballSource = model<'all' | 'arsenal'>('all');
   presentingElement?: HTMLElement;
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
 
   readonly maxBalls = 4;
 
   selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
+
+  /** Ball pool driven by the active segment */
+  availableBalls = computed<Ball[]>(() => (this.ballSource() === 'arsenal' ? this.storageService.arsenal() : this.storageService.allBalls()));
 
   private chartInstance: Chart | null = null;
 
@@ -103,6 +112,12 @@ export class BallComparePage implements OnInit {
         this.chartInstance?.destroy();
         this.chartInstance = null;
       }
+    });
+
+    // When the source segment changes, remove any selected balls that are no longer in the pool
+    effect(() => {
+      const poolIds = new Set(this.availableBalls().map((p) => p.ball_id));
+      this.selectedBalls.update((balls) => balls.filter((b) => poolIds.has(b.ball_id)));
     });
   }
 
@@ -120,8 +135,8 @@ export class BallComparePage implements OnInit {
   }
 
   onBallSelectionChange(ballIds: string[]): void {
-    const allBalls = this.storageService.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    const pool = this.availableBalls();
+    const selected = ballIds.map((id) => pool.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.selectedBalls.set(selected);
   }
 

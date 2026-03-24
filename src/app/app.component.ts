@@ -45,7 +45,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private appFacade: AppFacade,
   ) {
-    void this.appFacade.init();
+    this.appFacade.init().catch((error) => {
+      console.error('Error initializing app facade:', error);
+    });
 
     // Initialize service worker updates for all platforms
     this.initializeApp();

@@ -47,9 +47,7 @@ export class StorageService {
     private patternsStore: PatternsStore,
     private leaguesStore: LeaguesStore,
     private settingsStore: SettingsStore,
-  ) {
-    this.appFacade.init();
-  }
+  ) {}
 
   async loadArsenal(): Promise<void> {
     return this.ballsStore.loadArsenal();

@@ -35,8 +35,13 @@
     </div>
   } @else {
     <ion-segment-view>
-      <!-- ── Compare tab: ball cards grid ── -->
+      <!-- ── Compare tab: radar chart + ball cards grid ── -->
       <ion-segment-content id="compare">
+        <!-- Radar comparison chart -->
+        <div class="chart-section">
+          <canvas #chartCanvas class="radar-canvas"></canvas>
+        </div>
+
         <div class="compare-grid">
           @for (ball of selectedBalls(); track ball.ball_id) {
             <ion-card class="ball-card">
@@ -138,10 +143,10 @@
         }
       </ion-segment-content>
 
-      <!-- ── Chart tab: enlarged radar chart ── -->
+      <!-- ── Chart tab: RG vs Differential scatter chart (same as arsenal page) ── -->
       <ion-segment-content id="chart">
-        <div class="chart-section-full">
-          <canvas #chartCanvas class="radar-canvas-full"></canvas>
+        <div class="arsenal-chart-container">
+          <canvas #distChartCanvas class="dist-chart-canvas"></canvas>
         </div>
       </ion-segment-content>
     </ion-segment-view>

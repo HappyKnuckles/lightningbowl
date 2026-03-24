@@ -28,6 +28,9 @@ import { addIcons } from 'ionicons';
 import { add, closeOutline, scaleOutline } from 'ionicons/icons';
 import { ModalController } from '@ionic/angular';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
@@ -85,9 +88,12 @@ const CHART_COLORS = [
 })
 export class BallComparePage implements OnInit {
   storageService = inject(StorageService);
+  private chartGenerationService = inject(ChartGenerationService);
+  private toastService = inject(ToastService);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('distChartCanvas', { static: false }) distChartCanvas?: ElementRef;
 
   selectedBalls = signal<Ball[]>([]);
   // model() used for two-way binding with [(ngModel)] on IonSegment (same pattern as arsenal page)
@@ -101,19 +107,26 @@ export class BallComparePage implements OnInit {
 
   private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   private chartInstance: Chart | null = null;
+  private distChartInstance: Chart | null = null;
 
   constructor() {
     addIcons({ add, closeOutline, scaleOutline });
 
-    // Re-render chart when balls change or when switching to chart segment
+    // Re-render charts when balls change or when switching segments
     effect(() => {
       const balls = this.selectedBalls();
       const segment = this.selectedSegment();
-      if (balls.length > 0 && segment === 'chart') {
-        setTimeout(() => this.renderComparisonChart(), 50);
-      } else if (balls.length === 0) {
+      if (balls.length === 0) {
         this.chartInstance?.destroy();
         this.chartInstance = null;
+        this.distChartInstance?.destroy();
+        this.distChartInstance = null;
+        return;
+      }
+      if (segment === 'compare') {
+        setTimeout(() => this.renderComparisonChart(), 50);
+      } else if (segment === 'chart') {
+        setTimeout(() => this.renderDistributionChart(), 50);
       }
     });
 
@@ -372,5 +385,21 @@ export class BallComparePage implements OnInit {
         },
       },
     });
+  }
+
+  private renderDistributionChart(): void {
+    if (!this.distChartCanvas) return;
+    const balls = this.selectedBalls();
+    if (balls.length === 0) return;
+    try {
+      this.distChartInstance = this.chartGenerationService.generateBallDistributionChart(
+        this.distChartCanvas,
+        balls,
+        this.distChartInstance ?? undefined,
+      );
+    } catch (error) {
+      console.error('Error generating ball distribution chart:', error);
+      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+    }
   }
 }

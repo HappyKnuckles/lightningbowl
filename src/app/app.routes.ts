@@ -48,7 +48,7 @@ export const routes: Routes = [
       },
       {
         path: 'ball-comparison',
-        loadComponent: () => import('./pages/ball-compare/ball-compare.page').then((m) => m.BallComparePage),
+        loadComponent: () => import('./pages/ball-comparison/ball-comparison.page').then((m) => m.BallComparisonPage),
       },
       {
         path: '',

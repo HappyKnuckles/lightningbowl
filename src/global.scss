@@ -42,7 +42,7 @@ ion-content {
 }
 
 .stat-container {
-  border: 1px solid #2b2828;
+  border: 1px solid var(--ion-border-color, #2b2828);
   margin: 0 16px 12px;
   border-radius: 7px;
   background-color: #141414;
@@ -83,8 +83,7 @@ ion-input {
 }
 
 ion-card {
-  border: 1px solid #2b2828;
-  background-color: #141414;
+  border: 1px solid var(--ion-border-color, #2b2828);
 }
 
 ion-header {

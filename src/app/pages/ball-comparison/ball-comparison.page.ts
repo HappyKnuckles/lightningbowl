@@ -50,9 +50,9 @@ interface SavedEntry {
 }
 
 @Component({
-  selector: 'app-ball-compare',
-  templateUrl: './ball-compare.page.html',
-  styleUrls: ['./ball-compare.page.scss'],
+  selector: 'app-ball-comparison',
+  templateUrl: './ball-comparison.page.html',
+  styleUrls: ['./ball-comparison.page.scss'],
   providers: [ModalController],
   standalone: true,
   imports: [
@@ -87,7 +87,7 @@ interface SavedEntry {
     GenericTypeaheadComponent,
   ],
 })
-export class BallComparePage implements OnInit, OnDestroy {
+export class BallComparisonPage implements OnInit, OnDestroy {
   protected readonly storageService = inject(StorageService);
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
@@ -229,7 +229,7 @@ export class BallComparePage implements OnInit, OnDestroy {
   }
 
   private initRestoreEffect(): void {
-    const raw = localStorage.getItem(BallComparePage.STORAGE_KEY);
+    const raw = localStorage.getItem(BallComparisonPage.STORAGE_KEY);
     if (!raw) return;
 
     let entries: SavedEntry[];
@@ -270,7 +270,7 @@ export class BallComparePage implements OnInit, OnDestroy {
 
   private saveSelectedIds(balls: Ball[]): void {
     const entries: SavedEntry[] = balls.map((b) => ({ id: b.ball_id, weight: b.core_weight }));
-    localStorage.setItem(BallComparePage.STORAGE_KEY, JSON.stringify(entries));
+    localStorage.setItem(BallComparisonPage.STORAGE_KEY, JSON.stringify(entries));
   }
 
   private async getBallsForWeight(weight: number): Promise<Ball[]> {

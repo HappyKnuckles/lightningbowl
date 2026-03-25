@@ -73,7 +73,7 @@ ion-card-content {
     color: var(--ion-color-medium);
 
     ion-button:first-child {
-      border: 1px solid #2b2828;
+      border: 1px solid var(--ion-border-color, #2b2828);
       border-radius: 7px;
     }
   }

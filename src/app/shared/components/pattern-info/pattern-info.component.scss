@@ -4,7 +4,7 @@ ion-grid {
   padding: 4px;
   border-radius: 7px;
   align-items: center;
-  border: 1px solid #2b2828;
+  border: 1px solid var(--ion-border-color, #2b2828);
 
   &:last-child {
     margin-bottom: 32px;
@@ -44,7 +44,7 @@ ion-grid {
     width: 55%;
 
     ion-chip {
-      border: 1px solid #2b2828;
+      border: 1px solid var(--ion-border-color, #2b2828);
 
       &:first-child {
         margin-top: 0;

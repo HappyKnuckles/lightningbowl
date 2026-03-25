@@ -1,7 +1,7 @@
 import type { Chart } from 'chart.js';
 import ChartJs from 'chart.js/auto';
 import { Ball } from 'src/app/core/models/ball.model';
-import { getBallMetrics } from '../data-calculation/chart-data-calculators';
+import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { ElementRef } from '@angular/core';
 
 const CHART_COLORS = [

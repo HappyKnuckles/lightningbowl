@@ -4,6 +4,7 @@ ion-grid {
   padding: 4px;
   border-radius: 7px;
   align-items: center;
+  border: 1px solid #2b2828;
 
   &:last-child {
     margin-bottom: 32px;
@@ -42,12 +43,16 @@ ion-grid {
     display: grid;
     width: 55%;
 
-    ion-chip:first-child {
-      margin-top: 0;
-    }
+    ion-chip {
+      border: 1px solid #2b2828;
 
-    ion-chip:last-child {
-      margin-bottom: 0;
+      &:first-child {
+        margin-top: 0;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 }

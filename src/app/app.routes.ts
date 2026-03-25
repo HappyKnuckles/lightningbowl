@@ -47,6 +47,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/minigame/minigame.page').then((m) => m.MinigamePage),
       },
       {
+        path: 'ball-comparison',
+        loadComponent: () => import('./pages/ball-comparison/ball-comparison.page').then((m) => m.BallComparisonPage),
+      },
+      {
         path: '',
         redirectTo: '/tabs/add',
         pathMatch: 'full',

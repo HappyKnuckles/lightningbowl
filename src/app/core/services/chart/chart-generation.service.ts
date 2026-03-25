@@ -8,6 +8,7 @@ import { generatePinChart, generateSpareDistributionChart } from './generation/p
 import { generateThrowChart } from './generation/throw-chart-generator';
 import { generateBallDistributionChart } from './generation/ball-distribution-chart-generator';
 import { Chart } from 'chart.js';
+import { generateBallComparisonChart } from './generation/ball-compare-chart-generator';
 
 @Injectable({
   providedIn: 'root',
@@ -89,5 +90,12 @@ export class ChartGenerationService {
     isReload?: boolean,
   ): Chart {
     return generateBallDistributionChart(ballDistributionChartCanvas, balls, existingChartInstance, isReload);
+  }
+
+  /**
+   * Generate ball comparison radar chart comparing hook, length, and flare metrics
+   */
+  generateBallComparisonChart(comparisonChartCanvas: ElementRef, balls: Ball[], existingChartInstance: Chart | null): Chart | null {
+    return generateBallComparisonChart(comparisonChartCanvas, balls, existingChartInstance);
   }
 }

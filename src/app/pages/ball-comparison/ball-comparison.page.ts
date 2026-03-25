@@ -40,6 +40,7 @@ import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
@@ -89,6 +90,7 @@ interface SavedEntry {
 })
 export class BallComparisonPage implements OnInit, OnDestroy {
   protected readonly storageService = inject(StorageService);
+  private readonly ballsStore = inject(BallsStore);
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
@@ -140,7 +142,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.presentingElement = document.querySelector('.ion-page') ?? undefined;
     this.ballTypeaheadConfig = {
-      ...createBallTypeaheadConfig(this.storageService),
+      ...createBallTypeaheadConfig(this.ballsStore),
       title: 'Select Balls to Compare',
       maxSelections: this.maxBalls,
     };

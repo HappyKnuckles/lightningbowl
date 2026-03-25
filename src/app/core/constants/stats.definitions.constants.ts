@@ -172,7 +172,7 @@ export const leagueStatDefinitions: StatDefinition[] = [
     toolTip: 'This is the probability of how likely you hit a spare if your first throw was not a strike.',
     prevKey: 'overallSpareRate',
   },
-  { label: 'Total opens', key: 'totalSparesMissed', id: 'totalSparesMissed' },
+  { label: 'Total opens', key: 'totalSparesMissed', id: 'league-totalSparesMissed' },
   { label: 'Opens per game', key: 'averageOpensPerGame', id: 'league-averageOpensPerGame', prevKey: 'averageOpensPerGame' },
   {
     label: 'Open-percentage',
@@ -201,7 +201,7 @@ export const throwStatDefinitions: StatDefinition[] = [
 
 export const strikeStatDefinitions: StatDefinition[] = [
   { label: 'Turkeys', key: 'turkeyCount', id: 'turkeyCount', toolTip: 'Number of times you threw exactly 3 strikes in a row.' },
-  { label: '4-baggers', key: 'bagger4Count', id: 'fourBaggerCount', toolTip: 'Number of times you threw exactly 4 strikes in a row.' },
+  { label: '4-baggers', key: 'bagger4Count', id: 'bagger4Count', toolTip: 'Number of times you threw exactly 4 strikes in a row.' },
   { label: '5-baggers', key: 'bagger5Count', id: 'bagger5Count', toolTip: 'Number of times you threw exactly 5 strikes in a row.' },
   { label: '6-baggers', key: 'bagger6Count', id: 'bagger6Count', toolTip: 'Number of times you threw exactly 6 strikes in a row.' },
   { label: '7-baggers', key: 'bagger7Count', id: 'bagger7Count', toolTip: 'Number of times you threw exactly 7 strikes in a row.' },

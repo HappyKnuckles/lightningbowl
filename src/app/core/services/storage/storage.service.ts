@@ -361,7 +361,8 @@ export class StorageService {
         return;
       }
 
-      const patterns = await this.patternService.getAllPatterns();
+      const response = await this.patternService.getAllPatternCharts();
+      const patterns = response.patterns;
       const imageMap: Record<string, string> = {};
       for (const p of patterns) {
         if (p.title && p.chart_horizontal) {
@@ -381,7 +382,9 @@ export class StorageService {
 
   private async refreshPatternImageMapInBackground(cacheKey: string): Promise<void> {
     try {
-      const patterns = await this.patternService.getAllPatterns();
+      const response = await this.patternService.getAllPatternCharts();
+      const patterns = response.patterns;
+
       const imageMap: Record<string, string> = {};
       for (const p of patterns) {
         if (p.title && p.chart_horizontal) {

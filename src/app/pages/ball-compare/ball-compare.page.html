@@ -55,75 +55,106 @@
                 <ion-card-subtitle>{{ ball.data.brand_name }} ({{ ball.data.release_date }})</ion-card-subtitle>
                 <ion-card-title>{{ ball.data.ball_name }}</ion-card-title>
               </ion-card-header>
-
               <ion-card-content>
-                <div class="chips-row">
-                  <ion-chip class="small-chip">{{ ball.data.core_weight }}lbs</ion-chip>
-                  <ion-chip class="small-chip">{{ ball.data.core_type }}</ion-chip>
-                  <ion-chip class="small-chip">
-                    {{ ball.data.coverstock_type }}
-                  </ion-chip>
-                </div>
+                <ion-grid>
+                  <ion-row class="chips-row">
+                    <ion-col size="auto"
+                      ><ion-chip class="small-chip">{{ ball.data.core_weight }}lbs</ion-chip></ion-col
+                    >
+                    <ion-col size="auto"
+                      ><ion-chip class="small-chip">{{ ball.data.core_type }}</ion-chip></ion-col
+                    >
+                    <ion-col size="auto"
+                      ><ion-chip class="small-chip">{{ ball.data.coverstock_type }}</ion-chip></ion-col
+                    >
+                  </ion-row>
 
-                <div class="metrics-section">
-                  <!-- Hook Potential -->
-                  <div class="metric">
-                    <div class="metric-header">
-                      <span class="metric-label">Hook Potential</span>
-                      <span class="metric-value">{{ ball.metrics.hookLabel }}</span>
-                    </div>
-                    <div class="metric-bar-bg">
-                      <div class="metric-bar" [style.width.%]="ball.metrics.hookScore" [style.background]="ball.hookBarColor"></div>
-                    </div>
-                  </div>
+                  <ion-row class="metric">
+                    <ion-col size="12">
+                      <ion-row class="metric-header">
+                        <ion-col><span class="metric-label">Hook Potential</span></ion-col>
+                        <ion-col size="auto"
+                          ><span class="metric-value">{{ ball.metrics.hookLabel }}</span></ion-col
+                        >
+                      </ion-row>
+                      <div class="metric-bar-bg">
+                        <div class="metric-bar" [style.width.%]="ball.metrics.hookScore" [style.background]="ball.hookBarColor"></div>
+                      </div>
+                    </ion-col>
+                  </ion-row>
 
-                  <!-- Length / Roll Timing -->
-                  <div class="metric">
-                    <div class="metric-header">
-                      <span class="metric-label">Length (RG: {{ ball.data.core_rg || "N/A" }})</span>
-                      <span class="metric-value">{{ ball.metrics.lengthLabel }}</span>
-                    </div>
-                    <div class="metric-bar-bg">
-                      <div class="metric-bar" [style.width.%]="ball.metrics.lengthScore" [style.background]="'var(--ion-color-primary)'"></div>
-                    </div>
-                  </div>
+                  <ion-row class="metric">
+                    <ion-col size="12">
+                      <ion-row class="metric-header">
+                        <ion-col
+                          ><span class="metric-label">Length (RG: {{ ball.data.core_rg || "N/A" }})</span></ion-col
+                        >
+                        <ion-col size="auto"
+                          ><span class="metric-value">{{ ball.metrics.lengthLabel }}</span></ion-col
+                        >
+                      </ion-row>
+                      <div class="metric-bar-bg">
+                        <div class="metric-bar" [style.width.%]="ball.metrics.lengthScore" [style.background]="'var(--ion-color-primary)'"></div>
+                      </div>
+                    </ion-col>
+                  </ion-row>
 
-                  <!-- Flare Potential -->
-                  <div class="metric">
-                    <div class="metric-header">
-                      <span class="metric-label">Flare (Diff: {{ ball.data.core_diff || "N/A" }})</span>
-                      <span class="metric-value">{{ ball.metrics.flareLabel }}</span>
-                    </div>
-                    <div class="metric-bar-bg">
-                      <div class="metric-bar" [style.width.%]="ball.metrics.flareScore" [style.background]="ball.flareBarColor"></div>
-                    </div>
-                  </div>
+                  <ion-row class="metric">
+                    <ion-col size="12">
+                      <ion-row class="metric-header">
+                        <ion-col
+                          ><span class="metric-label">Flare (Diff: {{ ball.data.core_diff || "N/A" }})</span></ion-col
+                        >
+                        <ion-col size="auto"
+                          ><span class="metric-value">{{ ball.metrics.flareLabel }}</span></ion-col
+                        >
+                      </ion-row>
+                      <div class="metric-bar-bg">
+                        <div class="metric-bar" [style.width.%]="ball.metrics.flareScore" [style.background]="ball.flareBarColor"></div>
+                      </div>
+                    </ion-col>
+                  </ion-row>
 
-                  @if (ball.data.core_int_diff) {
-                    <div class="spec-row">
-                      <span class="spec-label">Int. Diff</span>
-                      <span class="spec-value">{{ ball.data.core_int_diff }}</span>
-                    </div>
-                  }
-                </div>
+                  <ion-row class="spec-row">
+                    @if (ball.data.core_int_diff) {
+                      <ion-col><span class="spec-label">Int. Diff</span></ion-col>
+                      <ion-col size="auto"
+                        ><span class="spec-value">{{ ball.data.core_int_diff }}</span></ion-col
+                      >
+                    } @else {
+                      <ion-col><span class="spec-label">&nbsp;</span></ion-col>
+                      <ion-col size="auto"><span class="spec-value">&nbsp;</span></ion-col>
+                    }
+                  </ion-row>
 
-                <div class="lane-condition">
-                  <span class="lane-label">Best For:</span>
-                  <ion-chip [color]="ball.metrics.laneConditionColor" class="lane-chip">
-                    {{ ball.metrics.laneCondition }}
-                  </ion-chip>
-                </div>
+                  <ion-row class="lane-condition">
+                    <ion-col><span class="lane-label">Best For:</span></ion-col>
+                    <ion-col size="auto">
+                      <ion-chip [color]="ball.metrics.laneConditionColor" class="lane-chip">
+                        {{ ball.metrics.laneCondition }}
+                      </ion-chip>
+                    </ion-col>
+                  </ion-row>
 
-                <div class="coverstock-detail">
-                  <div class="spec-row">
-                    <span class="spec-label">Coverstock</span>
-                    <span class="spec-value">{{ ball.data.coverstock_name }}</span>
-                  </div>
-                  <div class="spec-row">
-                    <span class="spec-label">Finish</span>
-                    <span class="spec-value">{{ ball.data.factory_finish }}</span>
-                  </div>
-                </div>
+                  <ion-row>
+                    <ion-col size="12">
+                      <div class="coverstock-detail"></div>
+                    </ion-col>
+                  </ion-row>
+
+                  <ion-row class="spec-row">
+                    <ion-col><span class="spec-label">Coverstock</span></ion-col>
+                    <ion-col size="auto"
+                      ><span class="spec-value">{{ ball.data.coverstock_name }}</span></ion-col
+                    >
+                  </ion-row>
+                  <ion-row class="spec-row">
+                    <ion-col><span class="spec-label">Finish</span></ion-col>
+                    <ion-col size="auto"
+                      ><span class="spec-value">{{ ball.data.factory_finish }}</span></ion-col
+                    >
+                  </ion-row>
+                </ion-grid>
               </ion-card-content>
             </ion-card>
           }

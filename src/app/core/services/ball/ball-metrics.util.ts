@@ -45,9 +45,10 @@ export function getBallMetrics(ball: Ball): BallMetrics {
     if (isPolished) hookBase = Math.max(0, hookBase - 8);
   }
 
-  if (!isPlastic && !isUrethane && !isNaN(diff)) {
-    const diffNorm = Math.min(1, Math.max(0, (diff - 0.02) / (0.055 - 0.02)));
-    hookBase = Math.round(Math.min(100, Math.max(0, hookBase + (diffNorm - 0.5) * 14)));
+  if (!isPlastic && !isNaN(diff)) {
+    const range = isUrethane ? { min: 0.01, max: 0.05, weight: 8 } : { min: 0.02, max: 0.055, weight: 14 };
+    const diffNorm = Math.min(1, Math.max(0, (diff - range.min) / (range.max - range.min)));
+    hookBase = Math.round(Math.min(100, Math.max(0, hookBase + (diffNorm - 0.5) * range.weight)));
   }
 
   const hookScore = Math.max(0, Math.min(isPlastic ? 20 : 90, hookBase));
@@ -80,7 +81,7 @@ export function getBallMetrics(ball: Ball): BallMetrics {
   if (isPlastic) {
     flareScore = 5;
   } else if (isUrethane) {
-    flareScore = !isNaN(diff) ? Math.round(Math.min(100, Math.max(0, ((diff - 0.005) / (0.04 - 0.005)) * 100))) : 20;
+    flareScore = !isNaN(diff) ? Math.round(Math.min(100, Math.max(0, ((diff - 0.005) / (0.06 - 0.005)) * 100))) : 20;
   } else {
     flareScore = !isNaN(diff) ? Math.round(Math.min(100, Math.max(0, ((diff - 0.015) / (0.06 - 0.015)) * 100))) : 50;
   }

@@ -33,6 +33,11 @@
   }
 }
 
+ion-grid {
+  --ion-grid-padding: 0;
+  --ion-grid-column-padding: 0;
+}
+
 ion-card-header,
 ion-card-content {
   padding-inline: 12px;
@@ -57,11 +62,15 @@ ion-card-content {
   flex-wrap: wrap;
   gap: 6px;
   margin-inline: 16px;
+  align-items: stretch;
 }
 
 .ball-card {
   margin: 0;
   flex: 1 1 calc(50% - 6px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 
   .remove-btn {
     position: absolute;
@@ -87,6 +96,9 @@ ion-card-content {
 
   ion-card-header {
     padding-bottom: 4px;
+    min-height: 86px;
+    display: flex;
+    justify-content: flex-end;
 
     ion-card-subtitle {
       font-size: 0.7rem;
@@ -101,12 +113,11 @@ ion-card-content {
 
   ion-card-content {
     padding-top: 4px;
+    flex: 1;
   }
 }
 
 .chips-row {
-  display: flex;
-  flex-wrap: wrap;
   gap: 2px;
   margin-bottom: 12px;
 
@@ -118,17 +129,12 @@ ion-card-content {
   }
 }
 
-.metrics-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+ion-row.metric {
+  margin-bottom: 8px;
 }
 
 .metric {
   .metric-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
     margin-bottom: 3px;
 
@@ -160,27 +166,25 @@ ion-card-content {
 }
 
 .spec-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
   padding: 2px 0;
+  align-items: center;
 
   .spec-label {
+    font-size: 0.72rem;
     color: var(--ion-color-medium);
   }
 
   .spec-value {
+    font-size: 0.72rem;
     font-weight: 500;
     color: var(--ion-text-color);
     text-align: right;
-    max-width: 60%;
   }
 }
 
+
 .lane-condition {
-  display: flex;
   align-items: center;
-  gap: 8px;
   margin: 8px 0;
 
   .lane-label {
@@ -193,6 +197,7 @@ ion-card-content {
     height: 24px;
     --padding-start: 8px;
     --padding-end: 8px;
+    margin: 0;
   }
 }
 

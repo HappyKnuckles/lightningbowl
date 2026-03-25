@@ -33,7 +33,7 @@
       <ion-list>
         @for (tab of moreTabs; track tab.path) {
           <ion-item class="tab-btn" button [routerLink]="tab.path" routerLinkActive="active-tab" (click)="modal.dismiss()">
-            <ion-icon slot="start" [src]="tab.src" [name]="tab.src ? null : tab.icon"></ion-icon>
+            <ion-icon slot="start" [src]="tab.src" [name]="tab.src ? undefined : tab.icon"></ion-icon>
             <ion-label>{{ tab.label }}</ion-label>
           </ion-item>
         }

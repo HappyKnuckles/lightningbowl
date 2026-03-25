@@ -1,6 +1,6 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Ball Compare</ion-title>
+    <ion-title>Ball Comparison</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openAddBallModal()" [disabled]="selectedBalls().length >= maxBalls">
         <ion-icon slot="icon-only" name="add"></ion-icon>
@@ -43,9 +43,29 @@
         <div class="compare-grid">
           @for (ball of displayBalls(); track ball.data.ball_id) {
             <ion-card class="ball-card">
-              <ion-button class="remove-btn" fill="clear" size="small" (click)="removeBall(ball.data)">
-                <ion-icon name="close-outline" slot="icon-only"></ion-icon>
-              </ion-button>
+              <div class="ball-header">
+                <ion-button
+                  [id]="'weight-trigger-' + ball.data.ball_id"
+                  fill="clear"
+                  size="small"
+                  [disabled]="loadingWeightBallId() === ball.data.ball_id">
+                  {{ ball.data.core_weight }}lbs
+                </ion-button>
+
+                <ion-button fill="clear" size="small" (click)="removeBall(ball.data)">
+                  <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </div>
+
+              <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.data.ball_id" triggerAction="click">
+                <ng-template>
+                  <ion-list>
+                    @for (weight of ball.weightOptions; track weight) {
+                      <ion-item button detail="false" (click)="onWeightSelect(ball.data, weight, weightPopover)"> {{ weight }}lbs </ion-item>
+                    }
+                  </ion-list>
+                </ng-template>
+              </ion-popover>
 
               <div class="ball-image-wrapper">
                 <ion-img [src]="storageService.url + ball.data.thumbnail_image" [alt]="ball.data.ball_name"></ion-img>
@@ -55,12 +75,10 @@
                 <ion-card-subtitle>{{ ball.data.brand_name }} ({{ ball.data.release_date }})</ion-card-subtitle>
                 <ion-card-title>{{ ball.data.ball_name }}</ion-card-title>
               </ion-card-header>
+
               <ion-card-content>
                 <ion-grid>
                   <ion-row class="chips-row">
-                    <ion-col size="auto"
-                      ><ion-chip class="small-chip">{{ ball.data.core_weight }}lbs</ion-chip></ion-col
-                    >
                     <ion-col size="auto"
                       ><ion-chip class="small-chip">{{ ball.data.core_type }}</ion-chip></ion-col
                     >
@@ -86,12 +104,13 @@
                   <ion-row class="metric">
                     <ion-col size="12">
                       <ion-row class="metric-header">
-                        <ion-col
-                          ><span class="metric-label">Length (RG: {{ ball.data.core_rg || "N/A" }})</span></ion-col
-                        >
-                        <ion-col size="auto"
-                          ><span class="metric-value">{{ ball.metrics.lengthLabel }}</span></ion-col
-                        >
+                        <ion-col class="metric-label-col">
+                          <span class="metric-label">Length</span>
+                          <span class="metric-subtext">RG: {{ ball.data.core_rg || "N/A" }}</span>
+                        </ion-col>
+                        <ion-col size="auto">
+                          <span class="metric-value">{{ ball.metrics.lengthLabel }}</span>
+                        </ion-col>
                       </ion-row>
                       <div class="metric-bar-bg">
                         <div class="metric-bar" [style.width.%]="ball.metrics.lengthScore" [style.background]="'var(--ion-color-primary)'"></div>
@@ -102,9 +121,10 @@
                   <ion-row class="metric">
                     <ion-col size="12">
                       <ion-row class="metric-header">
-                        <ion-col
-                          ><span class="metric-label">Flare (Diff: {{ ball.data.core_diff || "N/A" }})</span></ion-col
-                        >
+                        <ion-col class="metric-label-col">
+                          <span class="metric-label">Flare</span>
+                          <span class="metric-subtext">Diff: {{ ball.data.core_diff || "N/A" }}</span>
+                        </ion-col>
                         <ion-col size="auto"
                           ><span class="metric-value">{{ ball.metrics.flareLabel }}</span></ion-col
                         >
@@ -172,7 +192,7 @@
 
       <ion-segment-content id="chart">
         <div class="arsenal-chart-container">
-          <canvas #distChartCanvas class="dist-chart-canvas"></canvas>
+          <canvas #distChartCanvas style="width: 600px; height: 800px; max-height: 75dvh"></canvas>
         </div>
         @if (selectedBalls().length < maxBalls) {
           <div class="add-more-row">

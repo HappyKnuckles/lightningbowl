@@ -44,8 +44,8 @@ export class TabsPage {
       icon: 'bowling-ball-outline',
     },
     {
-      path: '/tabs/ball-compare',
-      label: 'Ball Compare',
+      path: '/tabs/ball-comparison',
+      label: 'Ball Comparison',
       icon: 'scale-outline',
     },
     {

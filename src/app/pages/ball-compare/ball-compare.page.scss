@@ -49,12 +49,6 @@ ion-card-content {
   border-radius: 7px;
   background-color: var(--ion-background-color-step-100, #141414);
   padding: 0 0 12px 12px;
-
-  .dist-chart-canvas {
-    width: 600px;
-    height: 800px;
-    max-height: 100%;
-  }
 }
 
 .compare-grid {
@@ -72,20 +66,21 @@ ion-card-content {
   flex-direction: column;
   justify-content: flex-start;
 
-  .remove-btn {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    --padding-start: 4px;
-    --padding-end: 4px;
-    z-index: 10;
+  .ball-header {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 6px 8px;
     color: var(--ion-color-medium);
+
+    ion-button:first-child {
+      border: 1px solid #2b2828;
+      border-radius: 7px;
+    }
   }
 
   .ball-image-wrapper {
     display: flex;
     justify-content: center;
-    padding: 12px 12px 0;
 
     ion-img {
       width: 80px;
@@ -120,6 +115,9 @@ ion-card-content {
 .chips-row {
   gap: 2px;
   margin-bottom: 12px;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 
   .small-chip {
     font-size: 0.65rem;
@@ -138,8 +136,20 @@ ion-row.metric {
     align-items: center;
     margin-bottom: 3px;
 
+    .metric-label-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1.2;
+    }
+
     .metric-label {
       font-size: 0.7rem;
+      color: var(--ion-color-medium);
+    }
+
+    .metric-subtext {
+      font-size: 0.6rem;
       color: var(--ion-color-medium);
     }
 

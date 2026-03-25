@@ -47,7 +47,7 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/minigame/minigame.page').then((m) => m.MinigamePage),
       },
       {
-        path: 'ball-compare',
+        path: 'ball-comparison',
         loadComponent: () => import('./pages/ball-compare/ball-compare.page').then((m) => m.BallComparePage),
       },
       {

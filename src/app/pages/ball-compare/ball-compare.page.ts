@@ -17,7 +17,10 @@ import {
   IonHeader,
   IonIcon,
   IonImg,
+  IonItem,
+  IonList,
   IonModal,
+  IonPopover,
   IonRow,
   IonSegment,
   IonSegmentButton,
@@ -29,16 +32,22 @@ import {
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
-import { add, closeOutline, scaleOutline } from 'ionicons/icons';
+import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
+import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
+
+interface SavedEntry {
+  id: string;
+  weight: string;
+}
 
 @Component({
   selector: 'app-ball-compare',
@@ -59,7 +68,10 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
     IonButton,
     IonButtons,
     IonIcon,
+    IonItem,
+    IonList,
     IonModal,
+    IonPopover,
     IonText,
     IonImg,
     IonCard,
@@ -76,7 +88,8 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
   ],
 })
 export class BallComparePage implements OnInit, OnDestroy {
-  readonly storageService = inject(StorageService);
+  protected readonly storageService = inject(StorageService);
+  private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -87,31 +100,39 @@ export class BallComparePage implements OnInit, OnDestroy {
 
   readonly selectedBalls = signal<Ball[]>([]);
   readonly selectedSegment = model<'compare' | 'chart'>('compare');
+  readonly loadingWeightBallId = signal<string | null>(null);
 
   presentingElement?: HTMLElement;
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
 
+  readonly maxBalls = 6;
+  readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
+
   readonly displayBalls = computed(() =>
     this.selectedBalls().map((ball) => {
       const metrics = getBallMetrics(ball);
+      const weightOptions = this.availableWeights.includes(ball.core_weight)
+        ? this.availableWeights
+        : [...this.availableWeights, ball.core_weight].sort((a, b) => Number(a) - Number(b));
       return {
         data: ball,
         metrics,
         hookBarColor: this.getMetricBarColor(metrics.hookScore),
         flareBarColor: this.getMetricBarColor(metrics.flareScore),
+        weightOptions,
       };
     }),
   );
 
-  readonly maxBalls = 6;
-  readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
-
   private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   private chartInstance: Chart | null = null;
   private distChartInstance: Chart | null = null;
+  private readonly ballsByWeightCache = new Map<number, Ball[]>();
+  private hasRestored = false;
 
   constructor() {
-    addIcons({ add, closeOutline, scaleOutline });
+    addIcons({ add, chevronDownOutline, closeOutline, scaleOutline });
     this.initChartEffect();
     this.initRestoreEffect();
   }
@@ -136,7 +157,6 @@ export class BallComparePage implements OnInit, OnDestroy {
   onBallSelectionChange(ballIds: string[]): void {
     const allBalls = this.storageService.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-
     this.selectedBalls.set(selected);
     this.saveSelectedIds(selected);
   }
@@ -147,6 +167,37 @@ export class BallComparePage implements OnInit, OnDestroy {
       this.saveSelectedIds(updated);
       return updated;
     });
+  }
+
+  async onWeightSelect(ball: Ball, weight: string, popover: IonPopover): Promise<void> {
+    await popover.dismiss();
+    await this.changeBallWeight(ball, Number(weight));
+  }
+
+  private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
+    if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
+
+    this.loadingWeightBallId.set(ball.ball_id);
+
+    try {
+      const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
+      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+
+      if (!replacementBall) {
+        this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
+        return;
+      }
+
+      this.selectedBalls.update((balls) => {
+        const updated = balls.map((entry) => (entry.ball_id === ball.ball_id ? replacementBall : entry));
+        this.saveSelectedIds(updated);
+        return updated;
+      });
+    } catch {
+      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+    } finally {
+      this.loadingWeightBallId.set(null);
+    }
   }
 
   private getMetricBarColor(score: number): string {
@@ -181,31 +232,53 @@ export class BallComparePage implements OnInit, OnDestroy {
     const raw = localStorage.getItem(BallComparePage.STORAGE_KEY);
     if (!raw) return;
 
-    let ids: string[];
+    let entries: SavedEntry[];
     try {
-      ids = JSON.parse(raw);
-      if (!Array.isArray(ids) || ids.length === 0) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      entries = typeof parsed[0] === 'string' ? parsed.map((id: string) => ({ id, weight: '15' })) : parsed;
     } catch {
       return;
     }
 
-    // Effect re-runs automatically once allBalls() is populated
     effect(
       () => {
         const allBalls = this.storageService.allBalls();
-        if (allBalls.length === 0) return;
-
-        const restored = ids.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-
-        if (restored.length > 0) this.selectedBalls.set(restored);
+        if (allBalls.length === 0 || this.hasRestored) return;
+        this.hasRestored = true;
+        void this.restoreFromEntries(entries, allBalls);
       },
       { allowSignalWrites: true },
     );
   }
 
+  private async restoreFromEntries(entries: SavedEntry[], allBalls: Ball[]): Promise<void> {
+    const defaultBallMap = new Map(allBalls.map((b) => [b.ball_id, b]));
+
+    const resolved = await Promise.all(
+      entries.map(async ({ id, weight }) => {
+        const defaultBall = defaultBallMap.get(id);
+        if (defaultBall && defaultBall.core_weight === weight) return defaultBall;
+        const ballsAtWeight = await this.getBallsForWeight(Number(weight));
+        return ballsAtWeight.find((b) => b.ball_id === id) ?? defaultBall ?? null;
+      }),
+    );
+
+    const restored = resolved.filter((b): b is Ball => !!b);
+    if (restored.length > 0) this.selectedBalls.set(restored);
+  }
+
   private saveSelectedIds(balls: Ball[]): void {
-    const ids = balls.map((b) => b.ball_id);
-    localStorage.setItem(BallComparePage.STORAGE_KEY, JSON.stringify(ids));
+    const entries: SavedEntry[] = balls.map((b) => ({ id: b.ball_id, weight: b.core_weight }));
+    localStorage.setItem(BallComparePage.STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  private async getBallsForWeight(weight: number): Promise<Ball[]> {
+    const cached = this.ballsByWeightCache.get(weight);
+    if (cached) return cached;
+    const fetched = await this.ballService.loadAllBalls(undefined, weight);
+    this.ballsByWeightCache.set(weight, fetched);
+    return fetched;
   }
 
   private destroyCharts(): void {

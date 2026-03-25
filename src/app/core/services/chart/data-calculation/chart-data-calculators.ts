@@ -406,39 +406,39 @@ export function getBallMetrics(ball: Ball): BallMetrics {
   const factoryFinish = (ball.factory_finish || '').toLowerCase();
 
   const isPlastic = coverstockType.includes('plastic') || coverstockType.includes('polyester');
-  const isSolid = coverstockType.includes('solid') && !isPlastic;
+  const isUrethane = coverstockType.includes('urethane');
+  const isSolid = coverstockType.includes('solid') && !isPlastic && !isUrethane;
   const isHybrid = coverstockType.includes('hybrid');
   const isPearl = coverstockType.includes('pearl');
-  const isUrethane = coverstockType.includes('urethane');
 
   const gritMatch = factoryFinish.match(/(\d{3,4})(?:\s*[-\s]?grit)?/i);
   const finishGrit = gritMatch ? parseInt(gritMatch[1], 10) : null;
-  const isPolished = ['polish', 'shine', 'gloss'].some((term) => factoryFinish.includes(term));
+  const isPolished = ['polish', 'shine', 'gloss'].some((t) => factoryFinish.includes(t));
 
   let hookBase: number;
-  if (isSolid) hookBase = 82;
-  else if (isHybrid) hookBase = 67;
-  else if (isPearl) hookBase = 53;
+  if (isSolid) hookBase = 68;
+  else if (isHybrid) hookBase = 55;
+  else if (isPearl) hookBase = 44;
   else if (isUrethane) hookBase = 35;
   else if (isPlastic) hookBase = 7;
-  else hookBase = 53;
+  else hookBase = 44;
 
   if (!isPlastic) {
-    if (isPolished) hookBase = Math.max(0, hookBase - 8);
-    else if (finishGrit !== null) {
+    if (finishGrit !== null) {
       if (finishGrit <= 500) hookBase = Math.min(100, hookBase + 9);
       else if (finishGrit <= 1000) hookBase = Math.min(100, hookBase + 5);
       else if (finishGrit <= 2000) hookBase = Math.min(100, hookBase + 1);
       else if (finishGrit >= 4000) hookBase = Math.max(0, hookBase - 4);
     }
+    if (isPolished) hookBase = Math.max(0, hookBase - 8);
   }
 
   if (!isPlastic && !isUrethane && !isNaN(diff)) {
-    const diffNorm = Math.min(1, Math.max(0, (diff - 0.01) / (0.06 - 0.01)));
+    const diffNorm = Math.min(1, Math.max(0, (diff - 0.02) / (0.055 - 0.02)));
     hookBase = Math.round(Math.min(100, Math.max(0, hookBase + (diffNorm - 0.5) * 14)));
   }
 
-  const hookScore = Math.max(0, Math.min(100, hookBase));
+  const hookScore = Math.max(0, Math.min(isPlastic ? 20 : 90, hookBase));
 
   let lengthBase: number;
   if (isSolid) lengthBase = 35;
@@ -454,12 +454,12 @@ export function getBallMetrics(ball: Ball): BallMetrics {
   }
 
   if (!isPlastic) {
-    if (isPolished) lengthBase = Math.min(100, lengthBase + 10);
-    else if (finishGrit !== null) {
+    if (finishGrit !== null) {
       if (finishGrit <= 500) lengthBase = Math.max(0, lengthBase - 8);
       else if (finishGrit <= 1000) lengthBase = Math.max(0, lengthBase - 4);
       else if (finishGrit >= 4000) lengthBase = Math.min(100, lengthBase + 5);
     }
+    if (isPolished) lengthBase = Math.min(100, lengthBase + 10);
   }
 
   const lengthScore = Math.max(0, Math.min(100, Math.round(lengthBase)));
@@ -474,20 +474,15 @@ export function getBallMetrics(ball: Ball): BallMetrics {
   }
 
   const hookLabel =
-    hookScore >= 80 ? 'Very Strong' : hookScore >= 60 ? 'Strong' : hookScore >= 40 ? 'Medium' : hookScore >= 20 ? 'Weak' : 'Very Weak';
+    hookScore >= 75 ? 'Very Strong' : hookScore >= 55 ? 'Strong' : hookScore >= 35 ? 'Medium' : hookScore >= 18 ? 'Weak' : 'Very Weak';
+
   const lengthLabel = lengthScore >= 70 ? 'Late Roll' : lengthScore >= 40 ? 'Medium Roll' : 'Early Roll';
+
   const flareLabel = flareScore >= 70 ? 'High Flare' : flareScore >= 40 ? 'Medium Flare' : 'Low Flare';
 
   const combined = hookScore * 0.5 + flareScore * 0.3 + (100 - lengthScore) * 0.2;
-  let laneCondition = 'Medium Oil';
-  let laneConditionColor = 'warning';
-  if (combined >= 60) {
-    laneCondition = 'Heavy Oil';
-    laneConditionColor = 'primary';
-  } else if (combined <= 30) {
-    laneCondition = 'Dry / Light Oil';
-    laneConditionColor = 'danger';
-  }
+  const laneCondition = combined >= 60 ? 'Heavy Oil' : combined <= 30 ? 'Dry / Light Oil' : 'Medium Oil';
+  const laneConditionColor = combined >= 60 ? 'primary' : combined <= 30 ? 'danger' : 'warning';
 
   return { hookScore, lengthScore, flareScore, hookLabel, lengthLabel, flareLabel, laneCondition, laneConditionColor };
 }

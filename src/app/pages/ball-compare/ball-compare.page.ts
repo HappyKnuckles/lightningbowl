@@ -143,7 +143,7 @@ export class BallComparePage implements OnInit, OnDestroy {
     });
   }
 
-  getMetricBarColor(score: number): string {
+  private getMetricBarColor(score: number): string {
     if (score >= 70) return 'var(--ion-color-success)';
     if (score >= 40) return 'var(--ion-color-warning)';
     return 'var(--ion-color-danger)';

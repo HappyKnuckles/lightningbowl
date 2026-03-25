@@ -2,7 +2,20 @@ import { Component, OnInit, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTO
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
-import { IonGrid, IonModal, IonRow, IonCol, IonInput, IonItem, IonTextarea, IonCheckbox, IonList, IonLabel } from '@ionic/angular/standalone';
+import {
+  IonGrid,
+  IonModal,
+  IonRow,
+  IonCol,
+  IonInput,
+  IonItem,
+  IonTextarea,
+  IonCheckbox,
+  IonList,
+  IonLabel,
+  IonAccordion,
+  IonAccordionGroup,
+} from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -49,6 +62,8 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
     BallSelectComponent,
     PinInputComponent,
     PinDeckFrameRowComponent,
+    IonAccordion,
+    IonAccordionGroup,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

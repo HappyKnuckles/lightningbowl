@@ -33,18 +33,9 @@
   }
 }
 
-.chart-section {
-  margin: 12px 16px 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 16px 8px 8px;
-
-  .radar-canvas {
-    display: block;
-    width: 100% !important;
-    height: 260px !important;
-  }
+ion-card-header,
+ion-card-content {
+  padding-inline: 12px;
 }
 
 .arsenal-chart-container {
@@ -64,15 +55,13 @@
 .compare-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0;
-  padding: 8px;
+  gap: 6px;
+  margin-inline: 16px;
 }
 
 .ball-card {
-  position: relative;
-  flex: 1 1 calc(50% - 16px);
-  min-width: 150px;
-  margin: 4px;
+  margin: 0;
+  flex: 1 1 calc(50% - 6px);
 
   .remove-btn {
     position: absolute;
@@ -152,6 +141,7 @@
       font-size: 0.7rem;
       font-weight: 600;
       color: var(--ion-text-color);
+      text-align: right;
     }
   }
 
@@ -216,25 +206,4 @@
   display: flex;
   justify-content: center;
   padding: 8px 16px 24px;
-}
-
-// Coverstock type color accents
-.coverstock-solid {
-  --background: rgba(239, 68, 68, 0.15);
-  --color: #ef4444;
-}
-
-.coverstock-hybrid {
-  --background: rgba(234, 179, 8, 0.15);
-  --color: #eab308;
-}
-
-.coverstock-pearl {
-  --background: rgba(59, 130, 246, 0.15);
-  --color: #3b82f6;
-}
-
-.coverstock-urethane {
-  --background: rgba(168, 85, 247, 0.15);
-  --color: #a855f7;
 }

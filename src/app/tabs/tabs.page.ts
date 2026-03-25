@@ -18,7 +18,12 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular/standalone';
 import { AsyncPipe } from '@angular/common';
-
+interface MoreTab {
+  path: string;
+  label: string;
+  icon?: string;
+  src?: string;
+}
 @Component({
   selector: 'app-tabs',
   templateUrl: 'tabs.page.html',
@@ -27,8 +32,45 @@ import { AsyncPipe } from '@angular/common';
 })
 export class TabsPage {
   activeMoreTab$ = new BehaviorSubject<boolean>(false);
-  readonly moreTabs = ['/tabs/arsenal', '/tabs/balls', '/tabs/ball-compare', '/tabs/pattern', '/tabs/map', '/tabs/minigame', '/tabs/settings'];
+  readonly moreTabs: MoreTab[] = [
+    {
+      path: '/tabs/arsenal',
+      label: 'Arsenal',
+      src: 'assets/svg/ball-bag-svgrepo-com.svg',
+    },
+    {
+      path: '/tabs/balls',
+      label: 'Ball Library',
+      icon: 'bowling-ball-outline',
+    },
+    {
+      path: '/tabs/ball-compare',
+      label: 'Ball Compare',
+      icon: 'scale-outline',
+    },
+    {
+      path: '/tabs/pattern',
+      label: 'Pattern Library',
+      src: 'assets/svg/lane.svg',
+    },
+    {
+      path: '/tabs/map',
+      label: 'Map',
+      icon: 'map-outline',
+    },
+    {
+      path: '/tabs/minigame',
+      label: 'Minigame',
+      icon: 'game-controller-outline',
+    },
+    {
+      path: '/tabs/settings',
+      label: 'Settings',
+      icon: 'settings-outline',
+    },
+  ];
 
+  private tabPaths = this.moreTabs.map((t) => t.path);
   constructor(private router: Router) {
     addIcons({
       add,
@@ -45,11 +87,8 @@ export class TabsPage {
     });
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-      this.activeMoreTab$.next(this.moreTabs.some((tab) => this.router.url.includes(tab)));
+      const isMoreActive = this.tabPaths.some((path) => this.router.url.includes(path));
+      this.activeMoreTab$.next(isMoreActive);
     });
-  }
-
-  isActive(path: string): boolean {
-    return this.router.url.includes(path);
   }
 }

@@ -31,14 +31,16 @@
 ion-segment-view {
   height: fit-content;
 }
+
 // Header background bleed hackaround
 // body {
 //   background: #0d0e0d;
-    
+
 // }
-ion-content{
+ion-content {
   --offset-top: 200px !important;
 }
+
 .stat-container {
   border: 1px solid #2b2828;
   margin: 0 16px 12px;
@@ -78,6 +80,11 @@ ion-input {
 .alert-input {
   background-color: white !important;
   color: #080f08 !important;
+}
+
+ion-card {
+  border: 1px solid #2b2828;
+  background-color: #141414;
 }
 
 ion-header {

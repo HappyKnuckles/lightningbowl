@@ -11,9 +11,11 @@
 
 <ion-content>
   <ion-item lines="none" style="padding-top: 8px">
-    <ion-badge slot="start" color="dark" class="hero-icon"
-      ><ion-icon [name]="cloudSyncService.syncStatus().isAuthenticated ? 'cloud-done-outline' : 'cloud-offline-outline'"></ion-icon
-    ></ion-badge>
+    <ion-badge slot="start" color="dark" class="hero-icon">
+      @if (cloudSyncService.syncStatus()) {
+        <ion-icon [name]="cloudSyncService.syncStatus().isAuthenticated ? 'cloud-done-outline' : 'cloud-offline-outline'"></ion-icon>
+      }
+    </ion-badge>
     <ion-label>
       <h1>{{ cloudSyncService.syncStatus().isAuthenticated ? "Connected" : "Not Connected" }}</h1>
       <p *ngIf="cloudSyncService.syncStatus().isAuthenticated">Linked to {{ providerDisplayName() }}</p>

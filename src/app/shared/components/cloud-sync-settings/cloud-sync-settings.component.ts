@@ -1,45 +1,45 @@
+import { DatePipe, NgIf } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AlertController, ModalController } from '@ionic/angular';
 import {
+  IonBadge,
+  IonButton,
+  IonButtons,
   IonCard,
   IonCardContent,
+  IonCol,
+  IonContent,
+  IonFooter,
+  IonGrid,
+  IonHeader,
+  IonIcon,
+  IonInput,
   IonItem,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
-  IonButton,
-  IonIcon,
-  IonSpinner,
-  IonToggle,
-  IonInput,
-  IonFooter,
-  IonToolbar,
-  IonCol,
-  IonRow,
-  IonGrid,
   IonList,
   IonListHeader,
-  IonBadge,
-  IonContent,
-  IonButtons,
-  IonHeader,
+  IonRow,
+  IonSelect,
+  IonSelectOption,
+  IonSpinner,
   IonTitle,
+  IonToggle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { NgIf, DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import {
-  cloudUploadOutline,
+  calendarOutline,
   cloudDoneOutline,
   cloudOfflineOutline,
-  syncOutline,
-  linkOutline,
-  unlinkOutline,
+  cloudUploadOutline,
   folderOutline,
-  calendarOutline,
+  linkOutline,
+  syncOutline,
+  unlinkOutline,
 } from 'ionicons/icons';
-import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 import { CloudProvider, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
-import { AlertController, ModalController } from '@ionic/angular';
+import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 
 @Component({
   selector: 'app-cloud-sync-settings',

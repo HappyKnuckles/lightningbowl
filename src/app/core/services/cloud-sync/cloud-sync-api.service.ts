@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
 import { environment } from 'src/environments/environment';
+import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
 
 /**
  * Service responsible for all cloud provider API interactions (OAuth, uploads).
@@ -13,7 +13,7 @@ export class CloudSyncApiService {
    * Navigate browser to OAuth start endpoint
    */
   authenticateWithProvider(provider: CloudProvider): void {
-    const redirectUrl = `${window.location.origin}/auth/callback?openModal=true`;
+    const redirectUrl = `${window.location.origin}/tabs/settings?openCloudSync=true`;
     const startUrl = `${environment.authBackendUrl}/${provider}/start?redirect=${encodeURIComponent(redirectUrl)}`;
     window.location.href = startUrl;
   }

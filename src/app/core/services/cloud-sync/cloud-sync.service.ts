@@ -1,8 +1,8 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { CloudSyncSettings, CloudProvider, SyncFrequency, CloudSyncStatus } from '../../models/cloud-sync.model';
+import { computed, Injectable, signal } from '@angular/core';
+import { CloudProvider, CloudSyncSettings, CloudSyncStatus, SyncFrequency } from '../../models/cloud-sync.model';
 import { ExcelService } from '../excel/excel.service';
-import { ToastService } from '../toast/toast.service';
 import { StorageService } from '../storage/storage.service';
+import { ToastService } from '../toast/toast.service';
 import { CloudSyncApiService } from './cloud-sync-api.service';
 
 const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
@@ -122,7 +122,7 @@ export class CloudSyncService {
   }
 
   /**
-   * Called by the auth-callback page after the OAuth backend redirects back
+   * Called after the OAuth backend redirects to settings with callback query params
    */
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
     await this._settingsLoaded;

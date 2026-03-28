@@ -3,30 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent,
-  IonThumbnail,
   IonHeader,
   IonTitle,
   IonToolbar,
   IonImg,
-  IonList,
-  IonItem,
-  IonLabel,
+  IonCard,
+  IonCardHeader,
+  IonCardContent,
+  IonCardTitle,
+  IonCardSubtitle,
   IonButton,
   IonButtons,
   IonIcon,
   IonModal,
   IonText,
-  IonItemSliding,
-  IonItemOption,
-  IonItemOptions,
   IonChip,
-  IonReorderGroup,
-  IonReorder,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
-  IonListHeader,
   IonRippleEffect,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
@@ -34,7 +29,7 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { addIcons } from 'ionicons';
 import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -54,24 +49,19 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
   providers: [ModalController],
   imports: [
     IonRippleEffect,
-    IonListHeader,
     IonSegmentButton,
     IonSegment,
-    IonReorder,
-    IonReorderGroup,
     IonChip,
-    IonItemOptions,
-    IonItemOption,
-    IonItemSliding,
     IonText,
-    IonThumbnail,
     IonModal,
     IonIcon,
     IonButtons,
     IonButton,
-    IonLabel,
-    IonItem,
-    IonList,
+    IonCard,
+    IonCardHeader,
+    IonCardContent,
+    IonCardTitle,
+    IonCardSubtitle,
     IonImg,
     IonContent,
     IonHeader,
@@ -139,6 +129,11 @@ export class ArsenalPage implements OnInit {
     }
   }
 
+  handleRemove(ball: Ball, event: Event): void {
+    event.stopPropagation();
+    this.removeFromArsenal(ball);
+  }
+
   async removeFromArsenal(ball: Ball): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Heavy);
@@ -170,18 +165,6 @@ export class ArsenalPage implements OnInit {
       console.error('Error displaying removal alert:', error);
       this.toastService.showToast(ToastMessages.unexpectedError, 'warning', true);
     }
-  }
-
-  async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
-    event.detail.complete();
-
-    const arsenal = this.storageService.arsenal();
-    const [movedItem] = arsenal.splice(event.detail.from, 1);
-    arsenal.splice(event.detail.to, 0, movedItem);
-
-    arsenal.forEach((ball, idx) => (ball.position = idx + 1));
-
-    await Promise.all(arsenal.map((ball) => this.storageService.saveBallToArsenal(ball)));
   }
 
   saveBallToArsenal(ball: Ball[]): void {

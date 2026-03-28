@@ -50,7 +50,7 @@
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 100,
-        "maxAge": "10h"
+        "maxAge": "1d"
       }
     },
     {
@@ -59,9 +59,9 @@
         "https://pattern.lightningbowl.de/api/**"
       ],
       "cacheConfig": {
-        "strategy": "freshness",
+        "strategy": "performance",
         "maxSize": 5000,
-        "maxAge": "48h"
+        "maxAge": "7d"
       }
     }
   ]

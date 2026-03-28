@@ -5,6 +5,7 @@ import { firstValueFrom, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
+import { PATTERN_CACHE_TTL } from '../../models/cache.model';
 
 interface SearchResult {
   patterns: Pattern[];
@@ -42,14 +43,35 @@ export class PatternService {
   ) {}
 
   async getAllPatternCharts(): Promise<PatternChartsResult> {
+    const cacheKey = 'pattern_charts';
+
     try {
+      const cachedCharts = await this.cacheService.get<PatternChartsResult>(cacheKey);
+      if (cachedCharts) {
+        return cachedCharts;
+      }
+
+      if (this.networkService.isOffline) {
+        const staleCharts = await this.cacheService.getStale<PatternChartsResult>(cacheKey);
+        if (staleCharts) {
+          return staleCharts;
+        }
+        return { count: 0, patterns: [] };
+      }
+
       const response = await firstValueFrom(
         this.http.get<PatternChartsResult>(`${environment.patternEndpoint}patterns/charts`).pipe(retry({ count: 5, delay: 2000 })),
       );
+
+      if (response.count !== 0) {
+        await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
+      }
+
       return response;
     } catch (error) {
       console.error('Error fetching pattern charts:', error);
-      return { count: 0, patterns: [] };
+      const staleCharts = await this.cacheService.getStale<PatternChartsResult>(cacheKey);
+      return staleCharts ?? { count: 0, patterns: [] };
     }
   }
 
@@ -59,15 +81,14 @@ export class PatternService {
     try {
       if (!forceRefresh) {
         const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-        if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
+        if (cachedPatterns) {
           return cachedPatterns;
         }
       }
 
       if (this.networkService.isOffline) {
-        return { total: 0, patterns: [] };
+        const stalePatterns = await this.cacheService.getStale<AllPatternsResult>(cacheKey);
+        return stalePatterns ?? { total: 0, patterns: [] };
       }
 
       const response = await firstValueFrom(
@@ -75,76 +96,153 @@ export class PatternService {
       );
 
       if (response.total !== 0) {
-        await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 6 hours
+        await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
       }
 
       return response;
     } catch (error) {
       console.error('Error fetching patterns:', error);
 
-      // Try to use cached data as fallback
-      const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
-      if (cachedPatterns) {
-        return cachedPatterns;
-      }
-
-      return { total: 0, patterns: [] };
+      const stalePatterns = await this.cacheService.getStale<AllPatternsResult>(cacheKey);
+      return stalePatterns ?? { total: 0, patterns: [] };
     }
   }
 
   async getAllPatternsStripped(): Promise<Partial<Pattern>[]> {
+    const cacheKey = 'all_patterns_stripped';
+
     try {
+      const cached = await this.cacheService.get<Partial<Pattern>[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      if (this.networkService.isOffline) {
+        const stale = await this.cacheService.getStale<Partial<Pattern>[]>(cacheKey);
+        return stale ?? [];
+      }
+
       const response = await firstValueFrom(
         this.http
           .get<{ count: number; patterns: Partial<Pattern>[] }>(`${environment.patternEndpoint}patterns/all-stripped`)
           .pipe(retry({ count: 5, delay: 2000 })),
       );
+
+      if (response.patterns.length !== 0) {
+        await this.cacheService.set(cacheKey, response.patterns, PATTERN_CACHE_TTL);
+      }
+
       return response.patterns;
     } catch (error) {
       console.error('Error fetching stripped patterns:', error);
-      return [];
+      const stale = await this.cacheService.getStale<Partial<Pattern>[]>(cacheKey);
+      return stale ?? [];
     }
   }
 
   async getAllPatterns(): Promise<Pattern[]> {
+    const cacheKey = 'all_patterns_full';
+
     try {
+      const cached = await this.cacheService.get<Pattern[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      if (this.networkService.isOffline) {
+        const stale = await this.cacheService.getStale<Pattern[]>(cacheKey);
+        return stale ?? [];
+      }
+
       const response = await firstValueFrom(
         this.http.get<{ count: number; patterns: Pattern[] }>(`${environment.patternEndpoint}patterns/all`).pipe(retry({ count: 5, delay: 2000 })),
       );
+
+      if (response.patterns.length !== 0) {
+        await this.cacheService.set(cacheKey, response.patterns, PATTERN_CACHE_TTL);
+      }
+
       return response.patterns;
     } catch (error) {
       console.error('Error fetching all patterns:', error);
-      return [];
+      const stale = await this.cacheService.getStale<Pattern[]>(cacheKey);
+      return stale ?? [];
     }
   }
 
   async getPatternCategories(): Promise<string[]> {
+    const cacheKey = 'pattern_categories';
+
     try {
+      const cached = await this.cacheService.get<string[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      if (this.networkService.isOffline) {
+        const stale = await this.cacheService.getStale<string[]>(cacheKey);
+        return stale ?? [];
+      }
+
       const response = await firstValueFrom(this.http.get<string[]>(`${environment.patternEndpoint}categories`));
+
+      if (response.length !== 0) {
+        await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
+      }
+
       return response;
     } catch (error) {
       console.error('Error fetching pattern categories:', error);
-      return [];
+      const stale = await this.cacheService.getStale<string[]>(cacheKey);
+      return stale ?? [];
     }
   }
 
   async getPatternData(url: string): Promise<Pattern> {
+    const cacheKey = `pattern_data_${encodeURIComponent(url)}`;
+
     try {
+      const cached = await this.cacheService.get<Pattern>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      if (this.networkService.isOffline) {
+        const stale = await this.cacheService.getStale<Pattern>(cacheKey);
+        return stale ?? ({} as Pattern);
+      }
+
       const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`));
+      await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
       return response;
     } catch (error) {
       console.error('Error fetching pattern data:', error);
-      return {} as Pattern;
+      const stale = await this.cacheService.getStale<Pattern>(cacheKey);
+      return stale ?? ({} as Pattern);
     }
   }
 
   async getPatternStats() {
+    const cacheKey = 'pattern_stats';
+
     try {
+      const cached = await this.cacheService.get<unknown>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      if (this.networkService.isOffline) {
+        const stale = await this.cacheService.getStale<unknown>(cacheKey);
+        return stale ?? {};
+      }
+
       const response = await firstValueFrom(this.http.get(`${environment.patternEndpoint}stats`));
+      await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
       return response;
     } catch (error) {
       console.error('Error fetching pattern stats:', error);
-      return {};
+      const stale = await this.cacheService.getStale<unknown>(cacheKey);
+      return stale ?? {};
     }
   }
 
@@ -153,13 +251,15 @@ export class PatternService {
 
     try {
       const cachedResult = await this.cacheService.get<SearchResult>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedResult && (isCacheValid || this.networkService.isOffline)) {
+      if (cachedResult) {
         return cachedResult;
       }
 
       if (this.networkService.isOffline) {
+        const staleResult = await this.cacheService.getStale<SearchResult>(cacheKey);
+        if (staleResult) {
+          return staleResult;
+        }
         console.warn('Cannot search patterns: offline and no cached data available');
         return { patterns: [], count: 0, query: searchTerm, numeric_query: false, threshold: 0 };
       }
@@ -168,16 +268,15 @@ export class PatternService {
         this.http.get<SearchResult>(`${environment.patternEndpoint}search?q=${searchTerm}&include_metadata=${include_metadata}`),
       );
 
-      await this.cacheService.set(cacheKey, response, 2 * 60 * 60 * 1000); // 2 hours
+      await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
 
       return response;
     } catch (error) {
       console.error('Error searching patterns:', error);
 
-      // Try to use cached data as fallback
-      const cachedResult = await this.cacheService.get<SearchResult>(cacheKey);
-      if (cachedResult) {
-        return cachedResult;
+      const staleResult = await this.cacheService.getStale<SearchResult>(cacheKey);
+      if (staleResult) {
+        return staleResult;
       }
 
       return { patterns: [], count: 0, query: '', numeric_query: false, threshold: 0 };

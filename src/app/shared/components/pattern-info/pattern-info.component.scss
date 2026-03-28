@@ -1,6 +1,6 @@
 ion-grid {
   background-color: var(--ion-card-background);
-  margin: 8px 6px;
+  margin: 8px 16px;
   padding: 4px;
   border-radius: 7px;
   align-items: center;
@@ -8,13 +8,6 @@ ion-grid {
 
   &:last-child {
     margin-bottom: 32px;
-  }
-
-  ion-label {
-    padding: 4px;
-    font-size: 1.1375rem;
-    font-weight: 600;
-    text-align: center;
   }
 
   .header-row {
@@ -37,7 +30,7 @@ ion-grid {
 .pattern-container {
   display: flex;
   gap: 8px;
-  margin: 8px;
+  margin: 8px 16px;
 
   .pattern-info {
     display: grid;

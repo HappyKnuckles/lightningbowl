@@ -170,7 +170,7 @@ export class PatternPage implements OnInit {
       this.hasMoreData = true;
       this.patterns = [];
       this.searchTerm.set(''); // Clear search term on refresh
-      await this.loadPatterns();
+      await this.loadPatterns(undefined, true);
     } catch (error) {
       console.error(error);
       this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
@@ -180,7 +180,7 @@ export class PatternPage implements OnInit {
     }
   }
 
-  async loadPatterns(event?: InfiniteScrollCustomEvent): Promise<void> {
+  async loadPatterns(event?: InfiniteScrollCustomEvent, forceRefresh = false): Promise<void> {
     const now = Date.now();
     if (now - this.lastLoadTime < this.debounceMs) {
       if (event) event.target.complete();
@@ -191,7 +191,7 @@ export class PatternPage implements OnInit {
       if (!event) {
         this.isPageLoading.set(true);
       }
-      const response = await this.patternService.getPatterns(this.currentPage);
+      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh);
       const patterns = response.patterns;
       if (response.total > 0) {
         this.patterns = [...this.patterns, ...patterns];

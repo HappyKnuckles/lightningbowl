@@ -59,9 +59,10 @@
         "https://pattern.lightningbowl.de/api/**"
       ],
       "cacheConfig": {
-        "strategy": "performance",
+        "strategy": "freshness",
         "maxSize": 5000,
-        "maxAge": "7d"
+        "maxAge": "7d",
+        "timeout": "10s"
       }
     }
   ]

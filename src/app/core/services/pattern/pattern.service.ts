@@ -53,15 +53,17 @@ export class PatternService {
     }
   }
 
-  async getPatterns(page: number): Promise<AllPatternsResult> {
+  async getPatterns(page: number, forceRefresh = false): Promise<AllPatternsResult> {
     const cacheKey = `patterns_page_${page}`;
 
     try {
-      const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
+      if (!forceRefresh) {
+        const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
+        const isCacheValid = await this.cacheService.isValid(cacheKey);
 
-      if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
-        return cachedPatterns;
+        if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
+          return cachedPatterns;
+        }
       }
 
       if (this.networkService.isOffline) {

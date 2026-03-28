@@ -246,7 +246,7 @@ export class BallsPage implements OnInit {
       if (this.isFilterActive()) {
         this.filterDisplayCount = 100;
       }
-      await Promise.all([this.storageService.loadAllBalls(), this.storageService.loadArsenal()]);
+      await Promise.all([this.storageService.loadAllBalls(undefined, undefined, true), this.storageService.loadArsenal()]);
       await this.loadBalls();
     } catch (error) {
       console.error(error);

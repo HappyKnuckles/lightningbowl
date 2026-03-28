@@ -10,6 +10,22 @@
   }
 }
 
+.card-content {
+  color: white;
+
+  .header {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+}
+
+ion-thumbnail {
+  --size: 80px;
+
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
 ion-header {
   ion-button {
     position: relative;
@@ -28,13 +44,18 @@ ion-card-title {
   padding-bottom: 12px;
 }
 
-.ball-card-image {
-  height: 15vmax;
+.sliding {
+  .title {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+}
+
+ion-img::part(image) {
+  border-radius: 50%;
 }
 
 .ball-info {
-  margin-top: 12px;
-
   ion-chip {
     text-align: center;
     padding: 6px;
@@ -58,30 +79,33 @@ ion-card-title {
   max-height: 70dvh;
 }
 
-.ball-detail-container {
+.section-title {
+  padding: 16px 16px 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.coverstock-container,
+.core-container {
   display: flex;
   flex-direction: column;
   align-items: center;
 
-  h2 {
-    margin: 8px 0 4px;
-    font-size: 1rem;
-    font-weight: 600;
+  .coverstock-image,
+  .core-image {
+    margin-bottom: 12px;
+
+    ion-img {
+      width: 120px;
+      height: 120px;
+    }
   }
 
-  p {
-    margin: 2px 0;
-    color: var(--ion-color-medium);
-  }
-}
-
-.ball-detail-image {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-
-  &::part(image) {
-    border-radius: 50%;
+  ion-item {
+    width: 100%;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    pointer-events: none;
   }
 }

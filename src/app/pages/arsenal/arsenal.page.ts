@@ -3,33 +3,38 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent,
+  IonThumbnail,
   IonHeader,
   IonTitle,
   IonToolbar,
   IonImg,
-  IonCard,
-  IonCardHeader,
-  IonCardContent,
-  IonCardTitle,
-  IonCardSubtitle,
+  IonList,
+  IonItem,
+  IonLabel,
   IonButton,
   IonButtons,
   IonIcon,
   IonModal,
   IonText,
+  IonItemSliding,
+  IonItemOption,
+  IonItemOptions,
   IonChip,
+  IonReorderGroup,
+  IonReorder,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
-  IonRippleEffect,
+  IonCard,
+  IonCardContent,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { Ball } from 'src/app/core/models/ball.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { addIcons } from 'ionicons';
 import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { AlertController, ModalController } from '@ionic/angular';
+import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -48,20 +53,23 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
   styleUrls: ['./arsenal.page.scss'],
   providers: [ModalController],
   imports: [
-    IonRippleEffect,
     IonSegmentButton,
     IonSegment,
+    IonReorder,
+    IonReorderGroup,
     IonChip,
+    IonItemOptions,
+    IonItemOption,
+    IonItemSliding,
     IonText,
+    IonThumbnail,
     IonModal,
     IonIcon,
     IonButtons,
     IonButton,
-    IonCard,
-    IonCardHeader,
-    IonCardContent,
-    IonCardTitle,
-    IonCardSubtitle,
+    IonLabel,
+    IonItem,
+    IonList,
     IonImg,
     IonContent,
     IonHeader,
@@ -73,6 +81,8 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    IonCard,
+    IonCardContent,
   ],
 })
 export class ArsenalPage implements OnInit {
@@ -129,9 +139,16 @@ export class ArsenalPage implements OnInit {
     }
   }
 
-  handleRemove(ball: Ball, event: Event): void {
-    event.stopPropagation();
-    this.removeFromArsenal(ball);
+  async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
+    event.detail.complete();
+
+    const arsenal = this.storageService.arsenal();
+    const [movedItem] = arsenal.splice(event.detail.from, 1);
+    arsenal.splice(event.detail.to, 0, movedItem);
+
+    arsenal.forEach((ball, idx) => (ball.position = idx + 1));
+
+    await Promise.all(arsenal.map((ball) => this.storageService.saveBallToArsenal(ball)));
   }
 
   async removeFromArsenal(ball: Ball): Promise<void> {

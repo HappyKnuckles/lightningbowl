@@ -88,6 +88,25 @@
           </ion-card-header>
           <ion-card-content>
             <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for' + ' ' + ball.ball_name"></ion-img>
+            <div style="margin: 8px 0">
+              <ion-chip
+                [id]="'weight-trigger-' + ball.ball_id + '-' + ball.core_weight"
+                button
+                [disabled]="loadingWeightBallId() === ball.ball_id"
+                (click)="$event.stopPropagation()">
+                {{ ball.core_weight }}lbs
+                <ion-icon name="chevron-down-outline" style="margin-left: 4px; font-size: 0.75rem"></ion-icon>
+              </ion-chip>
+            </div>
+            <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.ball_id + '-' + ball.core_weight" triggerAction="click">
+              <ng-template>
+                <ion-list>
+                  @for (weight of availableWeights; track weight) {
+                    <ion-item button detail="false" (click)="onWeightSelect(ball, weight, weightPopover)"> {{ weight }}lbs </ion-item>
+                  }
+                </ion-list>
+              </ng-template>
+            </ion-popover>
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">

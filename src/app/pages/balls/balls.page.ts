@@ -25,6 +25,7 @@ import {
   IonRefresherContent,
   IonRefresher,
   IonSkeletonText,
+  IonChip,
   IonPopover,
   IonItem,
 } from '@ionic/angular/standalone';
@@ -62,6 +63,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
   providers: [ModalController],
   imports: [
     IonSkeletonText,
+    IonChip,
     IonPopover,
     IonItem,
     IonRefresher,

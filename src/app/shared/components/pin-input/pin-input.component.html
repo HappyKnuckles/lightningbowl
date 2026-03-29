@@ -1,116 +1,74 @@
 <div class="pin-input-container">
   @if (storageService.arsenal().length > 0) {
-    <div class="ball-selector-corner">
-      @if (getSelectedBallThumbnail(); as selectedBallThumbnail) {
-        <ion-button fill="clear" class="ball-image-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
-          <img
-            class="selected-ball-thumb"
-            [src]="storageService.url + selectedBallThumbnail"
-            [alt]="(selectedBall() || 'Selected ball') + ' thumbnail'" />
-        </ion-button>
-      } @else {
-        <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
-          <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
-        </ion-button>
-      }
-    </div>
+  <div class="ball-selector-corner">
+    @if (getSelectedBallThumbnail(); as selectedBallThumbnail) {
+    <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+      <img slot="icon-only" class="selected-ball-thumb" [src]="storageService.url + selectedBallThumbnail"
+        [alt]="(selectedBall() || 'Selected ball') + ' thumbnail'" />
+    </ion-button>
+    } @else {
+    <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+      <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
+    </ion-button>
+    }
+  </div>
   }
 
   <!-- Pin Deck -->
   <div class="pin-row">
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(7)"
-      [class.disabled]="!isPinAvailable(7) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(7)"
-      [disabled]="!isPinAvailable(7) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(7)" [class.disabled]="!isPinAvailable(7) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(7)" [disabled]="!isPinAvailable(7) || isGameComplete()"
       (click)="togglePin(7)">
       7
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(8)"
-      [class.disabled]="!isPinAvailable(8) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(8)"
-      [disabled]="!isPinAvailable(8) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(8)" [class.disabled]="!isPinAvailable(8) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(8)" [disabled]="!isPinAvailable(8) || isGameComplete()"
       (click)="togglePin(8)">
       8
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(9)"
-      [class.disabled]="!isPinAvailable(9) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(9)"
-      [disabled]="!isPinAvailable(9) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(9)" [class.disabled]="!isPinAvailable(9) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(9)" [disabled]="!isPinAvailable(9) || isGameComplete()"
       (click)="togglePin(9)">
       9
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(10)"
-      [class.disabled]="!isPinAvailable(10) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(10)"
-      [disabled]="!isPinAvailable(10) || isGameComplete()"
-      (click)="togglePin(10)">
+    <ion-button class="pin" [class.active]="isPinSelected(10)"
+      [class.disabled]="!isPinAvailable(10) || isGameComplete()" [class.knocked-down]="isPinKnockedDown(10)"
+      [disabled]="!isPinAvailable(10) || isGameComplete()" (click)="togglePin(10)">
       10
     </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(4)"
-      [class.disabled]="!isPinAvailable(4) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(4)"
-      [disabled]="!isPinAvailable(4) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(4)" [class.disabled]="!isPinAvailable(4) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(4)" [disabled]="!isPinAvailable(4) || isGameComplete()"
       (click)="togglePin(4)">
       4
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(5)"
-      [class.disabled]="!isPinAvailable(5) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(5)"
-      [disabled]="!isPinAvailable(5) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(5)" [class.disabled]="!isPinAvailable(5) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(5)" [disabled]="!isPinAvailable(5) || isGameComplete()"
       (click)="togglePin(5)">
       5
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(6)"
-      [class.disabled]="!isPinAvailable(6) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(6)"
-      [disabled]="!isPinAvailable(6) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(6)" [class.disabled]="!isPinAvailable(6) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(6)" [disabled]="!isPinAvailable(6) || isGameComplete()"
       (click)="togglePin(6)">
       6
     </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(2)"
-      [class.disabled]="!isPinAvailable(2) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(2)"
-      [disabled]="!isPinAvailable(2) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(2)" [class.disabled]="!isPinAvailable(2) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(2)" [disabled]="!isPinAvailable(2) || isGameComplete()"
       (click)="togglePin(2)">
       2
     </ion-button>
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(3)"
-      [class.disabled]="!isPinAvailable(3) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(3)"
-      [disabled]="!isPinAvailable(3) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(3)" [class.disabled]="!isPinAvailable(3) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(3)" [disabled]="!isPinAvailable(3) || isGameComplete()"
       (click)="togglePin(3)">
       3
     </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button
-      class="pin"
-      [class.active]="isPinSelected(1)"
-      [class.disabled]="!isPinAvailable(1) || isGameComplete()"
-      [class.knocked-down]="isPinKnockedDown(1)"
-      [disabled]="!isPinAvailable(1) || isGameComplete()"
+    <ion-button class="pin" [class.active]="isPinSelected(1)" [class.disabled]="!isPinAvailable(1) || isGameComplete()"
+      [class.knocked-down]="isPinKnockedDown(1)" [disabled]="!isPinAvailable(1) || isGameComplete()"
       (click)="togglePin(1)">
       1
     </ion-button>
@@ -134,16 +92,10 @@
   </div>
 </div>
 
-<ion-modal
-  [isOpen]="isBallModalOpen"
-  (didDismiss)="closeBallSelector()"
-  class="ball-modal"
-  [enterAnimation]="enterAnimation"
-  [leaveAnimation]="leaveAnimation">
+<ion-modal [isOpen]="isBallModalOpen" (didDismiss)="closeBallSelector()" class="ball-modal"
+  [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation">
   <ng-template>
-    <app-ball-select
-      [selectedBalls]="selectedBall() ? [selectedBall()!] : []"
-      [singleSelect]="true"
+    <app-ball-select [selectedBalls]="selectedBall() ? [selectedBall()!] : []" [singleSelect]="true"
       (ballSelect)="onBallSelection($event)"></app-ball-select>
   </ng-template>
 </ion-modal>

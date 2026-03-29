@@ -30,22 +30,17 @@
   height: 28px;
 }
 
-.ball-image-button {
-  margin: 0;
-  --padding-start: 0;
-  --padding-end: 0;
-  --padding-top: 0;
-  --padding-bottom: 0;
-  height: 24px;
-  width: 24px;
-}
-
 .selected-ball-thumb {
+  display: block;
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--ion-color-medium);
+}
+
+.ball-icon-button ion-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .ball-modal {

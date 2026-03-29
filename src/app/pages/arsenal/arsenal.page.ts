@@ -1,51 +1,52 @@
-import { Component, OnInit, computed, Signal, ViewChild, ElementRef, effect, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnInit, Signal, ViewChild, computed, effect, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonContent,
-  IonThumbnail,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-  IonImg,
-  IonList,
-  IonItem,
-  IonLabel,
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardContent,
+  IonChip,
+  IonContent,
+  IonHeader,
   IonIcon,
-  IonModal,
-  IonText,
-  IonItemSliding,
+  IonImg,
+  IonItem,
   IonItemOption,
   IonItemOptions,
-  IonChip,
-  IonReorderGroup,
+  IonItemSliding,
+  IonLabel,
+  IonList,
+  IonListHeader,
+  IonModal,
   IonReorder,
+  IonReorderGroup,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
-  IonCard,
-  IonCardContent,
+  IonText,
+  IonThumbnail,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { Ball } from 'src/app/core/models/ball.model';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { addIcons } from 'ionicons';
-import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
+import { addIcons } from 'ionicons';
+import { add, chevronBack, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { Ball } from 'src/app/core/models/ball.model';
+import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
+import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 @Component({
   selector: 'app-arsenal',
@@ -53,6 +54,7 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
   styleUrls: ['./arsenal.page.scss'],
   providers: [ModalController],
   imports: [
+    IonListHeader,
     IonSegmentButton,
     IonSegment,
     IonReorder,

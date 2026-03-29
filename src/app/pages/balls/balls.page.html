@@ -57,29 +57,49 @@
     <ng-template #content>
       @for (ball of displayedBalls; track ball.ball_id) {
         <ion-card role="article">
+          <div class="action-header">
+            <ion-button
+              fill="clear"
+              size="small"
+              class="weight-change"
+              [id]="'weight-trigger-' + ball.ball_id"
+              button
+              [disabled]="loadingWeightBallId() === ball.ball_id">
+              {{ ball.core_weight }}lbs
+            </ion-button>
+            <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
+              <ion-icon
+                [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
+                slot="icon-only"
+                style="color: var(--ion-color-primary); font-size: 24px">
+              </ion-icon>
+            </ion-button>
+          </div>
+          <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.ball_id" triggerAction="click">
+            <ng-template>
+              <ion-list>
+                @for (weight of availableWeights; track weight) {
+                  <ion-item button detail="false" (click)="onWeightSelect(ball, weight, weightPopover)"> {{ weight }}lbs </ion-item>
+                }
+              </ion-list>
+            </ng-template>
+          </ion-popover>
+
           <ion-card-header>
-            <ion-card-title style="display: flex; align-items: center; justify-content: space-between">
-              <span
-                (click)="getSimilarMovementBalls(ball)"
-                (keydown.enter)="getSimilarMovementBalls(ball)"
-                (keydown.space)="getSimilarMovementBalls(ball)"
-                tabindex="0"
-                role="button"
-                style="position: relative"
-                [attr.aria-label]="'Find balls with similar movement pattern to ' + ball.ball_name"
-                class="ion-activatable ripple-parent rounded-rectangle"
+            <ion-card-title
+              (click)="getSimilarMovementBalls(ball)"
+              (keydown.enter)="getSimilarMovementBalls(ball)"
+              (keydown.space)="getSimilarMovementBalls(ball)"
+              tabindex="0"
+              role="button"
+              style="position: relative"
+              [attr.aria-label]="'Find balls with similar movement pattern to ' + ball.ball_name"
+              class="ion-activatable ripple-parent rounded-rectangle">
+              <span style="position: relative"
                 >{{ ball.ball_name }}
                 <ion-icon style="position: absolute; color: rgb(153, 153, 153); font-size: 1rem; right: -18px" name="open-outline"></ion-icon>
-                <ion-ripple-effect style="width: calc(100% + 45px); border-radius: 5px; margin-left: -20px"></ion-ripple-effect
-              ></span>
-
-              <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
-                <ion-icon
-                  [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
-                  slot="icon-only"
-                  style="color: var(--ion-color-primary); font-size: 24px">
-                </ion-icon>
-              </ion-button>
+              </span>
+              <ion-ripple-effect style="width: calc(100% + 45px); border-radius: 5px; margin-left: -20px"></ion-ripple-effect>
             </ion-card-title>
             <ion-card-subtitle>
               {{ ball.brand_name }} ({{ ball.release_date }})
@@ -88,25 +108,6 @@
           </ion-card-header>
           <ion-card-content>
             <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for ' + ball.ball_name"></ion-img>
-            <div class="weight-selector-container">
-              <ion-chip
-                [id]="'weight-trigger-' + ball.ball_id"
-                button
-                [disabled]="loadingWeightBallId() === ball.ball_id"
-                (click)="$event.stopPropagation()">
-                {{ ball.core_weight }}lbs
-                <ion-icon name="chevron-down-outline" class="weight-selector-icon"></ion-icon>
-              </ion-chip>
-            </div>
-            <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.ball_id" triggerAction="click">
-              <ng-template>
-                <ion-list>
-                  @for (weight of availableWeights; track weight) {
-                    <ion-item button detail="false" (click)="onWeightSelect(ball, weight, weightPopover)"> {{ weight }}lbs </ion-item>
-                  }
-                </ion-list>
-              </ng-template>
-            </ion-popover>
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">

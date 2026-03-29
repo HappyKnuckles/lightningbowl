@@ -61,7 +61,11 @@ ion-header {
 
 ion-card {
   margin-top: 12px;
-  
+
+  ion-card-header {
+    padding-top: 12px;
+  }
+
   ion-card-title {
     font-size: 1.375rem;
   }
@@ -95,11 +99,14 @@ ion-card {
   font-size: 14px;
 }
 
-.weight-selector-container {
-  margin: 8px 0;
-}
+.action-header {
+  margin: 8px 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-.weight-selector-icon {
-  margin-left: 4px;
-  font-size: 0.75rem;
+  .weight-change {
+    border: 1px solid var(--ion-border-color, #2b2828);
+    border-radius: 7px;
+  }
 }

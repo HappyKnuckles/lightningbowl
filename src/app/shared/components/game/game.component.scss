@@ -71,6 +71,49 @@ ion-list {
       // color: #fff;
     }
   }
+
+  .throw-cell {
+    cursor: pointer;
+  }
+
+  .throw-ball-preview {
+    margin: 6px 8px 2px;
+    border-radius: 8px;
+    --background: var(--ion-item-background);
+
+    ion-label {
+      margin-left: 10px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.78rem;
+      opacity: 0.75;
+    }
+
+    h3 {
+      margin: 2px 0 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+  }
+
+  .throw-ball-thumb,
+  .throw-ball-fallback-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .throw-ball-thumb {
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .throw-ball-fallback-icon {
+    color: var(--ion-color-medium);
+  }
 }
 
 // Pin deck frame row styling for history games

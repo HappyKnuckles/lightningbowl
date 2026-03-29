@@ -201,6 +201,7 @@ export class GameComponent implements OnInit {
   private originalGameState: Record<string, Game> = {};
   public editedGameStates: Record<string, Game> = {};
   public editedFocus: Record<string, { frameIndex: number; throwIndex: number }> = {};
+  public selectedThrowByGame: Record<string, { frameIndex: number; throwIndex: number }> = {};
   private closeTimers: Record<string, NodeJS.Timeout> = {};
 
   // Config
@@ -489,18 +490,18 @@ export class GameComponent implements OnInit {
 
       const updatedGame: Game = editedState
         ? {
-            ...game,
-            frames: editedState.frames,
-            frameScores: editedState.frameScores,
-            totalScore: editedState.totalScore,
-            isPractice: !game.league,
-            isPerfect: editedState.totalScore === 300,
-            isClean: this.gameUtilsService.calculateIsClean(editedState.frames),
-          }
+          ...game,
+          frames: editedState.frames,
+          frameScores: editedState.frameScores,
+          totalScore: editedState.totalScore,
+          isPractice: !game.league,
+          isPerfect: editedState.totalScore === 300,
+          isClean: this.gameUtilsService.calculateIsClean(editedState.frames),
+        }
         : {
-            ...game,
-            isPractice: !game.league,
-          };
+          ...game,
+          isPractice: !game.league,
+        };
 
       if (!this.isGameValid(updatedGame)) {
         this.hapticService.vibrate(ImpactStyle.Heavy);
@@ -769,8 +770,77 @@ export class GameComponent implements OnInit {
     return getGameBalls(game);
   }
 
+  private parseBallSelection(rawBallSelection: string | undefined): { name: string; weight?: string } | undefined {
+    const selection = rawBallSelection?.trim();
+    if (!selection) return undefined;
+
+    const weightedMatch = selection.match(/^(.*?)(?:\s*(\d{1,2})\s*(?:lbs?|lb|#)?)$/i);
+    if (!weightedMatch) {
+      return { name: selection };
+    }
+
+    const name = weightedMatch[1]?.trim();
+    const weight = weightedMatch[2]?.trim();
+
+    if (!name) {
+      return { name: selection };
+    }
+
+    return { name, weight };
+  }
+
+  private formatBallDisplayName(rawBallSelection: string | undefined): string {
+    const parsedSelection = this.parseBallSelection(rawBallSelection);
+    if (!parsedSelection) return '';
+
+    const selectedBall = this.storageService
+      .arsenal()
+      .find((ball) => ball.ball_name === rawBallSelection || ball.ball_name === parsedSelection.name);
+
+    const displayName = selectedBall?.ball_name || parsedSelection.name;
+    const weight = parsedSelection.weight || selectedBall?.core_weight;
+
+    return weight ? `${displayName} ${weight}lbs` : displayName;
+  }
+
   getSelectedBallsText(game: Game): string {
     const balls = getGameBalls(game);
-    return balls.length > 0 ? balls.join(', ') : 'None';
+    return balls.length > 0 ? balls.map((ball) => this.formatBallDisplayName(ball)).join(', ') : 'None';
+  }
+
+  selectThrowForBallPreview(gameId: string, frameIndex: number, throwIndex: number): void {
+    this.selectedThrowByGame[gameId] = { frameIndex, throwIndex };
+  }
+
+  getSelectedThrowBallName(game: Game): string | undefined {
+    const selectedThrow = this.selectedThrowByGame[game.gameId];
+    if (!selectedThrow) return undefined;
+
+    const rawBallSelection = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
+    const formattedName = this.formatBallDisplayName(rawBallSelection);
+
+    return formattedName || undefined;
+  }
+
+  getSelectedThrowBallThumbnail(game: Game): string | undefined {
+    const selectedThrow = this.selectedThrowByGame[game.gameId];
+    if (!selectedThrow) return undefined;
+
+    const rawBallSelection = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
+    const parsedSelection = this.parseBallSelection(rawBallSelection);
+    if (!parsedSelection) return undefined;
+
+    const selectedBall = this.storageService
+      .arsenal()
+      .find((ball) => ball.ball_name === rawBallSelection || ball.ball_name === parsedSelection.name);
+
+    return selectedBall?.thumbnail_image;
+  }
+
+  getSelectedThrowLabel(game: Game): string {
+    const selectedThrow = this.selectedThrowByGame[game.gameId];
+    if (!selectedThrow) return '';
+
+    return `Frame ${selectedThrow.frameIndex + 1}, Throw ${selectedThrow.throwIndex + 1}`;
   }
 }

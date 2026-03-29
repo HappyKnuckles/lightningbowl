@@ -132,13 +132,35 @@ export class PinInputComponent {
     this.isBallModalOpen = false;
   }
 
+  private parseBallSelection(rawBallSelection: string | undefined): { name: string; weight?: string } | undefined {
+    const selection = rawBallSelection?.trim();
+    if (!selection) return undefined;
+
+    const weightedMatch = selection.match(/^(.*?)(?:\s*(\d{1,2})\s*(?:lbs?|lb|#)?)$/i);
+    if (!weightedMatch) {
+      return { name: selection };
+    }
+
+    const name = weightedMatch[1]?.trim();
+    const weight = weightedMatch[2]?.trim();
+
+    if (!name) {
+      return { name: selection };
+    }
+
+    return { name, weight };
+  }
+
   getSelectedBallThumbnail(): string | undefined {
-    const selectedBallName = this.selectedBall();
-    if (!selectedBallName) {
+    const parsedSelection = this.parseBallSelection(this.selectedBall());
+    if (!parsedSelection) {
       return undefined;
     }
 
-    const selectedBall = this.storageService.arsenal().find((ball) => ball.ball_name === selectedBallName);
+    const selectedBall = this.storageService
+      .arsenal()
+      .find((ball) => ball.ball_name === this.selectedBall() || ball.ball_name === parsedSelection.name);
+
     return selectedBall?.thumbnail_image;
   }
 }

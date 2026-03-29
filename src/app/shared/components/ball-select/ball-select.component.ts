@@ -39,29 +39,29 @@ export class BallSelectComponent implements OnInit {
     this.#tempSelectedBalls.set([...this.selectedBalls()!]);
   }
 
-  toggleBallSelection(ballName: string): void {
+  toggleBallSelection(ballName: string, ballWeight: string): void {
     const currentSelection = this.#tempSelectedBalls();
-    const index = currentSelection.indexOf(ballName);
+    const index = currentSelection.indexOf(ballName + ballWeight);
 
     if (this.singleSelect()) {
       if (index > -1) {
         this.#tempSelectedBalls.set([]);
       } else {
-        this.#tempSelectedBalls.set([ballName]);
+        this.#tempSelectedBalls.set([ballName + ballWeight]);
       }
       return;
     }
 
     if (index > -1) {
-      const updated = currentSelection.filter((name) => name !== ballName);
+      const updated = currentSelection.filter((name) => name !== ballName + ballWeight);
       this.#tempSelectedBalls.set(updated);
     } else {
-      this.#tempSelectedBalls.set([...currentSelection, ballName]);
+      this.#tempSelectedBalls.set([...currentSelection, ballName + ballWeight]);
     }
   }
 
-  isBallSelected(ballName: string): boolean {
-    return this.#tempSelectedBalls().includes(ballName);
+  isBallSelected(ballName: string, ballWeight: string): boolean {
+    return this.#tempSelectedBalls().includes(ballName + ballWeight);
   }
 
   confirmBallSelection(): void {

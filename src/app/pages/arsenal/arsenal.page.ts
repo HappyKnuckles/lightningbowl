@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, Signal, ViewChild, ElementRef, effect, model } from '@angular/core';
+import { Component, OnInit, computed, Signal, ViewChild, ElementRef, effect, model, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -28,12 +28,13 @@ import {
   IonSegmentView,
   IonListHeader,
   IonRippleEffect,
+  IonPopover,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { Ball } from 'src/app/core/models/ball.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { addIcons } from 'ionicons';
-import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline, chevronDownOutline } from 'ionicons/icons';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -83,6 +84,7 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    IonPopover,
   ],
 })
 export class ArsenalPage implements OnInit {
@@ -100,6 +102,9 @@ export class ArsenalPage implements OnInit {
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
+  readonly loadingWeightBallId = signal<string | null>(null);
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
+  private readonly ballsByWeightCache = new Map<number, Ball[]>();
   constructor(
     public storageService: StorageService,
     private hapticService: HapticService,
@@ -110,7 +115,7 @@ export class ArsenalPage implements OnInit {
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
   ) {
-    addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline });
+    addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
       if (this.selectedSegment() === 'compare') {
         this.generateBallDistributionChart();
@@ -246,5 +251,43 @@ export class ArsenalPage implements OnInit {
     } finally {
       this.loadingService.setLoading(false);
     }
+  }
+
+  async onWeightSelect(ball: Ball, weight: string, popover: IonPopover): Promise<void> {
+    await popover.dismiss();
+    await this.changeBallWeight(ball, Number(weight));
+  }
+
+  private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
+    if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
+
+    this.loadingWeightBallId.set(ball.ball_id);
+
+    try {
+      const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
+      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+
+      if (!replacementBall) {
+        this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
+        return;
+      }
+
+      replacementBall.position = ball.position;
+      await this.storageService.removeFromArsenal(ball);
+      await this.storageService.saveBallToArsenal(replacementBall);
+      this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
+    } catch {
+      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+    } finally {
+      this.loadingWeightBallId.set(null);
+    }
+  }
+
+  private async getBallsForWeight(weight: number): Promise<Ball[]> {
+    const cached = this.ballsByWeightCache.get(weight);
+    if (cached) return cached;
+    const fetched = await this.ballService.loadAllBalls(undefined, weight);
+    this.ballsByWeightCache.set(weight, fetched);
+    return fetched;
   }
 }

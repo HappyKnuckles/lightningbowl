@@ -51,12 +51,29 @@
                   <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
                   <h1>{{ ball.ball_name }}</h1>
                   <div class="ball-info">
-                    <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
+                    <ion-chip
+                      [id]="'weight-trigger-' + ball.ball_id"
+                      button
+                      [disabled]="loadingWeightBallId() === ball.ball_id"
+                      (click)="$event.stopPropagation()">
+                      {{ ball.core_weight }}lbs
+                      <ion-icon name="chevron-down-outline" style="margin-left: 4px; font-size: 0.75rem"></ion-icon>
+                    </ion-chip>
                     <ion-chip>{{ ball.core_type }}</ion-chip>
                     <ion-chip>{{ ball.coverstock_type }}</ion-chip>
                   </div>
                 </ion-label>
               </ion-item>
+
+              <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.ball_id" triggerAction="click">
+                <ng-template>
+                  <ion-list>
+                    @for (weight of availableWeights; track weight) {
+                      <ion-item button detail="false" (click)="onWeightSelect(ball, weight, weightPopover)">{{ weight }}lbs</ion-item>
+                    }
+                  </ion-list>
+                </ng-template>
+              </ion-popover>
             </ion-item-sliding>
           </ion-reorder-group>
         </ion-list>

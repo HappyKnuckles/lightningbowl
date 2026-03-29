@@ -607,9 +607,9 @@ export class AddGamePage implements OnInit {
 
   // PRIVATE HELPERS - GAME STATE
   private loadPinInputMode(): void {
-    this.isPinInputMode = localStorage.getItem('pinInputMode') === 'true';
+    const pinInputMode = localStorage.getItem('pinInputMode');
+    this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
   }
-
   private updateGameState(frames: Frame[], index: number, isModal: boolean): void {
     const scoreResult = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
     const maxScore = this.gameScoreCalculatorService.calculateMaxScoreFromFrames(frames, scoreResult.totalScore);

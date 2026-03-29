@@ -222,7 +222,7 @@ export class StorageService {
 
   loadPinInputMode(): void {
     const mode = localStorage.getItem('pin-input-mode');
-    const pinInputMode = mode === null ? true : mode === 'hit';
+    const pinInputMode = mode === null ? false : mode === 'hit';
     this.#pinInputMode.set(pinInputMode);
   }
 

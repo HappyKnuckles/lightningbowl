@@ -3,6 +3,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
+import { Ball } from 'src/app/core/models/ball.model';
 import { Game, getGameBalls } from 'src/app/core/models/game.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -186,7 +187,7 @@ export class ExcelService {
 
             const throwBall = throwBalls[k]?.trim();
             if (throwBall) {
-              throwObj.ball = throwBall;
+              throwObj.ball = this.formatBallDisplayName(throwBall);
             }
 
             if (isPinMode) {
@@ -251,7 +252,12 @@ export class ExcelService {
             : (row['Pattern'] as string)?.trim()
               ? [(row['Pattern'] as string).trim()]
               : [],
-          balls: (row['Balls'] as string)?.trim() ? (row['Balls'] as string).split(', ') : [],
+          balls: (row['Balls'] as string)?.trim()
+            ? (row['Balls'] as string)
+                .split(', ')
+                .map((ball) => this.formatBallDisplayName(ball))
+                .filter((ball) => !!ball)
+            : [],
           note: row['Notes'] as string,
         };
 
@@ -261,14 +267,14 @@ export class ExcelService {
 
         if (game.balls) {
           for (const ball of game.balls) {
-            ballMap.add(ball);
+            ballMap.add(this.formatBallDisplayName(ball));
           }
         }
 
         for (const frame of game.frames) {
           for (const throwData of frame.throws) {
             if (throwData.ball) {
-              ballMap.add(throwData.ball);
+              ballMap.add(this.formatBallDisplayName(throwData.ball));
             }
           }
         }
@@ -281,8 +287,8 @@ export class ExcelService {
       }
 
       for (const ball of ballMap.values()) {
-        const ballToAdd = this.storageService.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.storageService.arsenal().some((b) => b.ball_name === ball)) {
+        const ballToAdd = this.resolveBallReference(ball);
+        if (ballToAdd !== undefined && !this.storageService.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
           await this.storageService.saveBallToArsenal(ballToAdd);
         }
       }
@@ -390,7 +396,7 @@ export class ExcelService {
 
         if (frame) {
           const pins = frame.throws.map((t: any) => t.pinsLeftStanding?.join(',') || '');
-          const balls = frame.throws.map((t: any) => t.ball || '');
+          const balls = frame.throws.map((t: any) => this.formatBallDisplayName(t.ball) || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
@@ -420,7 +426,9 @@ export class ExcelService {
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
         game.patterns?.join(', ') || '',
-        getGameBalls(game).join(', ') || '',
+        getGameBalls(game)
+          .map((ball) => this.formatBallDisplayName(ball))
+          .join(', ') || '',
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,
@@ -435,6 +443,36 @@ export class ExcelService {
         {} as Record<string, ExcelCellValue>,
       );
     });
+  }
+
+  private normalizeBallKey(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/lbs?|#/g, '');
+  }
+
+  private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
+    const raw = rawBallValue?.trim();
+    if (!raw) return undefined;
+
+    const normalizedRaw = this.normalizeBallKey(raw);
+    return this.storageService.allBalls().find((ball) => {
+      const byName = this.normalizeBallKey(ball.ball_name);
+      const byNameAndWeight = this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`);
+      return normalizedRaw === byName || normalizedRaw === byNameAndWeight;
+    });
+  }
+
+  private formatBallDisplayName(rawBallValue: string | undefined): string {
+    const raw = rawBallValue?.trim();
+    if (!raw) return '';
+
+    const resolvedBall = this.resolveBallReference(raw);
+    if (!resolvedBall) return raw;
+
+    return `${resolvedBall.ball_name} ${resolvedBall.core_weight}lbs`;
   }
 
   // TODO add new stats to export

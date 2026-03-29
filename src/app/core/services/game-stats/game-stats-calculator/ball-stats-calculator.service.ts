@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Ball } from 'src/app/core/models/ball.model';
 import { Game, getGameBalls } from 'src/app/core/models/game.model';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { StorageService } from '../../storage/storage.service';
@@ -8,6 +9,91 @@ import { StorageService } from '../../storage/storage.service';
 })
 export class BallStatsCalculatorService {
   constructor(private storageService: StorageService) {}
+
+  private getBallCandidates(): Ball[] {
+    const all = this.storageService.allBalls();
+    const arsenal = this.storageService.arsenal();
+    const merged = [...all, ...arsenal];
+    const seen = new Set<string>();
+
+    return merged.filter((ball) => {
+      const key = `${ball.ball_id}-${ball.core_weight}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private normalizeBallName(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '');
+  }
+
+  private normalizeBallKey(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/lbs?|#/g, '');
+  }
+
+  private extractWeightToken(value: string | undefined): string | undefined {
+    if (!value) return undefined;
+    const match = value.toLowerCase().match(/(1\d(?:\.\d+)?|[6-9](?:\.\d+)?)/);
+    if (!match) return undefined;
+
+    const numeric = Number(match[1]);
+    if (Number.isNaN(numeric)) return undefined;
+    return Number.isInteger(numeric) ? String(numeric) : String(numeric);
+  }
+
+  private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
+    const raw = rawBallValue?.trim();
+    if (!raw) return undefined;
+
+    const rawWeight = this.extractWeightToken(raw);
+    const rawNameOnly = raw.replace(/(1\d(?:\.\d+)?|[6-9](?:\.\d+)?)(?:\s*(?:lbs?|lb|#)?)\s*$/i, '').trim();
+    const normalizedRawName = this.normalizeBallName(rawNameOnly || raw);
+
+    const candidates = this.getBallCandidates();
+
+    const byNameAndWeight = candidates.find((ball) => {
+      if (this.normalizeBallName(ball.ball_name) !== normalizedRawName) return false;
+      if (!rawWeight) return true;
+      return this.extractWeightToken(ball.core_weight) === rawWeight;
+    });
+
+    if (byNameAndWeight) return byNameAndWeight;
+
+    const normalizedRaw = this.normalizeBallKey(raw);
+    return candidates.find((ball) => {
+      const byName = this.normalizeBallKey(ball.ball_name);
+      const byNameAndWeight = this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`);
+      return normalizedRaw === byName || normalizedRaw === byNameAndWeight;
+    });
+  }
+
+  private formatBallDisplayName(rawBallValue: string | undefined): string {
+    const raw = rawBallValue?.trim();
+    if (!raw) return '';
+
+    const resolvedBall = this.resolveBallReference(raw);
+    if (!resolvedBall) {
+      const weightedMatch = raw.match(/^(.*?)(?:\s*)(1[0-6])(?:\s*(?:lbs?|lb|#)?)$/i);
+      const baseName = weightedMatch?.[1]?.trim();
+      const weight = weightedMatch?.[2];
+
+      if (baseName && weight) {
+        return `${baseName} ${weight}lbs`;
+      }
+
+      return raw;
+    }
+
+    return `${resolvedBall.ball_name} ${resolvedBall.core_weight}lbs`;
+  }
 
   private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
     const tempStats: Record<
@@ -33,7 +119,8 @@ export class BallStatsCalculatorService {
         frame.throws.forEach((throwData) => {
           if (throwData.ball) {
             hasThrowLevelBalls = true;
-            const ball = throwData.ball;
+            const ball = this.formatBallDisplayName(throwData.ball);
+            if (!ball) return;
             throwBallCounts.set(ball, (throwBallCounts.get(ball) || 0) + 1);
             const isStrike = throwData.value === 10 && (frameIndex < 9 || frameIndex === 9);
             if (isStrike) {
@@ -44,7 +131,9 @@ export class BallStatsCalculatorService {
       });
 
       // Determine ball names for this game
-      const ballNames = getGameBalls(game);
+      const ballNames = getGameBalls(game)
+        .map((ballName) => this.formatBallDisplayName(ballName))
+        .filter((ballName) => !!ballName);
       if (ballNames.length === 0) {
         return;
       }
@@ -97,7 +186,8 @@ export class BallStatsCalculatorService {
     const finalStats: Record<string, BestBallStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
-      const ballImage = this.storageService.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';
+      const resolvedBall = this.resolveBallReference(ballName);
+      const ballImage = resolvedBall?.ball_image || resolvedBall?.thumbnail_image || '';
       const strikeRate = stats.totalThrows > 0 ? Math.round((stats.totalStrikes / stats.totalThrows) * 100) : 0;
 
       finalStats[ballName] = {

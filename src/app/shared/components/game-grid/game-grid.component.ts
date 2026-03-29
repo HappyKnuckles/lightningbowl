@@ -1,43 +1,39 @@
-import { Component, OnInit, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed } from '@angular/core';
-import { Platform } from '@ionic/angular';
-import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, computed, input, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { Keyboard } from '@capacitor/keyboard';
+import { InputCustomEvent, Platform } from '@ionic/angular';
 import {
-  IonGrid,
-  IonModal,
-  IonRow,
-  IonCol,
-  IonInput,
-  IonItem,
-  IonTextarea,
-  IonCheckbox,
-  IonList,
-  IonLabel,
   IonAccordion,
   IonAccordionGroup,
-  IonSelect,
-  IonSelectOption,
-  IonIcon,
+  IonCheckbox,
+  IonCol,
+  IonGrid,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonModal,
+  IonRow,
+  IonTextarea,
 } from '@ionic/angular/standalone';
-import { FormsModule } from '@angular/forms';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
-import { InputCustomEvent } from '@ionic/angular';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { Keyboard } from '@capacitor/keyboard';
 import { addIcons } from 'ionicons';
-import { chevronExpandOutline, bowlingBallOutline } from 'ionicons/icons';
+import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
+import { Subscription } from 'rxjs';
+import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
+import { Pattern } from 'src/app/core/models/pattern.model';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
+import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 
 @Component({
   selector: 'app-game-grid',
@@ -59,9 +55,6 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
     IonModal,
     GenericTypeaheadComponent,
     IonLabel,
-    IonSelect,
-    IonSelectOption,
-    IonIcon,
     PinInputComponent,
     PinDeckFrameRowComponent,
     IonAccordion,
@@ -96,7 +89,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
   noteChanged = output<string>();
   throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: string | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
-  inputFocused = output<{ frameIndex: number; throwIndex: number }>(); 
+  inputFocused = output<{ frameIndex: number; throwIndex: number }>();
 
   // Pin Input Mode - Events from Child to Parent
   pinThrowConfirmed = output<ThrowConfirmedEvent>();
@@ -169,6 +162,14 @@ export class GameGridComponent implements OnInit, OnDestroy {
 
   onPinUndoRequested(): void {
     this.pinUndoRequested.emit();
+  }
+
+  onPinBallSelected(ball: string | undefined): void {
+    this.throwBallChanged.emit({
+      frameIndex: this.currentFrameIndex(),
+      throwIndex: this.currentThrowIndex(),
+      ball,
+    });
   }
 
   onScoreCellClicked(frameIndex: number, throwIndex: number): void {
@@ -278,6 +279,12 @@ export class GameGridComponent implements OnInit, OnDestroy {
     return val.toString();
   }
 
+  getCurrentThrowBall(): string | undefined {
+    const frameIndex = this.currentFrameIndex();
+    const throwIndex = this.currentThrowIndex();
+    return this.game()?.frames?.[frameIndex]?.throws?.[throwIndex]?.ball;
+  }
+
   async focusNextInput(frameIndex: number, inputIndex: number) {
     await new Promise((resolve) => setTimeout(resolve, 50));
     const inputArray = this.inputs.toArray();
@@ -335,9 +342,6 @@ export class GameGridComponent implements OnInit, OnDestroy {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  onThrowBallChange(frameIndex: number, throwIndex: number, ball: string | undefined) {
-    this.throwBallChanged.emit({ frameIndex, throwIndex, ball });
-  }
   onNoteChange(note: string) {
     this.noteChanged.emit(note);
   }
@@ -346,13 +350,6 @@ export class GameGridComponent implements OnInit, OnDestroy {
   }
 
   // --- Template Getters ---
-  getThrowBallsSummary(): string {
-    const balls = this.currentGame?.frames
-      .flatMap((f) => f.throws.map((t) => t.ball).filter((b): b is string => !!b));
-    const unique = [...new Set(balls || [])];
-    return unique.length > 0 ? unique.join(', ') : 'None';
-  }
-
   isNumber(value: unknown): boolean {
     return this.utilsService.isNumber(value);
   }

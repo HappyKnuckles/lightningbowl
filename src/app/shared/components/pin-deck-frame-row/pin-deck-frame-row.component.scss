@@ -9,6 +9,7 @@
     --ion-grid-column-padding: 0;
     padding: 0;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     flex: 1 1 0;
@@ -33,5 +34,14 @@
     height: 15px;
     width: 100%;
     transform: translateY(-4px);
+  }
+
+  .throw-ball-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--ion-color-medium);
+    margin-top: -5px;
   }
 }

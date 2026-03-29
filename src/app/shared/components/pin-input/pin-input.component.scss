@@ -1,4 +1,5 @@
 .pin-input-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,6 +10,50 @@
   background-color: var(--ion-item-background);
   border-radius: 7px;
   margin: 0 5px 5px;
+}
+
+.ball-selector-corner {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ball-icon-button {
+  margin: 0;
+  --padding-start: 6px;
+  --padding-end: 6px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+  height: 28px;
+}
+
+.ball-image-button {
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  height: 24px;
+  width: 24px;
+}
+
+.selected-ball-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--ion-color-medium);
+}
+
+.ball-modal {
+  --width: fit-content;
+  --min-width: 250px;
+  --height: fit-content;
+  --border-radius: 13px;
+  --max-height: auto;
 }
 
 .pin-row {

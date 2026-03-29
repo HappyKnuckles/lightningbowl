@@ -202,6 +202,39 @@ export class StorageService {
             needsUpdate = true;
           }
         }
+
+        const hasThrowLevelBalls = (game.frames || []).some((frame) =>
+          (frame.throws || []).some((throwData) => typeof throwData.ball === 'string' && throwData.ball.trim().length > 0),
+        );
+
+        if (!hasThrowLevelBalls && game.balls && game.balls.length > 0) {
+          const fallbackBall = game.balls[0];
+          (game.frames || []).forEach((frame) => {
+            (frame.throws || []).forEach((throwData) => {
+              if (!throwData.ball) {
+                throwData.ball = fallbackBall;
+                needsUpdate = true;
+              }
+            });
+          });
+        }
+
+        (game.frames || []).forEach((frame) => {
+          (frame.throws || []).forEach((throwData) => {
+            if (typeof throwData.ball === 'string') {
+              const trimmed = throwData.ball.trim();
+              if (trimmed.length === 0) {
+                if (throwData.ball !== undefined) {
+                  delete throwData.ball;
+                  needsUpdate = true;
+                }
+              } else if (trimmed !== throwData.ball) {
+                throwData.ball = trimmed;
+                needsUpdate = true;
+              }
+            }
+          });
+        });
       });
 
       // Save updated games back to storage if any changes were made

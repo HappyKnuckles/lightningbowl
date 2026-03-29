@@ -172,7 +172,12 @@ export function setThrowInFrame(frame: Frame, throwIndex: number, value: number)
   }
 
   // Set or update the throw
-  frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  const existingThrow = frame.throws[throwIndex];
+  frame.throws[throwIndex] = {
+    ...existingThrow,
+    value,
+    throwIndex: throwIndex + 1,
+  };
 }
 
 /**

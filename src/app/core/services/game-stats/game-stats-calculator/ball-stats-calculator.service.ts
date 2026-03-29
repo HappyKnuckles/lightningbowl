@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, getGameBalls } from 'src/app/core/models/game.model';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { StorageService } from '../../storage/storage.service';
 
@@ -12,7 +12,15 @@ export class BallStatsCalculatorService {
   private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
     const tempStats: Record<
       string,
-      { totalScore: number; gameCount: number; highestGame: number; lowestGame: number; cleanGames: number; totalStrikes: number; totalThrows: number }
+      {
+        totalScore: number;
+        gameCount: number;
+        highestGame: number;
+        lowestGame: number;
+        cleanGames: number;
+        totalStrikes: number;
+        totalThrows: number;
+      }
     > = {};
 
     gameHistory.forEach((game) => {
@@ -36,13 +44,8 @@ export class BallStatsCalculatorService {
       });
 
       // Determine ball names for this game
-      let ballNames: string[];
-      if (hasThrowLevelBalls) {
-        ballNames = [...new Set(throwBallCounts.keys())];
-      } else if (game.balls && game.balls.length > 0) {
-        // Backward compat: fall back to game-level balls
-        ballNames = game.balls;
-      } else {
+      const ballNames = getGameBalls(game);
+      if (ballNames.length === 0) {
         return;
       }
 

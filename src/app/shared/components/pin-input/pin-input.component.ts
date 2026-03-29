@@ -1,7 +1,10 @@
 import { Component, input, output } from '@angular/core';
-import { IonButton, IonIcon } from '@ionic/angular/standalone';
+import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeCircleOutline, arrowUndoOutline, checkmarkOutline } from 'ionicons/icons';
+import { arrowUndoOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -10,7 +13,7 @@ export interface ThrowConfirmedEvent {
   selector: 'app-pin-input',
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
-  imports: [IonButton, IonIcon],
+  imports: [IonButton, IonIcon, IonModal, BallSelectComponent],
 })
 export class PinInputComponent {
   pinsLeftStanding = input<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -19,12 +22,17 @@ export class PinInputComponent {
   canUndo = input<boolean>(false);
   isGameComplete = input<boolean>(false);
   selectHitPins = input<boolean>(true);
+  selectedBall = input<string | undefined>(undefined);
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
+  ballSelected = output<string | undefined>();
   selectedPins: number[] = [];
+  isBallModalOpen = false;
+  enterAnimation = alertEnterAnimation;
+  leaveAnimation = alertLeaveAnimation;
 
-  constructor() {
-    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline });
+  constructor(public storageService: StorageService) {
+    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, bowlingBallOutline });
   }
 
   get allPins(): number[] {
@@ -105,5 +113,32 @@ export class PinInputComponent {
 
   isPinKnockedDown(pinNumber: number): boolean {
     return !this.pinsLeftStanding().includes(pinNumber);
+  }
+
+  openBallSelector(): void {
+    if (this.storageService.arsenal().length === 0) {
+      return;
+    }
+    this.isBallModalOpen = true;
+  }
+
+  closeBallSelector(): void {
+    this.isBallModalOpen = false;
+  }
+
+  onBallSelection(selectedBalls: string[]): void {
+    const selectedBall = selectedBalls.length > 0 ? selectedBalls[0] : undefined;
+    this.ballSelected.emit(selectedBall);
+    this.isBallModalOpen = false;
+  }
+
+  getSelectedBallThumbnail(): string | undefined {
+    const selectedBallName = this.selectedBall();
+    if (!selectedBallName) {
+      return undefined;
+    }
+
+    const selectedBall = this.storageService.arsenal().find((ball) => ball.ball_name === selectedBallName);
+    return selectedBall?.thumbnail_image;
   }
 }

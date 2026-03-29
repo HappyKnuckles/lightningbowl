@@ -83,7 +83,9 @@
     [canUndo]="canUndo()"
     [isGameComplete]="isGameComplete()"
     [selectHitPins]="storageService.pinInputMode()"
+    [selectedBall]="getCurrentThrowBall()"
     (throwConfirmed)="onPinThrowConfirmed($event)"
+    (ballSelected)="onPinBallSelected($event)"
     (undoRequested)="onPinUndoRequested()">
   </app-pin-input>
 } @else {
@@ -192,7 +194,6 @@
           >Game Details
           <p>{{ game().isPractice ? "Practice" : "Regular" }}</p>
           <p *ngIf="game().league">{{ game().league }}</p>
-          <p *ngIf="getThrowBallsSummary() !== 'None'">{{ getThrowBallsSummary() }}</p>
           <p *ngIf="game().patterns">{{ game().patterns.join(", ") }}</p>
         </ion-label>
       </ion-item>
@@ -220,30 +221,6 @@
               </app-generic-typeahead>
             </ng-template>
           </ion-modal>
-          @if (storageService.arsenal().length > 0) {
-            <ion-item lines="none">
-              <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-              <ion-label>Balls per Throw</ion-label>
-            </ion-item>
-            @for (frame of currentGame.frames; track frame.frameIndex) {
-              @for (throwData of frame.throws; track throwData.throwIndex) {
-                <ion-item>
-                  <ion-label>Frame {{ frame.frameIndex }}, Throw {{ throwData.throwIndex }}</ion-label>
-                  <ion-select
-                    slot="end"
-                    [value]="throwData.ball || null"
-                    (ionChange)="onThrowBallChange(frame.frameIndex - 1, throwData.throwIndex - 1, $event.detail.value || undefined)"
-                    interface="action-sheet"
-                    placeholder="None">
-                    <ion-select-option [value]="null">None</ion-select-option>
-                    @for (ball of storageService.arsenal(); track ball.ball_id) {
-                      <ion-select-option [value]="ball.ball_name">{{ ball.ball_name }}</ion-select-option>
-                    }
-                  </ion-select>
-                </ion-item>
-              }
-            }
-          }
           <ion-item lines="none">
             <ion-textarea
               label="Note"

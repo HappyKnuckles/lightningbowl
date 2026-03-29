@@ -1,51 +1,51 @@
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, OnInit, QueryList, signal, ViewChild, ViewChildren, effect, untracked } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChild, ViewChildren } from '@angular/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { ImpactStyle } from '@capacitor/haptics';
+import { InputCustomEvent, ModalController } from '@ionic/angular';
 import {
   ActionSheetController,
   AlertController,
-  IonModal,
-  isPlatform,
-  IonHeader,
-  IonToolbar,
-  IonButton,
-  IonIcon,
-  IonTitle,
   IonAlert,
+  IonButton,
+  IonButtons,
+  IonCol,
   IonContent,
   IonGrid,
+  IonHeader,
+  IonIcon,
+  IonLabel,
+  IonModal,
   IonRow,
-  IonCol,
-  IonButtons,
   IonSegment,
   IonSegmentButton,
-  IonSegmentView,
   IonSegmentContent,
-  IonLabel,
+  IonSegmentView,
+  IonTitle,
+  IonToolbar,
+  isPlatform,
 } from '@ionic/angular/standalone';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Game, Frame, createEmptyGame, numberArraysToFrames, cloneFrames, createThrow, Throw } from 'src/app/core/models/game.model';
-import { addIcons } from 'ionicons';
-import { add, chevronDown, chevronUp, cameraOutline, documentTextOutline, medalOutline, bowlingBallOutline, bowlingBall } from 'ionicons/icons';
-import { NgIf, NgFor } from '@angular/common';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { addIcons } from 'ionicons';
+import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { cloneFrames, createEmptyGame, createThrow, Frame, Game, numberArraysToFrames, Throw } from 'src/app/core/models/game.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { InputCustomEvent, ModalController } from '@ionic/angular';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
-import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
+import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { UserService } from 'src/app/core/services/user/user.service';
+import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -372,8 +372,12 @@ export class AddGamePage implements OnInit {
     const { frameIndex, throwIndex, ball } = event;
     if (isModal) {
       const frames = cloneFrames(this.gameData.frames);
-      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
-        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+      const frame = frames[frameIndex];
+      if (frame) {
+        while (frame.throws.length <= throwIndex) {
+          frame.throws.push(createThrow(0, frame.throws.length + 1));
+        }
+        frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
         this.gameData = { ...this.gameData, frames };
       }
     } else {
@@ -381,8 +385,12 @@ export class AddGamePage implements OnInit {
         games.map((g, i) => {
           if (i !== index) return g;
           const frames = cloneFrames(g.frames);
-          if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
-            frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+          const frame = frames[frameIndex];
+          if (frame) {
+            while (frame.throws.length <= throwIndex) {
+              frame.throws.push(createThrow(0, frame.throws.length + 1));
+            }
+            frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
           }
           return { ...g, frames };
         }),
@@ -732,7 +740,12 @@ export class AddGamePage implements OnInit {
     while (frame.throws.length <= throwIndex) {
       frame.throws.push(createThrow(0, frame.throws.length + 1));
     }
-    frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+    const existingThrow = frame.throws[throwIndex];
+    frame.throws[throwIndex] = {
+      ...existingThrow,
+      value,
+      throwIndex: throwIndex + 1,
+    };
   }
 
   private removeThrow(frames: Frame[], frameIndex: number, throwIndex: number): void {
@@ -1006,7 +1019,17 @@ export class AddGamePage implements OnInit {
     this.games.set(draft.games);
     this.totalScores.set(draft.totalScores);
     this.maxScores.set(draft.maxScores);
-    this.pinModeState.set(draft.pinModeState);
+
+    const restoredPinModeState = draft.games.map((game, index) => {
+      const persistedState = draft.pinModeState?.[index];
+      return {
+        currentFrameIndex: persistedState?.currentFrameIndex ?? 0,
+        currentThrowIndex: persistedState?.currentThrowIndex ?? 0,
+        throwsData: Array.from({ length: 10 }, (_, frameIndex) => (game.frames?.[frameIndex]?.throws || []).map((throwData) => ({ ...throwData }))),
+      };
+    });
+
+    this.pinModeState.set(restoredPinModeState);
     this.selectedSegment = draft.gameIndex;
 
     setTimeout(() => {

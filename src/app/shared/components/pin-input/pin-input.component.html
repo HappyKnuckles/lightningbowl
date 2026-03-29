@@ -1,4 +1,21 @@
 <div class="pin-input-container">
+  @if (storageService.arsenal().length > 0) {
+    <div class="ball-selector-corner">
+      @if (getSelectedBallThumbnail(); as selectedBallThumbnail) {
+        <ion-button fill="clear" class="ball-image-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+          <img
+            class="selected-ball-thumb"
+            [src]="storageService.url + selectedBallThumbnail"
+            [alt]="(selectedBall() || 'Selected ball') + ' thumbnail'" />
+        </ion-button>
+      } @else {
+        <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+          <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
+        </ion-button>
+      }
+    </div>
+  }
+
   <!-- Pin Deck -->
   <div class="pin-row">
     <ion-button
@@ -116,3 +133,17 @@
     </ion-button>
   </div>
 </div>
+
+<ion-modal
+  [isOpen]="isBallModalOpen"
+  (didDismiss)="closeBallSelector()"
+  class="ball-modal"
+  [enterAnimation]="enterAnimation"
+  [leaveAnimation]="leaveAnimation">
+  <ng-template>
+    <app-ball-select
+      [selectedBalls]="selectedBall() ? [selectedBall()!] : []"
+      [singleSelect]="true"
+      (ballSelect)="onBallSelection($event)"></app-ball-select>
+  </ng-template>
+</ion-modal>

@@ -1,17 +1,17 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import {
-  IonButtons,
-  IonFooter,
-  IonToolbar,
+  IonAvatar,
   IonButton,
+  IonButtons,
   IonCheckbox,
   IonContent,
+  IonFooter,
   IonHeader,
-  IonTitle,
+  IonItem,
   IonLabel,
   IonList,
-  IonAvatar,
-  IonItem,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 
@@ -25,6 +25,7 @@ export class BallSelectComponent implements OnInit {
   storageService = inject(StorageService);
 
   selectedBalls = input.required<string[] | undefined>();
+  singleSelect = input<boolean>(false);
 
   ballSelect = output<string[]>();
 
@@ -41,6 +42,15 @@ export class BallSelectComponent implements OnInit {
   toggleBallSelection(ballName: string): void {
     const currentSelection = this.#tempSelectedBalls();
     const index = currentSelection.indexOf(ballName);
+
+    if (this.singleSelect()) {
+      if (index > -1) {
+        this.#tempSelectedBalls.set([]);
+      } else {
+        this.#tempSelectedBalls.set([ballName]);
+      }
+      return;
+    }
 
     if (index > -1) {
       const updated = currentSelection.filter((name) => name !== ballName);

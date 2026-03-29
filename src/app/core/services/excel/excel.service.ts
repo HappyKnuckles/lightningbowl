@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import * as ExcelJS from 'exceljs';
-import { isPlatform } from '@ionic/angular';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
+import { isPlatform } from '@ionic/angular';
+import * as ExcelJS from 'exceljs';
 import { Game, getGameBalls } from 'src/app/core/models/game.model';
+import { Stats } from 'src/app/core/models/stats.model';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
-import { Stats } from 'src/app/core/models/stats.model';
 import { GameUtilsService } from '../game-utils/game-utils.service';
+import { SortUtilsService } from '../sort-utils/sort-utils.service';
 
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
@@ -148,7 +148,10 @@ export class ExcelService {
 
         for (let j = 1; j <= 10; j++) {
           const frameIndex = j;
-          const frame: { frameIndex: number; throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean }[] } = {
+          const frame: {
+            frameIndex: number;
+            throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: string }[];
+          } = {
             frameIndex: frameIndex,
             throws: [],
           };
@@ -168,14 +171,23 @@ export class ExcelService {
           const pinsLeft2 = (row[`Frame ${frameIndex} Throw 2`] as string) || '';
           const pinsLeft3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Throw 3`] as string) || '' : '';
           const pinsLefts = [pinsLeft1, pinsLeft2, pinsLeft3];
+          const ball1 = (row[`Frame ${frameIndex} Ball 1`] as string) || '';
+          const ball2 = (row[`Frame ${frameIndex} Ball 2`] as string) || '';
+          const ball3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Ball 3`] as string) || '' : '';
+          const throwBalls = [ball1, ball2, ball3];
 
           const maxThrowsInFrame = frameIndex === 10 ? 3 : 2;
 
           for (let k = 0; k < throwValues.length && k < maxThrowsInFrame; k++) {
-            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean } = {
+            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: string } = {
               value: throwValues[k],
               throwIndex: k + 1,
             };
+
+            const throwBall = throwBalls[k]?.trim();
+            if (throwBall) {
+              throwObj.ball = throwBall;
+            }
 
             if (isPinMode) {
               const pinsLeftString = pinsLefts[k];
@@ -253,6 +265,14 @@ export class ExcelService {
           }
         }
 
+        for (const frame of game.frames) {
+          for (const throwData of frame.throws) {
+            if (throwData.ball) {
+              ballMap.add(throwData.ball);
+            }
+          }
+        }
+
         gameData.push(game);
       }
 
@@ -314,13 +334,17 @@ export class ExcelService {
     const baseHeaders = ['Game', 'Date', ...Array.from({ length: 10 }, (_, i) => `Frame ${i + 1}`), 'Total Score'];
 
     const pinHeaders: string[] = [];
+    const throwBallHeaders: string[] = [];
     for (let i = 0; i < 10; i++) {
       const frameIndex = i + 1;
       pinHeaders.push(`Frame ${frameIndex} Throw 1`);
       pinHeaders.push(`Frame ${frameIndex} Throw 2`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 1`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 2`);
 
       if (frameIndex === 10) {
         pinHeaders.push(`Frame ${frameIndex} Throw 3`);
+        throwBallHeaders.push(`Frame ${frameIndex} Ball 3`);
       }
     }
 
@@ -338,7 +362,7 @@ export class ExcelService {
       'isPinMode',
     ];
 
-    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders];
+    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders, ...throwBallHeaders];
 
     return gameHistory.map((game) => {
       const frameValues = Array.from({ length: 10 }, (_, i) => {
@@ -356,24 +380,30 @@ export class ExcelService {
       });
 
       const pinData: string[] = [];
+      const throwBallData: string[] = [];
       for (let i = 0; i < 10; i++) {
         const frame = game.frames[i];
         const frameIndex = i + 1;
 
         const framePins: string[] = ['', '', ''];
+        const frameBalls: string[] = ['', '', ''];
 
         if (frame) {
           const pins = frame.throws.map((t: any) => t.pinsLeftStanding?.join(',') || '');
+          const balls = frame.throws.map((t: any) => t.ball || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
             framePins[k] = pins[k] || '';
+            frameBalls[k] = balls[k] || '';
           }
         }
 
         pinData.push(framePins[0], framePins[1]);
+        throwBallData.push(frameBalls[0], frameBalls[1]);
         if (frameIndex === 10) {
           pinData.push(framePins[2]);
+          throwBallData.push(frameBalls[2]);
         }
       }
 
@@ -394,6 +424,7 @@ export class ExcelService {
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,
+        ...throwBallData,
       ];
 
       return headers.reduce(

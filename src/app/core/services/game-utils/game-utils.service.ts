@@ -58,7 +58,9 @@ export class GameUtilsService {
       updatedFrames.map((f) => f.throws),
     );
 
+    const existingThrow = frame.throws[throwIndex];
     frame.throws[throwIndex] = {
+      ...existingThrow,
       value,
       throwIndex: throwIndex + 1,
       pinsLeftStanding: pinsStandingAfter,

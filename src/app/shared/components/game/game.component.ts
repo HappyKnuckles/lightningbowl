@@ -1,70 +1,70 @@
-import { NgIf, NgFor, DatePipe } from '@angular/common';
-import { Component, Renderer2, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal } from '@angular/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { Component, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, computed, input, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonButton,
-  IonSelect,
-  IonSelectOption,
-  IonItemSliding,
-  IonAccordionGroup,
-  IonItemOption,
-  IonIcon,
-  IonItemOptions,
-  IonItem,
   IonAccordion,
-  IonTextarea,
-  IonGrid,
-  IonRow,
+  IonAccordionGroup,
+  IonBadge,
+  IonButton,
   IonCol,
-  IonInput,
+  IonGrid,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonText,
-  IonList,
+  IonInput,
+  IonItem,
   IonItemDivider,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
-  IonBadge,
+  IonList,
   IonModal,
+  IonRow,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonTextarea,
 } from '@ionic/angular/standalone';
 import { toPng } from 'html-to-image';
 import { addIcons } from 'ionicons';
 import {
-  cloudUploadOutline,
-  cloudDownloadOutline,
-  filterOutline,
-  trashOutline,
-  createOutline,
-  shareOutline,
-  documentTextOutline,
-  medalOutline,
   bowlingBallOutline,
+  cloudDownloadOutline,
+  cloudUploadOutline,
+  createOutline,
+  documentTextOutline,
+  filterOutline,
   gridOutline,
+  medalOutline,
+  shareOutline,
+  trashOutline,
 } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Game, Frame, cloneFrames, createThrow, getGameBalls } from 'src/app/core/models/game.model';
+import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
+import { Frame, Game, cloneFrames, createThrow, getGameBalls } from 'src/app/core/models/game.model';
+import { Pattern } from 'src/app/core/models/pattern.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
+import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Router } from '@angular/router';
-import { GameGridComponent } from '../game-grid/game-grid.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
+import { GameGridComponent } from '../game-grid/game-grid.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
+import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 
 interface MonthHeader {
   name: string;
@@ -364,11 +364,7 @@ export class GameComponent implements OnInit {
 
         (() => {
           const balls = getGameBalls(game);
-          return balls.length > 0
-            ? balls.length === 1
-              ? `Bowled with: ${balls[0]}`
-              : `Bowled with: ${balls.join(', ')}`
-            : null;
+          return balls.length > 0 ? (balls.length === 1 ? `Bowled with: ${balls[0]}` : `Bowled with: ${balls.join(', ')}`) : null;
         })(),
 
         game.patterns && game.patterns.length > 0 ? `Patterns: ${game.patterns.join(', ')}` : null,
@@ -683,7 +679,12 @@ export class GameComponent implements OnInit {
       frame.throws.push(createThrow(0, frame.throws.length + 1));
     }
 
-    frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+    const existingThrow = frame.throws[throwIndex];
+    frame.throws[throwIndex] = {
+      ...existingThrow,
+      value,
+      throwIndex: throwIndex + 1,
+    };
   }
 
   private removeThrow(frames: Frame[], frameIndex: number, throwIndex: number): void {
@@ -734,14 +735,22 @@ export class GameComponent implements OnInit {
     const editedGame = this.editedGameStates[game.gameId];
     if (editedGame) {
       const frames = cloneFrames(editedGame.frames);
-      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
-        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+      const frame = frames[frameIndex];
+      if (frame) {
+        while (frame.throws.length <= throwIndex) {
+          frame.throws.push(createThrow(0, frame.throws.length + 1));
+        }
+        frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
         this.editedGameStates[game.gameId] = { ...editedGame, frames };
       }
     } else {
       const frames = cloneFrames(game.frames);
-      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
-        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+      const frame = frames[frameIndex];
+      if (frame) {
+        while (frame.throws.length <= throwIndex) {
+          frame.throws.push(createThrow(0, frame.throws.length + 1));
+        }
+        frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
         Object.assign(game, { frames });
       }
     }

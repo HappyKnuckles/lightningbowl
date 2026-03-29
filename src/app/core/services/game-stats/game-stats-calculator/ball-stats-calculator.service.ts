@@ -10,38 +10,75 @@ export class BallStatsCalculatorService {
   constructor(private storageService: StorageService) {}
 
   private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
-    const gamesWithBalls = gameHistory.filter((game) => game.balls && game.balls.length > 0);
     const tempStats: Record<
       string,
-      { totalScore: number; gameCount: number; highestGame: number; lowestGame: number; cleanGames: number; totalStrikes: number }
+      { totalScore: number; gameCount: number; highestGame: number; lowestGame: number; cleanGames: number; totalStrikes: number; totalThrows: number }
     > = {};
 
-    gamesWithBalls.forEach((game) => {
-      const uniqueBallsInGame = new Set(game.balls);
+    gameHistory.forEach((game) => {
+      // Collect per-throw ball data from frames
+      const throwBallStrikes = new Map<string, number>(); // ballName -> strike count in this game
+      const throwBallCounts = new Map<string, number>(); // ballName -> throw count in this game
+      let hasThrowLevelBalls = false;
 
-      let totalStrikesInGame = 0;
-      game.frames.forEach((frame: { throws: any[] }, index: number) => {
-        if (index < 9) {
-          if (frame.throws[0]?.value === 10) {
-            totalStrikesInGame++;
-          }
-        } else if (index === 9) {
-          frame.throws.forEach((throwData: { value: number }) => {
-            if (throwData.value === 10) {
-              totalStrikesInGame++;
+      game.frames.forEach((frame, frameIndex) => {
+        frame.throws.forEach((throwData) => {
+          if (throwData.ball) {
+            hasThrowLevelBalls = true;
+            const ball = throwData.ball;
+            throwBallCounts.set(ball, (throwBallCounts.get(ball) || 0) + 1);
+            const isStrike = throwData.value === 10 && (frameIndex < 9 || frameIndex === 9);
+            if (isStrike) {
+              throwBallStrikes.set(ball, (throwBallStrikes.get(ball) || 0) + 1);
             }
-          });
-        }
+          }
+        });
       });
 
+      // Determine ball names for this game
+      let ballNames: string[];
+      if (hasThrowLevelBalls) {
+        ballNames = [...new Set(throwBallCounts.keys())];
+      } else if (game.balls && game.balls.length > 0) {
+        // Backward compat: fall back to game-level balls
+        ballNames = game.balls;
+      } else {
+        return;
+      }
+
+      // For backward-compat games without throw-level data, count strikes the old way
+      let legacyTotalStrikes = 0;
+      if (!hasThrowLevelBalls) {
+        game.frames.forEach((frame, index) => {
+          if (index < 9) {
+            if (frame.throws[0]?.value === 10) {
+              legacyTotalStrikes++;
+            }
+          } else if (index === 9) {
+            frame.throws.forEach((throwData: { value: number }) => {
+              if (throwData.value === 10) {
+                legacyTotalStrikes++;
+              }
+            });
+          }
+        });
+      }
+
+      const uniqueBallsInGame = new Set(ballNames);
       uniqueBallsInGame.forEach((ballName) => {
         if (!tempStats[ballName]) {
-          tempStats[ballName] = { totalScore: 0, gameCount: 0, highestGame: 0, lowestGame: 301, cleanGames: 0, totalStrikes: 0 };
+          tempStats[ballName] = { totalScore: 0, gameCount: 0, highestGame: 0, lowestGame: 301, cleanGames: 0, totalStrikes: 0, totalThrows: 0 };
         }
         const stats = tempStats[ballName];
         stats.totalScore += game.totalScore;
         stats.gameCount++;
-        stats.totalStrikes += totalStrikesInGame;
+        if (hasThrowLevelBalls) {
+          stats.totalStrikes += throwBallStrikes.get(ballName) || 0;
+          stats.totalThrows += throwBallCounts.get(ballName) || 0;
+        } else {
+          stats.totalStrikes += legacyTotalStrikes;
+          stats.totalThrows += 12; // approximation for legacy data
+        }
         if (game.totalScore > stats.highestGame) {
           stats.highestGame = game.totalScore;
         }
@@ -58,8 +95,7 @@ export class BallStatsCalculatorService {
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
       const ballImage = this.storageService.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';
-      const totalPossibleStrikes = stats.gameCount * 12;
-      const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
+      const strikeRate = stats.totalThrows > 0 ? Math.round((stats.totalStrikes / stats.totalThrows) * 100) : 0;
 
       finalStats[ballName] = {
         ballName: ballName,

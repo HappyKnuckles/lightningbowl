@@ -53,10 +53,10 @@
                     <ion-text>{{ game.pattern }}</ion-text>
                   </ion-item>
                 } -->
-                @if (game.balls && game.balls.length > 0) {
-                  <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(game.balls)">
+                @if (getSelectedBallsText(game) !== 'None') {
+                  <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(getGameBalls(game))">
                     <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                    <ion-text>{{ game.balls.join(", ") }}</ion-text>
+                    <ion-text>{{ getSelectedBallsText(game) }}</ion-text>
                   </ion-item>
                 }
                 @if (game.note) {
@@ -178,31 +178,30 @@
                     </app-generic-typeahead>
                   </ng-template>
                 </ion-modal>
-                <ion-item
-                  class="arsenal"
-                  id="ball-selector-{{ game.gameId }}"
-                  button
-                  detailIcon="chevron-expand-outline"
-                  [disabled]="storageService.arsenal().length === 0">
-                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                  <!-- <ion-select [(ngModel)]="game.balls" multiple="true" name="balls" label="Balls">
-                    <ion-select-option *ngFor="let ball of storageService.arsenal()" [value]="ball.ball_name">
-                      {{ ball.ball_name }}
-                    </ion-select-option>
-                  </ion-select> -->
-                  <ion-label>Balls</ion-label>
-                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
-                </ion-item>
-                <ion-modal
-                  [enterAnimation]="enterAnimation"
-                  [leaveAnimation]="leaveAnimation"
-                  #modal
-                  trigger="ball-selector-{{ game.gameId }}"
-                  class="ball-modal">
-                  <ng-template>
-                    <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls"></app-ball-select>
-                  </ng-template>
-                </ion-modal>
+                @if (storageService.arsenal().length > 0) {
+                  <ion-item lines="none">
+                    <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                    <ion-label>Balls per Throw</ion-label>
+                  </ion-item>
+                  @for (frame of editedGameStates[game.gameId]?.frames ?? game.frames; track frame.frameIndex) {
+                    @for (throwData of frame.throws; track throwData.throwIndex) {
+                      <ion-item>
+                        <ion-label>Frame {{ frame.frameIndex }}, Throw {{ throwData.throwIndex }}</ion-label>
+                        <ion-select
+                          slot="end"
+                          [value]="throwData.ball || null"
+                          (ionChange)="onThrowBallChange({ frameIndex: frame.frameIndex - 1, throwIndex: throwData.throwIndex - 1, ball: $event.detail.value || undefined }, game)"
+                          interface="action-sheet"
+                          placeholder="None">
+                          <ion-select-option [value]="null">None</ion-select-option>
+                          @for (ball of storageService.arsenal(); track ball.ball_id) {
+                            <ion-select-option [value]="ball.ball_name">{{ ball.ball_name }}</ion-select-option>
+                          }
+                        </ion-select>
+                      </ion-item>
+                    }
+                  }
+                }
                 <ion-item class="note" lines="none">
                   <ion-icon name="document-text-outline" slot="start"> </ion-icon>
                   <ion-textarea type="text" [(ngModel)]="game.note" [autoGrow]="true"></ion-textarea>

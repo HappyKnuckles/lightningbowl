@@ -7,6 +7,7 @@ export interface Throw {
   isSplit?: boolean;
   pinsLeftStanding?: number[];
   pinsKnockedDown?: number[];
+  ball?: string;
 }
 
 /**
@@ -195,6 +196,18 @@ export function cloneFrames(frames: Frame[]): Frame[] {
     ...frame,
     throws: frame.throws.map((t) => ({ ...t })),
   }));
+}
+
+/**
+ * Get all unique ball names used in a game (from throw-level data, falling back to game.balls)
+ */
+export function getGameBalls(game: Game): string[] {
+  const throwBalls = game.frames.flatMap((f) => f.throws.map((t) => t.ball).filter((b): b is string => !!b));
+  const uniqueThrowBalls = [...new Set(throwBalls)];
+  if (uniqueThrowBalls.length > 0) {
+    return uniqueThrowBalls;
+  }
+  return game.balls || [];
 }
 
 /**

@@ -45,7 +45,7 @@ import {
   gridOutline,
 } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Game, Frame, cloneFrames, createThrow } from 'src/app/core/models/game.model';
+import { Game, Frame, cloneFrames, createThrow, getGameBalls } from 'src/app/core/models/game.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
@@ -59,7 +59,6 @@ import { Pattern } from 'src/app/core/models/pattern.model';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Router } from '@angular/router';
 import { GameGridComponent } from '../game-grid/game-grid.component';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
@@ -116,13 +115,11 @@ interface MonthHeader {
     DatePipe,
     GameGridComponent,
     GenericTypeaheadComponent,
-    BallSelectComponent,
     PinDeckFrameRowComponent,
   ],
 })
 export class GameComponent implements OnInit {
   // DOM Elements
-  @ViewChild('modal', { static: false }) modal!: IonModal;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
   @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
 
@@ -365,11 +362,14 @@ export class GameComponent implements OnInit {
           ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
           : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
 
-        game.balls && game.balls.length > 0
-          ? game.balls.length === 1
-            ? `Bowled with: ${game.balls[0]}`
-            : `Bowled with: ${game.balls.join(', ')}`
-          : null,
+        (() => {
+          const balls = getGameBalls(game);
+          return balls.length > 0
+            ? balls.length === 1
+              ? `Bowled with: ${balls[0]}`
+              : `Bowled with: ${balls.join(', ')}`
+            : null;
+        })(),
 
         game.patterns && game.patterns.length > 0 ? `Patterns: ${game.patterns.join(', ')}` : null,
       ];
@@ -729,9 +729,22 @@ export class GameComponent implements OnInit {
     );
   }
 
-  onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
-    modal.dismiss();
-    game.balls = selectedBalls;
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: string | undefined }, game: Game): void {
+    const { frameIndex, throwIndex, ball } = event;
+    const editedGame = this.editedGameStates[game.gameId];
+    if (editedGame) {
+      const frames = cloneFrames(editedGame.frames);
+      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
+        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+        this.editedGameStates[game.gameId] = { ...editedGame, frames };
+      }
+    } else {
+      const frames = cloneFrames(game.frames);
+      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
+        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+        Object.assign(game, { frames });
+      }
+    }
   }
 
   // VALIDATION & HELPERS
@@ -743,8 +756,12 @@ export class GameComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
+  getGameBalls(game: Game): string[] {
+    return getGameBalls(game);
+  }
+
   getSelectedBallsText(game: Game): string {
-    const balls = game.balls || [];
+    const balls = getGameBalls(game);
     return balls.length > 0 ? balls.join(', ') : 'None';
   }
 }

@@ -368,8 +368,26 @@ export class AddGamePage implements OnInit {
   onNoteChange(note: string, index = 0, isModal = false) {
     this.updateSingleGameProperty('note', note, index, isModal);
   }
-  onBallsChange(balls: string[], index = 0, isModal = false) {
-    this.updateSingleGameProperty('balls', balls, index, isModal);
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: string | undefined }, index = 0, isModal = false) {
+    const { frameIndex, throwIndex, ball } = event;
+    if (isModal) {
+      const frames = cloneFrames(this.gameData.frames);
+      if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
+        frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+        this.gameData = { ...this.gameData, frames };
+      }
+    } else {
+      this.games.update((games) =>
+        games.map((g, i) => {
+          if (i !== index) return g;
+          const frames = cloneFrames(g.frames);
+          if (frames[frameIndex]?.throws?.[throwIndex] !== undefined) {
+            frames[frameIndex].throws[throwIndex] = { ...frames[frameIndex].throws[throwIndex], ball };
+          }
+          return { ...g, frames };
+        }),
+      );
+    }
   }
   onIsPracticeChange(isPractice: boolean, index = 0, isModal = false) {
     this.updateSingleGameProperty('isPractice', isPractice, index, isModal);

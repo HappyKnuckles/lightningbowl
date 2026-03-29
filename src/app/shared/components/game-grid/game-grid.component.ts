@@ -15,6 +15,9 @@ import {
   IonLabel,
   IonAccordion,
   IonAccordionGroup,
+  IonSelect,
+  IonSelectOption,
+  IonIcon,
 } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -31,8 +34,7 @@ import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { Keyboard } from '@capacitor/keyboard';
 import { addIcons } from 'ionicons';
-import { chevronExpandOutline } from 'ionicons/icons';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { chevronExpandOutline, bowlingBallOutline } from 'ionicons/icons';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
@@ -57,7 +59,9 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
     IonModal,
     GenericTypeaheadComponent,
     IonLabel,
-    BallSelectComponent,
+    IonSelect,
+    IonSelectOption,
+    IonIcon,
     PinInputComponent,
     PinDeckFrameRowComponent,
     IonAccordion,
@@ -67,7 +71,6 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
 })
 export class GameGridComponent implements OnInit, OnDestroy {
   // --- Inputs ---
-  ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
   patternModalId = input.required<string>();
   game = input.required<Game>();
@@ -91,9 +94,9 @@ export class GameGridComponent implements OnInit, OnDestroy {
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
-  ballsChanged = output<string[]>();
+  throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: string | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
-  inputFocused = output<{ frameIndex: number; throwIndex: number }>();
+  inputFocused = output<{ frameIndex: number; throwIndex: number }>(); 
 
   // Pin Input Mode - Events from Child to Parent
   pinThrowConfirmed = output<ThrowConfirmedEvent>();
@@ -141,7 +144,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
     private patternService: PatternService,
   ) {
     this.initializeKeyboardListeners();
-    addIcons({ chevronExpandOutline });
+    addIcons({ chevronExpandOutline, bowlingBallOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -332,9 +335,8 @@ export class GameGridComponent implements OnInit, OnDestroy {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  onBallSelect(selectedBalls: string[], modal: IonModal) {
-    modal.dismiss();
-    this.ballsChanged.emit(selectedBalls);
+  onThrowBallChange(frameIndex: number, throwIndex: number, ball: string | undefined) {
+    this.throwBallChanged.emit({ frameIndex, throwIndex, ball });
   }
   onNoteChange(note: string) {
     this.noteChanged.emit(note);
@@ -344,9 +346,11 @@ export class GameGridComponent implements OnInit, OnDestroy {
   }
 
   // --- Template Getters ---
-  getSelectedBallsText(): string {
-    const balls = this.currentGame?.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
+  getThrowBallsSummary(): string {
+    const balls = this.currentGame?.frames
+      .flatMap((f) => f.throws.map((t) => t.ball).filter((b): b is string => !!b));
+    const unique = [...new Set(balls || [])];
+    return unique.length > 0 ? unique.join(', ') : 'None';
   }
 
   isNumber(value: unknown): boolean {

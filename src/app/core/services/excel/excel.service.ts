@@ -4,7 +4,7 @@ import * as ExcelJS from 'exceljs';
 import { isPlatform } from '@ionic/angular';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, getGameBalls } from 'src/app/core/models/game.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -390,7 +390,7 @@ export class ExcelService {
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
         game.patterns?.join(', ') || '',
-        game.balls?.join(', ') || '',
+        getGameBalls(game).join(', ') || '',
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,

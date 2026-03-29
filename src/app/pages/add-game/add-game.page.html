@@ -75,7 +75,6 @@
         [canUndo]="canUndoForPinMode(i)"
         [isGameComplete]="isGameComplete(i)"
         [patternModalId]="i.toString()"
-        [ballSelectorId]="'modal-ball-selector' + i"
         (throwInput)="handleThrowInput($event, i)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
@@ -85,7 +84,7 @@
         (isPracticeChanged)="onIsPracticeChange($event, i)"
         (toolbarStateChanged)="onToolbarStateChange($event)"
         (noteChanged)="onNoteChange($event, i)"
-        (ballsChanged)="onBallsChange($event, i)"
+        (throwBallChanged)="onThrowBallChange($event, i)"
         (inputFocused)="onInputFocused($event, i)">
       </app-game-grid>
 
@@ -144,14 +143,13 @@
       <h2 class="ion-text-center">Edit wrong game data</h2>
       <app-game-grid
         #modalGrid
-        [ballSelectorId]="gameData.gameId + '-modal-ball-selector'"
         [game]="gameData"
         [isPinInputMode]="false"
         (throwInput)="handleThrowInput($event, 0, true)"
         (leagueChanged)="onLeagueChange($event, true)"
         (isPracticeChanged)="onIsPracticeChange($event, 0, true)"
         (noteChanged)="onNoteChange($event, 0, true)"
-        (ballsChanged)="onBallsChange($event, 0, true)"
+        (throwBallChanged)="onThrowBallChange($event, 0, true)"
         (patternChanged)="onPatternChange($event, true)"
         [patternModalId]="gameData.gameId">
       </app-game-grid>

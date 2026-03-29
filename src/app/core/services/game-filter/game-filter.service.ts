@@ -1,6 +1,6 @@
 import { computed, Injectable, Signal, signal } from '@angular/core';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, getGameBalls } from 'src/app/core/models/game.model';
 import { UtilsService } from '../utils/utils.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -79,7 +79,7 @@ export class GameFilterService {
         (!filters.isClean || game.isClean) &&
         (filters.leagues.includes('all') || filters.leagues.length === 0 || filters.leagues.includes(game.league || '')) &&
         (filters.patterns.includes('all') || filters.patterns.length === 0 || game.patterns!.some((pattern) => filters.patterns.includes(pattern))) &&
-        (filters.balls.includes('all') || filters.balls.length === 0 || game.balls!.some((ball) => filters.balls.includes(ball)))
+        (filters.balls.includes('all') || filters.balls.length === 0 || getGameBalls(game).some((ball) => filters.balls.includes(ball)))
       );
     });
     return filteredGames;

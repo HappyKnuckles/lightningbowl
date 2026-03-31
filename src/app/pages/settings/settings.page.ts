@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import {
   IonHeader,
   IonToolbar,
@@ -33,6 +33,7 @@ import {
   refreshCircleOutline,
   chevronBackOutline,
   bugOutline,
+  cloudUploadOutline,
 } from 'ionicons/icons';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -49,6 +50,7 @@ import { AlertController, InputCustomEvent, ModalController } from '@ionic/angul
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { PinpalService } from 'src/app/core/services/pinpal/pinpal.service';
 
 @Component({
   selector: 'app-settings',
@@ -85,6 +87,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
   ],
 })
 export class SettingsPage implements OnInit {
+  @ViewChild('pinpalFileInput') pinpalFileInput!: ElementRef<HTMLInputElement>;
   private modalCtrl = inject(ModalController);
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
@@ -107,6 +110,7 @@ export class SettingsPage implements OnInit {
     private alertCtrl: AlertController,
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
+    private pinpalService: PinpalService,
   ) {
     addIcons({
       personCircleOutline,
@@ -119,6 +123,7 @@ export class SettingsPage implements OnInit {
       chevronBack,
       sendOutline,
       bugOutline,
+      cloudUploadOutline,
     });
   }
 
@@ -215,6 +220,27 @@ export class SettingsPage implements OnInit {
       }
     } else {
       alert('Please fill out all fields correctly.');
+    }
+  }
+
+  openPinpalFileInput(): void {
+    this.pinpalFileInput.nativeElement.click();
+  }
+
+  async handlePinpalImport(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    this.loadingService.setLoading(true);
+    try {
+      const count = await this.pinpalService.importFromFile(file);
+      this.toastService.showToast(`${ToastMessages.pinpalImportSuccess} (${count} games)`, 'checkmark-outline');
+    } catch (error) {
+      console.error('PinPal import error:', error);
+      this.toastService.showToast(ToastMessages.pinpalImportError, 'bug-outline', true);
+    } finally {
+      input.value = '';
+      this.loadingService.setLoading(false);
     }
   }
 }

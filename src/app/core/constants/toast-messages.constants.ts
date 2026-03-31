@@ -38,4 +38,6 @@ export const ToastMessages = {
   unexpectedError: 'Unexpected error occurred.',
   chartGenerationError: 'Error generating chart.',
   leagueEditMode: 'Select leagues to hide or show.',
+  pinpalImportSuccess: 'PinPal backup imported successfully.',
+  pinpalImportError: 'Error importing PinPal backup.',
 };

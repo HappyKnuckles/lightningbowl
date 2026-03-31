@@ -65,6 +65,13 @@
         clearOnEdit="true"></ion-input>
     </ion-item>
 
+    <!-- Import from PinPal -->
+    <input #pinpalFileInput type="file" class="ion-hide" accept=".json" aria-label="Select PinPal JSON backup file" (change)="handlePinpalImport($event)" />
+    <ion-item button (click)="openPinpalFileInput()">
+      <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+      <ion-label>Import from PinPal</ion-label>
+    </ion-item>
+
     <!-- Issues & Features Section -->
     <ion-item button (click)="openGithubIssueModal()">
       <ion-icon name="bug-outline" slot="start"></ion-icon>

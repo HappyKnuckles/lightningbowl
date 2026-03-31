@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
 import { Game, Frame, Throw, numberArraysToFrames } from 'src/app/core/models/game.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
@@ -6,49 +7,29 @@ import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.se
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 
-/**
- * Represents a single frame in the PinPal backup format.
- * PinPal uses either an array of throw values or an object with ball1/ball2/ball3 fields.
- */
-type PinpalFrame = number[] | { ball1?: number | null; ball2?: number | null; ball3?: number | null };
-
-/**
- * Represents a single game in the PinPal backup format.
- */
-interface PinpalGame {
-  id?: string;
-  date?: string | number;
-  score?: number;
-  totalScore?: number;
-  league?: string;
-  leagueName?: string;
-  location?: string;
-  frames?: PinpalFrame[];
-  notes?: string;
-  note?: string;
+/** Row returned from the games JOIN query */
+interface GameRow {
+  pk: number;
+  totalScore: number | null;
+  notes: string | null;
+  leagueName: string | null;
+  ballName: string | null;
+  patternName: string | null;
+  weekDate: number | null;
 }
 
-/**
- * Represents a bowler entry (used in multi-bowler PinPal backups).
- */
-interface PinpalBowler {
-  name?: string;
-  games?: PinpalGame[];
-}
-
-/**
- * Represents the top-level PinPal backup file structure.
- */
-interface PinpalBackup {
-  version?: number;
-  games?: PinpalGame[];
-  bowlers?: PinpalBowler[];
+/** Row returned from the frames query */
+interface FrameRow {
+  frameNum: number;
+  scores: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class PinpalService {
+  private sqlInstance: SqlJsStatic | null = null;
+
   constructor(
     private storageService: StorageService,
     private scoreCalculator: GameScoreCalculatorService,
@@ -58,111 +39,180 @@ export class PinpalService {
   ) {}
 
   /**
-   * Reads a PinPal backup JSON file and returns the number of games imported.
+   * Reads a PinPal .pinpal (SQLite) backup file and returns the number of games imported.
    */
   async importFromFile(file: File): Promise<number> {
-    const text = await this.readFileAsText(file);
-    const parsed = JSON.parse(text);
-    const pinpalGames = this.extractGames(parsed);
-    const timestamp = Date.now();
-    const games = pinpalGames.map((pg, index) => this.convertGame(pg, timestamp, index));
-    const validGames = games.filter((g) => g.frames.length === 10);
-    const sortedGames = this.sortUtils.sortGameHistoryByDate(validGames);
-    await this.storageService.saveGamesToLocalStorage(sortedGames);
-    this.gameFilterService.setDefaultFilters();
-    return validGames.length;
+    const buffer = await this.readFileAsArrayBuffer(file);
+    const SQL = await this.getSqlJs();
+    const db = new SQL.Database(new Uint8Array(buffer));
+
+    try {
+      const hasFrameTable = this.tableExists(db, 'frame');
+      const gameRows = this.queryGames(db);
+      const timestamp = Date.now();
+
+      const games: Game[] = [];
+      for (let i = 0; i < gameRows.length; i++) {
+        const row = gameRows[i];
+        const frames = hasFrameTable ? this.queryFrames(db, row.pk) : [];
+
+        // Only include complete games (10 frames) when frame data is available
+        if (hasFrameTable && frames.length !== 10) continue;
+
+        const { totalScore: calcTotal, frameScores } = hasFrameTable
+          ? this.scoreCalculator.calculateScoreFromFrames(frames)
+          : { totalScore: row.totalScore ?? 0, frameScores: [] };
+
+        const totalScore = hasFrameTable ? calcTotal : (row.totalScore ?? 0);
+        const isClean = hasFrameTable ? this.gameUtilsService.calculateIsClean(frames) : false;
+        const isPerfect = totalScore === 300;
+        const league = row.leagueName ?? '';
+
+        games.push({
+          gameId: `${timestamp}_${i}_${Math.random().toString(36).slice(2, 9)}`,
+          date: this.parseDate(row.weekDate),
+          frames,
+          totalScore,
+          frameScores,
+          isClean,
+          isPerfect,
+          isPractice: league === '',
+          isPinMode: false,
+          league,
+          patterns: row.patternName ? [row.patternName] : [],
+          balls: row.ballName ? [row.ballName] : [],
+          note: row.notes ?? '',
+        });
+      }
+
+      const sortedGames = this.sortUtils.sortGameHistoryByDate(games);
+      await this.storageService.saveGamesToLocalStorage(sortedGames);
+      this.gameFilterService.setDefaultFilters();
+      return games.length;
+    } finally {
+      db.close();
+    }
   }
 
-  private readFileAsText(file: File): Promise<string> {
+  private async getSqlJs(): Promise<SqlJsStatic> {
+    if (!this.sqlInstance) {
+      this.sqlInstance = await initSqlJs({ locateFile: (f: string) => `assets/${f}` });
+    }
+    return this.sqlInstance;
+  }
+
+  private readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
       reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
     });
   }
 
-  /**
-   * Extracts the array of PinPal games from various possible backup structures.
-   */
-  private extractGames(data: unknown): PinpalGame[] {
-    if (!data || typeof data !== 'object') {
-      throw new Error('Invalid PinPal backup: not a valid JSON object or array');
-    }
-
-    // Direct array of games
-    if (Array.isArray(data)) {
-      return data as PinpalGame[];
-    }
-
-    const backup = data as PinpalBackup;
-
-    // Top-level "games" array
-    if (Array.isArray(backup.games)) {
-      return backup.games;
-    }
-
-    // Top-level "bowlers" array (multi-bowler backup)
-    if (Array.isArray(backup.bowlers)) {
-      return backup.bowlers.flatMap((b) => b.games ?? []);
-    }
-
-    throw new Error('Invalid PinPal backup: no "games" or "bowlers" field found');
+  /** Returns true if the given table exists in the database. */
+  private tableExists(db: Database, tableName: string): boolean {
+    const result = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`);
+    return result.length > 0 && result[0].values.length > 0;
   }
 
   /**
-   * Converts a PinPal game object to a Lightning Bowl Game model.
+   * Queries all games joined with their week date, league, ball, and pattern names.
    */
-  private convertGame(pg: PinpalGame, timestamp: number, index: number): Game {
-    const frames = this.convertFrames(pg.frames ?? []);
-    const { totalScore, frameScores } = this.scoreCalculator.calculateScoreFromFrames(frames);
-    const isClean = this.gameUtilsService.calculateIsClean(frames);
-    const isPerfect = totalScore === 300;
-    const date = this.parseDate(pg.date);
-    const league = pg.league ?? pg.leagueName ?? '';
-    const gameId = pg.id ?? `${timestamp}_${index}_${Math.random().toString(36).slice(2, 9)}`;
+  private queryGames(db: Database): GameRow[] {
+    const sql = `
+      SELECT
+        g.pk          AS pk,
+        g.score       AS totalScore,
+        g.notes       AS notes,
+        w.date        AS weekDate,
+        l.name        AS leagueName,
+        b.name        AS ballName,
+        p.name        AS patternName
+      FROM game g
+      LEFT JOIN week    w ON g.weekFk    = w.pk
+      LEFT JOIN league  l ON g.leagueFk  = l.pk
+      LEFT JOIN ball    b ON g.ballFk    = b.pk
+      LEFT JOIN pattern p ON g.patternFk = p.pk
+    `;
 
-    return {
-      gameId,
-      date,
-      frames,
-      totalScore,
-      frameScores,
-      isClean,
-      isPerfect,
-      isPractice: league === '',
-      isPinMode: false,
-      league,
-      patterns: [],
-      balls: [],
-      note: pg.notes ?? pg.note ?? '',
-    };
+    const result = db.exec(sql);
+    if (!result.length) return [];
+
+    const { columns, values } = result[0];
+    const col = (name: string) => columns.indexOf(name);
+
+    return values.map((row) => ({
+      pk: row[col('pk')] as number,
+      totalScore: row[col('totalScore')] as number | null,
+      notes: row[col('notes')] as string | null,
+      weekDate: row[col('weekDate')] as number | null,
+      leagueName: row[col('leagueName')] as string | null,
+      ballName: row[col('ballName')] as string | null,
+      patternName: row[col('patternName')] as string | null,
+    }));
   }
 
   /**
-   * Converts PinPal frames to the app's Frame[] format.
+   * Queries the frame rows for a given game primary key,
+   * decodes the throw values and returns a Frame[] array.
+   *
+   * PinPal encodes throw values in the `scores` INTEGER column as packed bytes:
+   *   throw1 = scores & 0xFF
+   *   throw2 = (scores >> 8) & 0xFF
+   *   throw3 = (scores >> 16) & 0xFF  (10th frame only)
    */
-  private convertFrames(pinpalFrames: PinpalFrame[]): Frame[] {
-    const numberArrays: number[][] = pinpalFrames.map((frame) => {
-      if (Array.isArray(frame)) {
-        return frame.map(Number).filter((v) => !isNaN(v));
-      }
-      // Object format: { ball1, ball2, ball3 }
-      const values: number[] = [];
-      if (frame.ball1 != null) values.push(Number(frame.ball1));
-      if (frame.ball2 != null) values.push(Number(frame.ball2));
-      if (frame.ball3 != null) values.push(Number(frame.ball3));
-      return values;
-    });
+  private queryFrames(db: Database, gamePk: number): Frame[] {
+    const sql = `
+      SELECT frameNum, scores
+      FROM frame
+      WHERE gameFk = ${gamePk}
+      ORDER BY frameNum ASC
+    `;
 
-    return numberArraysToFrames(numberArrays).map((frame) =>
-      this.normalizeThrows(frame),
+    const result = db.exec(sql);
+    if (!result.length) return [];
+
+    const { columns, values } = result[0];
+    const col = (name: string) => columns.indexOf(name);
+
+    const frameRows: FrameRow[] = values.map((row) => ({
+      frameNum: row[col('frameNum')] as number,
+      scores: row[col('scores')] as number,
+    }));
+
+    const numberArrays: number[][] = frameRows.map(({ frameNum, scores }) =>
+      this.decodeThrows(frameNum, scores),
     );
+
+    return numberArraysToFrames(numberArrays).map((frame) => this.normalizeThrows(frame));
   }
 
   /**
-   * Re-indexes throwIndex values to be 1-based and sequential.
+   * Decodes the packed `scores` integer for a single frame into individual throw values.
+   *
+   * Encoding:  throw1 = scores & 0xFF
+   *            throw2 = (scores >> 8) & 0xFF
+   *            throw3 = (scores >> 16) & 0xFF
    */
+  private decodeThrows(frameNum: number, scores: number): number[] {
+    const throw1 = scores & 0xff;
+    const throw2 = (scores >> 8) & 0xff;
+    const throw3 = (scores >> 16) & 0xff;
+
+    if (frameNum < 10) {
+      // Frames 1–9: strike = only 1 throw; spare/open = 2 throws
+      return throw1 === 10 ? [10] : [throw1, throw2];
+    }
+
+    // 10th frame: always 2–3 throws
+    if (throw1 === 10 || throw1 + throw2 === 10) {
+      return [throw1, throw2, throw3];
+    }
+    return [throw1, throw2];
+  }
+
+  /** Re-indexes throwIndex values to be 1-based and sequential. */
   private normalizeThrows(frame: Frame): Frame {
     return {
       ...frame,
@@ -171,15 +221,25 @@ export class PinpalService {
   }
 
   /**
-   * Parses a date value (string or timestamp number) to a millisecond timestamp.
+   * Converts a SQLite date value to a millisecond Unix timestamp.
+   *
+   * PinPal stores dates as a REAL in the `week.date` column. Depending on the
+   * app version the value may be:
+   *   - A Julian Day Number   (JDN, ~2 400 000–2 500 000 for 1968–2040)
+   *   - A Unix timestamp in seconds  (<  1 × 10^10)
+   *   - A Unix timestamp in milliseconds (>= 1 × 10^10)
    */
-  private parseDate(date: string | number | undefined): number {
-    if (!date) return Date.now();
-    if (typeof date === 'number') {
-      // If the number looks like seconds (< 1e12), convert to ms
-      return date < 1e12 ? date * 1000 : date;
+  private parseDate(value: number | null): number {
+    if (!value) return Date.now();
+    if (value < 3_000_000) {
+      // Julian Day Number → milliseconds
+      return (value - 2440587.5) * 86400 * 1000;
     }
-    const parsed = Date.parse(date);
-    return isNaN(parsed) ? Date.now() : parsed;
+    if (value < 1e10) {
+      // Unix timestamp in seconds
+      return value * 1000;
+    }
+    // Unix timestamp in milliseconds
+    return value;
   }
 }

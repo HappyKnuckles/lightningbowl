@@ -124,7 +124,7 @@ export class PinpalService {
    */
   private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
     const bytes = new Uint8Array(buffer);
-    const sqliteMagic = new Uint8Array([
+    const sqliteMagic = [
       0x53, // S
       0x51, // Q
       0x4c, // L
@@ -141,11 +141,22 @@ export class PinpalService {
       0x20, // space
       0x33, // 3
       0x00, // \0
-    ]);
+    ];
 
-    for (let i = 0; i <= bytes.length - sqliteMagic.length; i++) {
-      const isMatch = sqliteMagic.every((value, offset) => bytes[i + offset] === value);
-      if (isMatch) return bytes.slice(i);
+    const firstByte = sqliteMagic[0];
+    let start = bytes.indexOf(firstByte);
+
+    while (start !== -1 && start <= bytes.length - sqliteMagic.length) {
+      let isMatch = true;
+      for (let i = 1; i < sqliteMagic.length; i++) {
+        if (bytes[start + i] !== sqliteMagic[i]) {
+          isMatch = false;
+          break;
+        }
+      }
+
+      if (isMatch) return bytes.slice(start);
+      start = bytes.indexOf(firstByte, start + 1);
     }
 
     throw new Error('Selected file does not contain a valid PinPal SQLite database.');

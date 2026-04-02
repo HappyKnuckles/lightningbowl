@@ -28,6 +28,25 @@ interface FrameRow {
   providedIn: 'root',
 })
 export class PinpalService {
+  private static readonly SQLITE_MAGIC_BYTES = [
+    0x53, // S
+    0x51, // Q
+    0x4c, // L
+    0x69, // i
+    0x74, // t
+    0x65, // e
+    0x20, // space
+    0x66, // f
+    0x6f, // o
+    0x72, // r
+    0x6d, // m
+    0x61, // a
+    0x74, // t
+    0x20, // space
+    0x33, // 3
+    0x00, // \0
+  ] as const;
+
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
@@ -124,24 +143,7 @@ export class PinpalService {
    */
   private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
     const bytes = new Uint8Array(buffer);
-    const sqliteMagic = [
-      0x53, // S
-      0x51, // Q
-      0x4c, // L
-      0x69, // i
-      0x74, // t
-      0x65, // e
-      0x20, // space
-      0x66, // f
-      0x6f, // o
-      0x72, // r
-      0x6d, // m
-      0x61, // a
-      0x74, // t
-      0x20, // space
-      0x33, // 3
-      0x00, // \0
-    ];
+    const sqliteMagic = PinpalService.SQLITE_MAGIC_BYTES;
 
     const firstByte = sqliteMagic[0];
     let start = bytes.indexOf(firstByte);
@@ -159,7 +161,7 @@ export class PinpalService {
       start = bytes.indexOf(firstByte, start + 1);
     }
 
-    throw new Error('Selected file does not contain a valid PinPal SQLite database.');
+    throw new Error('Invalid PinPal backup file: SQLite database signature not found.');
   }
 
   /** Returns true if the given table exists in the database. */

@@ -44,7 +44,8 @@ export class PinpalService {
   async importFromFile(file: File): Promise<number> {
     const buffer = await this.readFileAsArrayBuffer(file);
     const SQL = await this.getSqlJs();
-    const db = new SQL.Database(new Uint8Array(buffer));
+    const sqliteBytes = this.extractSqliteBytes(buffer);
+    const db = new SQL.Database(sqliteBytes);
 
     try {
       const hasFrameTable = this.tableExists(db, 'frame');
@@ -113,6 +114,41 @@ export class PinpalService {
       reader.onerror = () => reject(reader.error);
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  /**
+   * Extracts the SQLite database bytes from a PinPal backup file.
+   *
+   * Some PinPal exports include leading metadata before the SQLite payload.
+   * In that case we locate the SQLite file signature and slice from there.
+   */
+  private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
+    const bytes = new Uint8Array(buffer);
+    const sqliteMagic = new Uint8Array([
+      0x53, // S
+      0x51, // Q
+      0x4c, // L
+      0x69, // i
+      0x74, // t
+      0x65, // e
+      0x20, // space
+      0x66, // f
+      0x6f, // o
+      0x72, // r
+      0x6d, // m
+      0x61, // a
+      0x74, // t
+      0x20, // space
+      0x33, // 3
+      0x00, // \0
+    ]);
+
+    for (let i = 0; i <= bytes.length - sqliteMagic.length; i++) {
+      const isMatch = sqliteMagic.every((value, offset) => bytes[i + offset] === value);
+      if (isMatch) return bytes.slice(i);
+    }
+
+    throw new Error('Selected file does not contain a valid PinPal SQLite database.');
   }
 
   /** Returns true if the given table exists in the database. */

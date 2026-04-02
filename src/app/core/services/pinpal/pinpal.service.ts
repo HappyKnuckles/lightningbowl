@@ -96,7 +96,12 @@ export class PinpalService {
 
   private async getSqlJs(): Promise<SqlJsStatic> {
     if (!this.sqlInstance) {
-      this.sqlInstance = await initSqlJs({ locateFile: (f: string) => `assets/${f}` });
+      // Fetch the WASM binary as an ArrayBuffer so sql.js uses the non-streaming
+      // WebAssembly.instantiate() path, which doesn't enforce the application/wasm
+      // MIME type that servers sometimes omit.
+      const wasmResponse = await fetch('assets/sql-wasm.wasm');
+      const wasmBinary = await wasmResponse.arrayBuffer();
+      this.sqlInstance = await initSqlJs({ wasmBinary });
     }
     return this.sqlInstance;
   }

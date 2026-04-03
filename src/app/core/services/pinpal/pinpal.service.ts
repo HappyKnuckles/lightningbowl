@@ -75,15 +75,15 @@ export class PinpalService {
       for (let i = 0; i < gameRows.length; i++) {
         const row = gameRows[i];
         const importedFrames = hasFrameTable ? this.queryFrames(db, row.pk) : [];
-        const hasCompleteFrameData = importedFrames.length === 10;
-        const frames = hasCompleteFrameData ? importedFrames : createEmptyFrames();
+        const hasAnyFrameData = importedFrames.some((frame) => frame.throws.length > 0);
+        const frames = hasAnyFrameData ? importedFrames : createEmptyFrames();
 
-        const { totalScore: calcTotal, frameScores } = hasCompleteFrameData
-          ? this.scoreCalculator.calculateScoreFromFrames(importedFrames)
+        const { totalScore: calcTotal, frameScores } = hasAnyFrameData
+          ? this.scoreCalculator.calculateScoreFromFrames(frames)
           : { totalScore: row.totalScore ?? 0, frameScores: [] };
 
-        const totalScore = hasCompleteFrameData ? calcTotal : (row.totalScore ?? 0);
-        const isClean = hasCompleteFrameData ? this.gameUtilsService.calculateIsClean(importedFrames) : false;
+        const totalScore = hasAnyFrameData ? calcTotal : (row.totalScore ?? 0);
+        const isClean = hasAnyFrameData ? this.gameUtilsService.calculateIsClean(frames) : false;
         const isPerfect = totalScore === 300;
         const league = row.leagueName ?? '';
 
@@ -217,28 +217,46 @@ export class PinpalService {
    */
   private queryFrames(db: Database, gamePk: number): Frame[] {
     const sql = `
-      SELECT frameNum, scores
+      SELECT frameNum, COALESCE(scores, pins) AS scores
       FROM frame
       WHERE gameFk = ${gamePk}
       ORDER BY frameNum ASC
     `;
 
     const result = db.exec(sql);
-    if (!result.length) return [];
+    if (!result.length) return createEmptyFrames();
 
     const { columns, values } = result[0];
     const col = (name: string) => columns.indexOf(name);
 
+    const framesByIndex = new Map<number, number[]>();
     const frameRows: FrameRow[] = values.map((row) => ({
       frameNum: row[col('frameNum')] as number,
       scores: row[col('scores')] as number,
     }));
 
-    const numberArrays: number[][] = frameRows.map(({ frameNum, scores }) =>
-      this.decodeThrows(frameNum, scores),
-    );
+    for (const frameRow of frameRows) {
+      const normalizedFrameNum = this.normalizeFrameNumber(frameRow.frameNum);
+      if (normalizedFrameNum < 1 || normalizedFrameNum > 10) continue;
 
-    return numberArraysToFrames(numberArrays).map((frame) => this.normalizeThrows(frame));
+      framesByIndex.set(normalizedFrameNum, this.decodeThrows(normalizedFrameNum, frameRow.scores));
+    }
+
+    const frames = createEmptyFrames();
+    for (let frameNum = 1; frameNum <= 10; frameNum++) {
+      const throws = framesByIndex.get(frameNum);
+      if (!throws) continue;
+      frames[frameNum - 1] = numberArraysToFrames([throws])[0];
+      frames[frameNum - 1].frameIndex = frameNum;
+    }
+
+    return frames.map((frame) => this.normalizeThrows(frame));
+  }
+
+  private normalizeFrameNumber(frameNum: number): number {
+    if (frameNum >= 1 && frameNum <= 10) return frameNum;
+    if (frameNum >= 0 && frameNum <= 9) return frameNum + 1;
+    return frameNum;
   }
 
   /**

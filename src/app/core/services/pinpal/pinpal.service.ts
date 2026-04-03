@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
-import { Game, Frame, Throw, numberArraysToFrames } from 'src/app/core/models/game.model';
+import { Game, Frame, Throw, createEmptyFrames, numberArraysToFrames } from 'src/app/core/models/game.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
@@ -74,17 +74,16 @@ export class PinpalService {
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
         const row = gameRows[i];
-        const frames = hasFrameTable ? this.queryFrames(db, row.pk) : [];
+        const importedFrames = hasFrameTable ? this.queryFrames(db, row.pk) : [];
+        const hasCompleteFrameData = importedFrames.length === 10;
+        const frames = hasCompleteFrameData ? importedFrames : createEmptyFrames();
 
-        // Only include complete games (10 frames) when frame data is available
-        if (hasFrameTable && frames.length !== 10) continue;
-
-        const { totalScore: calcTotal, frameScores } = hasFrameTable
-          ? this.scoreCalculator.calculateScoreFromFrames(frames)
+        const { totalScore: calcTotal, frameScores } = hasCompleteFrameData
+          ? this.scoreCalculator.calculateScoreFromFrames(importedFrames)
           : { totalScore: row.totalScore ?? 0, frameScores: [] };
 
-        const totalScore = hasFrameTable ? calcTotal : (row.totalScore ?? 0);
-        const isClean = hasFrameTable ? this.gameUtilsService.calculateIsClean(frames) : false;
+        const totalScore = hasCompleteFrameData ? calcTotal : (row.totalScore ?? 0);
+        const isClean = hasCompleteFrameData ? this.gameUtilsService.calculateIsClean(importedFrames) : false;
         const isPerfect = totalScore === 300;
         const league = row.leagueName ?? '';
 

@@ -1,13 +1,12 @@
 import { Injectable } from '@angular/core';
-import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
-import { Game, Frame, Throw, createEmptyFrames, numberArraysToFrames } from 'src/app/core/models/game.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
+import { Frame, Game, Throw, createEmptyFrames } from 'src/app/core/models/game.model';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
 
-/** Row returned from the games JOIN query */
 interface GameRow {
   pk: number;
   totalScore: number | null;
@@ -18,36 +17,11 @@ interface GameRow {
   weekDate: number | null;
 }
 
-/** Row returned from the frames query */
-interface FrameRow {
-  frameNum: number;
-  scores: number | null;
-  pins: number | null;
-}
-
 @Injectable({
   providedIn: 'root',
 })
 export class PinpalService {
-  private static readonly SQLITE_MAGIC_BYTES = [
-    0x53, // S
-    0x51, // Q
-    0x4c, // L
-    0x69, // i
-    0x74, // t
-    0x65, // e
-    0x20, // space
-    0x66, // f
-    0x6f, // o
-    0x72, // r
-    0x6d, // m
-    0x61, // a
-    0x74, // t
-    0x20, // space
-    0x33, // 3
-    0x00, // \0
-  ] as const;
-
+  private static readonly SQLITE_HEADER = 'SQLite format 3';
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
@@ -58,12 +32,10 @@ export class PinpalService {
     private gameFilterService: GameFilterService,
   ) {}
 
-  /**
-   * Reads a PinPal .pinpal (SQLite) backup file and returns the number of games imported.
-   */
   async importFromFile(file: File): Promise<number> {
     const buffer = await this.readFileAsArrayBuffer(file);
     const SQL = await this.getSqlJs();
+
     const sqliteBytes = this.extractSqliteBytes(buffer);
     const db = new SQL.Database(sqliteBytes);
 
@@ -75,17 +47,14 @@ export class PinpalService {
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
         const row = gameRows[i];
-        const importedFrames = hasFrameTable ? this.queryFrames(db, row.pk) : [];
-        const hasAnyFrameData = importedFrames.some((frame) => frame.throws.length > 0);
-        const frames = hasAnyFrameData ? importedFrames : createEmptyFrames();
 
-        const { totalScore: calcTotal, frameScores } = hasAnyFrameData
-          ? this.scoreCalculator.calculateScoreFromFrames(frames)
-          : { totalScore: row.totalScore ?? 0, frameScores: [] };
+        const frames = hasFrameTable ? this.queryFrames(db, row.pk) : createEmptyFrames();
 
-        const totalScore = hasAnyFrameData ? calcTotal : (row.totalScore ?? 0);
-        const isClean = hasAnyFrameData ? this.gameUtilsService.calculateIsClean(frames) : false;
-        const isPerfect = totalScore === 300;
+        const { totalScore: calcTotal, frameScores } = this.scoreCalculator.calculateScoreFromFrames(frames);
+
+        const totalScore = frames.some((f) => f.throws.length > 0) ? calcTotal : (row.totalScore ?? 0);
+
+        const isClean = this.gameUtilsService.calculateIsClean(frames);
         const league = row.leagueName ?? '';
 
         games.push({
@@ -95,9 +64,9 @@ export class PinpalService {
           totalScore,
           frameScores,
           isClean,
-          isPerfect,
+          isPerfect: totalScore === 300,
           isPractice: league === '',
-          isPinMode: false,
+          isPinMode: true,
           league,
           patterns: row.patternName ? [row.patternName] : [],
           balls: row.ballName ? [row.ballName] : [],
@@ -114,11 +83,135 @@ export class PinpalService {
     }
   }
 
+  /**
+   * Sucht nach "SQLite format 3" und schneidet alles davor ab.
+   */
+  private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
+    const bytes = new Uint8Array(buffer);
+    const headerStr = PinpalService.SQLITE_HEADER;
+
+    // Suche im Byte-Array nach dem Header-String
+    const headerBytes = new TextEncoder().encode(headerStr);
+    let start = -1;
+
+    for (let i = 0; i < bytes.length - headerBytes.length; i++) {
+      let match = true;
+      for (let j = 0; j < headerBytes.length; j++) {
+        if (bytes[i + j] !== headerBytes[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        start = i;
+        break;
+      }
+    }
+
+    if (start === -1) {
+      throw new Error('Keine gültige SQLite Datenbank im PinPal Backup gefunden.');
+    }
+
+    return bytes.slice(start);
+  }
+
+  private queryFrames(db: Database, gamePk: number): Frame[] {
+    const sql = `SELECT frameNum, scores, pins FROM frame WHERE gameFk = ${gamePk} ORDER BY frameNum ASC`;
+    const result = db.exec(sql);
+    const frames = createEmptyFrames();
+
+    if (!result.length) return frames;
+
+    const { columns, values } = result[0];
+    const col = (name: string) => columns.indexOf(name);
+
+    values.forEach((row: SqlValue[]) => {
+      const dbFrameNum = row[col('frameNum')] as number;
+      // PinPal nutzt oft 0-9 für FrameNum
+      const frameIdx = dbFrameNum >= 0 && dbFrameNum <= 9 ? dbFrameNum : dbFrameNum - 1;
+
+      if (frameIdx >= 0 && frameIdx < 10) {
+        const pinMask = (row[col('pins')] as number) || 0;
+        frames[frameIdx].throws = this.decodePinpalThrows(frameIdx + 1, pinMask);
+      }
+    });
+
+    return frames;
+  }
+
+  /**
+   * Dekodiert die 1024er Bitmaske in Throw-Objekte.
+   * Logic: (Wurf2 * 1024) + Wurf1
+   * Jeder Wurf ist eine 10-Bit Maske der STEHENDEN Pins.
+   */
+  private decodePinpalThrows(frameNum: number, pinMask: number): Throw[] {
+    const throws: Throw[] = [];
+    const ALL_PINS_MASK = 1023; // Alle 10 Pins stehen
+
+    // Extrahiere stehende Pins pro Wurf
+    const standingW1 = pinMask % 1024;
+    const standingW2 = Math.floor(pinMask / 1024) % 1024;
+    const standingW3 = Math.floor(pinMask / (1024 * 1024)) % 1024; // Nur für 10. Frame relevant
+
+    const standingMasks = [standingW1, standingW2];
+    if (frameNum === 10) standingMasks.push(standingW3);
+
+    let previousStanding = ALL_PINS_MASK;
+
+    for (let i = 0; i < standingMasks.length; i++) {
+      const currentStanding = standingMasks[i];
+
+      // Wenn 0, wurde dieser Wurf vielleicht nicht gemacht (außer im Falle eines Strikes im 1. Wurf)
+      if (i > 0 && currentStanding === 0 && previousStanding === 0) continue;
+
+      // Welche Pins sind in DIESEM Wurf gefallen?
+      // (Pins die vorher standen, aber jetzt nicht mehr stehen)
+      const knockedDownMask = previousStanding ^ (previousStanding & currentStanding);
+      const value = this.countSetBits(knockedDownMask);
+
+      const t: Throw = {
+        value: value,
+        throwIndex: i + 1,
+        pinsKnockedDown: this.getPinListFromMask(knockedDownMask),
+        pinsLeftStanding: this.getPinListFromMask(currentStanding),
+      };
+
+      throws.push(t);
+
+      // Für den nächsten Wurf: Falls Strike oder Spare im 10., werden Pins neu aufgestellt
+      if (frameNum < 10 && value === 10) break; // Strike beendet Frame
+
+      if (currentStanding === 0 && (frameNum === 10 || value === 10)) {
+        previousStanding = ALL_PINS_MASK; // Neu aufgestellt
+      } else {
+        previousStanding = currentStanding;
+      }
+    }
+
+    return throws;
+  }
+
+  private countSetBits(n: number): number {
+    let count = 0;
+    while (n > 0) {
+      n &= n - 1;
+      count++;
+    }
+    return count;
+  }
+
+  private getPinListFromMask(mask: number): number[] {
+    const pins = [];
+    for (let i = 0; i < 10; i++) {
+      if ((mask >> i) & 1) {
+        pins.push(i + 1);
+      }
+    }
+    return pins;
+  }
+
   private async getSqlJs(): Promise<SqlJsStatic> {
     if (!this.sqlInstance) {
-      // Fetch the WASM binary as an ArrayBuffer so sql.js uses the non-streaming
-      // WebAssembly.instantiate() path, which doesn't enforce the application/wasm
-      // MIME type that servers sometimes omit.
       const wasmResponse = await fetch('assets/sql-wasm.wasm');
       const wasmBinary = await wasmResponse.arrayBuffer();
       this.sqlInstance = await initSqlJs({ wasmBinary });
@@ -135,68 +228,27 @@ export class PinpalService {
     });
   }
 
-  /**
-   * Extracts the SQLite database bytes from a PinPal backup file.
-   *
-   * Some PinPal exports include leading metadata before the SQLite payload.
-   * In that case we locate the SQLite file signature and slice from there.
-   */
-  private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
-    const bytes = new Uint8Array(buffer);
-    const sqliteMagic = PinpalService.SQLITE_MAGIC_BYTES;
-
-    const firstByte = sqliteMagic[0];
-    let start = bytes.indexOf(firstByte);
-
-    while (start !== -1 && start <= bytes.length - sqliteMagic.length) {
-      let isMatch = true;
-      for (let i = 1; i < sqliteMagic.length; i++) {
-        if (bytes[start + i] !== sqliteMagic[i]) {
-          isMatch = false;
-          break;
-        }
-      }
-
-      if (isMatch) return bytes.slice(start);
-      start = bytes.indexOf(firstByte, start + 1);
-    }
-
-    throw new Error('Invalid PinPal backup file: SQLite database signature not found.');
-  }
-
-  /** Returns true if the given table exists in the database. */
   private tableExists(db: Database, tableName: string): boolean {
     const result = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`);
     return result.length > 0 && result[0].values.length > 0;
   }
 
-  /**
-   * Queries all games joined with their week date, league, ball, and pattern names.
-   */
   private queryGames(db: Database): GameRow[] {
     const sql = `
-      SELECT
-        g.pk          AS pk,
-        g.score       AS totalScore,
-        g.notes       AS notes,
-        w.date        AS weekDate,
-        l.name        AS leagueName,
-        b.name        AS ballName,
-        p.name        AS patternName
+      SELECT g.pk, g.score as totalScore, g.notes, w.date as weekDate, 
+             l.name as leagueName, b.name as ballName, p.name as patternName
       FROM game g
-      LEFT JOIN week    w ON g.weekFk    = w.pk
-      LEFT JOIN league  l ON g.leagueFk  = l.pk
-      LEFT JOIN ball    b ON g.ballFk    = b.pk
-      LEFT JOIN pattern p ON g.patternFk = p.pk
-    `;
+      LEFT JOIN week w ON g.weekFk = w.pk
+      LEFT JOIN league l ON g.leagueFk = l.pk
+      LEFT JOIN ball b ON g.ballFk = b.pk
+      LEFT JOIN pattern p ON g.patternFk = p.pk`;
 
     const result = db.exec(sql);
     if (!result.length) return [];
-
     const { columns, values } = result[0];
     const col = (name: string) => columns.indexOf(name);
 
-    return values.map((row) => ({
+    return values.map((row: SqlValue[]) => ({
       pk: row[col('pk')] as number,
       totalScore: row[col('totalScore')] as number | null,
       notes: row[col('notes')] as string | null,
@@ -207,124 +259,10 @@ export class PinpalService {
     }));
   }
 
-  /**
-   * Queries the frame rows for a given game primary key,
-   * decodes the throw values and returns a Frame[] array.
-   *
-   * PinPal encodes throw values in the `scores` INTEGER column as packed bytes:
-   *   throw1 = scores & 0xFF
-   *   throw2 = (scores >> 8) & 0xFF
-   *   throw3 = (scores >> 16) & 0xFF  (10th frame only)
-   */
-  private queryFrames(db: Database, gamePk: number): Frame[] {
-    const sql = `
-      SELECT frameNum, scores, pins
-      FROM frame
-      WHERE gameFk = ${gamePk}
-      ORDER BY frameNum ASC
-    `;
-
-    const result = db.exec(sql);
-    if (!result.length) return createEmptyFrames();
-
-    const { columns, values } = result[0];
-    const col = (name: string) => columns.indexOf(name);
-
-    const framesByIndex = new Map<number, number[]>();
-    const frameRows: FrameRow[] = values.map((row) => ({
-      frameNum: row[col('frameNum')] as number,
-      scores: row[col('scores')] as number | null,
-      pins: row[col('pins')] as number | null,
-    }));
-
-    for (const frameRow of frameRows) {
-      const normalizedFrameNum = this.normalizeFrameNumber(frameRow.frameNum);
-      if (normalizedFrameNum < 1 || normalizedFrameNum > 10) continue;
-
-      const scoreThrows = frameRow.scores !== null ? this.decodeThrows(normalizedFrameNum, frameRow.scores) : [];
-      const pinsThrows = frameRow.pins !== null ? this.decodeThrows(normalizedFrameNum, frameRow.pins) : [];
-      const throws = scoreThrows.length > 0 ? scoreThrows : pinsThrows;
-
-      framesByIndex.set(normalizedFrameNum, throws);
-    }
-
-    const frames = createEmptyFrames();
-    for (let frameNum = 1; frameNum <= 10; frameNum++) {
-      const throws = framesByIndex.get(frameNum);
-      if (!throws) continue;
-      frames[frameNum - 1] = numberArraysToFrames([throws])[0];
-      frames[frameNum - 1].frameIndex = frameNum;
-    }
-
-    return frames.map((frame) => this.normalizeThrows(frame));
-  }
-
-  private normalizeFrameNumber(frameNum: number): number {
-    if (frameNum >= 1 && frameNum <= 10) return frameNum;
-    if (frameNum >= 0 && frameNum <= 9) return frameNum + 1;
-    return frameNum;
-  }
-
-  /**
-   * Decodes the packed `scores` integer for a single frame into individual throw values.
-   *
-   * Encoding:  throw1 = scores & 0xFF
-   *            throw2 = (scores >> 8) & 0xFF
-   *            throw3 = (scores >> 16) & 0xFF
-   */
-  private decodeThrows(frameNum: number, scores: number): number[] {
-    const throw1 = this.sanitizeThrowValue(scores & 0xff);
-    const throw2 = this.sanitizeThrowValue((scores >> 8) & 0xff);
-    const throw3 = this.sanitizeThrowValue((scores >> 16) & 0xff);
-
-    if (throw1 === null) return [];
-
-    if (frameNum < 10) {
-      // Frames 1–9: strike = only 1 throw; spare/open = 2 throws
-      if (throw1 === 10) return [10];
-      return throw2 === null ? [throw1] : [throw1, throw2];
-    }
-
-    // 10th frame: always 2–3 throws
-    if (throw2 === null) return [throw1];
-    if (throw1 === 10 || throw1 + throw2 === 10) {
-      return throw3 === null ? [throw1, throw2] : [throw1, throw2, throw3];
-    }
-    return [throw1, throw2];
-  }
-
-  private sanitizeThrowValue(value: number): number | null {
-    return value >= 0 && value <= 10 ? value : null;
-  }
-
-  /** Re-indexes throwIndex values to be 1-based and sequential. */
-  private normalizeThrows(frame: Frame): Frame {
-    return {
-      ...frame,
-      throws: frame.throws.map((t: Throw, i: number) => ({ ...t, throwIndex: i + 1 })),
-    };
-  }
-
-  /**
-   * Converts a SQLite date value to a millisecond Unix timestamp.
-   *
-   * PinPal stores dates as a REAL in the `week.date` column. Depending on the
-   * app version the value may be:
-   *   - A Julian Day Number   (JDN, ~2 400 000–2 500 000 for 1968–2040)
-   *   - A Unix timestamp in seconds  (<  1 × 10^10)
-   *   - A Unix timestamp in milliseconds (>= 1 × 10^10)
-   */
   private parseDate(value: number | null): number {
     if (!value) return Date.now();
-    if (value < 3_000_000) {
-      // Julian Day Number → milliseconds
-      return (value - 2440587.5) * 86400 * 1000;
-    }
-    if (value < 1e10) {
-      // Unix timestamp in seconds
-      return value * 1000;
-    }
-    // Unix timestamp in milliseconds
+    if (value < 3_000_000) return (value - 2440587.5) * 86400 * 1000;
+    if (value < 1e10) return value * 1000;
     return value;
   }
 }

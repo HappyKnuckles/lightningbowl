@@ -2,9 +2,12 @@ import { NgIf } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { Filesystem } from '@capacitor/filesystem';
 import { AlertController } from '@ionic/angular';
-import { IonIcon, IonButton, IonSpinner, IonButtons } from '@ionic/angular/standalone';
+import { IonButton, IonButtons, IonIcon, IonSpinner } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { cloudUploadOutline, cloudDownloadOutline } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
+import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -19,32 +22,41 @@ export class FileHeaderButtonsComponent {
   storageService = inject(StorageService);
   loadingService = inject(LoadingService);
   excelService = inject(ExcelService);
+  importDispatcherService = inject(ImportDispatcherService);
   toastService = inject(ToastService);
   alertController = inject(AlertController);
-  @ViewChild('excelUpload', { static: false }) excelUpload!: ElementRef<HTMLInputElement>;
+  @ViewChild('import', { static: false }) fileImport!: ElementRef<HTMLInputElement>;
+
+  constructor() {
+    addIcons({ cloudUploadOutline, cloudDownloadOutline });
+  }
 
   async handleFileUpload(): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      const input = this.excelUpload.nativeElement;
+      const input = this.fileImport.nativeElement;
       if (!input.files || input.files.length === 0) return;
+      console.log(input.files[0]);
       const file = input.files[0];
-      const gameData = await this.excelService.readExcelData(file);
-      await this.excelService.transformData(gameData);
-      this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileUploadError, 'bug', true);
-      console.error(error);
+      const importResult = await this.importDispatcherService.importFromFile(file);
+
+      if (importResult.type === 'pinpal') {
+        this.toastService.showToast(`${ToastMessages.pinpalImportSuccess} (${importResult.importedGames} games)`, 'checkmark-outline');
+      } else {
+        this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
+      }
+    } catch {
+      this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
     } finally {
-      const input = this.excelUpload.nativeElement;
+      const input = this.fileImport.nativeElement;
       input.value = '';
       this.loadingService.setLoading(false);
     }
   }
 
-  openExcelFileInput(): void {
-    if (this.excelUpload) {
-      this.excelUpload.nativeElement.click();
+  openFileInput(): void {
+    if (this.fileImport) {
+      this.fileImport.nativeElement.click();
     }
   }
 

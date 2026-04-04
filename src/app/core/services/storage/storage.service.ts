@@ -456,6 +456,7 @@ export class StorageService {
       await Promise.all(gameData.map((game) => this.save('game' + game.gameId, game)));
 
       // Efficient signal update
+      let mergedGames: Game[] = [];
       this.games.update((games) => {
         const existingMap = new Map(games.map((g) => [g.gameId, g]));
         for (const game of gameData) {
@@ -465,8 +466,11 @@ export class StorageService {
         // Keep new/updated games at top
         const updatedIds = new Set(gameData.map((g) => g.gameId));
         const others = games.filter((g) => !updatedIds.has(g.gameId));
-        return [...gameData, ...others];
+        mergedGames = [...gameData, ...others];
+        return mergedGames;
       });
+
+      this.updateFirstGameDate(mergedGames);
     } catch (error) {
       console.error('Error saving games to local storage:', error);
       throw error;
@@ -553,6 +557,7 @@ export class StorageService {
   async deleteAllData(): Promise<void> {
     try {
       await this.storage.clear();
+      localStorage.removeItem('first-game');
       this.games.set([]);
       this.arsenal.set([]);
       this.leagues.set([]);
@@ -576,11 +581,7 @@ export class StorageService {
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
-      if (this.games().length > 0) {
-        if (localStorage.getItem('first-game') === null) {
-          localStorage.setItem('first-game', this.games()[this.games().length - 1].date.toString());
-        }
-      }
+      this.updateFirstGameDate(this.games());
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;
@@ -617,6 +618,19 @@ export class StorageService {
     } catch (error) {
       console.error(`Error deleting data for key "${key}":`, error);
       throw error;
+    }
+  }
+
+  private updateFirstGameDate(games: Game[]): void {
+    if (!games.length) {
+      localStorage.removeItem('first-game');
+      return;
+    }
+
+    const earliestDate = games.reduce((minDate, game) => Math.min(minDate, game.date), Number.POSITIVE_INFINITY);
+
+    if (Number.isFinite(earliestDate)) {
+      localStorage.setItem('first-game', earliestDate.toString());
     }
   }
 }

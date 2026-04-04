@@ -10,14 +10,9 @@
     <ion-spinner style="position: absolute" *ngIf="storageService.allBalls().length === 0" name="crescent"></ion-spinner>
     <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
   </ion-button>
-  <ion-button
-    (click)="exportToExcel()"
-    class="action-sheet"
-    fill="clear"
-    [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+  <ion-button (click)="exportToExcel()" class="action-sheet" fill="clear" [disabled]="loadingService.isLoading()">
     <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon> </ion-button
 ></ion-buttons>
-<!-- Clear Input on Upload-->
 <input
   type="file"
   id="import"

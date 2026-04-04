@@ -4,7 +4,7 @@ import { Filesystem } from '@capacitor/filesystem';
 import { AlertController } from '@ionic/angular';
 import { IonButton, IonButtons, IonIcon, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { cloudUploadOutline, cloudDownloadOutline } from 'ionicons/icons';
+import { cloudDownloadOutline, cloudUploadOutline } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
@@ -36,7 +36,6 @@ export class FileHeaderButtonsComponent {
       this.loadingService.setLoading(true);
       const input = this.fileImport.nativeElement;
       if (!input.files || input.files.length === 0) return;
-      console.log(input.files[0]);
       const file = input.files[0];
       const importResult = await this.importDispatcherService.importFromFile(file);
 
@@ -54,10 +53,38 @@ export class FileHeaderButtonsComponent {
     }
   }
 
-  openFileInput(): void {
-    if (this.fileImport) {
-      this.fileImport.nativeElement.click();
+  async openFileInput(): Promise<void> {
+    if (!this.fileImport) {
+      return;
     }
+    console.log(this.storageService.games().length);
+    if (this.storageService.games().length === 0) {
+      const importInfoAlert = await this.alertController.create({
+        header: 'Info',
+        message: 'You can import files from PinPal or our custom Excel file.',
+        buttons: [
+          {
+            text: 'Continue',
+            role: 'confirm',
+          },
+          {
+            text: 'Download .XLSX template',
+            role: 'cancel',
+            handler: () => {
+              this.exportToExcel();
+            },
+          },
+        ],
+      });
+      await importInfoAlert.present();
+      const { role } = await importInfoAlert.onDidDismiss();
+
+      if (role === 'cancel' || role === 'backdrop') {
+        return;
+      }
+    }
+
+    this.fileImport.nativeElement.click();
   }
 
   async exportToExcel(): Promise<void> {

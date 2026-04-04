@@ -21,7 +21,8 @@ interface GameRow {
 /** Row returned from the frames query */
 interface FrameRow {
   frameNum: number;
-  scores: number;
+  scores: number | null;
+  pins: number | null;
 }
 
 @Injectable({
@@ -217,7 +218,7 @@ export class PinpalService {
    */
   private queryFrames(db: Database, gamePk: number): Frame[] {
     const sql = `
-      SELECT frameNum, COALESCE(scores, pins) AS scores
+      SELECT frameNum, scores, pins
       FROM frame
       WHERE gameFk = ${gamePk}
       ORDER BY frameNum ASC
@@ -232,14 +233,19 @@ export class PinpalService {
     const framesByIndex = new Map<number, number[]>();
     const frameRows: FrameRow[] = values.map((row) => ({
       frameNum: row[col('frameNum')] as number,
-      scores: row[col('scores')] as number,
+      scores: row[col('scores')] as number | null,
+      pins: row[col('pins')] as number | null,
     }));
 
     for (const frameRow of frameRows) {
       const normalizedFrameNum = this.normalizeFrameNumber(frameRow.frameNum);
       if (normalizedFrameNum < 1 || normalizedFrameNum > 10) continue;
 
-      framesByIndex.set(normalizedFrameNum, this.decodeThrows(normalizedFrameNum, frameRow.scores));
+      const scoreThrows = frameRow.scores !== null ? this.decodeThrows(normalizedFrameNum, frameRow.scores) : [];
+      const pinsThrows = frameRow.pins !== null ? this.decodeThrows(normalizedFrameNum, frameRow.pins) : [];
+      const throws = scoreThrows.length > 0 ? scoreThrows : pinsThrows;
+
+      framesByIndex.set(normalizedFrameNum, throws);
     }
 
     const frames = createEmptyFrames();
@@ -267,20 +273,28 @@ export class PinpalService {
    *            throw3 = (scores >> 16) & 0xFF
    */
   private decodeThrows(frameNum: number, scores: number): number[] {
-    const throw1 = scores & 0xff;
-    const throw2 = (scores >> 8) & 0xff;
-    const throw3 = (scores >> 16) & 0xff;
+    const throw1 = this.sanitizeThrowValue(scores & 0xff);
+    const throw2 = this.sanitizeThrowValue((scores >> 8) & 0xff);
+    const throw3 = this.sanitizeThrowValue((scores >> 16) & 0xff);
+
+    if (throw1 === null) return [];
 
     if (frameNum < 10) {
       // Frames 1–9: strike = only 1 throw; spare/open = 2 throws
-      return throw1 === 10 ? [10] : [throw1, throw2];
+      if (throw1 === 10) return [10];
+      return throw2 === null ? [throw1] : [throw1, throw2];
     }
 
     // 10th frame: always 2–3 throws
+    if (throw2 === null) return [throw1];
     if (throw1 === 10 || throw1 + throw2 === 10) {
-      return [throw1, throw2, throw3];
+      return throw3 === null ? [throw1, throw2] : [throw1, throw2, throw3];
     }
     return [throw1, throw2];
+  }
+
+  private sanitizeThrowValue(value: number): number | null {
+    return value >= 0 && value <= 10 ? value : null;
   }
 
   /** Re-indexes throwIndex values to be 1-based and sequential. */

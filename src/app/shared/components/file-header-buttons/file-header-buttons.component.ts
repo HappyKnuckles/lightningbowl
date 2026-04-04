@@ -57,7 +57,7 @@ export class FileHeaderButtonsComponent {
     if (!this.fileImport) {
       return;
     }
-    console.log(this.storageService.games().length);
+
     if (this.storageService.games().length === 0) {
       const importInfoAlert = await this.alertController.create({
         header: 'Info',
@@ -66,6 +66,9 @@ export class FileHeaderButtonsComponent {
           {
             text: 'Continue',
             role: 'confirm',
+            handler: () => {
+              this.fileImport.nativeElement.click();
+            },
           },
           {
             text: 'Download .XLSX template',
@@ -77,11 +80,7 @@ export class FileHeaderButtonsComponent {
         ],
       });
       await importInfoAlert.present();
-      const { role } = await importInfoAlert.onDidDismiss();
-
-      if (role === 'cancel' || role === 'backdrop') {
-        return;
-      }
+      return;
     }
 
     this.fileImport.nativeElement.click();

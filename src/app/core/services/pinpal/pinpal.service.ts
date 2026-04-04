@@ -44,18 +44,28 @@ export class PinpalService {
       const gameRows = this.queryGames(db);
       const timestamp = Date.now();
 
+      // Namen für Matching laden
+      const availableBallNames = this.storageService.allBalls().map((b) => b.ball_name);
+      const availablePatternNames = this.storageService.allPatterns().map((p) => p.title || '');
+
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
         const row = gameRows[i];
 
-        const frames = hasFrameTable ? this.queryFrames(db, row.pk) : createEmptyFrames();
+        const dbFrameResult = hasFrameTable ? this.getRawFrameData(db, row.pk) : [];
+
+        if (dbFrameResult.length !== 12) {
+          console.warn(`Spiel ${row.pk} übersprungen: Ungültige Frame-Anzahl (${dbFrameResult.length})`);
+          continue;
+        }
+
+        const { frames, isPinMode } = this.processFrames(dbFrameResult);
 
         const { totalScore: calcTotal, frameScores } = this.scoreCalculator.calculateScoreFromFrames(frames);
-
         const totalScore = frames.some((f) => f.throws.length > 0) ? calcTotal : (row.totalScore ?? 0);
 
-        const isClean = this.gameUtilsService.calculateIsClean(frames);
-        const league = row.leagueName ?? '';
+        const matchedBall = this.findBestMatch(row.ballName, availableBallNames);
+        const matchedPattern = this.findBestMatch(row.patternName, availablePatternNames);
 
         games.push({
           gameId: `${timestamp}_${i}_${Math.random().toString(36).slice(2, 9)}`,
@@ -63,13 +73,13 @@ export class PinpalService {
           frames,
           totalScore,
           frameScores,
-          isClean,
+          isClean: this.gameUtilsService.calculateIsClean(frames),
           isPerfect: totalScore === 300,
-          isPractice: league === '',
-          isPinMode: true,
-          league,
-          patterns: row.patternName ? [row.patternName] : [],
-          balls: row.ballName ? [row.ballName] : [],
+          isPractice: (row.leagueName ?? '') === '',
+          isPinMode: isPinMode,
+          league: row.leagueName ?? '',
+          patterns: matchedPattern ? [matchedPattern] : [],
+          balls: matchedBall ? [matchedBall] : [],
           note: row.notes ?? '',
         });
       }
@@ -83,17 +93,178 @@ export class PinpalService {
     }
   }
 
+  private processFrames(dbRows: any[]): { frames: Frame[]; isPinMode: boolean } {
+    const frames = createEmptyFrames();
+    let allFramesHavePinData = true;
+
+    const rows = dbRows.sort((a, b) => a.frameNum - b.frameNum);
+
+    for (let i = 0; i < 9; i++) {
+      const row = rows[i];
+      if (!row) continue;
+
+      const isDummyMask = row.pins === 1073741823 || row.pins === 1072694271;
+
+      const isEmpty = row.pins === 0 && row.scores === 0;
+
+      if (!isEmpty) {
+        if (!isDummyMask) {
+          frames[i].throws = this.decodePinpalThrows(i + 1, row.pins);
+        } else {
+          frames[i].throws = this.decodeManualNibbles(row.scores || 0);
+          allFramesHavePinData = false;
+        }
+      }
+    }
+
+    const r9 = rows[9];
+    const r10 = rows[10];
+    const r11 = rows[11];
+
+    if (r9) {
+      const isDummyMask10 = r9.pins === 1073741823 || r9.pins === 1072694271;
+      const isEmpty10 = r9.pins === 0 && r9.scores === 0;
+
+      if (!isEmpty10) {
+        if (!isDummyMask10) {
+          frames[9].throws = this.decodePinpalThrows(10, r9.pins);
+        } else {
+          frames[9].throws = this.decode10thFrameScores(r9?.scores, r10?.scores, r11?.scores);
+          allFramesHavePinData = false;
+        }
+      }
+    }
+
+    return { frames, isPinMode: allFramesHavePinData };
+  }
+
   /**
-   * Sucht nach "SQLite format 3" und schneidet alles davor ab.
+   * Dekodiert Frames 1-9 aus der Score-Spalte.
+   * W1 = Rechtes Nibble
+   * Total = Linkes Nibble
    */
+  private decodeManualNibbles(packedScore: number): Throw[] {
+    if (!packedScore || packedScore === 0) return [];
+
+    const w1 = packedScore & 0x0f;
+    const total = (packedScore >> 4) & 0x0f;
+    const w2 = total - w1;
+
+    const throws: Throw[] = [];
+    if (w1 <= 10) throws.push({ value: w1, throwIndex: 1 });
+    if (w1 < 10 && w2 >= 0 && w2 <= 10) throws.push({ value: w2, throwIndex: 2 });
+
+    return throws;
+  }
+
+  /**
+   * Universeller Decoder für Frame 10. Liest über 3 Zeilen hinweg.
+   */
+  private decode10thFrameScores(s9 = 0, s10 = 0, s11 = 0): Throw[] {
+    if (s9 === 0) return [];
+    const throws: Throw[] = [];
+
+    const w1 = s9 & 0x0f;
+    const t1 = (s9 >> 4) & 0x0f;
+    const w2_from_s9 = t1 - w1;
+
+    if (w1 <= 10) throws.push({ value: w1, throwIndex: 1 });
+
+    if (w1 === 10) {
+      // Strike im ersten Wurf -> Zweiter Wurf steht in s10
+      const w2 = s10 & 0x0f;
+      const t2 = (s10 >> 4) & 0x0f;
+      const w3_from_s10 = t2 - w2;
+
+      if (w2 <= 10) throws.push({ value: w2, throwIndex: 2 });
+
+      if (w2 === 10) {
+        // Zwei Strikes -> Dritter Wurf steht in s11
+        const w3 = s11 & 0x0f;
+        if (w3 <= 10) throws.push({ value: w3, throwIndex: 3 });
+      } else {
+        // Strike, gefolgt von z.B. 9, 1 -> Dritter Wurf steht ebenfalls in s10 (Differenz)
+        if (w3_from_s10 >= 0 && w3_from_s10 <= 10) throws.push({ value: w3_from_s10, throwIndex: 3 });
+      }
+    } else {
+      // Normaler Wurf (kein Strike) -> Wurf 2 steht in s9
+      if (w2_from_s9 >= 0 && w2_from_s9 <= 10) throws.push({ value: w2_from_s9, throwIndex: 2 });
+
+      if (w1 + w2_from_s9 === 10) {
+        // Spare -> Dritter Wurf steht in s10
+        const w3 = s10 & 0x0f;
+        if (w3 <= 10) throws.push({ value: w3, throwIndex: 3 });
+      }
+    }
+    return throws;
+  }
+
+  private decodePinpalThrows(frameNum: number, pinMask: number): Throw[] {
+    const throws: Throw[] = [];
+    const ALL_PINS_MASK = 1023;
+
+    const standingW1 = pinMask % 1024;
+    const standingW2 = Math.floor(pinMask / 1024) % 1024;
+    const standingW3 = Math.floor(pinMask / (1024 * 1024)) % 1024;
+
+    const standingMasks = [standingW1, standingW2];
+    if (frameNum === 10) standingMasks.push(standingW3);
+
+    let previousStanding = ALL_PINS_MASK;
+
+    for (let i = 0; i < standingMasks.length; i++) {
+      const currentStanding = standingMasks[i];
+      if (i > 0 && currentStanding === 0 && previousStanding === 0) continue;
+
+      const knockedDownMask = previousStanding ^ (previousStanding & currentStanding);
+      const value = this.countSetBits(knockedDownMask);
+
+      throws.push({
+        value: value,
+        throwIndex: i + 1,
+        pinsKnockedDown: this.getPinListFromMask(knockedDownMask),
+        pinsLeftStanding: this.getPinListFromMask(currentStanding),
+      });
+
+      if (frameNum < 10 && value === 10) break;
+      previousStanding = currentStanding === 0 && (frameNum === 10 || value === 10) ? ALL_PINS_MASK : currentStanding;
+    }
+    return throws;
+  }
+
+  /**
+   * Fuzzy Matching Logik
+   */
+  private findBestMatch(input: string | null, available: string[]): string | null {
+    if (!input) return null;
+    const sanitized = input.trim().toLowerCase();
+
+    const exact = available.find((a) => a.toLowerCase() === sanitized);
+    if (exact) return exact;
+
+    const partial = available.find((a) => a.toLowerCase().includes(sanitized) || sanitized.includes(a.toLowerCase()));
+    if (partial) return partial;
+
+    return input.trim();
+  }
+
+  private getRawFrameData(db: Database, gamePk: number): any[] {
+    const sql = `SELECT frameNum, scores, pins FROM frame WHERE gameFk = ${gamePk} ORDER BY frameNum ASC`;
+    const result = db.exec(sql);
+    if (!result.length) return [];
+
+    const { columns, values } = result[0];
+    return values.map((row) => {
+      const obj: any = {};
+      columns.forEach((col, idx) => (obj[col] = row[idx]));
+      return obj;
+    });
+  }
+
   private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {
     const bytes = new Uint8Array(buffer);
-    const headerStr = PinpalService.SQLITE_HEADER;
-
-    // Suche im Byte-Array nach dem Header-String
-    const headerBytes = new TextEncoder().encode(headerStr);
+    const headerBytes = new TextEncoder().encode(PinpalService.SQLITE_HEADER);
     let start = -1;
-
     for (let i = 0; i < bytes.length - headerBytes.length; i++) {
       let match = true;
       for (let j = 0; j < headerBytes.length; j++) {
@@ -107,88 +278,8 @@ export class PinpalService {
         break;
       }
     }
-
-    if (start === -1) {
-      throw new Error('Keine gültige SQLite Datenbank im PinPal Backup gefunden.');
-    }
-
+    if (start === -1) throw new Error('Keine gültige SQLite Datenbank gefunden.');
     return bytes.slice(start);
-  }
-
-  private queryFrames(db: Database, gamePk: number): Frame[] {
-    const sql = `SELECT frameNum, scores, pins FROM frame WHERE gameFk = ${gamePk} ORDER BY frameNum ASC`;
-    const result = db.exec(sql);
-    const frames = createEmptyFrames();
-
-    if (!result.length) return frames;
-
-    const { columns, values } = result[0];
-    const col = (name: string) => columns.indexOf(name);
-
-    values.forEach((row: SqlValue[]) => {
-      const dbFrameNum = row[col('frameNum')] as number;
-      // PinPal nutzt oft 0-9 für FrameNum
-      const frameIdx = dbFrameNum >= 0 && dbFrameNum <= 9 ? dbFrameNum : dbFrameNum - 1;
-
-      if (frameIdx >= 0 && frameIdx < 10) {
-        const pinMask = (row[col('pins')] as number) || 0;
-        frames[frameIdx].throws = this.decodePinpalThrows(frameIdx + 1, pinMask);
-      }
-    });
-
-    return frames;
-  }
-
-  /**
-   * Dekodiert die 1024er Bitmaske in Throw-Objekte.
-   * Logic: (Wurf2 * 1024) + Wurf1
-   * Jeder Wurf ist eine 10-Bit Maske der STEHENDEN Pins.
-   */
-  private decodePinpalThrows(frameNum: number, pinMask: number): Throw[] {
-    const throws: Throw[] = [];
-    const ALL_PINS_MASK = 1023; // Alle 10 Pins stehen
-
-    // Extrahiere stehende Pins pro Wurf
-    const standingW1 = pinMask % 1024;
-    const standingW2 = Math.floor(pinMask / 1024) % 1024;
-    const standingW3 = Math.floor(pinMask / (1024 * 1024)) % 1024; // Nur für 10. Frame relevant
-
-    const standingMasks = [standingW1, standingW2];
-    if (frameNum === 10) standingMasks.push(standingW3);
-
-    let previousStanding = ALL_PINS_MASK;
-
-    for (let i = 0; i < standingMasks.length; i++) {
-      const currentStanding = standingMasks[i];
-
-      // Wenn 0, wurde dieser Wurf vielleicht nicht gemacht (außer im Falle eines Strikes im 1. Wurf)
-      if (i > 0 && currentStanding === 0 && previousStanding === 0) continue;
-
-      // Welche Pins sind in DIESEM Wurf gefallen?
-      // (Pins die vorher standen, aber jetzt nicht mehr stehen)
-      const knockedDownMask = previousStanding ^ (previousStanding & currentStanding);
-      const value = this.countSetBits(knockedDownMask);
-
-      const t: Throw = {
-        value: value,
-        throwIndex: i + 1,
-        pinsKnockedDown: this.getPinListFromMask(knockedDownMask),
-        pinsLeftStanding: this.getPinListFromMask(currentStanding),
-      };
-
-      throws.push(t);
-
-      // Für den nächsten Wurf: Falls Strike oder Spare im 10., werden Pins neu aufgestellt
-      if (frameNum < 10 && value === 10) break; // Strike beendet Frame
-
-      if (currentStanding === 0 && (frameNum === 10 || value === 10)) {
-        previousStanding = ALL_PINS_MASK; // Neu aufgestellt
-      } else {
-        previousStanding = currentStanding;
-      }
-    }
-
-    return throws;
   }
 
   private countSetBits(n: number): number {
@@ -203,9 +294,7 @@ export class PinpalService {
   private getPinListFromMask(mask: number): number[] {
     const pins = [];
     for (let i = 0; i < 10; i++) {
-      if ((mask >> i) & 1) {
-        pins.push(i + 1);
-      }
+      if ((mask >> i) & 1) pins.push(i + 1);
     }
     return pins;
   }
@@ -242,12 +331,10 @@ export class PinpalService {
       LEFT JOIN league l ON g.leagueFk = l.pk
       LEFT JOIN ball b ON g.ballFk = b.pk
       LEFT JOIN pattern p ON g.patternFk = p.pk`;
-
     const result = db.exec(sql);
     if (!result.length) return [];
     const { columns, values } = result[0];
     const col = (name: string) => columns.indexOf(name);
-
     return values.map((row: SqlValue[]) => ({
       pk: row[col('pk')] as number,
       totalScore: row[col('totalScore')] as number | null,
@@ -263,6 +350,6 @@ export class PinpalService {
     if (!value) return Date.now();
     if (value < 3_000_000) return (value - 2440587.5) * 86400 * 1000;
     if (value < 1e10) return value * 1000;
-    return value;
+    return Math.round(value);
   }
 }

@@ -16,7 +16,11 @@ interface GameRow {
   patternName: string | null;
   weekDate: number | null;
 }
-
+interface RawFrameRow {
+  frameNum: number;
+  scores: number | null;
+  pins: number | null;
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -93,7 +97,7 @@ export class PinpalService {
     }
   }
 
-  private processFrames(dbRows: any[]): { frames: Frame[]; isPinMode: boolean } {
+  private processFrames(dbRows: RawFrameRow[]): { frames: Frame[]; isPinMode: boolean } {
     const frames = createEmptyFrames();
     let allFramesHavePinData = true;
 
@@ -102,16 +106,18 @@ export class PinpalService {
     for (let i = 0; i < 9; i++) {
       const row = rows[i];
       if (!row) continue;
+      const pins = row.pins ?? 0;
+      const scores = row.scores ?? 0;
 
       const isDummyMask = row.pins === 1073741823 || row.pins === 1072694271;
 
-      const isEmpty = row.pins === 0 && row.scores === 0;
+      const isEmpty = row.pins === 0 && scores === 0;
 
       if (!isEmpty) {
         if (!isDummyMask) {
-          frames[i].throws = this.decodePinpalThrows(i + 1, row.pins);
+          frames[i].throws = this.decodePinpalThrows(i + 1, pins);
         } else {
-          frames[i].throws = this.decodeManualNibbles(row.scores || 0);
+          frames[i].throws = this.decodeManualNibbles(scores);
           allFramesHavePinData = false;
         }
       }
@@ -122,14 +128,17 @@ export class PinpalService {
     const r11 = rows[11];
 
     if (r9) {
+      const r9Pins = r9.pins || 0;
+      const r9Scores = r9.scores || 0;
+
       const isDummyMask10 = r9.pins === 1073741823 || r9.pins === 1072694271;
       const isEmpty10 = r9.pins === 0 && r9.scores === 0;
 
       if (!isEmpty10) {
         if (!isDummyMask10) {
-          frames[9].throws = this.decodePinpalThrows(10, r9.pins);
+          frames[9].throws = this.decodePinpalThrows(10, r9Pins);
         } else {
-          frames[9].throws = this.decode10thFrameScores(r9?.scores, r10?.scores, r11?.scores);
+          frames[9].throws = this.decode10thFrameScores(r9Scores, r10?.scores || 0, r11?.scores || 0);
           allFramesHavePinData = false;
         }
       }
@@ -248,17 +257,21 @@ export class PinpalService {
     return input.trim();
   }
 
-  private getRawFrameData(db: Database, gamePk: number): any[] {
+  private getRawFrameData(db: Database, gamePk: number): RawFrameRow[] {
     const sql = `SELECT frameNum, scores, pins FROM frame WHERE gameFk = ${gamePk} ORDER BY frameNum ASC`;
     const result = db.exec(sql);
     if (!result.length) return [];
 
     const { columns, values } = result[0];
-    return values.map((row) => {
-      const obj: any = {};
-      columns.forEach((col, idx) => (obj[col] = row[idx]));
-      return obj;
-    });
+    const colFrameNum = columns.indexOf('frameNum');
+    const colScores = columns.indexOf('scores');
+    const colPins = columns.indexOf('pins');
+
+    return values.map((row: SqlValue[]) => ({
+      frameNum: row[colFrameNum] as number,
+      scores: row[colScores] as number | null,
+      pins: row[colPins] as number | null,
+    }));
   }
 
   private extractSqliteBytes(buffer: ArrayBuffer): Uint8Array {

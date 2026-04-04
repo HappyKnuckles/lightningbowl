@@ -44,6 +44,7 @@ export class ExcelService {
 
       // Game History Table
       this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
+      this.addHeaderNotes(gameWorksheet, 1, this.getGameHistoryNotes());
 
       // Stats Tables
       const sections = [
@@ -405,6 +406,53 @@ export class ExcelService {
         },
         {} as Record<string, ExcelCellValue>,
       );
+    });
+  }
+
+  private getGameHistoryNotes(): Record<string, string> {
+    const notes: Record<string, string> = {
+      Game: 'Unique game ID. Keep existing IDs when updating imports. For new games, any unique value is fine.',
+      Date: 'Date in MM/DD/YYYY format.',
+      'Total Score': 'Final game score (sum of all frames).',
+      'Frame Scores': 'Comma-separated cumulative frame totals. Example: 20, 40, 59, ...',
+      League: 'League name for this game. Leave empty if not a league game.',
+      Practice: 'Boolean value: true or false. Use true for practice games.',
+      Clean: 'Boolean value: true or false. True means no open frames in the game.',
+      Perfect: 'Boolean value: true or false. True means a 300 game.',
+      Series: 'Boolean value: true or false. Set true if this game belongs to a series.',
+      'Series ID': 'Use the same Series ID on each game that belongs to the same series.',
+      Patterns: 'Optional. One or two pattern names separated by comma and space.',
+      Balls: 'Optional. Ball names separated by comma and space.',
+      Notes: 'Optional free-text note for the game.',
+      isPinMode: 'Enter true for pin-layout mode, false for score-only mode.',
+    };
+
+    for (let frameIndex = 1; frameIndex <= 10; frameIndex++) {
+      notes[`Frame ${frameIndex}`] = 'Throw values separated by " / ". Examples: "10", "9 / 1", "10 / 10 / 10" (10th frame).';
+      notes[`Frame ${frameIndex} Throw 1`] = 'Pins left standing after throw 1, comma-separated (e.g. 7,10). Leave empty if none.';
+      notes[`Frame ${frameIndex} Throw 2`] = 'Pins left standing after throw 2, comma-separated. Only relevant when isPinMode=true.';
+      if (frameIndex === 10) {
+        notes[`Frame ${frameIndex} Throw 3`] = 'Pins left standing after throw 3 in 10th frame (if present).';
+      }
+    }
+
+    return notes;
+  }
+
+  private addHeaderNotes(worksheet: ExcelJS.Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
+    const row = worksheet.getRow(rowNumber);
+    row.eachCell((cell) => {
+      const headerName = cell.value?.toString();
+      if (headerName && notesMap[headerName]) {
+        cell.dataValidation = {
+          type: 'custom',
+          formulae: ['TRUE'],
+          allowBlank: true,
+          showInputMessage: true,
+          promptTitle: headerName,
+          prompt: notesMap[headerName],
+        };
+      }
     });
   }
 

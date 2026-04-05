@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
+import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game, Throw, createEmptyFrames } from 'src/app/core/models/game.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
@@ -49,8 +50,11 @@ export class PinpalService {
       const timestamp = Date.now();
 
       // Namen für Matching laden
-      const availableBallNames = this.storageService.allBalls().map((b) => b.ball_name);
+      const availableBalls = this.storageService.allBalls();
+      const availableBallNames = availableBalls.map((b) => b.ball_name);
+      const availableBallsByName = new Map(availableBalls.map((ball) => [ball.ball_name.toLowerCase(), ball]));
       const availablePatternNames = this.storageService.allPatterns().map((p) => p.title || '');
+      const ballsToAddToArsenal = new Map<string, Ball>();
 
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
@@ -70,6 +74,13 @@ export class PinpalService {
 
         const matchedBall = this.findBestMatch(row.ballName, availableBallNames);
         const matchedPattern = this.findBestMatch(row.patternName, availablePatternNames);
+        const matchedBallObject = matchedBall ? availableBallsByName.get(matchedBall.toLowerCase()) : undefined;
+
+        if (matchedBallObject) {
+          // ball_id + core_weight is the same uniqueness key used by StorageService for arsenal entries.
+          const ballKey = `${matchedBallObject.ball_id}_${matchedBallObject.core_weight}`;
+          ballsToAddToArsenal.set(ballKey, matchedBallObject);
+        }
 
         games.push({
           gameId: `${timestamp}_${i}_${Math.random().toString(36).slice(2, 9)}`,
@@ -90,6 +101,16 @@ export class PinpalService {
 
       const sortedGames = this.sortUtils.sortGameHistoryByDate(games);
       await this.storageService.saveGamesToLocalStorage(sortedGames);
+      const arsenalSaveResults = await Promise.allSettled(
+        [...ballsToAddToArsenal.values()].map((ball) => this.storageService.saveBallToArsenal(ball)),
+      );
+      const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
+      if (failedArsenalSaves.length > 0) {
+        console.warn(`Failed to add ${failedArsenalSaves.length} imported ball(s) to arsenal.`);
+        failedArsenalSaves.forEach((result) => {
+          console.warn('PinPal arsenal import save error:', result.reason);
+        });
+      }
       this.gameFilterService.setDefaultFilters();
       return games.length;
     } finally {

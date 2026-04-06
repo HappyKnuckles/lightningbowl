@@ -119,9 +119,10 @@ export class CloudSyncApiService {
    * Get or create a Google Drive folder by name
    */
   async getOrCreateFolder(folderName: string, accessToken: string): Promise<string> {
-    // Search for existing folder
-    const escapedFolderName = folderName.replace(/'/g, "\\'");
+    const escapedFolderName = folderName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
     const query = `name='${escapedFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
     const searchResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,

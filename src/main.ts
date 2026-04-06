@@ -11,8 +11,6 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { inject } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { routes } from './app/app.routes';
-import { StorageService } from './app/core/services/storage/storage.service';
-import { CloudSyncService } from './app/core/services/cloud-sync/cloud-sync.service';
 
 if (environment.production) {
   // Track app start time
@@ -33,8 +31,6 @@ bootstrapApplication(AppComponent, {
     provideAnimationsAsync(),
     provideIonicAngular({ innerHTMLTemplatesEnabled: true }),
     provideHttpClient(withInterceptorsFromDi()),
-    StorageService,
-    CloudSyncService,
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

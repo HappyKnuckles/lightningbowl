@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.bowling',
+  appId: 'de.lightningbowl',
   appName: 'Lightning Bowl',
   webDir: 'www',
   server: {

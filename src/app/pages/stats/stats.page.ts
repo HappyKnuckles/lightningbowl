@@ -64,6 +64,7 @@ import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/s
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
@@ -123,6 +124,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     GenericFilterActiveComponent,
     BallStatsComponent,
     PinLeaveStatsComponent,
+    PatternStatsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

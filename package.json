@@ -70,7 +70,7 @@
     "@angular/cli": "^20.3.16",
     "@angular/compiler-cli": "^19.2.19",
     "@angular/language-service": "^19.2.19",
-    "@capacitor/assets": "^3.0.4",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "7.5.0",
     "@ionic/angular-toolkit": "11.0.1",
     "@types/d3": "^7.4.3",

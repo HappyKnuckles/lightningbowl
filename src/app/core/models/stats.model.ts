@@ -126,12 +126,32 @@ export interface PrevStats {
   [key: string]: StatValue | undefined;
 }
 
+export interface GenericItemStats {
+  name: string;
+  image: string;
+  avg: number;
+  highestGame: number;
+  lowestGame: number;
+  gameCount: number;
+}
+
 export interface BestBallStats {
   ballName: string;
   ballImage: string;
   ballAvg: number;
   ballHighestGame: number;
   ballLowestGame: number;
+  gameCount: number;
+  strikeRate?: number;
+  cleanGameCount?: number;
+}
+
+export interface BestPatternStats {
+  patternName: string;
+  patternImage: string;
+  patternAvg: number;
+  patternHighestGame: number;
+  patternLowestGame: number;
   gameCount: number;
   strikeRate?: number;
   cleanGameCount?: number;

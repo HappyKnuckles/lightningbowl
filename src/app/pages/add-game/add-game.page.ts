@@ -63,6 +63,7 @@ interface GameDraft {
   maxScores: number[];
   isPinInputMode: boolean;
   selectedMode: SeriesMode;
+  gameIndex: string;
   segments: string[];
 }
 
@@ -181,11 +182,12 @@ export class AddGamePage implements OnInit {
 
       const mode = untracked(() => this.selectedMode);
       const isPinMode = untracked(() => this.isPinInputMode);
+      const selectedSegment = untracked(() => this.selectedSegment);
       const segments = untracked(() => this.segments);
 
       if (!this.isStorageReady) return;
 
-      this.saveDraft(gameState, pinState, totals, maxs, mode, isPinMode, segments);
+      this.saveDraft(gameState, pinState, totals, maxs, mode, isPinMode, selectedSegment, segments);
     });
   }
 
@@ -605,9 +607,9 @@ export class AddGamePage implements OnInit {
 
   // PRIVATE HELPERS - GAME STATE
   private loadPinInputMode(): void {
-    this.isPinInputMode = localStorage.getItem('pinInputMode') === 'true';
+    const pinInputMode = localStorage.getItem('pinInputMode');
+    this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
   }
-
   private updateGameState(frames: Frame[], index: number, isModal: boolean): void {
     const scoreResult = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
     const maxScore = this.gameScoreCalculatorService.calculateMaxScoreFromFrames(frames, scoreResult.totalScore);
@@ -936,6 +938,7 @@ export class AddGamePage implements OnInit {
     maxScores: number[],
     selectedMode: SeriesMode,
     isPinInputMode: boolean,
+    gameIndex: string,
     segments: string[],
   ): void {
     const hasData = games.some((game) => {
@@ -956,6 +959,7 @@ export class AddGamePage implements OnInit {
       totalScores,
       maxScores,
       selectedMode,
+      gameIndex,
       isPinInputMode,
       segments,
     };
@@ -985,6 +989,7 @@ export class AddGamePage implements OnInit {
     this.totalScores.set(draft.totalScores);
     this.maxScores.set(draft.maxScores);
     this.pinModeState.set(draft.pinModeState);
+    this.selectedSegment = draft.gameIndex;
 
     setTimeout(() => {
       this.propagateMetadataToSeries();

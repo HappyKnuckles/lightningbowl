@@ -166,6 +166,7 @@ export class LeaguePage {
     return this.hiddenLeagueSelectionService.selectionState();
   }
   private previousLeagueSelectionState: Record<string, boolean> = {};
+  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
 
   constructor(
     public storageService: StorageService,
@@ -413,8 +414,8 @@ export class LeaguePage {
         this.scoreChart,
         this.gamesByLeagueReverse()[league],
         this.scoreChartInstances[league]!,
-        undefined,
-        undefined,
+        this.chartViewMode,
+        () => this.toggleChartView(league),
         isReload,
       );
     } catch (error) {
@@ -439,5 +440,21 @@ export class LeaguePage {
       this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);
     }
+  }
+
+  private toggleChartView(league: string) {
+    if (this.chartViewMode === 'game') {
+      this.chartViewMode = 'session';
+    } else if (this.chartViewMode === 'session') {
+      this.chartViewMode = 'week';
+    } else if (this.chartViewMode === 'week') {
+      this.chartViewMode = 'monthly';
+    } else if (this.chartViewMode === 'monthly') {
+      this.chartViewMode = 'yearly';
+    } else {
+      this.chartViewMode = 'game';
+    }
+
+    this.generateScoreChart(league, true);
   }
 }

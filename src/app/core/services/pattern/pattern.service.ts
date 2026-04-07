@@ -21,6 +21,16 @@ interface AllPatternsResult {
   per_page?: number;
 }
 
+interface PatternChartsResult {
+  count: number;
+  patterns: {
+    url: string;
+    title: string;
+    chart_standard: string;
+    chart_horizontal: string;
+  }[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -31,15 +41,29 @@ export class PatternService {
     private networkService: NetworkService,
   ) {}
 
-  async getPatterns(page: number): Promise<AllPatternsResult> {
+  async getAllPatternCharts(): Promise<PatternChartsResult> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<PatternChartsResult>(`${environment.patternEndpoint}patterns/charts`).pipe(retry({ count: 5, delay: 2000 })),
+      );
+      return response;
+    } catch (error) {
+      console.error('Error fetching pattern charts:', error);
+      return { count: 0, patterns: [] };
+    }
+  }
+
+  async getPatterns(page: number, forceRefresh = false): Promise<AllPatternsResult> {
     const cacheKey = `patterns_page_${page}`;
 
     try {
-      const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
+      if (!forceRefresh) {
+        const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
+        const isCacheValid = await this.cacheService.isValid(cacheKey);
 
-      if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
-        return cachedPatterns;
+        if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
+          return cachedPatterns;
+        }
       }
 
       if (this.networkService.isOffline) {

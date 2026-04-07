@@ -48,8 +48,9 @@
   </div>
 
   <ng-container *ngIf="cloudSyncService.syncStatus().isAuthenticated">
-    <ion-list-header style="margin-bottom: 4px"> Configuration </ion-list-header>
     <ion-list>
+      <ion-list-header style="margin-bottom: 4px"> Configuration </ion-list-header>
+
       <ion-item>
         <ion-icon name="sync-outline" slot="start"></ion-icon>
         <ion-label>
@@ -78,25 +79,20 @@
           placeholder="e.g. Game-History">
         </ion-input>
       </ion-item>
-    </ion-list>
 
-    <ion-list-header style="margin-bottom: 4px"> Activity </ion-list-header>
-    <ion-grid class="stats-grid">
-      <ion-row>
-        <ion-col size="6">
-          <div class="stat-card">
-            <span>Last Sync</span>
-            <strong>{{ (cloudSyncService.syncStatus().lastSync | date: "MMM d, h:mm a") || "Never" }}</strong>
-          </div>
-        </ion-col>
-        <ion-col size="6">
-          <div class="stat-card">
-            <span>Next Sync</span>
-            <strong>{{ (cloudSyncService.syncStatus().nextSync | date: "MMM d, h:mm a") || "--" }}</strong>
-          </div>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+      <ion-list-header style="margin-bottom: 4px"> Activity </ion-list-header>
+      <div class="sync-container">
+        <div class="stat-card">
+          <span>Last Sync</span>
+          <strong>{{ (cloudSyncService.syncStatus().lastSync | date: "MMM d, h:mm a") || "Never" }}</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>Next Sync</span>
+          <strong>{{ (cloudSyncService.syncStatus().nextSync | date: "MMM d, h:mm a") || "--" }}</strong>
+        </div>
+      </div>
+    </ion-list>
 
     <ion-card class="error-card" *ngIf="cloudSyncService.syncStatus().error">
       <ion-card-content>

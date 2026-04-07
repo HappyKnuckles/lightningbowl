@@ -13,17 +13,20 @@
   }
 }
 
-.stats-grid {
-  padding: 0;
-  margin-bottom: 24px;
+.sync-container {
+  margin: 0 16px;
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
 
   .stat-card {
-    background: var(--ion-item-background);
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: #141414;
+    padding: 12px;
+    border: 1px solid var(--ion-border-color, #2b2828);
+    border-radius: 7px;
     display: flex;
     flex-direction: column;
+    flex: 1;
 
     span {
       font-size: 12px;

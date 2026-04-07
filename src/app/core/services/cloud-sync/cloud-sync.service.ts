@@ -276,10 +276,13 @@ export class CloudSyncService {
     }
 
     const now = Date.now();
-    const lastSyncDate = settings.lastSyncDate || 0;
+    const lastSyncDate = settings.lastSyncDate;
 
-    // Calculate if sync is needed based on frequency
-    const shouldSync = this.shouldSyncNow(lastSyncDate, settings.frequency, now);
+    // First sync: do not sync immediately after connection.
+    // Sync only once the initially scheduled nextSyncDate is due.
+    const shouldSync = lastSyncDate
+      ? this.shouldSyncNow(lastSyncDate, settings.frequency, now)
+      : settings.nextSyncDate !== undefined && settings.nextSyncDate <= now;
 
     if (!shouldSync) {
       return;
@@ -295,10 +298,6 @@ export class CloudSyncService {
   }
 
   private shouldSyncNow(lastSyncDate: number, frequency: SyncFrequency, currentDate: number): boolean {
-    if (lastSyncDate === 0) {
-      return false; // Never synced before — first sync is scheduled, not immediate
-    }
-
     const timeSinceLastSync = currentDate - lastSyncDate;
     const oneDayMs = 24 * 60 * 60 * 1000;
 

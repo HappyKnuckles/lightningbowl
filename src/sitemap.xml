@@ -1,33 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://bowling-stats-brown.vercel.app/tabs/add</loc>
-    <lastmod>2023-10-01</lastmod>
+    <loc>https://lightningbowl.de/tabs/add</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://bowling-stats-brown.vercel.app/tabs/stats</loc>
-    <lastmod>2023-10-01</lastmod>
+    <loc>https://lightningbowl.de/tabs/stats</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://bowling-stats-brown.vercel.app/tabs/history</loc>
-    <lastmod>2023-10-01</lastmod>
+    <loc>https://lightningbowl.de/tabs/history</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://bowling-stats-brown.vercel.app/tabs/league</loc>
-    <lastmod>2023-10-01</lastmod>
+    <loc>https://lightningbowl.de/tabs/league</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://bowling-stats-brown.vercel.app/tabs/settings</loc>
-    <lastmod>2023-10-01</lastmod>
+    <loc>https://lightningbowl.de/tabs/balls</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
-  </urlset>
+  <url>
+    <loc>https://lightningbowl.de/tabs/arsenal</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lightningbowl.de/tabs/pattern</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lightningbowl.de/tabs/map</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lightningbowl.de/tabs/minigame</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lightningbowl.de/tabs/settings</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>

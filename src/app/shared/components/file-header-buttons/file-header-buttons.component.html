@@ -10,7 +10,7 @@
     <ion-spinner style="position: absolute" *ngIf="ballsStore.allBalls().length === 0" name="crescent"></ion-spinner>
     <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
   </ion-button>
-  <ion-button (click)="exportToExcel()" class="action-sheet" fill="clear" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
+  <ion-button (click)="exportToExcel()" class="action-sheet" fill="clear">
     <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon> </ion-button
 ></ion-buttons>
 <input

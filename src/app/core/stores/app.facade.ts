@@ -70,10 +70,6 @@ export class AppFacade {
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
-      const games = this.gamesStore.games();
-      if (games.length > 0 && localStorage.getItem('first-game') === null) {
-        localStorage.setItem('first-game', games[games.length - 1].date.toString());
-      }
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;

@@ -78,7 +78,6 @@ export class PinpalService {
         const matchedBallObject = matchedBall ? availableBallsByName.get(matchedBall.toLowerCase()) : undefined;
 
         if (matchedBallObject) {
-          // ball_id + core_weight is the same uniqueness key used by StorageService for arsenal entries.
           const ballKey = `${matchedBallObject.ball_id}_${matchedBallObject.core_weight}`;
           ballsToAddToArsenal.set(ballKey, matchedBallObject);
         }

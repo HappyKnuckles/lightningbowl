@@ -32,7 +32,6 @@ module.exports = tseslint.config(
           suffixes: ["Component", "Page"],
         },
       ],
-      "@angular-eslint/prefer-inject": "warn",
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },

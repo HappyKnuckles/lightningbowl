@@ -41,10 +41,11 @@ export class CloudSyncService {
   ) {}
 
   public async init(): Promise<void> {
+    await this.appFacade.init();
     await this.loadSettings();
     // Fire-and-forget: startup sync runs in the background and should not
     // block other operations like handling the OAuth callback redirect.
-    this.checkAndSyncOnStartup();
+    void this.checkAndSyncOnStartup();
   }
 
   private async loadSettings(): Promise<void> {

@@ -33,8 +33,16 @@ bootstrapApplication(AppComponent, {
     provideAnimationsAsync(),
     provideIonicAngular({ innerHTMLTemplatesEnabled: true }),
     provideHttpClient(withInterceptorsFromDi()),
-    provideAppInitializer(() => void inject(AppFacade).init()),
-    provideAppInitializer(() => void inject(CloudSyncService).init()),
+    provideAppInitializer(() => {
+      void inject(AppFacade)
+        .init()
+        .catch((error) => console.error('AppFacade initialization failed:', error));
+    }),
+    provideAppInitializer(() => {
+      void inject(CloudSyncService)
+        .init()
+        .catch((error) => console.error('CloudSyncService initialization failed:', error));
+    }),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

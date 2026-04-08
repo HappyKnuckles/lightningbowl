@@ -5,6 +5,7 @@ import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
+import { BALL_CACHE_TTL, BALL_METADATA_CACHE_TTL } from '../../models/cache.model';
 
 @Injectable({
   providedIn: 'root',
@@ -36,14 +37,13 @@ export class BallService {
     try {
       // Check cache first
       const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedBalls && (isCacheValid || this.networkService.isOffline)) {
+      if (cachedBalls) {
         return cachedBalls;
       }
 
       if (this.networkService.isOffline) {
-        return [];
+        const staleBalls = await this.cacheService.getStale<Ball[]>(cacheKey);
+        return staleBalls ?? [];
       }
 
       const response = await firstValueFrom(
@@ -55,7 +55,7 @@ export class BallService {
       );
 
       if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 6 hours
+        await this.cacheService.set(cacheKey, response, BALL_CACHE_TTL);
       }
 
       return response;
@@ -63,9 +63,9 @@ export class BallService {
       console.error(`Error loading balls for page ${page}:`, error);
 
       // Try to use cached data as fallback
-      const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      if (cachedBalls) {
-        return cachedBalls;
+      const staleBalls = await this.cacheService.getStale<Ball[]>(cacheKey);
+      if (staleBalls) {
+        return staleBalls;
       }
 
       throw error;
@@ -144,14 +144,17 @@ export class BallService {
 
     try {
       const cachedBrands = await this.cacheService.get<Brand[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedBrands && (isCacheValid || this.networkService.isOffline)) {
+      if (cachedBrands) {
         this.brands.set(cachedBrands);
         return cachedBrands;
       }
 
       if (this.networkService.isOffline) {
+        const staleBrands = await this.cacheService.getStale<Brand[]>(cacheKey);
+        if (staleBrands) {
+          this.brands.set(staleBrands);
+          return staleBrands;
+        }
         console.warn('Cannot load brands: offline and no cached data available');
         return [];
       }
@@ -160,7 +163,7 @@ export class BallService {
       this.brands.set(response);
 
       if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
+        await this.cacheService.set(cacheKey, response, BALL_METADATA_CACHE_TTL);
       }
 
       return response;
@@ -168,10 +171,10 @@ export class BallService {
       console.error('Error loading brands:', error);
 
       // Try to use cached data as fallback
-      const cachedBrands = await this.cacheService.get<Brand[]>(cacheKey);
-      if (cachedBrands) {
-        this.brands.set(cachedBrands);
-        return cachedBrands;
+      const staleBrands = await this.cacheService.getStale<Brand[]>(cacheKey);
+      if (staleBrands) {
+        this.brands.set(staleBrands);
+        return staleBrands;
       }
 
       throw error;
@@ -183,15 +186,19 @@ export class BallService {
 
     try {
       const cachedCores = await this.cacheService.get<Core[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedCores && (isCacheValid || this.networkService.isOffline)) {
+      if (cachedCores) {
         cachedCores.sort((a, b) => a.brand.localeCompare(b.brand));
         this.cores.set(cachedCores);
         return cachedCores;
       }
 
       if (this.networkService.isOffline) {
+        const staleCores = await this.cacheService.getStale<Core[]>(cacheKey);
+        if (staleCores) {
+          staleCores.sort((a, b) => a.brand.localeCompare(b.brand));
+          this.cores.set(staleCores);
+          return staleCores;
+        }
         console.warn('Cannot load cores: offline and no cached data available');
         return [];
       }
@@ -201,7 +208,7 @@ export class BallService {
       this.cores.set(response);
 
       if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
+        await this.cacheService.set(cacheKey, response, BALL_METADATA_CACHE_TTL);
       }
 
       return response;
@@ -209,11 +216,11 @@ export class BallService {
       console.error('Error loading cores:', error);
 
       // Try to use cached data as fallback
-      const cachedCores = await this.cacheService.get<Core[]>(cacheKey);
-      if (cachedCores) {
-        cachedCores.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.cores.set(cachedCores);
-        return cachedCores;
+      const staleCores = await this.cacheService.getStale<Core[]>(cacheKey);
+      if (staleCores) {
+        staleCores.sort((a, b) => a.brand.localeCompare(b.brand));
+        this.cores.set(staleCores);
+        return staleCores;
       }
 
       throw error;
@@ -225,15 +232,19 @@ export class BallService {
 
     try {
       const cachedCoverstocks = await this.cacheService.get<Coverstock[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedCoverstocks && (isCacheValid || this.networkService.isOffline)) {
+      if (cachedCoverstocks) {
         cachedCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
         this.coverstocks.set(cachedCoverstocks);
         return cachedCoverstocks;
       }
 
       if (this.networkService.isOffline) {
+        const staleCoverstocks = await this.cacheService.getStale<Coverstock[]>(cacheKey);
+        if (staleCoverstocks) {
+          staleCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
+          this.coverstocks.set(staleCoverstocks);
+          return staleCoverstocks;
+        }
         console.warn('Cannot load coverstocks: offline and no cached data available');
         return [];
       }
@@ -243,7 +254,7 @@ export class BallService {
       this.coverstocks.set(response);
 
       if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
+        await this.cacheService.set(cacheKey, response, BALL_METADATA_CACHE_TTL);
       }
 
       return response;
@@ -251,11 +262,11 @@ export class BallService {
       console.error('Error loading coverstocks:', error);
 
       // Try to use cached data as fallback
-      const cachedCoverstocks = await this.cacheService.get<Coverstock[]>(cacheKey);
-      if (cachedCoverstocks) {
-        cachedCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.coverstocks.set(cachedCoverstocks);
-        return cachedCoverstocks;
+      const staleCoverstocks = await this.cacheService.getStale<Coverstock[]>(cacheKey);
+      if (staleCoverstocks) {
+        staleCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
+        this.coverstocks.set(staleCoverstocks);
+        return staleCoverstocks;
       }
 
       throw error;

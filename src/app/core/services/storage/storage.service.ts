@@ -11,6 +11,7 @@ import { LoadingService } from '../loader/loading.service';
 import { NetworkService } from '../network/network.service';
 import { PatternService } from '../pattern/pattern.service';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
+import { BALL_CACHE_TTL, BALL_STALE_AGE, PATTERN_CACHE_TTL, PATTERN_STALE_AGE } from '../../models/cache.model';
 
 @Injectable({
   providedIn: 'root',
@@ -240,36 +241,42 @@ export class StorageService {
       // Check if we should use cached data
       if (!forceRefresh) {
         const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
 
-        if (cachedBalls && (isCacheValid || this.networkService.isOffline)) {
+        if (cachedBalls) {
           this.allBalls.set(cachedBalls);
           this.#isUsingCache.set(true);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
+          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey, BALL_STALE_AGE))) {
             this.refreshBallsInBackground(updated, weight, cacheKey);
+          }
+          return;
+        }
+
+        // Cache expired or missing – fall back to stale data when offline
+        if (this.networkService.isOffline) {
+          const staleBalls = await this.cacheService.getStale<Ball[]>(cacheKey);
+          if (staleBalls) {
+            this.allBalls.set(staleBalls);
+            this.#isUsingCache.set(true);
+          } else {
+            console.warn('Cannot fetch balls: offline and no cached data available');
           }
           return;
         }
       }
 
-      // If no valid cache or force refresh, fetch from network
-      if (this.networkService.isOffline) {
-        console.warn('Cannot fetch balls: offline and no valid cache available');
-        return;
-      }
-
+      // Fetch from network
       const response = await this.ballService.loadAllBalls(updated, weight);
       this.allBalls.set(response);
       this.#isUsingCache.set(false);
 
-      await this.cacheService.set(cacheKey, response);
+      await this.cacheService.set(cacheKey, response, BALL_CACHE_TTL);
     } catch (error) {
       console.error('Failed to load all balls:', error);
 
       // Try to use cached data as fallback
-      const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      if (cachedBalls) {
-        this.allBalls.set(cachedBalls);
+      const staleBalls = await this.cacheService.getStale<Ball[]>(cacheKey);
+      if (staleBalls) {
+        this.allBalls.set(staleBalls);
         this.#isUsingCache.set(true);
       } else {
         throw error;
@@ -284,7 +291,7 @@ export class StorageService {
       this.#isUsingCache.set(false);
 
       if (cacheKey) {
-        await this.cacheService.set(cacheKey, response);
+        await this.cacheService.set(cacheKey, response, BALL_CACHE_TTL);
       }
     } catch (error) {
       console.error('Background refresh failed for balls:', error);
@@ -298,36 +305,42 @@ export class StorageService {
       // Check if we should use cached data
       if (!forceRefresh) {
         const cachedPatterns = await this.cacheService.get<Pattern[]>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
 
-        if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
+        if (cachedPatterns) {
           this.allPatterns.set(cachedPatterns);
           this.#isUsingCache.set(true);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
+          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey, PATTERN_STALE_AGE))) {
             this.refreshPatternsInBackground(cacheKey);
+          }
+          return;
+        }
+
+        // Cache expired or missing – fall back to stale data when offline
+        if (this.networkService.isOffline) {
+          const stalePatterns = await this.cacheService.getStale<Pattern[]>(cacheKey);
+          if (stalePatterns) {
+            this.allPatterns.set(stalePatterns);
+            this.#isUsingCache.set(true);
+          } else {
+            console.warn('Cannot fetch patterns: offline and no cached data available');
           }
           return;
         }
       }
 
-      // If no valid cache or force refresh, fetch from network
-      if (this.networkService.isOffline) {
-        console.warn('Cannot fetch patterns: offline and no valid cache available');
-        return;
-      }
-
+      // Fetch from network
       const response = await this.patternService.getAllPatternsStripped();
       this.allPatterns.set(response);
       this.#isUsingCache.set(false);
 
-      await this.cacheService.set(cacheKey, response);
+      await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
     } catch (error) {
       console.error('Error fetching patterns:', error);
 
       // Try to use cached data as fallback
-      const cachedPatterns = await this.cacheService.get<Pattern[]>(cacheKey);
-      if (cachedPatterns) {
-        this.allPatterns.set(cachedPatterns);
+      const stalePatterns = await this.cacheService.getStale<Pattern[]>(cacheKey);
+      if (stalePatterns) {
+        this.allPatterns.set(stalePatterns);
         this.#isUsingCache.set(true);
       }
     }
@@ -340,7 +353,7 @@ export class StorageService {
       this.#isUsingCache.set(false);
 
       if (cacheKey) {
-        await this.cacheService.set(cacheKey, response);
+        await this.cacheService.set(cacheKey, response, PATTERN_CACHE_TTL);
       }
     } catch (error) {
       console.error('Background refresh failed for patterns:', error);
@@ -353,19 +366,23 @@ export class StorageService {
     try {
       if (!forceRefresh) {
         const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
 
-        if (cached && (isCacheValid || this.networkService.isOffline)) {
+        if (cached) {
           this.#patternImageMap.set(cached);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
+          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey, PATTERN_STALE_AGE))) {
             this.refreshPatternImageMapInBackground(cacheKey);
           }
           return;
         }
-      }
 
-      if (this.networkService.isOffline) {
-        return;
+        // Cache expired or missing – fall back to stale data when offline
+        if (this.networkService.isOffline) {
+          const stale = await this.cacheService.getStale<Record<string, string>>(cacheKey);
+          if (stale) {
+            this.#patternImageMap.set(stale);
+          }
+          return;
+        }
       }
 
       const response = await this.patternService.getAllPatternCharts();
@@ -377,12 +394,12 @@ export class StorageService {
         }
       }
       this.#patternImageMap.set(imageMap);
-      await this.cacheService.set(cacheKey, imageMap);
+      await this.cacheService.set(cacheKey, imageMap, PATTERN_CACHE_TTL);
     } catch (error) {
       console.error('Error loading pattern image map:', error);
-      const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
-      if (cached) {
-        this.#patternImageMap.set(cached);
+      const stale = await this.cacheService.getStale<Record<string, string>>(cacheKey);
+      if (stale) {
+        this.#patternImageMap.set(stale);
       }
     }
   }

@@ -79,12 +79,40 @@ describe('CacheService', () => {
     };
 
     storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
-    storageSpy.remove.and.returnValue(Promise.resolve());
 
     const result = await service.get(cacheKey);
 
     expect(result).toBeNull();
-    expect(storageSpy.remove).toHaveBeenCalledWith(`cache_${cacheKey}`);
+    expect(storageSpy.remove).not.toHaveBeenCalled();
+  });
+
+  it('should return stale data via getStale even if expired', async () => {
+    const testData = { test: 'value' };
+    const cacheKey = 'test_key';
+    const now = Date.now();
+    const mockCacheEntry = {
+      data: testData,
+      metadata: {
+        lastUpdated: now - 1000 * 60 * 60 * 2, // 2 hours ago
+        version: '1.0',
+        expires: now - 1000 * 60 * 60 // 1 hour ago (expired)
+      }
+    };
+
+    storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
+
+    const result = await service.getStale(cacheKey);
+
+    expect(result).toEqual(testData);
+  });
+
+  it('should return null from getStale when no entry exists', async () => {
+    const cacheKey = 'nonexistent_key';
+    storageSpy.get.and.returnValue(Promise.resolve(null));
+
+    const result = await service.getStale(cacheKey);
+
+    expect(result).toBeNull();
   });
 
   it('should check if cache is valid', async () => {

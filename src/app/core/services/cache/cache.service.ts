@@ -29,7 +29,8 @@ export class CacheService {
   }
 
   /**
-   * Get data from cache
+   * Get data from cache. Returns null if the entry is missing or expired.
+   * Does not delete the expired entry so that getStale() can still retrieve it.
    */
   async get<T>(key: string): Promise<T | null> {
     try {
@@ -39,13 +40,26 @@ export class CacheService {
       }
 
       if (Date.now() > cacheEntry.metadata.expires) {
-        await this.delete(key);
         return null;
       }
 
       return cacheEntry.data;
     } catch (error) {
       console.error(`Error retrieving cache for key ${key}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get data from cache regardless of expiry. Useful as an offline fallback
+   * when the most recent cached value is acceptable even if it is stale.
+   */
+  async getStale<T>(key: string): Promise<T | null> {
+    try {
+      const cacheEntry: CacheEntry<T> = await this.storage.get(`cache_${key}`);
+      return cacheEntry?.data ?? null;
+    } catch (error) {
+      console.error(`Error retrieving stale cache for key ${key}:`, error);
       return null;
     }
   }

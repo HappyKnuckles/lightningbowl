@@ -1,64 +1,64 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, ViewChildren, QueryList, computed, Signal, signal, effect } from '@angular/core';
 import { DecimalPipe, NgIf } from '@angular/common';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, QueryList, Signal, signal, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
-  IonContent,
-  IonHeader,
-  IonSegment,
-  IonSegmentButton,
-  IonTitle,
-  IonToolbar,
   IonButton,
   IonButtons,
+  IonContent,
+  IonHeader,
   IonIcon,
-  IonText,
   IonItem,
-  IonLabel,
-  IonItemSliding,
   IonItemOption,
   IonItemOptions,
+  IonItemSliding,
+  IonLabel,
   IonModal,
   IonRefresher,
-  IonSegmentView,
+  IonSegment,
+  IonSegmentButton,
   IonSegmentContent,
+  IonSegmentView,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
+import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {
+  addOutline,
+  cameraOutline,
+  checkmarkOutline,
+  chevronBack,
   chevronForward,
-  trashOutline,
   createOutline,
   documentTextOutline,
-  shareOutline,
   medalOutline,
-  cameraOutline,
-  addOutline,
-  chevronBack,
-  checkmarkOutline,
+  shareOutline,
+  trashOutline,
 } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { BestBallStats, Stats } from 'src/app/core/models/stats.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImpactStyle } from '@capacitor/haptics';
+import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import Chart from 'chart.js/auto';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
+import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 
 @Component({
   selector: 'app-league',
@@ -198,12 +198,9 @@ export class LeaguePage {
       documentTextOutline,
       medalOutline,
     });
-    effect(
-      () => {
-        this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
+    });
   }
   updateLeagueSelection(league: string, checked: boolean) {
     this.hiddenLeagueSelectionService.updateSelection(league, checked);

@@ -130,8 +130,10 @@
     <!-- TODO Releasedate, availability-->
   </ion-list>
 </ion-content>
-<ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" (click)="confirm()">Confirm ({{ ballFilterService.filteredBalls().length }} Balls)</ion-button>
+<ion-footer>
+  <ion-toolbar>
+    <ion-button class="confirm-btn" expand="block" (click)="confirm()">Confirm ({{ ballFilterService.filteredBalls().length }} Balls)</ion-button>
+  </ion-toolbar>
 </ion-footer>
 
 <ion-modal [presentingElement]="presentingElement" trigger="select-cores">

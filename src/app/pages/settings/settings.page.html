@@ -77,6 +77,14 @@
       <p class="link">Open form</p>
     </ion-item>
 
+    <ion-item button (click)="openSyncModal()">
+      <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+      <ion-label>Cloud Sync</ion-label>
+      @if (cloudSyncService.syncStatus().lastSync) {
+        <ion-note slot="end">Last sync: {{ cloudSyncService.syncStatus().lastSync | date: "short" }}</ion-note>
+      }
+    </ion-item>
+
     <ion-item (click)="updateApp()" button [detail]="false" *ngIf="updateAvailable">
       <ion-icon name="refresh-circle-outline" slot="start"></ion-icon>
       <ion-label>Load update</ion-label>

@@ -16,17 +16,7 @@ import {
 } from '@ionic/angular/standalone';
 import { Filesystem } from '@capacitor/filesystem';
 import { addIcons } from 'ionicons';
-import {
-  cloudUploadOutline,
-  cloudDownloadOutline,
-  trashOutline,
-  createOutline,
-  shareOutline,
-  documentTextOutline,
-  filterOutline,
-  medalOutline,
-  swapVertical,
-} from 'ionicons/icons';
+import { trashOutline, createOutline, shareOutline, documentTextOutline, filterOutline, medalOutline, swapVertical } from 'ionicons/icons';
 import { NgIf, DatePipe } from '@angular/common';
 import { ImpactStyle } from '@capacitor/haptics';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -110,8 +100,6 @@ export class HistoryPage {
     // public sortService: SortService,
   ) {
     addIcons({
-      cloudUploadOutline,
-      cloudDownloadOutline,
       filterOutline,
       trashOutline,
       createOutline,

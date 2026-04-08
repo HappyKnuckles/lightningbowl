@@ -38,7 +38,6 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
@@ -89,8 +88,9 @@ interface SavedEntry {
   ],
 })
 export class BallComparisonPage implements OnInit, OnDestroy {
-  protected readonly storageService = inject(StorageService);
-  private readonly ballsStore = inject(BallsStore);
+  protected readonly ballsStore = inject(BallsStore);
+  protected readonly url = this.ballsStore.url;
+  protected readonly allBalls = this.ballsStore.allBalls;
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
@@ -157,7 +157,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   }
 
   onBallSelectionChange(ballIds: string[]): void {
-    const allBalls = this.storageService.allBalls();
+    const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.selectedBalls.set(selected);
     this.saveSelectedIds(selected);
@@ -245,7 +245,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
 
     effect(
       () => {
-        const allBalls = this.storageService.allBalls();
+        const allBalls = this.ballsStore.allBalls();
         if (allBalls.length === 0 || this.hasRestored) return;
         this.hasRestored = true;
         void this.restoreFromEntries(entries, allBalls);

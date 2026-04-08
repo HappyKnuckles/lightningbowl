@@ -1,15 +1,17 @@
 import { Injectable } from '@angular/core';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { GamesStore } from './games.store';
-import { BallsStore } from './balls.store';
-import { PatternsStore } from './patterns.store';
-import { LeaguesStore } from './leagues.store';
-import { SettingsStore } from './settings.store';
-import { BallService } from 'src/app/core/services/ball/ball.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { BallService } from 'src/app/core/services/ball/ball.service';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { BallsStore } from './balls.store';
+import { GamesStore } from './games.store';
+import { LeaguesStore } from './leagues.store';
+import { PatternsStore } from './patterns.store';
+import { SettingsStore } from './settings.store';
 
 @Injectable({ providedIn: 'root' })
 export class AppFacade {
+  #initPromise: Promise<void> | null = null;
+
   constructor(
     private storageRepository: StorageRepository,
     private gamesStore: GamesStore,
@@ -22,6 +24,15 @@ export class AppFacade {
   ) {}
 
   async init(): Promise<void> {
+    if (this.#initPromise) {
+      return this.#initPromise;
+    }
+
+    this.#initPromise = this.runInit();
+    return this.#initPromise;
+  }
+
+  private async runInit(): Promise<void> {
     try {
       await this.storageRepository.create();
 
@@ -50,6 +61,7 @@ export class AppFacade {
       this.settingsStore.loadPinInputMode();
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
+        this.patternsStore.loadPatternImageMap(),
         this.ballsStore.loadAllBalls(undefined, weight),
         this.leaguesStore.loadLeagues(),
         this.gamesStore.loadGameHistory(),

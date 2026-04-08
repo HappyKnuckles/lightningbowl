@@ -1,18 +1,18 @@
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { importProvidersFrom, inject, isDevMode, provideAppInitializer } from '@angular/core';
-import { environment } from './environments/environment';
-import { PreloadAllModules, provideRouter, RouteReuseStrategy, withPreloading } from '@angular/router';
-import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
+import { bootstrapApplication, BrowserModule } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
-import { IonicStorageModule } from '@ionic/storage-angular';
-import { AppComponent } from './app/app.component';
+import { PreloadAllModules, provideRouter, RouteReuseStrategy, withPreloading } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
+import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
+import { IonicStorageModule } from '@ionic/storage-angular';
 import { inject as injectVercelAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
+import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
-import { StorageService } from './app/core/services/storage/storage.service';
+import { CloudSyncService } from './app/core/services/cloud-sync/cloud-sync.service';
 import { AppFacade } from './app/core/stores/app.facade';
+import { environment } from './environments/environment';
 
 if (environment.production) {
   // Track app start time
@@ -33,8 +33,8 @@ bootstrapApplication(AppComponent, {
     provideAnimationsAsync(),
     provideIonicAngular({ innerHTMLTemplatesEnabled: true }),
     provideHttpClient(withInterceptorsFromDi()),
-    provideAppInitializer(() => inject(AppFacade).init()),
-    StorageService,
+    provideAppInitializer(() => void inject(AppFacade).init()),
+    provideAppInitializer(() => void inject(CloudSyncService).init()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { IonImg, IonList, IonListHeader } from '@ionic/angular/standalone';
 import { GenericItemStats } from 'src/app/core/models/stats.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-item-stats',
@@ -18,5 +18,5 @@ export class ItemStatsComponent {
   emptyMessage = input<string>('No data saved.');
   roundImage = input<boolean>(true);
 
-  constructor(public storageService: StorageService) {}
+  constructor(public ballsStore: BallsStore) {}
 }

@@ -46,7 +46,7 @@ export class ExcelService {
       if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
         if (permissionRequestResult.publicStorage !== 'granted') {
-          throw new Error('Permission not granted to save file.');
+          return false;
         }
       }
 

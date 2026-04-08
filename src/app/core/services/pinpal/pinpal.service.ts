@@ -7,6 +7,7 @@ import { GameScoreCalculatorService } from 'src/app/core/services/game-score-cal
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ToastService } from '../toast/toast.service';
 
 interface GameRow {
   pk: number;
@@ -35,6 +36,7 @@ export class PinpalService {
     private gameUtilsService: GameUtilsService,
     private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
+    private toastService: ToastService,
   ) {}
 
   async importFromFile(file: File): Promise<number> {
@@ -63,7 +65,6 @@ export class PinpalService {
         const dbFrameResult = hasFrameTable ? this.getRawFrameData(db, row.pk) : [];
 
         if (dbFrameResult.length !== 12) {
-          console.warn(`Spiel ${row.pk} übersprungen: Ungültige Frame-Anzahl (${dbFrameResult.length})`);
           continue;
         }
 
@@ -106,10 +107,7 @@ export class PinpalService {
       );
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {
-        console.warn(`Failed to add ${failedArsenalSaves.length} imported ball(s) to arsenal.`);
-        failedArsenalSaves.forEach((result) => {
-          console.warn('PinPal arsenal import save error:', result.reason);
-        });
+        this.toastService.showToast("Import finished, but some balls couldn't be added to the arsenal.", 'bug-outline');
       }
       this.gameFilterService.setDefaultFilters();
       return games.length;

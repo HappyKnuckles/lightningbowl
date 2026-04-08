@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import * as ExcelJS from 'exceljs';
-import { isPlatform } from '@ionic/angular';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
+import { isPlatform } from '@ionic/angular';
+import * as ExcelJS from 'exceljs';
 import { Game } from 'src/app/core/models/game.model';
+import { Stats } from 'src/app/core/models/stats.model';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
-import { Stats } from 'src/app/core/models/stats.model';
 import { GameUtilsService } from '../game-utils/game-utils.service';
+import { SortUtilsService } from '../sort-utils/sort-utils.service';
 
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
@@ -31,7 +31,9 @@ export class ExcelService {
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
   async exportToExcel(): Promise<boolean> {
     try {
-      const buffer = await this.generateExcelWorkbook();
+      const isTemplateExport = this.storageService.games().length === 0;
+      const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.storageService.games();
+      const buffer = await this.generateExcelWorkbook(gamesForExport);
 
       const date = new Date();
       const formattedDate = date.toLocaleString('de-DE', {
@@ -41,18 +43,16 @@ export class ExcelService {
       });
 
       const isIos = isPlatform('ios');
-      const permissionsGranted = isIos ? (await Filesystem.requestPermissions()).publicStorage === 'granted' : true;
-
-      if (isIos && !permissionsGranted) {
+      if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
-        if (!permissionRequestResult) {
-          throw new Error('Permission not granted to save file.');
+        if (permissionRequestResult.publicStorage !== 'granted') {
+          return false;
         }
       }
 
       this.hapticService.vibrate(ImpactStyle.Light);
       let suffix = '';
-      const fileName = `game_data_${formattedDate}`;
+      const fileName = isTemplateExport ? 'lightningbowl_import_template' : `game_data_${formattedDate}`;
       let i = 1;
       const existingFiles = JSON.parse(localStorage.getItem('savedFilenames') || '[]');
 
@@ -244,9 +244,9 @@ export class ExcelService {
     }
   }
 
-  private async generateExcelWorkbook(): Promise<ArrayBuffer> {
+  private async generateExcelWorkbook(gameHistory: Game[] = this.storageService.games()): Promise<ArrayBuffer> {
     try {
-      const gameData = this.getGameDataForExport(this.storageService.games());
+      const gameData = this.getGameDataForExport(gameHistory);
       const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
         this.statsService.currentStats(),
       );
@@ -257,6 +257,7 @@ export class ExcelService {
 
       // Game History Table
       this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
+      this.addHeaderNotes(gameWorksheet, 1, this.getGameHistoryNotes());
 
       // Stats Tables
       const sections = [
@@ -418,6 +419,53 @@ export class ExcelService {
         },
         {} as Record<string, ExcelCellValue>,
       );
+    });
+  }
+
+  private getGameHistoryNotes(): Record<string, string> {
+    const notes: Record<string, string> = {
+      Game: 'Unique game ID. Keep existing IDs when updating imports. For new games, any unique value is fine.',
+      Date: 'Date in MM/DD/YYYY format.',
+      'Total Score': 'Final game score (sum of all frames).',
+      'Frame Scores': 'Comma-separated cumulative frame totals. Example: 20, 40, 59, ...',
+      League: 'League name for this game. Leave empty if not a league game.',
+      Practice: 'Boolean value: true or false. Use true for practice games.',
+      Clean: 'Boolean value: true or false. True means no open frames in the game.',
+      Perfect: 'Boolean value: true or false. True means a 300 game.',
+      Series: 'Boolean value: true or false. Set true if this game belongs to a series.',
+      'Series ID': 'Use the same Series ID on each game that belongs to the same series.',
+      Patterns: 'Optional. One or two pattern names separated by comma and space.',
+      Balls: 'Optional. Ball names separated by comma and space.',
+      Notes: 'Optional free-text note for the game.',
+      isPinMode: 'Enter true for pin-layout mode, false for score-only mode.',
+    };
+
+    for (let frameIndex = 1; frameIndex <= 10; frameIndex++) {
+      notes[`Frame ${frameIndex}`] = 'Throw values separated by " / ". Examples: "10", "9 / 1", "10 / 10 / 10" (10th frame).';
+      notes[`Frame ${frameIndex} Throw 1`] = 'Pins left standing after throw 1, comma-separated (e.g. 7,10). Leave empty if none.';
+      notes[`Frame ${frameIndex} Throw 2`] = 'Pins left standing after throw 2, comma-separated. Only relevant when isPinMode=true.';
+      if (frameIndex === 10) {
+        notes[`Frame ${frameIndex} Throw 3`] = 'Pins left standing after throw 3 in 10th frame (if present).';
+      }
+    }
+
+    return notes;
+  }
+
+  private addHeaderNotes(worksheet: ExcelJS.Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
+    const row = worksheet.getRow(rowNumber);
+    row.eachCell((cell) => {
+      const headerName = cell.value?.toString();
+      if (headerName && notesMap[headerName]) {
+        cell.dataValidation = {
+          type: 'custom',
+          formulae: ['TRUE'],
+          allowBlank: true,
+          showInputMessage: true,
+          promptTitle: headerName,
+          prompt: notesMap[headerName],
+        };
+      }
     });
   }
 
@@ -588,5 +636,71 @@ export class ExcelService {
       };
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  private createSampleGame(): Game {
+    return {
+      gameId: '1775331174465_1u39gi6',
+      date: 1775331174465,
+      frames: [
+        {
+          frameIndex: 1,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [] },
+          ],
+        },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        {
+          frameIndex: 4,
+          throws: [
+            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [5] },
+          ],
+        },
+        {
+          frameIndex: 5,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [3] },
+          ],
+        },
+        {
+          frameIndex: 6,
+          throws: [
+            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [2] },
+          ],
+        },
+        {
+          frameIndex: 7,
+          throws: [
+            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2] },
+            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2] },
+          ],
+        },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 10, throwIndex: 1, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 2, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 3, pinsLeftStanding: [] },
+          ],
+        },
+      ],
+      frameScores: [20, 40, 60, 77, 95, 112, 119, 149, 179, 209],
+      totalScore: 209,
+      isClean: false,
+      isPerfect: false,
+      isPractice: false,
+      isPinMode: true,
+      league: 'Example League',
+      note: 'Example note',
+      patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
+      balls: ['Rocket A.I.'],
+    };
   }
 }

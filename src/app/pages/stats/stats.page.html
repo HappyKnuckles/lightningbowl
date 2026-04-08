@@ -1,25 +1,6 @@
 <ion-header [translucent]="true" class="ion-text-center">
   <ion-toolbar>
-    <ion-buttons slot="start" style="padding: 4px">
-      <ion-button
-        for="excelUpload"
-        type="button"
-        class="action-sheet"
-        slot="start"
-        fill="clear"
-        [disabled]="storageService.allBalls().length === 0"
-        (click)="openExcelFileInput()">
-        <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
-      </ion-button>
-      <ion-button
-        (click)="exportToExcel()"
-        class="action-sheet"
-        fill="clear"
-        [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
-        <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon> </ion-button
-    ></ion-buttons>
-    <!-- Clear Input on Upload-->
-    <input type="file" id="excelUpload" class="ion-hide" (input)="handleFileUpload($event)" placeholder="Upload file" accept=".xlsx" />
+    <app-file-header-buttons></app-file-header-buttons>
     <ion-title> Stats </ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">

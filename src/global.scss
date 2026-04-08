@@ -43,10 +43,10 @@ ion-content {
 
 .stat-container {
   border: 1px solid var(--ion-border-color, #2b2828);
-  margin: 0 16px 12px;
+  margin: 0 16px 12px;  
+  padding: 4px 0;
   border-radius: 7px;
   background-color: #141414;
-  padding: 4px 0;
 
   canvas {
     touch-action: pinch-zoom pan-y;

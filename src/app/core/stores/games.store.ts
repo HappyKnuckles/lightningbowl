@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 
@@ -21,7 +22,7 @@ export class GamesStore {
   async loadGameHistory(): Promise<Game[]> {
     this.loadingService.setLoading(true);
     try {
-      const gameHistory = await this.loadData<Game>('game');
+      const gameHistory = await this.loadData<Game>(STORAGE_PREFIX.game);
       let needsUpdate = false;
 
       gameHistory.forEach((game) => {
@@ -73,7 +74,7 @@ export class GamesStore {
 
   async saveGameToLocalStorage(gameData: Game): Promise<void> {
     try {
-      const key = 'game' + gameData.gameId;
+      const key = StorageKeys.game(gameData.gameId);
       await this.storageRepository.set(key, gameData);
       this.#games.update((games) => {
         const index = games.findIndex((game) => game.gameId === gameData.gameId);
@@ -91,7 +92,7 @@ export class GamesStore {
 
   async saveGamesToLocalStorage(gameData: Game[]): Promise<void> {
     try {
-      await Promise.all(gameData.map((game) => this.storageRepository.set('game' + game.gameId, game)));
+      await Promise.all(gameData.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
       this.#games.update((games) => {
         const existingMap = new Map(games.map((g) => [g.gameId, g]));
         for (const game of gameData) {
@@ -109,10 +110,10 @@ export class GamesStore {
 
   async deleteGame(gameId: string): Promise<void> {
     try {
-      const key = 'game' + gameId;
+      const key = StorageKeys.game(gameId);
       await this.storageRepository.remove(key);
       this.#games.update((games) => {
-        const newGames = games.filter((g) => g.gameId !== key.replace('game', ''));
+        const newGames = games.filter((g) => g.gameId !== gameId);
         return [...newGames];
       });
     } catch (error) {

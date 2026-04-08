@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 
 @Injectable({ providedIn: 'root' })
@@ -17,9 +18,10 @@ export class LeaguesStore {
 
   async loadLeagues(): Promise<string[]> {
     try {
-      const leagues = await this.loadData<string>('league');
-      this.#leagues.set(leagues.reverse());
-      return leagues.reverse();
+      const leagues = await this.loadData<string>(STORAGE_PREFIX.league);
+      const reversedLeagues = [...leagues].reverse();
+      this.#leagues.set(reversedLeagues);
+      return reversedLeagues;
     } catch (error) {
       console.error('Error loading leagues:', error);
       throw error;
@@ -28,7 +30,7 @@ export class LeaguesStore {
 
   async addLeague(league: string): Promise<void> {
     try {
-      const key = 'league' + '_' + league;
+      const key = StorageKeys.league(league);
       await this.storageRepository.set(key, league);
       this.#leagues.update((leagues) => [...leagues, league]);
     } catch (error) {
@@ -39,10 +41,10 @@ export class LeaguesStore {
 
   async deleteLeague(league: string): Promise<void> {
     try {
-      const key = 'league' + '_' + league;
+      const key = StorageKeys.league(league);
       await this.storageRepository.remove(key);
       this.analyticsService.trackLeagueDeleted();
-      this.#leagues.update((leagues) => leagues.filter((l) => l !== key.replace('league_', '')));
+      this.#leagues.update((leagues) => leagues.filter((l) => l !== league));
     } catch (error) {
       console.error('Error deleting league:', error);
       throw error;

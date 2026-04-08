@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
@@ -36,7 +37,7 @@ export class BallsStore {
 
   async loadArsenal(): Promise<void> {
     try {
-      const arsenal = await this.loadData<Ball>('arsenal');
+      const arsenal = await this.loadData<Ball>(STORAGE_PREFIX.arsenal);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.#arsenal.set(sortedArsenal);
     } catch (error) {
@@ -87,7 +88,7 @@ export class BallsStore {
 
   async saveBallToArsenal(ball: Ball): Promise<void> {
     try {
-      const key = 'arsenal' + '_' + ball.ball_id + '_' + ball.core_weight;
+      const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
       await this.storageRepository.set(key, ball);
       this.#arsenal.update((balls) => {
         const isUnique = !balls.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
@@ -106,7 +107,7 @@ export class BallsStore {
   async saveBallsToArsenal(balls: Ball[]): Promise<void> {
     try {
       for (const ball of balls) {
-        const key = 'arsenal' + '_' + ball.ball_id + '_' + ball.core_weight;
+        const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
         await this.storageRepository.set(key, ball);
       }
       this.#arsenal.update(() => [...balls]);
@@ -118,8 +119,8 @@ export class BallsStore {
 
   async removeFromArsenal(ball: Ball): Promise<void> {
     try {
-      const key = 'arsenal' + '_' + ball.ball_id + '_' + ball.core_weight;
-      await this.storageRepository.remove('arsenal' + '_' + ball.ball_id);
+      const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
+      await this.storageRepository.remove(`${STORAGE_PREFIX.arsenal}_${ball.ball_id}`);
       await this.storageRepository.remove(key);
       this.#arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
     } catch (error) {

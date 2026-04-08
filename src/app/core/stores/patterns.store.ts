@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { Pattern } from 'src/app/core/models/pattern.model';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
@@ -19,7 +18,6 @@ export class PatternsStore {
   }
 
   constructor(
-    private storageRepository: StorageRepository,
     private patternService: PatternService,
     private cacheService: CacheService,
     private networkService: NetworkService,

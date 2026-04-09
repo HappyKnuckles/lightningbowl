@@ -152,7 +152,7 @@
               (ionChange)="toggleBrand(brand.brand_name, $event.detail.checked)"
               justify="space-between">
               <div class="brand-label">
-                <img class="brand-logo" [src]="brand.logo" [alt]="brand.brand_name" />
+                <img class="brand-logo" [src]="brand.logo" [alt]="brand.brand_name" (error)="onBrandLogoError($event)" />
                 <ion-label>{{ brand.brand_name }}</ion-label>
               </div>
             </ion-checkbox>

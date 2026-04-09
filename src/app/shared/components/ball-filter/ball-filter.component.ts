@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, ViewChild } from '@angular/core';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -7,6 +7,7 @@ import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/model
 import {
   IonButton,
   IonButtons,
+  IonCheckbox,
   IonContent,
   IonFooter,
   IonHeader,
@@ -27,9 +28,9 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig, createBallBrandTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
+import { Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 @Component({
   selector: 'app-ball-filter',
@@ -56,11 +57,14 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     ReactiveFormsModule,
     CommonModule,
     IonSelectOption,
+    IonCheckbox,
     GenericTypeaheadComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class BallFilterComponent implements OnInit {
+  @ViewChild('brandModal') brandModal!: IonModal;
+
   markets: Market[] = [Market.ALL, Market.US, Market.INT];
   coreTypes: CoreType[] = [CoreType.ALL, CoreType.ASYMMETRIC, CoreType.SYMMETRIC];
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
@@ -68,7 +72,7 @@ export class BallFilterComponent implements OnInit {
   presentingElement?: HTMLElement;
   coreTypeaheadConfig!: TypeaheadConfig<Core>;
   coverstockTypeaheadConfig!: TypeaheadConfig<Coverstock>;
-  brandTypeaheadConfig!: TypeaheadConfig<Brand>;
+  pendingBrands: string[] = [];
 
   constructor(
     public ballFilterService: BallFilterService,
@@ -83,7 +87,6 @@ export class BallFilterComponent implements OnInit {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.coreTypeaheadConfig = createBallCoreTypeaheadConfig();
     this.coverstockTypeaheadConfig = createBallCoverstockTypeaheadConfig();
-    this.brandTypeaheadConfig = createBallBrandTypeaheadConfig();
   }
   cancel(): Promise<boolean> {
     this.ballFilterService.filters.update(() =>
@@ -144,5 +147,30 @@ export class BallFilterComponent implements OnInit {
     } finally {
       this.loadingService.setLoading(false);
     }
+  }
+
+  initBrandSelection(): void {
+    this.pendingBrands = [...this.ballFilterService.filters().brands];
+  }
+
+  isBrandSelected(brandName: string): boolean {
+    return this.pendingBrands.includes(brandName);
+  }
+
+  toggleBrand(brandName: string, checked: boolean): void {
+    if (checked) {
+      this.pendingBrands = [...this.pendingBrands, brandName];
+    } else {
+      this.pendingBrands = this.pendingBrands.filter((b) => b !== brandName);
+    }
+  }
+
+  saveBrandSelection(): void {
+    void this.updateFilter('brands', [...this.pendingBrands]);
+    void this.brandModal.dismiss();
+  }
+
+  resetBrandSelection(): void {
+    this.pendingBrands = [];
   }
 }

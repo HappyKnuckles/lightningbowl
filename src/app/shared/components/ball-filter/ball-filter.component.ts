@@ -27,9 +27,9 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig, createBallBrandTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { Core, Coverstock } from 'src/app/core/models/ball.model';
+import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 @Component({
   selector: 'app-ball-filter',
@@ -68,6 +68,7 @@ export class BallFilterComponent implements OnInit {
   presentingElement?: HTMLElement;
   coreTypeaheadConfig!: TypeaheadConfig<Core>;
   coverstockTypeaheadConfig!: TypeaheadConfig<Coverstock>;
+  brandTypeaheadConfig!: TypeaheadConfig<Brand>;
 
   constructor(
     public ballFilterService: BallFilterService,
@@ -82,6 +83,7 @@ export class BallFilterComponent implements OnInit {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.coreTypeaheadConfig = createBallCoreTypeaheadConfig();
     this.coverstockTypeaheadConfig = createBallCoverstockTypeaheadConfig();
+    this.brandTypeaheadConfig = createBallBrandTypeaheadConfig();
   }
   cancel(): Promise<boolean> {
     this.ballFilterService.filters.update(() =>

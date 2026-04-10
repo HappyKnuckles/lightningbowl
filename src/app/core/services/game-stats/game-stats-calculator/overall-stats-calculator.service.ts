@@ -225,7 +225,7 @@ export class OverallStatsCalculatorService {
         }
         longestStrikeStreak = Math.max(longestStrikeStreak, currentStrikeStreak);
 
-        // Pin-specific statistics (only for pin mode games)
+        // Pocket hit tracking (only for pin mode games with pin data)
         if (game.isPinMode && frame.throws) {
           // Check for pocket hit on first throw (not 10th frame bonus balls)
           if (frame.throws[0] && idx < 9) {
@@ -248,79 +248,71 @@ export class OverallStatsCalculatorService {
             if (isStrike) totalFirstBalls++;
             if (isSecondStrike) totalFirstBalls++;
           }
+        }
 
-          // Process first throw if not a strike
-          if (!isStrike && frame.throws[0] && frame.throws[0].pinsLeftStanding) {
+        // Single/multi pin spare counting (all games)
+        if (!isStrike) {
+          const hasPinData = game.isPinMode && frame.throws && frame.throws[0] && frame.throws[0].pinsLeftStanding;
+          const pinsLeftCount = hasPinData ? frame.throws[0].pinsLeftStanding.length : Number.isFinite(throw1) ? 10 - throw1 : 0;
+
+          // Split detection (only when pin data is available)
+          if (hasPinData && pinsLeftCount > 1) {
             const pinsLeft = frame.throws[0].pinsLeftStanding;
-            const pinsLeftCount = pinsLeft.length;
             const isSplit = this.gameUtilsService.isSplit(pinsLeft);
-
-            // Count opportunity
-            if (pinsLeftCount === 1) {
-              singlePinSpareOpportunities++;
-            } else if (pinsLeftCount > 1) {
-              multiPinSpareOpportunities++;
-              if (isSplit) {
-                splitOpportunities++;
-                // Check if split is makeable
-                if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
-                  makeableSplitOpportunities++;
-                }
+            if (isSplit) {
+              splitOpportunities++;
+              if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+                makeableSplitOpportunities++;
               }
-            }
-
-            // Count conversion if spare
-            if (isSpare) {
-              if (pinsLeftCount === 1) {
-                singlePinSpares++;
-              } else if (pinsLeftCount > 1) {
-                multiPinSpares++;
-                if (isSplit) {
-                  splits++;
-                  // Check if makeable split was converted
-                  if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
-                    makeableSplits++;
-                  }
+              if (isSpare) {
+                splits++;
+                if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+                  makeableSplits++;
                 }
               }
             }
           }
 
-          // Process 10th frame additional throws
-          if (idx === MAX_FRAMES - 1 && isStrike && throw2 !== undefined && !isSecondStrike && frame.throws[1] && frame.throws[1].pinsLeftStanding) {
+          // Count single/multi pin opportunities and conversions
+          if (pinsLeftCount === 1) {
+            singlePinSpareOpportunities++;
+            if (isSpare) singlePinSpares++;
+          } else if (pinsLeftCount > 1) {
+            multiPinSpareOpportunities++;
+            if (isSpare) multiPinSpares++;
+          }
+        }
+
+        // 10th frame fill ball counting (all games)
+        if (idx === MAX_FRAMES - 1 && isStrike && throw2 !== undefined && !isSecondStrike) {
+          const hasFillBallPinData = game.isPinMode && frame.throws && frame.throws[1] && frame.throws[1].pinsLeftStanding;
+          const fillBallPinsLeftCount = hasFillBallPinData ? frame.throws[1].pinsLeftStanding.length : Number.isFinite(throw2) ? 10 - throw2 : 0;
+
+          // Split detection (only when pin data is available)
+          if (hasFillBallPinData && fillBallPinsLeftCount > 1) {
             const pinsLeft = frame.throws[1].pinsLeftStanding;
-            const pinsLeftCount = pinsLeft.length;
             const isSplit = this.gameUtilsService.isSplit(pinsLeft);
-
-            // Count opportunity
-            if (pinsLeftCount === 1) {
-              singlePinSpareOpportunities++;
-            } else if (pinsLeftCount > 1) {
-              multiPinSpareOpportunities++;
-              if (isSplit) {
-                splitOpportunities++;
-                // Check if split is makeable
+            if (isSplit) {
+              splitOpportunities++;
+              if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+                makeableSplitOpportunities++;
+              }
+              if (throw3 !== undefined && throw2 + throw3 === 10) {
+                splits++;
                 if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
-                  makeableSplitOpportunities++;
+                  makeableSplits++;
                 }
               }
             }
+          }
 
-            // Count conversion if spare made
-            if (throw3 !== undefined && throw2 + throw3 === 10) {
-              if (pinsLeftCount === 1) {
-                singlePinSpares++;
-              } else if (pinsLeftCount > 1) {
-                multiPinSpares++;
-                if (isSplit) {
-                  splits++;
-                  // Check if makeable split was converted
-                  if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
-                    makeableSplits++;
-                  }
-                }
-              }
-            }
+          // Count single/multi pin opportunities and conversions
+          if (fillBallPinsLeftCount === 1) {
+            singlePinSpareOpportunities++;
+            if (throw3 !== undefined && throw2 + throw3 === 10) singlePinSpares++;
+          } else if (fillBallPinsLeftCount > 1) {
+            multiPinSpareOpportunities++;
+            if (throw3 !== undefined && throw2 + throw3 === 10) multiPinSpares++;
           }
         }
       });

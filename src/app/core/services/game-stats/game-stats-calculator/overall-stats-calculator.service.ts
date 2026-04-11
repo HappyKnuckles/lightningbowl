@@ -38,10 +38,6 @@ export class OverallStatsCalculatorService {
     let allSparesGameCount = 0;
     let pocketHits = 0;
     let totalFirstBalls = 0;
-    let singlePinSpares = 0;
-    let singlePinSpareOpportunities = 0;
-    let multiPinSpares = 0;
-    let multiPinSpareOpportunities = 0;
     let splits = 0;
     let splitOpportunities = 0;
     let makeableSplits = 0;
@@ -250,14 +246,10 @@ export class OverallStatsCalculatorService {
           }
         }
 
-        // Single/multi pin spare counting (all games)
-        if (!isStrike) {
-          const hasPinData = game.isPinMode && frame.throws && frame.throws[0] && frame.throws[0].pinsLeftStanding;
-          const pinsLeftCount = hasPinData ? frame.throws[0].pinsLeftStanding.length : Number.isFinite(throw1) ? 10 - throw1 : 0;
-
-          // Split detection (only when pin data is available)
-          if (hasPinData && pinsLeftCount > 1) {
-            const pinsLeft = frame.throws[0].pinsLeftStanding;
+        // Split detection (only for pin mode games with pin data)
+        if (!isStrike && game.isPinMode && frame.throws && frame.throws[0] && frame.throws[0].pinsLeftStanding) {
+          const pinsLeft = frame.throws[0].pinsLeftStanding;
+          if (pinsLeft.length > 1) {
             const isSplit = this.gameUtilsService.isSplit(pinsLeft);
             if (isSplit) {
               splitOpportunities++;
@@ -272,25 +264,12 @@ export class OverallStatsCalculatorService {
               }
             }
           }
-
-          // Count single/multi pin opportunities and conversions
-          if (pinsLeftCount === 1) {
-            singlePinSpareOpportunities++;
-            if (isSpare) singlePinSpares++;
-          } else if (pinsLeftCount > 1) {
-            multiPinSpareOpportunities++;
-            if (isSpare) multiPinSpares++;
-          }
         }
 
-        // 10th frame fill ball counting (all games)
-        if (idx === MAX_FRAMES - 1 && isStrike && throw2 !== undefined && !isSecondStrike) {
-          const hasFillBallPinData = game.isPinMode && frame.throws && frame.throws[1] && frame.throws[1].pinsLeftStanding;
-          const fillBallPinsLeftCount = hasFillBallPinData ? frame.throws[1].pinsLeftStanding.length : Number.isFinite(throw2) ? 10 - throw2 : 0;
-
-          // Split detection (only when pin data is available)
-          if (hasFillBallPinData && fillBallPinsLeftCount > 1) {
-            const pinsLeft = frame.throws[1].pinsLeftStanding;
+        // 10th frame fill ball split detection (only for pin mode games with pin data)
+        if (idx === MAX_FRAMES - 1 && isStrike && throw2 !== undefined && !isSecondStrike && game.isPinMode && frame.throws && frame.throws[1] && frame.throws[1].pinsLeftStanding) {
+          const pinsLeft = frame.throws[1].pinsLeftStanding;
+          if (pinsLeft.length > 1) {
             const isSplit = this.gameUtilsService.isSplit(pinsLeft);
             if (isSplit) {
               splitOpportunities++;
@@ -304,15 +283,6 @@ export class OverallStatsCalculatorService {
                 }
               }
             }
-          }
-
-          // Count single/multi pin opportunities and conversions
-          if (fillBallPinsLeftCount === 1) {
-            singlePinSpareOpportunities++;
-            if (throw3 !== undefined && throw2 + throw3 === 10) singlePinSpares++;
-          } else if (fillBallPinsLeftCount > 1) {
-            multiPinSpareOpportunities++;
-            if (throw3 !== undefined && throw2 + throw3 === 10) multiPinSpares++;
           }
         }
       });
@@ -329,6 +299,16 @@ export class OverallStatsCalculatorService {
     for (let i = 1; i <= MAX_FRAMES; i++) {
       totalSparesMissed += missedCounts[i] || 0;
       totalSparesConverted += pinCounts[i] || 0;
+    }
+
+    // Derive single/multi pin spare counts from pinCounts/missedCounts
+    const singlePinSpares = pinCounts[1] || 0;
+    const singlePinSpareOpportunities = (pinCounts[1] || 0) + (missedCounts[1] || 0);
+    let multiPinSpares = 0;
+    let multiPinSpareOpportunities = 0;
+    for (let i = 2; i <= MAX_FRAMES; i++) {
+      multiPinSpares += pinCounts[i] || 0;
+      multiPinSpareOpportunities += (pinCounts[i] || 0) + (missedCounts[i] || 0);
     }
 
     // Core aggregated stats

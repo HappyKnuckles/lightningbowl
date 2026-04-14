@@ -74,6 +74,10 @@ export class PatternStatsCalculatorService {
     return finalStats;
   }
 
+  calculateAllPatternStats(gameHistory: Game[]): BestPatternStats[] {
+    return Object.values(this._calculateAllPatternStats(gameHistory));
+  }
+
   calculateBestPatternStats(gameHistory: Game[]): BestPatternStats {
     const allPatternStats = this._calculateAllPatternStats(gameHistory);
     const patternNames = Object.keys(allPatternStats);

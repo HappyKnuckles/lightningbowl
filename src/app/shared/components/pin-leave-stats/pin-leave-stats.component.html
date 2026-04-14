@@ -1,13 +1,14 @@
-<ion-list>
-  <ion-list-header
-    [class.clickable-header]="allLeaves()"
-    [attr.tabindex]="allLeaves() ? '0' : null"
-    [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
-    (click)="openModal()"
-    (keydown.enter)="openModal()">
+<ion-list
+  [class.ion-activatable]="allLeaves()"
+  [class.ion-ripple-parent]="allLeaves()"
+  [attr.tabindex]="allLeaves() ? '0' : null"
+  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
+  (click)="openModal()"
+  (keydown.enter)="openModal()">
+  <ion-list-header>
     {{ title() }}
     @if (allLeaves()) {
-      <ion-icon name="chevron-forward-outline" class="expand-icon"></ion-icon>
+      <ion-icon name="open-outline" class="open-icon"></ion-icon>
     }
   </ion-list-header>
 
@@ -46,6 +47,9 @@
       }
     }
   </div>
+  @if (allLeaves()) {
+    <ion-ripple-effect></ion-ripple-effect>
+  }
 </ion-list>
 
 @if (allLeaves()) {

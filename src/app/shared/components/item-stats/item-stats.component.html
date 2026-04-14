@@ -1,5 +1,17 @@
-<ion-list style="background: none">
-  <ion-list-header style="margin-bottom: 4px">{{ title() }}</ion-list-header>
+<ion-list
+  [class.ion-activatable]="allItems()?.length"
+  [class.ion-ripple-parent]="allItems()?.length"
+  [attr.tabindex]="allItems()?.length ? '0' : null"
+  [attr.aria-label]="allItems()?.length ? 'View all ' + title().toLowerCase() : null"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  style="background: none">
+  <ion-list-header style="margin-bottom: 4px">
+    {{ title() }}
+    @if (allItems()?.length) {
+      <ion-icon name="open-outline" class="open-icon"></ion-icon>
+    }
+  </ion-list-header>
   <div class="stat-container">
     @if (item().gameCount === 0) {
       <div class="inner-stat-container">
@@ -34,4 +46,54 @@
       </div>
     }
   </div>
+  @if (allItems()?.length) {
+    <ion-ripple-effect></ion-ripple-effect>
+  }
 </ion-list>
+
+@if (allItems()?.length) {
+  <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="closeModal()">Close</ion-button>
+          </ion-buttons>
+          <ion-title>All {{ title() }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list style="background: none">
+          @for (i of allItems(); track i.name) {
+            <div class="modal-item">
+              <div class="modal-item-header">
+                <span class="modal-item-name">{{ i.name }}</span>
+                <span class="game-count-ratio">{{ i.gameCount }} games</span>
+              </div>
+              <div class="inner-stat-container">
+                <ion-img
+                  [class.round]="roundImage()"
+                  [class.pattern-img]="!roundImage()"
+                  [src]="(imageUrlBase() ?? storageService.url) + i.image"></ion-img>
+                <div class="item-stats">
+                  <div class="stat-line">
+                    <span class="stat-label">Avg:</span>
+                    <span class="stat-value">{{ i.avg }}</span>
+                  </div>
+                  <div class="stat-line">
+                    <span class="stat-label">High:</span>
+                    <span class="stat-value">{{ i.highestGame }}</span>
+                  </div>
+                  <div class="stat-line">
+                    <span class="stat-label">Low:</span>
+                    <span class="stat-value">{{ i.lowestGame }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}

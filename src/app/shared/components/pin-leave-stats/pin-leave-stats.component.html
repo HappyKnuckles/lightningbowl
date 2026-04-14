@@ -1,6 +1,14 @@
 <ion-list>
-  <ion-list-header>
+  <ion-list-header
+    [class.clickable-header]="allLeaves()"
+    [attr.tabindex]="allLeaves() ? '0' : null"
+    [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
+    (click)="openModal()"
+    (keydown.enter)="openModal()">
     {{ title() }}
+    @if (allLeaves()) {
+      <ion-icon name="chevron-forward-outline" class="expand-icon"></ion-icon>
+    }
   </ion-list-header>
 
   <div class="stat-container">
@@ -39,3 +47,57 @@
     }
   </div>
 </ion-list>
+
+@if (allLeaves()) {
+  <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="closeModal()">Close</ion-button>
+          </ion-buttons>
+          <ion-title>All Leaves</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list>
+          <div class="stat-container">
+            @if (sortedAllLeaves().length === 0) {
+              <div class="inner-stat-container">
+                <div class="leave-container">
+                  <div class="leave-stats">
+                    <p>No stats available.</p>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              @for (leave of sortedAllLeaves(); track $index) {
+                <ion-item lines="none" class="leave-item">
+                  <div class="leave-container">
+                    <div class="pin-deck-wrapper">
+                      <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
+                    </div>
+                    <div class="leave-stats">
+                      <ion-label>
+                        <h3>Occurrences</h3>
+                        <p>{{ leave.occurrences }}</p>
+                      </ion-label>
+                      <ion-label>
+                        <h3>Pickups</h3>
+                        <p>{{ leave.pickups }}</p>
+                      </ion-label>
+                      <ion-label>
+                        <h3>Pickup %</h3>
+                        <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
+                      </ion-label>
+                    </div>
+                  </div>
+                </ion-item>
+              }
+            }
+          </div>
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}

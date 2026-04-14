@@ -63,6 +63,10 @@ export class GameStatsService {
     return this.calculateAllLeaves(this.gameFilterService.filteredGames());
   });
 
+  get allLeaves(): Signal<LeaveStats[]> {
+    return this.#allLeaves;
+  }
+
   #commonLeaves = computed(() => {
     return this.calculateMostCommonLeaves(this.#allLeaves());
   });

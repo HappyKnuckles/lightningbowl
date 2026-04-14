@@ -10,6 +10,23 @@ ion-list-header {
   margin-bottom: 4px;
 }
 
+ion-list-header.clickable-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  .expand-icon {
+    margin-left: 4px;
+    font-size: 1rem;
+    color: var(--ion-color-medium);
+  }
+
+  &:hover .expand-icon,
+  &:focus .expand-icon {
+    color: var(--ion-color-primary);
+  }
+}
+
 .leave-item {
   --padding-start: 8px;
   --padding-end: 8px;

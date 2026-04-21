@@ -2,6 +2,9 @@
   <ion-toolbar>
     <ion-title>Pattern Library</ion-title>
     <ion-buttons slot="end" class="action-sheet">
+      <ion-button (click)="openAddPatternModal()" aria-label="Add custom pattern">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
       <app-sort-header
         #sortHeader
         [id]="'pattern-sort-header'"

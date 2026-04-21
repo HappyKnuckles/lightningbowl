@@ -197,6 +197,10 @@ export class PatternService {
       throw new Error(response.error || 'Failed to add pattern');
     }
 
-    return response.pattern_id || '';
+    if (!response.pattern_id) {
+      throw new Error('Pattern created but no pattern_id was returned');
+    }
+
+    return response.pattern_id;
   }
 }

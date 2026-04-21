@@ -1,10 +1,4 @@
-<ion-list
-  [class.ion-activatable]="allLeaves()"
-  [class.ion-ripple-parent]="allLeaves()"
-  [attr.tabindex]="allLeaves() ? '0' : null"
-  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
-  (click)="openModal()"
-  (keydown.enter)="openModal()">
+<ion-list (click)="openModal()" (keydown.enter)="openModal()">
   <ion-list-header>
     {{ title() }}
     @if (allLeaves()) {
@@ -12,7 +6,12 @@
     }
   </ion-list-header>
 
-  <div class="stat-container">
+  <div
+    class="stat-container"
+    [class.ion-activatable]="allLeaves()"
+    [class.ripple-parent]="allLeaves()"
+    [attr.tabindex]="allLeaves() ? '0' : null"
+    [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null">
     @if (leaveStats().length === 0) {
       <div class="inner-stat-container">
         <div class="leave-container">
@@ -46,25 +45,27 @@
         </ion-item>
       }
     }
+    @if (allLeaves()) {
+      <ion-ripple-effect></ion-ripple-effect>
+    }
   </div>
-  @if (allLeaves()) {
-    <ion-ripple-effect></ion-ripple-effect>
-  }
 </ion-list>
 
 @if (allLeaves()) {
-  <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
+  <ion-modal #allLeaves [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
     <ng-template>
       <ion-header [translucent]="true">
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="closeModal()">Close</ion-button>
+            <ion-button color="medium" (click)="closeModal()">
+              <ion-icon name="chevron-back"></ion-icon>
+            </ion-button>
           </ion-buttons>
           <ion-title>All Leaves</ion-title>
         </ion-toolbar>
       </ion-header>
       <ion-content>
-        <ion-list>
+        <ion-list style="padding: 8px 0 16px">
           <div class="stat-container">
             @if (sortedAllLeaves().length === 0) {
               <div class="inner-stat-container">

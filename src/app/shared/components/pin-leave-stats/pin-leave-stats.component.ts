@@ -15,13 +15,28 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { openOutline } from 'ionicons/icons';
+import { chevronBack, openOutline } from 'ionicons/icons';
 import { LeaveStats } from 'src/app/core/models/stats.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 @Component({
   selector: 'app-pin-leave-stats',
-  imports: [IonList, IonListHeader, IonItem, IonLabel, PinDeckComponent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonRippleEffect],
+  imports: [
+    IonList,
+    IonListHeader,
+    IonItem,
+    IonLabel,
+    PinDeckComponent,
+    IonModal,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonContent,
+    IonRippleEffect,
+  ],
   templateUrl: './pin-leave-stats.component.html',
   styleUrl: './pin-leave-stats.component.scss',
 })
@@ -39,7 +54,7 @@ export class PinLeaveStatsComponent {
   });
 
   constructor() {
-    addIcons({ openOutline });
+    addIcons({ openOutline, chevronBack });
   }
 
   openModal(): void {

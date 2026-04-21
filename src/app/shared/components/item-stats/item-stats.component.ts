@@ -14,7 +14,7 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { openOutline } from 'ionicons/icons';
+import { chevronBack, openOutline } from 'ionicons/icons';
 import { GenericItemStats } from 'src/app/core/models/stats.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 
@@ -37,7 +37,7 @@ export class ItemStatsComponent {
   isModalOpen = signal(false);
 
   constructor(public storageService: StorageService) {
-    addIcons({ openOutline });
+    addIcons({ openOutline, chevronBack });
   }
 
   openModal(): void {

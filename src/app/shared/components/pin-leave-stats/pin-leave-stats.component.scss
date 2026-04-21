@@ -10,11 +10,9 @@ ion-list-header {
   margin-bottom: 4px;
 }
 
-ion-list-header .open-icon {
-  margin-left: 4px;
-  font-size: 1rem;
-  color: var(--ion-color-medium);
-  vertical-align: middle;
+.stat-container.ripple-parent {
+  position: relative;
+  overflow: hidden;
 }
 
 .leave-item {

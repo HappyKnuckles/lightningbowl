@@ -51,6 +51,11 @@ ion-img {
   line-height: 1.5;
 }
 
+.stat-container.ripple-parent {
+  position: relative;
+  overflow: hidden;
+}
+
 .inner-stat-container {
   display: flex;
   flex-direction: row;
@@ -85,28 +90,4 @@ ion-img {
   font-size: 1.25rem;
   font-weight: 600;
   justify-self: center;
-}
-
-ion-list-header .open-icon {
-  margin-left: 4px;
-  font-size: 1rem;
-  color: var(--ion-color-medium);
-  vertical-align: middle;
-}
-
-.modal-item {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--ion-color-step-100, var(--ion-border-color));
-}
-
-.modal-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-}
-
-.modal-item-name {
-  font-size: 1rem;
-  font-weight: 600;
 }

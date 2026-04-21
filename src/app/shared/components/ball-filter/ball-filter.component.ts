@@ -173,8 +173,4 @@ export class BallFilterComponent implements OnInit {
   resetBrandSelection(): void {
     this.pendingBrands = [];
   }
-
-  onBrandLogoError(event: Event): void {
-    (event.target as HTMLImageElement).style.display = 'none';
-  }
 }

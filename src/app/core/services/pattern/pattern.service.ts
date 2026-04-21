@@ -198,7 +198,7 @@ export class PatternService {
     }
 
     if (!response.pattern_id) {
-      throw new Error('Failed to retrieve pattern ID after creation');
+      throw new Error('Pattern created successfully but backend did not return pattern_id (unexpected API response)');
     }
 
     return response.pattern_id;

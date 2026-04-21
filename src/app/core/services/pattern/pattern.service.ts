@@ -198,7 +198,7 @@ export class PatternService {
     }
 
     if (!response.pattern_id) {
-      throw new Error('Pattern created but no pattern_id was returned');
+      throw new Error('Failed to retrieve pattern ID after creation');
     }
 
     return response.pattern_id;

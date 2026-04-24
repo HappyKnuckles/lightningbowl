@@ -130,36 +130,14 @@
   </ion-toolbar>
 </ion-footer>
 
-<ion-modal #brandModal [presentingElement]="presentingElement" trigger="select-brands" (ionModalWillPresent)="initBrandSelection()">
+<ion-modal [presentingElement]="presentingElement" trigger="select-brands">
   <ng-template>
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-button color="medium" (click)="resetBrandSelection()">Reset</ion-button>
-        </ion-buttons>
-        <ion-title>Select Brands</ion-title>
-        <ion-buttons slot="end">
-          <ion-button [strong]="true" (click)="saveBrandSelection()">Save</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content [fullscreen]="true">
-      <ion-list>
-        @for (brand of ballService.brands(); track brand.id) {
-          <ion-item lines="none">
-            <ion-checkbox
-              [checked]="isBrandSelected(brand.brand_name)"
-              (ionChange)="toggleBrand(brand.brand_name, $event.detail.checked)"
-              justify="space-between">
-              <div class="brand-label">
-                <img class="brand-logo" [src]="brand.logo" [alt]="brand.brand_name" />
-                <ion-label>{{ brand.brand_name }}</ion-label>
-              </div>
-            </ion-checkbox>
-          </ion-item>
-        }
-      </ion-list>
-    </ion-content>
+    <app-generic-typeahead
+      [items]="ballService.brands()"
+      [config]="brandTypeaheadConfig"
+      (selectedItemsChange)="updateFilter('brands', $event)"
+      [prevSelectedItems]="ballFilterService.filters().brands">
+    </app-generic-typeahead>
   </ng-template>
 </ion-modal>
 

@@ -27,9 +27,16 @@
     <ion-list>
       @for (item of displayedItems(); track getItemIdentifier(item)) {
         <ion-item role="article" [ngClass]="getCustomDisplayLogic(item).cssClass" lines="none">
-          <ion-avatar slot="start" *ngIf="config().showImages">
+          <ion-avatar slot="start" *ngIf="config().showImages && config().imageShape !== 'rect'">
             <ion-img [src]="getImageUrl(item)"></ion-img>
           </ion-avatar>
+          <img
+            slot="start"
+            class="typeahead-img-rect"
+            *ngIf="config().showImages && config().imageShape === 'rect'"
+            [src]="getImageUrl(item)"
+            [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
+            (error)="onImageError($event)" />
 
           <ion-checkbox
             [value]="getItemValue(item)"

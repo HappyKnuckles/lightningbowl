@@ -43,6 +43,7 @@ import {
   medalOutline,
   bowlingBallOutline,
   gridOutline,
+  layersOutline,
 } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Game, Frame, cloneFrames, createThrow } from 'src/app/core/models/game.model';
@@ -71,6 +72,15 @@ interface MonthHeader {
   name: string;
   count: number;
 }
+
+interface SeriesGroup {
+  seriesId: string;
+  games: Game[];
+  totalScore: number;
+  date: number;
+}
+
+type DisplayItem = { type: 'single'; game: Game } | { type: 'series'; group: SeriesGroup };
 
 @Component({
   selector: 'app-game',
@@ -148,15 +158,63 @@ export class GameComponent implements OnInit {
     return [...this.games()].sort((a, b) => b.date - a.date);
   });
 
-  showingGames = computed(() => {
-    return this.sortedGames().slice(0, this.loadedCount());
+  displayItems = computed((): DisplayItem[] => {
+    const sorted = this.sortedGames();
+    const seenSeriesIds = new Set<string>();
+    const seriesMap = new Map<string, Game[]>();
+
+    for (const game of sorted) {
+      if (game.seriesId) {
+        if (!seriesMap.has(game.seriesId)) {
+          seriesMap.set(game.seriesId, []);
+        }
+        seriesMap.get(game.seriesId)!.push(game);
+      }
+    }
+
+    const items: DisplayItem[] = [];
+    for (const game of sorted) {
+      if (!game.seriesId) {
+        items.push({ type: 'single', game });
+      } else if (!seenSeriesIds.has(game.seriesId)) {
+        seenSeriesIds.add(game.seriesId);
+        const seriesGames = seriesMap.get(game.seriesId)!;
+        const sortedSeriesGames = [...seriesGames].sort((a, b) => a.date - b.date);
+        items.push({
+          type: 'series',
+          group: {
+            seriesId: game.seriesId,
+            games: sortedSeriesGames,
+            totalScore: sortedSeriesGames.reduce((sum, g) => sum + g.totalScore, 0),
+            date: game.date,
+          },
+        });
+      }
+    }
+    return items;
+  });
+
+  showingDisplayItems = computed(() => {
+    return this.displayItems().slice(0, this.loadedCount());
+  });
+
+  gameNumberMap = computed(() => {
+    const allGames = this.sortedGames();
+    const total = allGames.length;
+    const map = new Map<string, number>();
+    allGames.forEach((game, idx) => {
+      map.set(game.gameId, total - idx);
+    });
+    return map;
   });
 
   monthHeaders = computed(() => {
-    const games = this.showingGames();
+    const items = this.showingDisplayItems();
     const headers = new Map<number, MonthHeader>();
 
-    if (games.length === 0) return headers;
+    if (items.length === 0) return headers;
+
+    const getDate = (item: DisplayItem) => (item.type === 'single' ? item.game.date : item.group.date);
 
     const getMonthKey = (timestamp: number) => {
       const d = new Date(timestamp);
@@ -169,24 +227,24 @@ export class GameComponent implements OnInit {
     };
 
     const counts = new Map<string, number>();
-    for (const game of games) {
-      const key = getMonthKey(game.date);
+    for (const item of items) {
+      const key = getMonthKey(getDate(item));
       counts.set(key, (counts.get(key) || 0) + 1);
     }
 
-    const firstKey = getMonthKey(games[0].date);
+    const firstDate = getDate(items[0]);
     headers.set(0, {
-      name: formatName(games[0].date),
-      count: counts.get(firstKey) || 0,
+      name: formatName(firstDate),
+      count: counts.get(getMonthKey(firstDate)) || 0,
     });
 
-    for (let i = 1; i < games.length; i++) {
-      const currentKey = getMonthKey(games[i].date);
-      const prevKey = getMonthKey(games[i - 1].date);
+    for (let i = 1; i < items.length; i++) {
+      const currentKey = getMonthKey(getDate(items[i]));
+      const prevKey = getMonthKey(getDate(items[i - 1]));
 
       if (currentKey !== prevKey) {
         headers.set(i, {
-          name: formatName(games[i].date),
+          name: formatName(getDate(items[i])),
           count: counts.get(currentKey) || 0,
         });
       }
@@ -239,6 +297,7 @@ export class GameComponent implements OnInit {
       cloudUploadOutline,
       cloudDownloadOutline,
       filterOutline,
+      layersOutline,
     });
   }
 
@@ -252,7 +311,7 @@ export class GameComponent implements OnInit {
     setTimeout(() => {
       this.loadedCount.update((count) => count + this.batchSize);
       event.target.complete();
-      if (this.loadedCount() >= this.games().length) {
+      if (this.loadedCount() >= this.displayItems().length) {
         event.target.disabled = true;
       }
     }, 50);

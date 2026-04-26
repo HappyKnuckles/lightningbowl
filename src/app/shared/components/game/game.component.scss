@@ -19,6 +19,76 @@ ion-list {
   margin-bottom: 32px;
 }
 
+.series-group {
+  border-left: 3px solid var(--ion-color-primary);
+  margin: 4px 0;
+
+  .series-group-header {
+    --background: var(--ion-color-step-50, rgba(var(--ion-color-primary-rgb), 0.08));
+    --padding-start: 8px;
+    --inner-padding-end: 8px;
+
+    .series-icon {
+      color: var(--ion-color-primary);
+      font-size: 1.3rem;
+    }
+
+    .game-info {
+      display: flex;
+      flex-direction: column;
+      margin-left: 12px;
+
+      .title {
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .score {
+        font-size: 0.875rem;
+        color: lightgray;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        width: 90%;
+      }
+
+      .series-total {
+        font-weight: 600;
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+
+  .series-games {
+    .series-sliding {
+      ion-accordion {
+        background-color: transparent;
+
+        .game-info {
+          display: flex;
+          flex-direction: column;
+          margin-left: 20px;
+
+          .title {
+            font-weight: 600;
+            font-size: 1rem;
+          }
+
+          .score {
+            font-size: 0.875rem;
+            color: lightgray;
+          }
+        }
+
+        ::ng-deep .ion-accordion-toggle-icon {
+          margin-right: 20px;
+          font-size: 22px;
+        }
+      }
+    }
+  }
+}
+
 .sliding {
   .note {
     --inner-border-width: 0;

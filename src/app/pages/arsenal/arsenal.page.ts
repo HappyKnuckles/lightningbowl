@@ -28,7 +28,8 @@ import {
   IonSegmentView,
   IonListHeader,
   IonRippleEffect,
-  IonPopover,
+  IonSelect,
+  IonSelectOption,
 } from '@ionic/angular/standalone';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { Ball } from 'src/app/core/models/ball.model';
@@ -84,7 +85,8 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
-    IonPopover,
+    IonSelect,
+    IonSelectOption,
   ],
 })
 export class ArsenalPage implements OnInit {
@@ -93,6 +95,8 @@ export class ArsenalPage implements OnInit {
   coverstockBalls: Ball[] = [];
   coreBalls: Ball[] = [];
   presentingElement?: HTMLElement;
+  openWeightId = signal<string | null>(null);
+
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.storageService
@@ -253,8 +257,7 @@ export class ArsenalPage implements OnInit {
     }
   }
 
-  async onWeightSelect(ball: Ball, weight: string, popover: IonPopover): Promise<void> {
-    await popover.dismiss();
+  async onWeightSelect(ball: Ball, weight: string): Promise<void> {
     await this.changeBallWeight(ball, Number(weight));
   }
 

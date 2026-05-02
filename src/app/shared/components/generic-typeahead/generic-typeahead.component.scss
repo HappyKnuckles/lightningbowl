@@ -18,3 +18,14 @@
   @extend %card;
   border-left-color: green;
 }
+
+.typeahead-img-rect {
+  width: 80px;
+  height: 40px;
+  object-fit: contain;
+  background-color: white;
+  border-radius: 7px;
+  padding: 4px;
+  flex-shrink: 0;
+  margin-inline-end: 12px;
+}

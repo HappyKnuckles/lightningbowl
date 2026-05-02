@@ -12,17 +12,11 @@
 
 <ion-content>
   <ion-list style="padding-top: 10px" lines="full">
-    <ion-item>
-      <!-- TODO make this a typeahead component-->
-      <ion-select
-        label="Brands"
-        name="brands"
-        multiple="true"
-        placeholder="All"
-        [ngModel]="ballFilterService.filters().brands"
-        (ionChange)="updateFilter('brands', $event.detail.value)">
-        <ion-select-option *ngFor="let brand of ballService.brands()" [value]="brand.brand_name">{{ brand.brand_name }}</ion-select-option>
-      </ion-select>
+    <ion-item button id="select-brands">
+      <ion-label>Brands</ion-label>
+      <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
+        {{ ballFilterService.filters().brands.join(", ") }}
+      </p>
     </ion-item>
     <ion-item button id="select-coverstocks">
       <ion-label>Coverstocks</ion-label>
@@ -135,6 +129,17 @@
     <ion-button class="confirm-btn" expand="block" (click)="confirm()">Confirm ({{ ballFilterService.filteredBalls().length }} Balls)</ion-button>
   </ion-toolbar>
 </ion-footer>
+
+<ion-modal [presentingElement]="presentingElement" trigger="select-brands">
+  <ng-template>
+    <app-generic-typeahead
+      [items]="ballService.brands()"
+      [config]="brandTypeaheadConfig"
+      (selectedItemsChange)="updateFilter('brands', $event)"
+      [prevSelectedItems]="ballFilterService.filters().brands">
+    </app-generic-typeahead>
+  </ng-template>
+</ion-modal>
 
 <ion-modal [presentingElement]="presentingElement" trigger="select-cores">
   <ng-template>

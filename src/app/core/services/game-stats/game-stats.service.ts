@@ -45,6 +45,20 @@ export class GameStatsService {
     return this.#mostPlayedBallStats;
   }
 
+  #allBallStats: Signal<BestBallStats[]> = computed(() => {
+    return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
+  });
+  get allBallStats(): Signal<BestBallStats[]> {
+    return this.#allBallStats;
+  }
+
+  #allPatternStats: Signal<BestPatternStats[]> = computed(() => {
+    return this.patternStatsCalculatorService.calculateAllPatternStats(this.gameFilterService.filteredGames());
+  });
+  get allPatternStats(): Signal<BestPatternStats[]> {
+    return this.#allPatternStats;
+  }
+
   #bestPatternStats: Signal<BestPatternStats> = computed(() => {
     return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
   });
@@ -62,6 +76,10 @@ export class GameStatsService {
   #allLeaves: Signal<LeaveStats[]> = computed(() => {
     return this.calculateAllLeaves(this.gameFilterService.filteredGames());
   });
+
+  get allLeaves(): Signal<LeaveStats[]> {
+    return this.#allLeaves;
+  }
 
   #commonLeaves = computed(() => {
     return this.calculateMostCommonLeaves(this.#allLeaves());

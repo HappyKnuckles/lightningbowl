@@ -15,7 +15,7 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronBack, openOutline } from 'ionicons/icons';
+import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { LeaveStats } from 'src/app/core/models/stats.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
@@ -54,7 +54,7 @@ export class PinLeaveStatsComponent {
   });
 
   constructor() {
-    addIcons({ openOutline, chevronBack });
+    addIcons({ chevronBack, chevronForwardOutline });
   }
 
   openModal(): void {

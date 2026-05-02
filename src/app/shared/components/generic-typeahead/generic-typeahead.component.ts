@@ -223,6 +223,10 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
     return this.config().imageUrlGenerator?.(item) || '';
   }
 
+  onImageError(event: Event): void {
+    (event.target as HTMLImageElement).style.display = 'none';
+  }
+
   getCustomDisplayLogic(item: T): { cssClass?: string; disabled?: boolean } {
     return this.config().customDisplayLogic?.(item) || {};
   }

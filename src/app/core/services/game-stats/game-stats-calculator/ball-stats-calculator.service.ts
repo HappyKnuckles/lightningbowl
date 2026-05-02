@@ -75,6 +75,10 @@ export class BallStatsCalculatorService {
     return finalStats;
   }
 
+  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
+    return Object.values(this._calculateAllBallStats(gameHistory));
+  }
+
   calculateBestBallStats(gameHistory: Game[]): BestBallStats {
     const allBallStats = this._calculateAllBallStats(gameHistory);
     const ballNames = Object.keys(allBallStats);

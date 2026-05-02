@@ -2,6 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+import { ThrowBall, formatThrowBall, getThrowBallKey } from 'src/app/core/models/game.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
@@ -22,10 +23,10 @@ export class PinInputComponent {
   canUndo = input<boolean>(false);
   isGameComplete = input<boolean>(false);
   selectHitPins = input<boolean>(true);
-  selectedBall = input<string | undefined>(undefined);
+  selectedBall = input<ThrowBall | undefined>(undefined);
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
-  ballSelected = output<string | undefined>();
+  ballSelected = output<ThrowBall | undefined>();
   selectedPins: number[] = [];
   isBallModalOpen = false;
   enterAnimation = alertEnterAnimation;
@@ -41,6 +42,12 @@ export class PinInputComponent {
 
   get pinsKnockedDownPreviously(): number[] {
     return this.allPins.filter((pin) => !this.pinsLeftStanding().includes(pin));
+  }
+
+  /** Convert the current ThrowBall to a key string used by BallSelectComponent */
+  get selectedBallKeys(): string[] {
+    const ball = this.selectedBall();
+    return ball ? [getThrowBallKey(ball)] : [];
   }
 
   togglePin(pinNumber: number): void {
@@ -126,41 +133,33 @@ export class PinInputComponent {
     this.isBallModalOpen = false;
   }
 
-  onBallSelection(selectedBalls: string[]): void {
-    const selectedBall = selectedBalls.length > 0 ? selectedBalls[0] : undefined;
-    this.ballSelected.emit(selectedBall);
+  onBallSelection(selectedKeys: string[]): void {
+    const key = selectedKeys.length > 0 ? selectedKeys[0] : undefined;
+    if (!key) {
+      this.ballSelected.emit(undefined);
+    } else {
+      // Look up the ball in the arsenal to get proper name + weight
+      const arsenalBall = this.storageService.arsenal().find((b) => b.ball_name + b.core_weight === key);
+      if (arsenalBall) {
+        this.ballSelected.emit({ name: arsenalBall.ball_name, weight: arsenalBall.core_weight });
+      } else {
+        // Fallback: store the key as the name with no weight (edge case)
+        this.ballSelected.emit({ name: key });
+      }
+    }
     this.isBallModalOpen = false;
   }
 
-  private parseBallSelection(rawBallSelection: string | undefined): { name: string; weight?: string } | undefined {
-    const selection = rawBallSelection?.trim();
-    if (!selection) return undefined;
-
-    const weightedMatch = selection.match(/^(.*?)(?:\s*(\d{1,2})\s*(?:lbs?|lb|#)?)$/i);
-    if (!weightedMatch) {
-      return { name: selection };
-    }
-
-    const name = weightedMatch[1]?.trim();
-    const weight = weightedMatch[2]?.trim();
-
-    if (!name) {
-      return { name: selection };
-    }
-
-    return { name, weight };
+  getSelectedBallThumbnail(): string | undefined {
+    const ball = this.selectedBall();
+    if (!ball) return undefined;
+    const arsenalBall = this.storageService
+      .arsenal()
+      .find((b) => b.ball_name === ball.name && (!ball.weight || b.core_weight === ball.weight));
+    return arsenalBall?.thumbnail_image;
   }
 
-  getSelectedBallThumbnail(): string | undefined {
-    const parsedSelection = this.parseBallSelection(this.selectedBall());
-    if (!parsedSelection) {
-      return undefined;
-    }
-
-    const selectedBall = this.storageService
-      .arsenal()
-      .find((ball) => ball.ball_name === this.selectedBall() || ball.ball_name === parsedSelection.name);
-
-    return selectedBall?.thumbnail_image;
+  getSelectedBallDisplayName(): string {
+    return formatThrowBall(this.selectedBall());
   }
 }

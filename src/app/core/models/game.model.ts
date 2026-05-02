@@ -1,4 +1,12 @@
 /**
+ * Minimized ball reference stored per throw
+ */
+export interface ThrowBall {
+  name: string;
+  weight?: string;
+}
+
+/**
  * Represents a single throw/ball in a bowling frame
  */
 export interface Throw {
@@ -7,7 +15,7 @@ export interface Throw {
   isSplit?: boolean;
   pinsLeftStanding?: number[];
   pinsKnockedDown?: number[];
-  ball?: string;
+  ball?: ThrowBall;
 }
 
 /**
@@ -207,12 +215,40 @@ export function cloneFrames(frames: Frame[]): Frame[] {
  * Get all unique ball names used in a game (from throw-level data, falling back to game.balls)
  */
 export function getGameBalls(game: Game): string[] {
-  const throwBalls = game.frames.flatMap((f) => f.throws.map((t) => t.ball).filter((b): b is string => !!b));
-  const uniqueThrowBalls = [...new Set(throwBalls)];
-  if (uniqueThrowBalls.length > 0) {
-    return uniqueThrowBalls;
+  const seen = new Set<string>();
+  const keys: string[] = [];
+  for (const frame of game.frames) {
+    for (const t of frame.throws) {
+      if (t.ball?.name) {
+        const key = getThrowBallKey(t.ball);
+        if (!seen.has(key)) {
+          seen.add(key);
+          keys.push(key);
+        }
+      }
+    }
+  }
+  if (keys.length > 0) {
+    return keys;
   }
   return game.balls || [];
+}
+
+/**
+ * Get a compact key string for a ThrowBall used for comparison/deduplication.
+ * Format: "BallName{weight}" e.g. "Storm IQ Tour15"
+ */
+export function getThrowBallKey(ball: ThrowBall): string {
+  return ball.weight ? `${ball.name}${ball.weight}` : ball.name;
+}
+
+/**
+ * Format a ThrowBall for human-readable display.
+ * Format: "BallName Weightlbs" e.g. "Storm IQ Tour 15lbs"
+ */
+export function formatThrowBall(ball: ThrowBall | undefined): string {
+  if (!ball?.name) return '';
+  return ball.weight ? `${ball.name} ${ball.weight}lbs` : ball.name;
 }
 
 /**

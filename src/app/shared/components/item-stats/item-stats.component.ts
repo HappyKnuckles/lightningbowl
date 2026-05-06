@@ -1,3 +1,4 @@
+import { NgIf } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { IonImg, IonList, IonListHeader } from '@ionic/angular/standalone';
 import { GenericItemStats } from 'src/app/core/models/stats.model';
@@ -6,7 +7,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
 @Component({
   selector: 'app-item-stats',
   standalone: true,
-  imports: [IonList, IonListHeader, IonImg],
+  imports: [IonList, IonListHeader, IonImg, NgIf],
   templateUrl: './item-stats.component.html',
   styleUrl: './item-stats.component.scss',
 })

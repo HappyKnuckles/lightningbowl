@@ -1,53 +1,54 @@
-import { Component, OnInit, computed, Signal, ViewChild, ElementRef, effect, model, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnInit, Signal, ViewChild, computed, effect, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonContent,
-  IonThumbnail,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-  IonImg,
-  IonList,
-  IonItem,
-  IonLabel,
   IonButton,
   IonButtons,
+  IonChip,
+  IonContent,
+  IonHeader,
   IonIcon,
-  IonModal,
-  IonText,
-  IonItemSliding,
+  IonImg,
+  IonItem,
   IonItemOption,
   IonItemOptions,
-  IonChip,
-  IonReorderGroup,
+  IonItemSliding,
+  IonLabel,
+  IonList,
+  IonListHeader,
+  IonModal,
   IonReorder,
+  IonReorderGroup,
+  IonRippleEffect,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
-  IonListHeader,
-  IonRippleEffect,
   IonSelect,
   IonSelectOption,
+  IonText,
+  IonThumbnail,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { Ball } from 'src/app/core/models/ball.model';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { addIcons } from 'ionicons';
-import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline, chevronDownOutline } from 'ionicons/icons';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
+import { addIcons } from 'ionicons';
+import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { Ball } from 'src/app/core/models/ball.model';
+import { BallService } from 'src/app/core/services/ball/ball.service';
+import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
+import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 @Component({
   selector: 'app-arsenal',
@@ -95,7 +96,6 @@ export class ArsenalPage implements OnInit {
   coverstockBalls: Ball[] = [];
   coreBalls: Ball[] = [];
   presentingElement?: HTMLElement;
-  openWeightId = signal<string | null>(null);
 
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
@@ -108,7 +108,7 @@ export class ArsenalPage implements OnInit {
   private ballsChartInstance: Chart | null = null;
   readonly loadingWeightBallId = signal<string | null>(null);
   readonly availableWeights = ['12', '13', '14', '15', '16'];
-  private readonly ballsByWeightCache = new Map<number, Ball[]>();
+
   constructor(
     public storageService: StorageService,
     private hapticService: HapticService,
@@ -118,6 +118,7 @@ export class ArsenalPage implements OnInit {
     public modalCtrl: ModalController,
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
+    private cacheService: CacheService,
   ) {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
@@ -262,9 +263,7 @@ export class ArsenalPage implements OnInit {
   }
 
   private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
-    if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
-
-    this.loadingWeightBallId.set(ball.ball_id);
+    this.loadingWeightBallId.set(ball.ball_id + ball.core_weight);
 
     try {
       const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
@@ -287,10 +286,19 @@ export class ArsenalPage implements OnInit {
   }
 
   private async getBallsForWeight(weight: number): Promise<Ball[]> {
-    const cached = this.ballsByWeightCache.get(weight);
-    if (cached) return cached;
+    const cacheKey = `balls_weight_${weight}`;
+    const cached = await this.cacheService.get<Ball[]>(cacheKey);
+    const isCacheValid = await this.cacheService.isValid(cacheKey);
+
+    if (cached && isCacheValid) {
+      return cached;
+    }
+
     const fetched = await this.ballService.loadAllBalls(undefined, weight);
-    this.ballsByWeightCache.set(weight, fetched);
+    if (fetched.length > 0) {
+      // Cache for 24 hours
+      await this.cacheService.set(cacheKey, fetched, 24 * 60 * 60 * 1000);
+    }
     return fetched;
   }
 }

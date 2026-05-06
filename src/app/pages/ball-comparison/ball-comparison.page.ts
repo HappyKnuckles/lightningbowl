@@ -29,6 +29,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonSelect,
+  IonSelectOption,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
@@ -37,6 +39,7 @@ import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
+import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -85,6 +88,8 @@ interface SavedEntry {
     IonSegmentView,
     IonSegmentContent,
     GenericTypeaheadComponent,
+    IonSelect,
+    IonSelectOption,
   ],
 })
 export class BallComparisonPage implements OnInit, OnDestroy {
@@ -92,6 +97,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
+  private readonly cacheService = inject(CacheService);
   private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
@@ -128,7 +134,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   private chartInstance: Chart | null = null;
   private distChartInstance: Chart | null = null;
-  private readonly ballsByWeightCache = new Map<number, Ball[]>();
   private hasRestored = false;
 
   constructor() {
@@ -169,8 +174,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     });
   }
 
-  async onWeightSelect(ball: Ball, weight: string, popover: IonPopover): Promise<void> {
-    await popover.dismiss();
+  async onWeightSelect(ball: Ball, weight: string): Promise<void> {
     await this.changeBallWeight(ball, Number(weight));
   }
 
@@ -274,10 +278,19 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   }
 
   private async getBallsForWeight(weight: number): Promise<Ball[]> {
-    const cached = this.ballsByWeightCache.get(weight);
-    if (cached) return cached;
+    const cacheKey = `balls_weight_${weight}`;
+    const cached = await this.cacheService.get<Ball[]>(cacheKey);
+    const isCacheValid = await this.cacheService.isValid(cacheKey);
+
+    if (cached && isCacheValid) {
+      return cached;
+    }
+
     const fetched = await this.ballService.loadAllBalls(undefined, weight);
-    this.ballsByWeightCache.set(weight, fetched);
+    if (fetched.length > 0) {
+      // Cache for 24 hours
+      await this.cacheService.set(cacheKey, fetched, 24 * 60 * 60 * 1000);
+    }
     return fetched;
   }
 

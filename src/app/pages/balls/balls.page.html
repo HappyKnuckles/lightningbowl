@@ -58,15 +58,18 @@
       @for (ball of displayedBalls; track ball.ball_id) {
         <ion-card role="article">
           <div class="action-header">
-            <ion-button
-              fill="clear"
-              size="small"
+            <ion-select
               class="weight-change"
-              [id]="'weight-trigger-' + ball.ball_id"
-              button
-              [disabled]="loadingWeightBallId() === ball.ball_id">
-              {{ ball.core_weight }}lbs
-            </ion-button>
+              interface="popover"
+              [value]="ball.core_weight"
+              (ionChange)="onWeightSelect(ball, $event.detail.value)"
+              [disabled]="loadingWeightBallId() === ball.ball_id"
+              aria-label="Weight"
+              [selectedText]="ball.core_weight + 'lbs'">
+              @for (weight of availableWeights; track weight) {
+                <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
+              }
+            </ion-select>
             <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
               <ion-icon
                 [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
@@ -75,15 +78,6 @@
               </ion-icon>
             </ion-button>
           </div>
-          <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.ball_id" triggerAction="click">
-            <ng-template>
-              <ion-list>
-                @for (weight of availableWeights; track weight) {
-                  <ion-item button detail="false" (click)="onWeightSelect(ball, weight, weightPopover)"> {{ weight }}lbs </ion-item>
-                }
-              </ion-list>
-            </ng-template>
-          </ion-popover>
 
           <ion-card-header>
             <ion-card-title

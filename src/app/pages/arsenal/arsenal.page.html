@@ -33,7 +33,7 @@
       @if (storageService.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            <ion-item-sliding *ngFor="let ball of storageService.arsenal(); let i = index" #slidingItem class="sliding">
+            <ion-item-sliding *ngFor="let ball of storageService.arsenal()" #slidingItem class="sliding">
               <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
                 <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
                   <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
@@ -51,10 +51,11 @@
                   <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
                   <h1>{{ ball.ball_name }}</h1>
                   <div class="ball-info">
-                    <ion-chip button [disabled]="loadingWeightBallId() === ball.ball_id" (click)="$event.stopPropagation()">
+                    <ion-chip>
                       <ion-select
                         [value]="ball.core_weight"
                         style="min-height: 0"
+                        (click)="$event.stopPropagation()"
                         [disabled]="loadingWeightBallId() === ball.ball_id"
                         (ionChange)="onWeightSelect(ball, $event.detail.value)"
                         interface="popover">

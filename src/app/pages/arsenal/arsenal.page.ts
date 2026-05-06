@@ -272,9 +272,15 @@ export class ArsenalPage implements OnInit {
         return;
       }
 
-      replacementBall.position = ball.position;
-      await this.storageService.removeFromArsenal(ball);
-      await this.storageService.saveBallToArsenal(replacementBall);
+      const alreadyInArsenal = this.storageService
+        .arsenal()
+        .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
+      if (alreadyInArsenal) {
+        this.toastService.showToast(`${ball.ball_name} at ${selectedWeight}lbs is already in your arsenal.`, 'information-circle-outline', true);
+        return;
+      }
+
+      await this.storageService.updateArsenalBall(ball, replacementBall);
       this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
     } catch {
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);

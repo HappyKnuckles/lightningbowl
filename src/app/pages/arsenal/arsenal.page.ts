@@ -39,7 +39,6 @@ import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutl
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
@@ -118,7 +117,6 @@ export class ArsenalPage implements OnInit {
     public modalCtrl: ModalController,
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
-    private cacheService: CacheService,
   ) {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
@@ -266,7 +264,7 @@ export class ArsenalPage implements OnInit {
     this.loadingWeightBallId.set(ball.ball_id + ball.core_weight);
 
     try {
-      const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
 
       if (!replacementBall) {
@@ -283,22 +281,5 @@ export class ArsenalPage implements OnInit {
     } finally {
       this.loadingWeightBallId.set(null);
     }
-  }
-
-  private async getBallsForWeight(weight: number): Promise<Ball[]> {
-    const cacheKey = `balls_weight_${weight}`;
-    const cached = await this.cacheService.get<Ball[]>(cacheKey);
-    const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-    if (cached && isCacheValid) {
-      return cached;
-    }
-
-    const fetched = await this.ballService.loadAllBalls(undefined, weight);
-    if (fetched.length > 0) {
-      // Cache for 24 hours
-      await this.cacheService.set(cacheKey, fetched, 24 * 60 * 60 * 1000);
-    }
-    return fetched;
   }
 }

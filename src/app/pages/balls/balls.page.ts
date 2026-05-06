@@ -46,7 +46,6 @@ import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/model
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
@@ -203,7 +202,6 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
-    private cacheService: CacheService,
   ) {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline });
     this.searchSubject.subscribe((query) => {
@@ -535,21 +533,7 @@ export class BallsPage implements OnInit {
 
     this.loadingWeightBallId.set(ball.ball_id);
     try {
-      const selectedWeight = Number(weight);
-      const cacheKey = `balls_weight_${selectedWeight}`;
-      const cached = await this.cacheService.get<Ball[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      let ballsAtWeight: Ball[];
-      if (cached && isCacheValid) {
-        ballsAtWeight = cached;
-      } else {
-        ballsAtWeight = await this.ballService.loadAllBalls(undefined, selectedWeight);
-        if (ballsAtWeight.length > 0) {
-          await this.cacheService.set(cacheKey, ballsAtWeight, 24 * 60 * 60 * 1000);
-        }
-      }
-
+      const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
       if (!replacementBall) {
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);

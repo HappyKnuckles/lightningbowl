@@ -39,7 +39,6 @@ import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -97,7 +96,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
-  private readonly cacheService = inject(CacheService);
   private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
@@ -184,7 +182,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     this.loadingWeightBallId.set(ball.ball_id);
 
     try {
-      const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
 
       if (!replacementBall) {
@@ -263,7 +261,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
       entries.map(async ({ id, weight }) => {
         const defaultBall = defaultBallMap.get(id);
         if (defaultBall && defaultBall.core_weight === weight) return defaultBall;
-        const ballsAtWeight = await this.getBallsForWeight(Number(weight));
+        const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
         return ballsAtWeight.find((b) => b.ball_id === id) ?? defaultBall ?? null;
       }),
     );
@@ -275,23 +273,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private saveSelectedIds(balls: Ball[]): void {
     const entries: SavedEntry[] = balls.map((b) => ({ id: b.ball_id, weight: b.core_weight }));
     localStorage.setItem(BallComparisonPage.STORAGE_KEY, JSON.stringify(entries));
-  }
-
-  private async getBallsForWeight(weight: number): Promise<Ball[]> {
-    const cacheKey = `balls_weight_${weight}`;
-    const cached = await this.cacheService.get<Ball[]>(cacheKey);
-    const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-    if (cached && isCacheValid) {
-      return cached;
-    }
-
-    const fetched = await this.ballService.loadAllBalls(undefined, weight);
-    if (fetched.length > 0) {
-      // Cache for 24 hours
-      await this.cacheService.set(cacheKey, fetched, 24 * 60 * 60 * 1000);
-    }
-    return fetched;
   }
 
   private destroyCharts(): void {

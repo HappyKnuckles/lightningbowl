@@ -55,7 +55,7 @@ export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
   issues$: Observable<GitHubIssue[]>;
   loading = signal(false);
-  selectedLabels: string[] = ['']; // Empty string means "All labels"
+  selectedLabels: string[] = ['']; // Initial '' selection maps to the "All" filter option
   error = signal<string | null>(null);
   private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
@@ -79,7 +79,7 @@ export class GithubIssuesModalComponent {
           }),
         ),
       ),
-      shareReplay({ bufferSize: 1, refCount: true }),
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
 
     addIcons({

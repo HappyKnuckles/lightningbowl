@@ -11,6 +11,7 @@ import { LoadingService } from '../loader/loading.service';
 import { NetworkService } from '../network/network.service';
 import { PatternService } from '../pattern/pattern.service';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -258,7 +259,7 @@ export class StorageService {
         return;
       }
 
-      const response = await this.ballService.loadAllBalls(updated, weight);
+      const response = await firstValueFrom(this.ballService.loadAllBalls(updated, weight));
       this.allBalls.set(response);
       this.#isUsingCache.set(false);
 
@@ -279,7 +280,7 @@ export class StorageService {
 
   private async refreshBallsInBackground(updated?: string, weight?: number, cacheKey?: string): Promise<void> {
     try {
-      const response = await this.ballService.loadAllBalls(updated, weight);
+      const response = await firstValueFrom(this.ballService.loadAllBalls(updated, weight));
       this.allBalls.set(response);
       this.#isUsingCache.set(false);
 
@@ -316,7 +317,7 @@ export class StorageService {
         return;
       }
 
-      const response = await this.patternService.getAllPatternsStripped();
+      const response = await firstValueFrom(this.patternService.getAllPatternsStripped());
       this.allPatterns.set(response);
       this.#isUsingCache.set(false);
 
@@ -335,7 +336,7 @@ export class StorageService {
 
   private async refreshPatternsInBackground(cacheKey?: string): Promise<void> {
     try {
-      const response = await this.patternService.getAllPatternsStripped();
+      const response = await firstValueFrom(this.patternService.getAllPatternsStripped());
       this.allPatterns.set(response);
       this.#isUsingCache.set(false);
 
@@ -368,7 +369,7 @@ export class StorageService {
         return;
       }
 
-      const response = await this.patternService.getAllPatternCharts();
+      const response = await firstValueFrom(this.patternService.getAllPatternCharts());
       const patterns = response.patterns;
       const imageMap: Record<string, string> = {};
       for (const p of patterns) {
@@ -389,7 +390,7 @@ export class StorageService {
 
   private async refreshPatternImageMapInBackground(cacheKey: string): Promise<void> {
     try {
-      const response = await this.patternService.getAllPatternCharts();
+      const response = await firstValueFrom(this.patternService.getAllPatternCharts());
       const patterns = response.patterns;
 
       const imageMap: Record<string, string> = {};
@@ -584,9 +585,9 @@ export class StorageService {
         this.loadLeagues(),
         this.loadGameHistory().then(() => this.#resolveGamesReady()),
         this.loadArsenal(),
-        this.ballService.getBrands(),
-        this.ballService.getCores(),
-        this.ballService.getCoverstocks(),
+        firstValueFrom(this.ballService.getBrands()),
+        firstValueFrom(this.ballService.getCores()),
+        firstValueFrom(this.ballService.getCoverstocks()),
       ]);
       this.updateFirstGameDate(this.games());
     } catch (error) {

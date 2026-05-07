@@ -24,6 +24,7 @@ import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-github-issues-modal',
@@ -73,7 +74,7 @@ export class GithubIssuesModalComponent implements OnInit {
     this.loading = true;
     this.error = null;
     try {
-      this.issues = await this.gitHubService.getIssues(this.selectedLabels);
+      this.issues = await firstValueFrom(this.gitHubService.getIssues(this.selectedLabels));
     } catch (error) {
       console.error('Failed to load issues:', error);
       this.issues = [];

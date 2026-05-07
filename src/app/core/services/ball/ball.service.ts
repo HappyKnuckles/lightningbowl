@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { Observable, defer, firstValueFrom, of, retry, throwError } from 'rxjs';
+import { Observable, catchError, defer, firstValueFrom, of, retry, throwError } from 'rxjs';
 import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
@@ -81,31 +81,58 @@ export class BallService {
     if (weight !== undefined) {
       params = params.set('weight', weight.toString());
     }
-    return this.http.get<Ball[]>(`${environment.bowwwlEndpoint}all-balls`, { params }).pipe(retry({ count: 5, delay: 2000 }));
+    return this.http.get<Ball[]>(`${environment.bowwwlEndpoint}all-balls`, { params }).pipe(
+      retry({ count: 5, delay: 2000 }),
+      catchError((error) => {
+        console.error('Error loading all balls:', error);
+        return throwError(() => error);
+      }),
+    );
   }
 
   getBallsByCore(ball: Ball): Observable<Ball[]> {
-    return this.http.get<Ball[]>(`${environment.bowwwlEndpoint}core-balls`, {
-      params: {
-        core: ball.core_name,
-        ballId: ball.ball_id.toString(),
-      },
-    });
+    return this.http
+      .get<Ball[]>(`${environment.bowwwlEndpoint}core-balls`, {
+        params: {
+          core: ball.core_name,
+          ballId: ball.ball_id.toString(),
+        },
+      })
+      .pipe(
+        catchError((error) => {
+          console.error(`Error loading balls by core for ball ID ${ball.ball_id}:`, error);
+          return throwError(() => error);
+        }),
+      );
   }
 
   getBallsByCoverstock(ball: Ball): Observable<Ball[]> {
-    return this.http.get<Ball[]>(`${environment.bowwwlEndpoint}coverstock-balls`, {
-      params: {
-        coverstock: ball.coverstock_name,
-        ballId: ball.ball_id.toString(),
-      },
-    });
+    return this.http
+      .get<Ball[]>(`${environment.bowwwlEndpoint}coverstock-balls`, {
+        params: {
+          coverstock: ball.coverstock_name,
+          ballId: ball.ball_id.toString(),
+        },
+      })
+      .pipe(
+        catchError((error) => {
+          console.error(`Error loading balls by coverstock for ball ID ${ball.ball_id}:`, error);
+          return throwError(() => error);
+        }),
+      );
   }
 
   getBallByBrand(brand: string): Observable<Ball[]> {
-    return this.http.get<Ball[]>(`${environment.bowwwlEndpoint}brand`, {
-      params: { brand },
-    });
+    return this.http
+      .get<Ball[]>(`${environment.bowwwlEndpoint}brand`, {
+        params: { brand },
+      })
+      .pipe(
+        catchError((error) => {
+          console.error(`Error loading balls by brand "${brand}":`, error);
+          return throwError(() => error);
+        }),
+      );
   }
 
   getBrands(): Observable<Brand[]> {

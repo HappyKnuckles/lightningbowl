@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Pattern } from '../../models/pattern.model';
-import { Observable, defer, firstValueFrom, retry } from 'rxjs';
+import { Observable, catchError, defer, firstValueFrom, map, of, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
@@ -42,17 +42,13 @@ export class PatternService {
   ) {}
 
   getAllPatternCharts(): Observable<PatternChartsResult> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(
-          this.http.get<PatternChartsResult>(`${environment.patternEndpoint}patterns/charts`).pipe(retry({ count: 5, delay: 2000 })),
-        );
-        return response;
-      } catch (error) {
+    return this.http.get<PatternChartsResult>(`${environment.patternEndpoint}patterns/charts`).pipe(
+      retry({ count: 5, delay: 2000 }),
+      catchError((error) => {
         console.error('Error fetching pattern charts:', error);
-        return { count: 0, patterns: [] };
-      }
-    });
+        return of({ count: 0, patterns: [] });
+      }),
+    );
   }
 
   getPatterns(page: number, forceRefresh = false): Observable<AllPatternsResult> {
@@ -77,7 +73,7 @@ export class PatternService {
         );
 
         if (response.total !== 0) {
-          await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 6 hours
+          await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 24 hours
         }
 
         return response;
@@ -96,69 +92,52 @@ export class PatternService {
   }
 
   getAllPatternsStripped(): Observable<Partial<Pattern>[]> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(
-          this.http
-            .get<{ count: number; patterns: Partial<Pattern>[] }>(`${environment.patternEndpoint}patterns/all-stripped`)
-            .pipe(retry({ count: 5, delay: 2000 })),
-        );
-        return response.patterns;
-      } catch (error) {
+    return this.http.get<{ count: number; patterns: Partial<Pattern>[] }>(`${environment.patternEndpoint}patterns/all-stripped`).pipe(
+      retry({ count: 5, delay: 2000 }),
+      map((response) => response.patterns),
+      catchError((error) => {
         console.error('Error fetching stripped patterns:', error);
-        return [];
-      }
-    });
+        return of([]);
+      }),
+    );
   }
 
   getAllPatterns(): Observable<Pattern[]> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(
-          this.http.get<{ count: number; patterns: Pattern[] }>(`${environment.patternEndpoint}patterns/all`).pipe(retry({ count: 5, delay: 2000 })),
-        );
-        return response.patterns;
-      } catch (error) {
+    return this.http.get<{ count: number; patterns: Pattern[] }>(`${environment.patternEndpoint}patterns/all`).pipe(
+      retry({ count: 5, delay: 2000 }),
+      map((response) => response.patterns),
+      catchError((error) => {
         console.error('Error fetching all patterns:', error);
-        return [];
-      }
-    });
+        return of([]);
+      }),
+    );
   }
 
   getPatternCategories(): Observable<string[]> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(this.http.get<string[]>(`${environment.patternEndpoint}categories`));
-        return response;
-      } catch (error) {
+    return this.http.get<string[]>(`${environment.patternEndpoint}categories`).pipe(
+      catchError((error) => {
         console.error('Error fetching pattern categories:', error);
-        return [];
-      }
-    });
+        return of([]);
+      }),
+    );
   }
 
   getPatternData(url: string): Observable<Pattern> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`));
-        return response;
-      } catch (error) {
+    return this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`).pipe(
+      catchError((error) => {
         console.error('Error fetching pattern data:', error);
-        return {} as Pattern;
-      }
-    });
+        return of({} as Pattern);
+      }),
+    );
   }
 
   getPatternStats(): Observable<Record<string, unknown>> {
-    return defer(async () => {
-      try {
-        const response = await firstValueFrom(this.http.get<Record<string, unknown>>(`${environment.patternEndpoint}stats`));
-        return response;
-      } catch (error) {
+    return this.http.get<Record<string, unknown>>(`${environment.patternEndpoint}stats`).pipe(
+      catchError((error) => {
         console.error('Error fetching pattern stats:', error);
-        return {};
-      }
-    });
+        return of({});
+      }),
+    );
   }
 
   searchPattern(searchTerm: string, include_metadata = false): Observable<SearchResult> {
@@ -199,12 +178,12 @@ export class PatternService {
   }
 
   addPattern(pattern: Partial<Pattern>): Observable<void> {
-    return defer(async () => {
-      try {
-        await firstValueFrom(this.http.post<Partial<Pattern>>(`${environment.patternEndpoint}add-pattern`, pattern));
-      } catch (error) {
+    return this.http.post<Partial<Pattern>>(`${environment.patternEndpoint}add-pattern`, pattern).pipe(
+      map(() => void 0),
+      catchError((error) => {
         console.error('Error adding pattern:', error);
-      }
-    });
+        return of(void 0);
+      }),
+    );
   }
 }

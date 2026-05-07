@@ -79,7 +79,7 @@ export class GithubIssuesModalComponent {
           }),
         ),
       ),
-      shareReplay({ bufferSize: 1, refCount: false }),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
 
     addIcons({

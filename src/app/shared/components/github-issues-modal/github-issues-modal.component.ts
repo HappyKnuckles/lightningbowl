@@ -24,7 +24,7 @@ import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
-import { BehaviorSubject, Observable, catchError, finalize, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-github-issues-modal',
@@ -55,9 +55,9 @@ export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
   issues$: Observable<GitHubIssue[]>;
   loading = signal(false);
-  selectedLabels: string[] = ['']; // Empty array to show all issues by default
+  selectedLabels: string[] = ['']; // Empty string means "All labels"
   error = signal<string | null>(null);
-  private selectedLabels$ = new BehaviorSubject<string[]>([...this.selectedLabels]);
+  private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
   constructor(private gitHubService: GitHubService) {
     this.issues$ = this.selectedLabels$.pipe(
@@ -79,6 +79,7 @@ export class GithubIssuesModalComponent {
           }),
         ),
       ),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
 
     addIcons({

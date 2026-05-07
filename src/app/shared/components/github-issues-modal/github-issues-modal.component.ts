@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -54,27 +54,28 @@ import { BehaviorSubject, Observable, catchError, finalize, of, switchMap, tap }
 export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
   issues$: Observable<GitHubIssue[]>;
-  loading = false;
+  loading = signal(false);
   selectedLabels: string[] = ['']; // Empty array to show all issues by default
-  error: string | null = null;
-  private selectedLabels$ = new BehaviorSubject<string[]>(this.selectedLabels);
+  error = signal<string | null>(null);
+  private selectedLabels$ = new BehaviorSubject<string[]>([...this.selectedLabels]);
 
   constructor(private gitHubService: GitHubService) {
     this.issues$ = this.selectedLabels$.pipe(
       tap(() => {
-        this.loading = true;
-        this.error = null;
+        this.loading.set(true);
+        this.error.set(null);
       }),
       switchMap((labels) =>
         this.gitHubService.getIssues(labels).pipe(
           catchError((error) => {
             console.error('Failed to load issues:', error);
-            this.error =
-              'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.';
+            this.error.set(
+              'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.',
+            );
             return of([]);
           }),
           finalize(() => {
-            this.loading = false;
+            this.loading.set(false);
           }),
         ),
       ),

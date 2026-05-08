@@ -49,7 +49,7 @@
                   interface="popover"
                   [value]="ball.data.core_weight"
                   (ionChange)="onWeightSelect(ball.data, $event.detail.value)"
-                  [disabled]="loadingWeightBallId() === ball.data.ball_id"
+                  [disabled]="loadingWeightBallId() === ball.data.ball_id + ball.data.core_weight"
                   aria-label="Weight"
                   [selectedText]="ball.data.core_weight + 'lbs'">
                   @for (weight of ball.weightOptions; track weight) {

@@ -12,17 +12,14 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
-  IonChip,
   IonContent,
   IonHeader,
   IonIcon,
   IonImg,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonItem,
   IonList,
   IonModal,
-  IonPopover,
   IonRefresher,
   IonRefresherContent,
   IonRippleEffect,
@@ -65,9 +62,6 @@ import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-
   providers: [ModalController],
   imports: [
     IonSkeletonText,
-    IonChip,
-    IonPopover,
-    IonItem,
     IonRefresher,
     IonRefresherContent,
     IonList,
@@ -531,7 +525,7 @@ export class BallsPage implements OnInit {
   async onWeightSelect(ball: Ball, weight: string): Promise<void> {
     if (!Number.isFinite(Number(weight)) || weight === ball.core_weight) return;
 
-    this.loadingWeightBallId.set(ball.ball_id);
+    this.loadingWeightBallId.set(ball.ball_id + weight);
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);

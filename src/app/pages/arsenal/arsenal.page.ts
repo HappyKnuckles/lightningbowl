@@ -257,10 +257,9 @@ export class ArsenalPage implements OnInit {
   }
 
   async onWeightSelect(ball: Ball, weight: string): Promise<void> {
-    await this.changeBallWeight(ball, Number(weight));
-  }
+    const selectedWeight = Number(weight);
+    if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-  private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
     this.loadingWeightBallId.set(ball.ball_id + ball.core_weight);
 
     try {

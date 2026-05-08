@@ -17,10 +17,7 @@ import {
   IonHeader,
   IonIcon,
   IonImg,
-  IonItem,
-  IonList,
   IonModal,
-  IonPopover,
   IonRow,
   IonSegment,
   IonSegmentButton,
@@ -70,10 +67,7 @@ interface SavedEntry {
     IonButton,
     IonButtons,
     IonIcon,
-    IonItem,
-    IonList,
     IonModal,
-    IonPopover,
     IonText,
     IonImg,
     IonCard,
@@ -173,13 +167,10 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   }
 
   async onWeightSelect(ball: Ball, weight: string): Promise<void> {
-    await this.changeBallWeight(ball, Number(weight));
-  }
-
-  private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
+    const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    this.loadingWeightBallId.set(ball.ball_id);
+    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
 
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);

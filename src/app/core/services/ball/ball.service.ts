@@ -23,6 +23,7 @@ export class BallService {
   get coverstocks() {
     return this.#coverstocks;
   }
+  private readonly pending = new Map<string, Promise<unknown>>();
 
   constructor(
     private http: HttpClient,
@@ -248,17 +249,38 @@ export class BallService {
 
     if (this.networkService.isOffline) return [];
 
-    try {
-      const data = await fetcher();
-      onData?.(data);
-      if (data.length > 0) await this.cacheService.set(cacheKey, data, ttl);
-      return data;
-    } catch (error) {
-      if (cached) {
-        onData?.(cached);
-        return cached;
+    if (this.pending.has(cacheKey)) {
+      try {
+        const data = await (this.pending.get(cacheKey) as Promise<T[]>);
+        onData?.(data);
+        return data;
+      } catch (error) {
+        if (cached) {
+          onData?.(cached);
+          return cached;
+        }
+        throw error;
       }
-      throw error;
     }
+
+    const request = (async () => {
+      try {
+        const data = await fetcher();
+        onData?.(data);
+        if (data.length > 0) await this.cacheService.set(cacheKey, data, ttl);
+        return data;
+      } catch (error) {
+        if (cached) {
+          onData?.(cached);
+          return cached;
+        }
+        throw error;
+      } finally {
+        this.pending.delete(cacheKey);
+      }
+    })();
+
+    this.pending.set(cacheKey, request);
+    return request;
   }
 }

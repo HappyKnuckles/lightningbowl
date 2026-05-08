@@ -166,7 +166,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     });
   }
 
-  async onWeightSelect(ball: Ball, weight: string): Promise<void> {
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
@@ -177,6 +177,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
 
       if (!replacementBall) {
+        selectEl.value = ball.core_weight;
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
         return;
       }
@@ -187,6 +188,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
         return updated;
       });
     } catch {
+      selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallId.set(null);

@@ -59,13 +59,13 @@
         <ion-card role="article">
           <div class="action-header">
             <ion-select
+              #weightSelect
               class="weight-change"
               interface="popover"
               [value]="ball.core_weight"
-              (ionChange)="onWeightSelect(ball, $event.detail.value)"
+              (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
               [disabled]="loadingWeightBallId() === ball.ball_id + ball.core_weight"
-              aria-label="Weight"
-              [selectedText]="ball.core_weight + 'lbs'">
+              aria-label="Weight">
               @for (weight of availableWeights; track weight) {
                 <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
               }

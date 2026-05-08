@@ -256,7 +256,7 @@ export class ArsenalPage implements OnInit {
     }
   }
 
-  async onWeightSelect(ball: Ball, weight: string): Promise<void> {
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
@@ -267,6 +267,7 @@ export class ArsenalPage implements OnInit {
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
 
       if (!replacementBall) {
+        selectEl.value = ball.core_weight;
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
         return;
       }
@@ -275,6 +276,7 @@ export class ArsenalPage implements OnInit {
         .arsenal()
         .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
       if (alreadyInArsenal) {
+        selectEl.value = ball.core_weight;
         this.toastService.showToast(`${ball.ball_name} at ${selectedWeight}lbs is already in your arsenal.`, 'information-circle-outline', true);
         return;
       }
@@ -282,6 +284,7 @@ export class ArsenalPage implements OnInit {
       await this.storageService.updateArsenalBall(ball, replacementBall);
       this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
     } catch {
+      selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallId.set(null);

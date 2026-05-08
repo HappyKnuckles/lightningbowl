@@ -53,11 +53,12 @@
                   <div class="ball-info">
                     <ion-chip>
                       <ion-select
+                        #weightSelect
                         [value]="ball.core_weight"
                         style="min-height: 0"
                         (click)="$event.stopPropagation()"
                         [disabled]="loadingWeightBallId() === ball.ball_id + ball.core_weight"
-                        (ionChange)="onWeightSelect(ball, $event.detail.value)"
+                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
                         interface="popover">
                         <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
                       </ion-select>

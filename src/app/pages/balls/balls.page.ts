@@ -522,19 +522,22 @@ export class BallsPage implements OnInit {
     }
   }
 
-  async onWeightSelect(ball: Ball, weight: string): Promise<void> {
-    if (!Number.isFinite(Number(weight)) || weight === ball.core_weight) return;
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
+    const selectedWeight = Number(weight);
+    if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
 
-    this.loadingWeightBallId.set(ball.ball_id + weight);
+    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
     try {
-      const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
       if (!replacementBall) {
+        selectEl.value = ball.core_weight;
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
         return;
       }
       this.balls.update((list) => list.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? replacementBall : b)));
     } catch {
+      selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallId.set(null);

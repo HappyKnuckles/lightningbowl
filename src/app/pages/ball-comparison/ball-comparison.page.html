@@ -44,28 +44,23 @@
           @for (ball of displayBalls(); track ball.data.ball_id) {
             <ion-card class="ball-card">
               <div class="ball-header">
-                <ion-button
-                  [id]="'weight-trigger-' + ball.data.ball_id"
-                  fill="clear"
-                  size="small"
-                  [disabled]="loadingWeightBallId() === ball.data.ball_id">
-                  {{ ball.data.core_weight }}lbs
-                </ion-button>
+                <ion-select
+                  #weightSelect
+                  class="weight-change"
+                  interface="popover"
+                  [value]="ball.data.core_weight"
+                  (ionChange)="onWeightSelect(ball.data, $event.detail.value, weightSelect)"
+                  [disabled]="loadingWeightBallId() === ball.data.ball_id + ball.data.core_weight"
+                  aria-label="Weight">
+                  @for (weight of availableWeights; track weight) {
+                    <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
+                  }
+                </ion-select>
 
                 <ion-button fill="clear" size="small" (click)="removeBall(ball.data)">
                   <ion-icon name="close-outline" slot="icon-only"></ion-icon>
                 </ion-button>
               </div>
-
-              <ion-popover #weightPopover [trigger]="'weight-trigger-' + ball.data.ball_id" triggerAction="click">
-                <ng-template>
-                  <ion-list>
-                    @for (weight of ball.weightOptions; track weight) {
-                      <ion-item button detail="false" (click)="onWeightSelect(ball.data, weight, weightPopover)"> {{ weight }}lbs </ion-item>
-                    }
-                  </ion-list>
-                </ng-template>
-              </ion-popover>
 
               <div class="ball-image-wrapper">
                 <ion-img [src]="url + ball.data.thumbnail_image" [alt]="ball.data.ball_name"></ion-img>

@@ -3,17 +3,7 @@ import { Subscription } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { IonToast } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import {
-  add,
-  bug,
-  checkmarkOutline,
-  eyeOutline,
-  informationCircleOutline,
-  refreshOutline,
-  reloadOutline,
-  removeOutline,
-  shareSocialOutline,
-} from 'ionicons/icons';
+import * as allIcons from 'ionicons/icons';
 import { NgFor, NgStyle } from '@angular/common';
 
 interface ToastData {
@@ -53,17 +43,7 @@ export class ToastComponent implements OnDestroy {
       }
     });
 
-    addIcons({
-      bug,
-      add,
-      checkmarkOutline,
-      refreshOutline,
-      reloadOutline,
-      shareSocialOutline,
-      removeOutline,
-      informationCircleOutline,
-      eyeOutline,
-    });
+    addIcons(allIcons);
   }
 
   /**

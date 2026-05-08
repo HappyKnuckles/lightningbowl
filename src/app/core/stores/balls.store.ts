@@ -1,11 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 
 @Injectable({ providedIn: 'root' })
 export class BallsStore {
@@ -83,6 +83,19 @@ export class BallsStore {
       } else {
         throw error;
       }
+    }
+  }
+  async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
+    try {
+      newBall.position = oldBall.position;
+      const oldKey = StorageKeys.arsenal(oldBall.ball_id, oldBall.core_weight);
+      const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
+      await this.storageRepository.remove(oldKey);
+      await this.storageRepository.set(newKey, newBall);
+      this.#arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+    } catch (error) {
+      console.error('Error updating ball in arsenal:', error);
+      throw error;
     }
   }
 

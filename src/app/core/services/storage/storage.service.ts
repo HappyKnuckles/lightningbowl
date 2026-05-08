@@ -28,6 +28,10 @@ export class StorageService {
 
   #pinInputMode = signal<boolean>(true);
 
+  /** Resolves once the initial game history has been loaded into the #games signal. */
+  readonly gamesReady: Promise<void>;
+  #resolveGamesReady!: () => void;
+
   get pinInputMode() {
     return this.#pinInputMode;
   }
@@ -74,6 +78,9 @@ export class StorageService {
     private networkService: NetworkService,
     private analyticsService: AnalyticsService,
   ) {
+    this.gamesReady = new Promise<void>((resolve) => {
+      this.#resolveGamesReady = resolve;
+    });
     this.init();
 
     // const games: Game[] = [];
@@ -222,7 +229,7 @@ export class StorageService {
 
   loadPinInputMode(): void {
     const mode = localStorage.getItem('pin-input-mode');
-    const pinInputMode = mode === null ? true : mode === 'hit';
+    const pinInputMode = mode === null ? false : mode === 'hit';
     this.#pinInputMode.set(pinInputMode);
   }
 
@@ -456,6 +463,7 @@ export class StorageService {
       await Promise.all(gameData.map((game) => this.save('game' + game.gameId, game)));
 
       // Efficient signal update
+      let mergedGames: Game[] = [];
       this.games.update((games) => {
         const existingMap = new Map(games.map((g) => [g.gameId, g]));
         for (const game of gameData) {
@@ -465,8 +473,11 @@ export class StorageService {
         // Keep new/updated games at top
         const updatedIds = new Set(gameData.map((g) => g.gameId));
         const others = games.filter((g) => !updatedIds.has(g.gameId));
-        return [...gameData, ...others];
+        mergedGames = [...gameData, ...others];
+        return mergedGames;
       });
+
+      this.updateFirstGameDate(mergedGames);
     } catch (error) {
       console.error('Error saving games to local storage:', error);
       throw error;
@@ -565,6 +576,7 @@ export class StorageService {
   async deleteAllData(): Promise<void> {
     try {
       await this.storage.clear();
+      localStorage.removeItem('first-game');
       this.games.set([]);
       this.arsenal.set([]);
       this.leagues.set([]);
@@ -582,17 +594,13 @@ export class StorageService {
         this.loadPatternImageMap(),
         this.loadAllBalls(undefined, weight),
         this.loadLeagues(),
-        this.loadGameHistory(),
+        this.loadGameHistory().then(() => this.#resolveGamesReady()),
         this.loadArsenal(),
         this.ballService.getBrands(),
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
-      if (this.games().length > 0) {
-        if (localStorage.getItem('first-game') === null) {
-          localStorage.setItem('first-game', this.games()[this.games().length - 1].date.toString());
-        }
-      }
+      this.updateFirstGameDate(this.games());
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;
@@ -614,7 +622,19 @@ export class StorageService {
     }
   }
 
-  private async save(key: string, data: unknown) {
+  /**
+   * Generic storage access methods for use by other services
+   */
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      return await this.storage.get(key);
+    } catch (error) {
+      console.error(`Error getting data for key "${key}":`, error);
+      throw error;
+    }
+  }
+
+  async set(key: string, data: unknown): Promise<void> {
     try {
       await this.storage.set(key, data);
     } catch (error) {
@@ -623,12 +643,39 @@ export class StorageService {
     }
   }
 
-  private async delete(key: string) {
+  async remove(key: string): Promise<void> {
     try {
       await this.storage.remove(key);
     } catch (error) {
       console.error(`Error deleting data for key "${key}":`, error);
       throw error;
     }
+  }
+
+  private updateFirstGameDate(games: Game[]): void {
+    if (!games.length) {
+      localStorage.removeItem('first-game');
+      return;
+    }
+
+    const earliestDate = games.reduce((minDate, game) => Math.min(minDate, game.date), Number.POSITIVE_INFINITY);
+
+    if (Number.isFinite(earliestDate)) {
+      localStorage.setItem('first-game', earliestDate.toString());
+    }
+  }
+
+  /**
+   * @deprecated Use set() instead
+   */
+  private async save(key: string, data: unknown) {
+    await this.set(key, data);
+  }
+
+  /**
+   * @deprecated Use remove() instead
+   */
+  private async delete(key: string) {
+    await this.remove(key);
   }
 }

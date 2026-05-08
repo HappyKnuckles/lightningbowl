@@ -9,4 +9,5 @@ export const environment = {
   analyticsEndpoint: 'https://analytics.nicolas-hoffmann.dev/api/',
   imagesUrl: 'https://images.lightningbowl.de/',
   branch: 'development',
+  authBackendUrl: 'http://localhost:3000',
 };

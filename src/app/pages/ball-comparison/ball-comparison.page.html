@@ -52,7 +52,7 @@
                   (ionChange)="onWeightSelect(ball.data, $event.detail.value, weightSelect)"
                   [disabled]="loadingWeightBallId() === ball.data.ball_id + ball.data.core_weight"
                   aria-label="Weight">
-                  @for (weight of ball.weightOptions; track weight) {
+                  @for (weight of availableWeights; track weight) {
                     <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
                   }
                 </ion-select>

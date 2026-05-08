@@ -1,21 +1,23 @@
 <ion-buttons slot="start" style="padding: 4px">
   <ion-button
-    for="excelUpload"
+    for="import"
     type="button"
     class="action-sheet"
     slot="start"
     fill="clear"
     [disabled]="storageService.allBalls().length === 0"
-    (click)="openExcelFileInput()">
+    (click)="openFileInput()">
     <ion-spinner style="position: absolute" *ngIf="storageService.allBalls().length === 0" name="crescent"></ion-spinner>
     <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
   </ion-button>
-  <ion-button
-    (click)="exportToExcel()"
-    class="action-sheet"
-    fill="clear"
-    [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+  <ion-button (click)="exportToExcel()" class="action-sheet" fill="clear" [disabled]="loadingService.isLoading()">
     <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon> </ion-button
 ></ion-buttons>
-<!-- Clear Input on Upload-->
-<input type="file" id="excelUpload" #excelUpload class="ion-hide" (input)="handleFileUpload()" placeholder="Upload file" accept=".xlsx" />
+<input
+  type="file"
+  id="import"
+  #import
+  class="ion-hide"
+  (change)="handleFileUpload()"
+  placeholder="Upload file"
+  accept=".xlsx,.xls,.pinpal,.db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3,application/vnd.sqlite3" />

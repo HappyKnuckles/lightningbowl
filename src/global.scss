@@ -44,15 +44,21 @@ ion-content {
 .stat-container {
   border: 1px solid var(--ion-border-color, #2b2828);
   margin: 0 16px 12px;
+  padding: 4px 0;
   border-radius: 7px;
   background-color: #141414;
-  padding: 4px 0;
 
   canvas {
     touch-action: pinch-zoom pan-y;
   }
 }
 
+ion-list-header .open-icon {
+  margin-left: auto;
+  margin-right: 16px;
+  font-size: 1.5rem;
+  color: var(--ion-color-medium);
+}
 
 canvas {
   margin: 0 8px;

@@ -1,7 +1,24 @@
 import { TypeaheadConfig } from './typeahead-config.interface';
-import { Ball, Core, Coverstock } from 'src/app/core/models/ball.model';
+import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+
+export function createBallBrandTypeaheadConfig(): TypeaheadConfig<Brand> {
+  return {
+    title: 'Select Brands',
+    searchPlaceholder: 'Search for brands',
+    loadingText: 'Loading more brands...',
+    noDataText: 'No brands found!',
+    displayFields: [{ key: 'brand_name', isPrimary: true }],
+    searchKeys: [{ name: 'brand_name', weight: 1 }],
+    identifierKey: 'id',
+    valueKey: 'brand_name',
+    searchMode: 'local',
+    showImages: true,
+    imageShape: 'rect',
+    imageUrlGenerator: (brand: Brand) => brand.logo,
+  };
+}
 
 export function createBallCoreTypeaheadConfig(): TypeaheadConfig<Core> {
   return {

@@ -1,54 +1,60 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { AfterViewInit, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import emailjs from '@emailjs/browser';
+import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonHeader,
-  IonToolbar,
-  IonContent,
-  IonInput,
-  IonIcon,
-  IonTitle,
-  IonItem,
-  IonSelect,
-  IonSelectOption,
+  IonButton,
+  IonButtons,
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
   IonLabel,
-  IonButton,
-  IonTextarea,
-  IonModal,
-  IonButtons,
   IonList,
+  IonModal,
+  IonNote,
+  IonSelect,
+  IonSelectOption,
+  IonTextarea,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import {
+  addOutline,
+  bugOutline,
+  chevronBack,
+  chevronBackOutline,
+  cloudUploadOutline,
   colorPaletteOutline,
   logoGithub,
-  personCircleOutline,
-  sendOutline,
-  addOutline,
   mailOutline,
-  chevronBack,
+  personCircleOutline,
   refreshCircleOutline,
-  chevronBackOutline,
-  bugOutline,
+  sendOutline,
 } from 'ionicons/icons';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
-import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
-import { environment } from 'src/environments/environment';
-import emailjs from '@emailjs/browser';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
+import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
 import { SpareNamesComponent } from 'src/app/shared/components/spare-names/spare-names.component';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular';
-import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -75,17 +81,23 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
     IonHeader,
     IonSelect,
     IonSelectOption,
+    IonNote,
     NgClass,
     NgFor,
+    NgIf,
+    DatePipe,
     FormsModule,
     ReactiveFormsModule,
     LeagueSelectorComponent,
     SpareNamesComponent,
-    NgIf,
   ],
 })
-export class SettingsPage implements OnInit {
+export class SettingsPage implements OnInit, AfterViewInit {
+  private destroyRef = inject(DestroyRef);
   private modalCtrl = inject(ModalController);
+  private router = inject(Router);
+  private hasHandledAuthCallback = false;
+  private hasOpenedCloudSyncModal = false;
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
     { name: 'Blue', class: 'blue-option' },
@@ -107,6 +119,8 @@ export class SettingsPage implements OnInit {
     private alertCtrl: AlertController,
     private analyticsService: AnalyticsService,
     public storageService: StorageService,
+    public cloudSyncService: CloudSyncService,
+    private route: ActivatedRoute,
   ) {
     addIcons({
       personCircleOutline,
@@ -119,12 +133,47 @@ export class SettingsPage implements OnInit {
       chevronBack,
       sendOutline,
       bugOutline,
+      cloudUploadOutline,
     });
   }
 
   ngOnInit(): void {
     this.currentColor = this.themeService.getCurrentTheme();
     this.updateAvailable = localStorage.getItem('update') !== null ? true : false;
+  }
+
+  ngAfterViewInit(): void {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const provider = params['provider'];
+      const status = params['status'];
+      const error = params['error'] || params['message'];
+      const shouldOpenCloudSync = params['openCloudSync'] === 'true' || params['openModal'] === 'true' || (provider && status);
+
+      if (provider && status && !this.hasHandledAuthCallback) {
+        this.hasHandledAuthCallback = true;
+        void this.cloudSyncService.handleAuthCallback(provider, status, error || undefined).catch((err) => {
+          console.error('Auth callback handling failed:', err);
+        });
+      }
+
+      if (shouldOpenCloudSync && !this.hasOpenedCloudSyncModal) {
+        this.hasOpenedCloudSyncModal = true;
+        void this.openSyncModal();
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true,
+        });
+      }
+    });
+  }
+
+  async openSyncModal() {
+    const modal = await this.modalCtrl.create({
+      component: CloudSyncSettingsComponent,
+    });
+
+    return await modal.present();
   }
 
   async openGithubIssueModal(): Promise<void> {

@@ -2,8 +2,6 @@
 <resources>
     <string name="app_name">Lightning Bowl</string>
     <string name="title_activity_main">Lightning Bowl</string>
-    <string name="package_name">io.ionic.bowling</string>
-    <string name="custom_url_scheme">io.ionic.bowling</string>
-    <string name="admob_app_id">ca-app-pub-5244538287702059~2003936792</string>
-
+    <string name="package_name">de.lightningbowl</string>
+    <string name="custom_url_scheme">de.lightningbowl</string>
 </resources>

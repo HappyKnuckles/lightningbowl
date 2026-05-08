@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -90,7 +90,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
-  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
@@ -110,15 +109,11 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   readonly displayBalls = computed(() =>
     this.selectedBalls().map((ball) => {
       const metrics = getBallMetrics(ball);
-      const weightOptions = this.availableWeights.includes(ball.core_weight)
-        ? this.availableWeights
-        : [...this.availableWeights, ball.core_weight].sort((a, b) => Number(a) - Number(b));
       return {
         data: ball,
         metrics,
         hookBarColor: this.getMetricBarColor(metrics.hookScore),
         flareBarColor: this.getMetricBarColor(metrics.flareScore),
-        weightOptions,
       };
     }),
   );

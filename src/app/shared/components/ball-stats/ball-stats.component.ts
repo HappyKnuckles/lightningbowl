@@ -14,6 +14,7 @@ export class BallStatsComponent {
   totalGames = input.required<number>();
   imageUrlBase = input<string>();
   emptyMessage = input<string>('No Games with balls saved.');
+  allBalls = input<BestBallStats[]>();
 
   asGeneric = computed(() => {
     const b = this.bestBall();
@@ -25,5 +26,18 @@ export class BallStatsComponent {
       lowestGame: b.ballLowestGame,
       gameCount: b.gameCount,
     };
+  });
+
+  allBallsGeneric = computed(() => {
+    return this.allBalls()
+      ?.map((b) => ({
+        name: b.ballName,
+        image: b.ballImage,
+        avg: b.ballAvg,
+        highestGame: b.ballHighestGame,
+        lowestGame: b.ballLowestGame,
+        gameCount: b.gameCount,
+      }))
+      .sort((a, b) => b.gameCount - a.gameCount);
   });
 }

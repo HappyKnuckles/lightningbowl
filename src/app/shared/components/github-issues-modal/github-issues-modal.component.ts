@@ -58,7 +58,7 @@ export class GithubIssuesModalComponent {
   readonly loading = signal(false);
   selectedLabels: string[] = ['']; // Initial '' selection maps to the "All" filter option
   readonly error = signal<string | null>(null);
-  vm$: Observable<{ loading: boolean; error: string | null; issues: GitHubIssue[] }>;
+  readonly vm$: Observable<{ loading: boolean; error: string | null; issues: GitHubIssue[] }>;
   private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
   constructor(private gitHubService: GitHubService) {

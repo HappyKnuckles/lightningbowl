@@ -23,7 +23,7 @@
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <ng-container *ngIf="vm$ | async as vm">
+  @if (vm$ | async; as vm) {
     <!-- Loading State -->
     <div *ngIf="vm.loading" style="text-align: center; padding: 40px">
       <ion-spinner></ion-spinner>
@@ -90,5 +90,5 @@
         </ion-card-content>
       </ion-card>
     </div>
-  </ng-container>
+  }
 </ion-content>

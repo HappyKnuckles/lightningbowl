@@ -34,7 +34,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import Fuse from 'fuse.js';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -326,7 +326,7 @@ export class BallsPage implements OnInit {
       }
 
       // Load the next page from the API.
-      const response = await this.ballService.loadBalls(this.currentPage);
+      const response = await firstValueFrom(this.ballService.loadBalls(this.currentPage));
 
       if (response.length > 0) {
         this.balls.set([...this.balls(), ...response]);
@@ -383,7 +383,7 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
-      this.coreBalls = await this.ballService.getBallsByCore(ball);
+      this.coreBalls = await firstValueFrom(this.ballService.getBallsByCore(ball));
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
       } else {
@@ -401,7 +401,7 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
-      this.coverstockBalls = await this.ballService.getBallsByCoverstock(ball);
+      this.coverstockBalls = await firstValueFrom(this.ballService.getBallsByCoverstock(ball));
       if (this.coverstockBalls.length > 0) {
         await this.coverstockModal.present();
       } else {
@@ -422,7 +422,7 @@ export class BallsPage implements OnInit {
 
       // Use all available balls for comparison
       const allBalls = this.storageService.allBalls();
-      this.movementBalls = await this.ballService.getBallsByMovementPattern(ball, allBalls);
+      this.movementBalls = await firstValueFrom(this.ballService.getBallsByMovementPattern(ball, allBalls));
 
       if (this.movementBalls.length > 0) {
         await this.movementModal.present();

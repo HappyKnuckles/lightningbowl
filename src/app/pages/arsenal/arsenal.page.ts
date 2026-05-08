@@ -46,6 +46,7 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-arsenal',
@@ -213,7 +214,7 @@ export class ArsenalPage implements OnInit {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
 
-      this.coreBalls = await this.ballService.getBallsByCore(ball);
+      this.coreBalls = await firstValueFrom(this.ballService.getBallsByCore(ball));
 
       if (this.coreBalls.length > 0) {
         this.coreModal.present();
@@ -233,7 +234,7 @@ export class ArsenalPage implements OnInit {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
 
-      this.coverstockBalls = await this.ballService.getBallsByCoverstock(ball);
+      this.coverstockBalls = await firstValueFrom(this.ballService.getBallsByCoverstock(ball));
 
       if (this.coverstockBalls.length > 0) {
         await this.coverstockModal.present();

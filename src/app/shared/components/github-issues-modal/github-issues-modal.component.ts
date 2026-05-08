@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -24,6 +24,7 @@ import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
+import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-github-issues-modal',
@@ -50,14 +51,37 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
     FormsModule,
   ],
 })
-export class GithubIssuesModalComponent implements OnInit {
+export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
-  issues: GitHubIssue[] = [];
-  loading = false;
-  selectedLabels: string[] = ['']; // Empty array to show all issues by default
-  error: string | null = null;
+  issues$: Observable<GitHubIssue[]>;
+  loading = signal(false);
+  selectedLabels: string[] = ['']; // Initial '' selection maps to the "All" filter option
+  error = signal<string | null>(null);
+  private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
   constructor(private gitHubService: GitHubService) {
+    this.issues$ = this.selectedLabels$.pipe(
+      tap(() => {
+        this.loading.set(true);
+        this.error.set(null);
+      }),
+      switchMap((labels) =>
+        this.gitHubService.getIssues(labels).pipe(
+          catchError((error) => {
+            console.error('Failed to load issues:', error);
+            this.error.set(
+              'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.',
+            );
+            return of([]);
+          }),
+          finalize(() => {
+            this.loading.set(false);
+          }),
+        ),
+      ),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+
     addIcons({
       documentOutline,
       openOutline,
@@ -65,27 +89,8 @@ export class GithubIssuesModalComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.loadIssues();
-  }
-
-  async loadIssues(): Promise<void> {
-    this.loading = true;
-    this.error = null;
-    try {
-      this.issues = await this.gitHubService.getIssues(this.selectedLabels);
-    } catch (error) {
-      console.error('Failed to load issues:', error);
-      this.issues = [];
-      this.error =
-        'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.';
-    } finally {
-      this.loading = false;
-    }
-  }
-
   onLabelFilterChange(): void {
-    this.loadIssues();
+    this.selectedLabels$.next(this.selectedLabels);
   }
 
   getTruncatedBody(body: string): string {

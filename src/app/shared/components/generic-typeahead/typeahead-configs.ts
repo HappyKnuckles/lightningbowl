@@ -2,6 +2,7 @@ import { TypeaheadConfig } from './typeahead-config.interface';
 import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { firstValueFrom, Observable } from 'rxjs';
 
 export function createBallBrandTypeaheadConfig(): TypeaheadConfig<Brand> {
   return {
@@ -91,7 +92,7 @@ export function createBallTypeaheadConfig(storageService: StorageService): Typea
   };
 }
 
-export function createPatternTypeaheadConfig(searchFn: (term: string) => Promise<{ patterns: Pattern[] }>): TypeaheadConfig<Pattern> {
+export function createPatternTypeaheadConfig(searchFn: (term: string) => Observable<{ patterns: Pattern[] }>): TypeaheadConfig<Pattern> {
   return {
     title: 'Select Patterns (max 2)',
     searchPlaceholder: 'Search for a pattern',
@@ -107,7 +108,7 @@ export function createPatternTypeaheadConfig(searchFn: (term: string) => Promise
     maxSelections: 2,
     searchMode: 'api',
     apiSearchFn: async (searchTerm: string) => {
-      const response = await searchFn(searchTerm);
+      const response = await firstValueFrom(searchFn(searchTerm));
       return { items: response.patterns };
     },
     customDisplayLogic: (pattern: Pattern) => {
@@ -128,7 +129,7 @@ export function createPatternTypeaheadConfig(searchFn: (term: string) => Promise
   };
 }
 
-export function createPartialPatternTypeaheadConfig(searchFn: (term: string) => Promise<{ patterns: Pattern[] }>): TypeaheadConfig<Partial<Pattern>> {
+export function createPartialPatternTypeaheadConfig(searchFn: (term: string) => Observable<{ patterns: Pattern[] }>): TypeaheadConfig<Partial<Pattern>> {
   return {
     title: 'Select Patterns (max 2)',
     searchPlaceholder: 'Search for a pattern',
@@ -144,7 +145,7 @@ export function createPartialPatternTypeaheadConfig(searchFn: (term: string) => 
     maxSelections: 2,
     searchMode: 'api',
     apiSearchFn: async (searchTerm: string) => {
-      const response = await searchFn(searchTerm);
+      const response = await firstValueFrom(searchFn(searchTerm));
       return { items: response.patterns };
     },
     customDisplayLogic: (pattern: Partial<Pattern>) => {

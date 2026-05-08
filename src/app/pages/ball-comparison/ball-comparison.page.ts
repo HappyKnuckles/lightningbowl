@@ -43,6 +43,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
+import { firstValueFrom } from 'rxjs';
 
 interface SavedEntry {
   id: string;
@@ -276,7 +277,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private async getBallsForWeight(weight: number): Promise<Ball[]> {
     const cached = this.ballsByWeightCache.get(weight);
     if (cached) return cached;
-    const fetched = await this.ballService.loadAllBalls(undefined, weight);
+    const fetched = await firstValueFrom(this.ballService.loadAllBalls(undefined, weight));
     this.ballsByWeightCache.set(weight, fetched);
     return fetched;
   }

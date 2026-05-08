@@ -61,6 +61,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { environment } from 'src/environments/environment';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-pattern',
@@ -191,7 +192,7 @@ export class PatternPage implements OnInit {
       if (!event) {
         this.isPageLoading.set(true);
       }
-      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh);
+      const response = await firstValueFrom(this.patternService.getPatterns(this.currentPage, forceRefresh));
       const patterns = response.patterns;
       if (response.total > 0) {
         this.patterns = [...this.patterns, ...patterns];
@@ -223,11 +224,11 @@ export class PatternPage implements OnInit {
 
       if (searchValue === '') {
         this.hasMoreData = true;
-        const response = await this.patternService.getPatterns(this.currentPage);
+        const response = await firstValueFrom(this.patternService.getPatterns(this.currentPage));
         this.patterns = response.patterns;
         this.currentPage++;
       } else {
-        const response = await this.patternService.searchPattern(searchValue, true);
+        const response = await firstValueFrom(this.patternService.searchPattern(searchValue, true));
         this.patterns = response.patterns;
         this.hasMoreData = false;
         this.currentPage = 1;

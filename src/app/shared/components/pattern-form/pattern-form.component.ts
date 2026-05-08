@@ -16,7 +16,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { trashOutline, chevronBack, close } from 'ionicons/icons';
-import { startWith, combineLatestWith } from 'rxjs';
+import { startWith, combineLatestWith, firstValueFrom } from 'rxjs';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { ForwardsData, Pattern, ReverseData } from 'src/app/core/models/pattern.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
@@ -228,7 +228,7 @@ export class PatternFormComponent implements OnInit {
     };
     try {
       this.loadingService.setLoading(true);
-      await this.patternService.addPattern(pattern);
+      await firstValueFrom(this.patternService.addPattern(pattern));
       this.toastService.showToast(ToastMessages.patternAddSuccess, 'checkmark');
       this.cancel();
     } catch (error) {

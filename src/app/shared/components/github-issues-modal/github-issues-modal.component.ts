@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -24,7 +25,7 @@ import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
-import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, combineLatest, finalize, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-github-issues-modal',
@@ -54,35 +55,39 @@ import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, swi
 export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
   issues$: Observable<GitHubIssue[]>;
-  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
-  readonly loading$ = this.loadingSubject.asObservable();
+  readonly loading = signal(false);
   selectedLabels: string[] = ['']; // Initial '' selection maps to the "All" filter option
-  private readonly errorSubject = new BehaviorSubject<string | null>(null);
-  readonly error$ = this.errorSubject.asObservable();
+  readonly error = signal<string | null>(null);
+  vm$: Observable<{ loading: boolean; error: string | null; issues: GitHubIssue[] }>;
   private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
   constructor(private gitHubService: GitHubService) {
     this.issues$ = this.selectedLabels$.pipe(
       tap(() => {
-        this.loadingSubject.next(true);
-        this.errorSubject.next(null);
+        this.loading.set(true);
+        this.error.set(null);
       }),
       switchMap((labels) =>
         this.gitHubService.getIssues(labels).pipe(
           catchError((error) => {
             console.error('Failed to load issues:', error);
-            this.errorSubject.next(
+            this.error.set(
               'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.',
             );
             return of([]);
           }),
           finalize(() => {
-            this.loadingSubject.next(false);
+            this.loading.set(false);
           }),
         ),
       ),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
+    this.vm$ = combineLatest({
+      loading: toObservable(this.loading),
+      error: toObservable(this.error),
+      issues: this.issues$.pipe(startWith([])),
+    });
 
     addIcons({
       documentOutline,

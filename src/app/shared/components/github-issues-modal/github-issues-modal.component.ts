@@ -54,28 +54,30 @@ import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, swi
 export class GithubIssuesModalComponent {
   modalCtrl = inject(ModalController);
   issues$: Observable<GitHubIssue[]>;
-  loading$ = new BehaviorSubject<boolean>(false);
+  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
+  readonly loading$ = this.loadingSubject.asObservable();
   selectedLabels: string[] = ['']; // Initial '' selection maps to the "All" filter option
-  error$ = new BehaviorSubject<string | null>(null);
+  private readonly errorSubject = new BehaviorSubject<string | null>(null);
+  readonly error$ = this.errorSubject.asObservable();
   private selectedLabels$ = new BehaviorSubject<string[]>(['']);
 
   constructor(private gitHubService: GitHubService) {
     this.issues$ = this.selectedLabels$.pipe(
       tap(() => {
-        this.loading$.next(true);
-        this.error$.next(null);
+        this.loadingSubject.next(true);
+        this.errorSubject.next(null);
       }),
       switchMap((labels) =>
         this.gitHubService.getIssues(labels).pipe(
           catchError((error) => {
             console.error('Failed to load issues:', error);
-            this.error$.next(
+            this.errorSubject.next(
               'Unable to load issues. This may be due to network restrictions or API limitations. Please visit the GitHub repository directly for the latest issues.',
             );
             return of([]);
           }),
           finalize(() => {
-            this.loading$.next(false);
+            this.loadingSubject.next(false);
           }),
         ),
       ),

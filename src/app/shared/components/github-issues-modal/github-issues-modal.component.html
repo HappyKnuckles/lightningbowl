@@ -23,34 +23,34 @@
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <!-- Loading State -->
-  <div *ngIf="loading()" style="text-align: center; padding: 40px">
-    <ion-spinner></ion-spinner>
-    <p>Loading issues...</p>
-  </div>
+  <ng-container *ngIf="{ loading: (loading$ | async) ?? false, error: (error$ | async), issues: (issues$ | async) ?? [] } as vm">
+    <!-- Loading State -->
+    <div *ngIf="vm.loading" style="text-align: center; padding: 40px">
+      <ion-spinner></ion-spinner>
+      <p>Loading issues...</p>
+    </div>
 
-  <!-- Error State -->
-  <div *ngIf="!loading() && error()" style="text-align: center; padding: 40px">
+    <!-- Error State -->
+    <div *ngIf="!vm.loading && vm.error" style="text-align: center; padding: 40px">
       <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
       <p style="color: var(--ion-color-warning); margin-top: 16px; font-weight: 500">
-        {{ error() }}
+        {{ vm.error }}
       </p>
       <ion-button fill="clear" size="small" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" target="_blank" style="margin-top: 16px">
         <ion-icon name="open-outline" slot="start"></ion-icon>
         View Issues on GitHub
       </ion-button>
-  </div>
+    </div>
 
-  <ng-container *ngIf="issues$ | async as issues">
     <!-- Empty State -->
-    <div *ngIf="!loading() && !error() && issues.length === 0" style="text-align: center; padding: 40px">
+    <div *ngIf="!vm.loading && !vm.error && vm.issues.length === 0" style="text-align: center; padding: 40px">
       <ion-icon name="document-outline" size="large" color="medium"></ion-icon>
       <p style="margin-top: 16px">No issues found for the selected filters.</p>
     </div>
 
     <!-- Issues List -->
-    <div *ngIf="!loading() && issues.length > 0" style="padding: 16px">
-      <ion-card *ngFor="let issue of issues" class="issue-card">
+    <div *ngIf="!vm.loading && vm.issues.length > 0" style="padding: 16px">
+      <ion-card *ngFor="let issue of vm.issues" class="issue-card">
         <ion-card-header>
           <div class="issue-header">
             <ion-card-title>{{ issue.title }}</ion-card-title>

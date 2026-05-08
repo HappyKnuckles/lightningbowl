@@ -27,7 +27,11 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig, createBallBrandTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import {
+  createBallCoreTypeaheadConfig,
+  createBallCoverstockTypeaheadConfig,
+  createBallBrandTypeaheadConfig,
+} from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';

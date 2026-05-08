@@ -1,57 +1,59 @@
-import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { ImpactStyle } from '@capacitor/haptics';
+import { InfiniteScrollCustomEvent, ModalController, RefresherCustomEvent, SearchbarCustomEvent } from '@ionic/angular';
 import {
-  IonContent,
-  IonSearchbar,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-  IonCardTitle,
-  IonImg,
-  IonCardContent,
+  IonButton,
+  IonButtons,
   IonCard,
+  IonCardContent,
   IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonImg,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonCardSubtitle,
-  IonIcon,
-  IonButtons,
-  IonButton,
-  IonText,
-  IonModal,
-  IonRippleEffect,
   IonList,
-  IonRefresherContent,
+  IonModal,
   IonRefresher,
+  IonRefresherContent,
+  IonRippleEffect,
+  IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonSkeletonText,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { Ball } from 'src/app/core/models/ball.model';
+import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
-import { globeOutline, camera, addOutline, filterOutline, openOutline, closeCircle, heart, heartOutline } from 'ionicons/icons';
-import { InfiniteScrollCustomEvent, ModalController, RefresherCustomEvent, SearchbarCustomEvent } from '@ionic/angular';
+import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
+import { Subject } from 'rxjs';
+import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { Ball } from 'src/app/core/models/ball.model';
+import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
+import { BallService } from 'src/app/core/services/ball/ball.service';
+import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { NetworkService } from 'src/app/core/services/network/network.service';
+import { SortService } from 'src/app/core/services/sort/sort.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import Fuse from 'fuse.js';
-import { Subject } from 'rxjs';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { ActivatedRoute } from '@angular/router';
-import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
-import { SortService } from 'src/app/core/services/sort/sort.service';
-import { BallSortOption, BallSortField, SortDirection } from 'src/app/core/models/sort.model';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 
 @Component({
   selector: 'app-balls',
@@ -82,6 +84,8 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
     IonHeader,
     IonTitle,
     IonToolbar,
+    IonSelect,
+    IonSelectOption,
     CommonModule,
     FormsModule,
     BallListComponent,
@@ -118,6 +122,8 @@ export class BallsPage implements OnInit {
   isPageLoading = signal(false);
   hasMoreData = true;
   filterDisplayCount = 100;
+  loadingWeightBallId = signal<string | null>(null);
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
   currentSortOption: BallSortOption = {
     field: BallSortField.RELEASE_DATE,
     direction: SortDirection.DESC,
@@ -191,7 +197,7 @@ export class BallsPage implements OnInit {
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
   ) {
-    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline });
+    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline });
     this.searchSubject.subscribe((query) => {
       this.searchTerm.set(query);
       if (this.content) {
@@ -513,6 +519,28 @@ export class BallsPage implements OnInit {
   private saveFavoritesFirstSetting(value: boolean): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('balls-favorites-first', value.toString());
+    }
+  }
+
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
+    const selectedWeight = Number(weight);
+    if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
+
+    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
+    try {
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
+      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+      if (!replacementBall) {
+        selectEl.value = ball.core_weight;
+        this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
+        return;
+      }
+      this.balls.update((list) => list.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? replacementBall : b)));
+    } catch {
+      selectEl.value = ball.core_weight;
+      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+    } finally {
+      this.loadingWeightBallId.set(null);
     }
   }
 

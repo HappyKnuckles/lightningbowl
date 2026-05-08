@@ -515,6 +515,18 @@ export class StorageService {
     }
   }
 
+  async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
+    try {
+      newBall.position = oldBall.position;
+      await this.delete(`arsenal_${oldBall.ball_id}_${oldBall.core_weight}`);
+      await this.save(`arsenal_${newBall.ball_id}_${newBall.core_weight}`, newBall);
+      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+    } catch (error) {
+      console.error('Error updating ball in arsenal:', error);
+      throw error;
+    }
+  }
+
   async deleteLeague(league: string) {
     try {
       const key = 'league' + '_' + league;

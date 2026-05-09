@@ -167,6 +167,14 @@ export class StatsPage implements OnInit, AfterViewInit {
 
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
 
+  sessionBestBallStats = computed(() => this.statsService.calculateBestBallStats(this.gamesForSelectedSession()));
+  sessionMostPlayedBallStats = computed(() => this.statsService.calculateMostPlayedBallStats(this.gamesForSelectedSession()));
+  sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
+
+  sessionBestPatternStats = computed(() => this.statsService.calculateBestPatternStats(this.gamesForSelectedSession()));
+  sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
+  sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
+
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';

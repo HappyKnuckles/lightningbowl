@@ -168,6 +168,22 @@ export class GameStatsService {
     return this.ballStatsCalculatorService.calculateMostPlayedBall(gameHistory);
   }
 
+  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
+    return this.ballStatsCalculatorService.calculateAllBallStats(gameHistory);
+  }
+
+  calculateBestPatternStats(gameHistory: Game[]): BestPatternStats {
+    return this.patternStatsCalculatorService.calculateBestPatternStats(gameHistory);
+  }
+
+  calculateMostPlayedPatternStats(gameHistory: Game[]): BestPatternStats {
+    return this.patternStatsCalculatorService.calculateMostPlayedPattern(gameHistory);
+  }
+
+  calculateAllPatternStats(gameHistory: Game[]): BestPatternStats[] {
+    return this.patternStatsCalculatorService.calculateAllPatternStats(gameHistory);
+  }
+
   calculateGamesForTargetAverage(targetAvg: number, steps = 15): { score: number; gamesNeeded: number }[] {
     return this.overallStatsCalculatorService.calculateGamesForTargetAverage(targetAvg, this.overallStats(), steps);
   }

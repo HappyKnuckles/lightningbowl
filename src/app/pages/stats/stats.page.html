@@ -173,12 +173,34 @@
     <ion-segment-content id="Sessions">
       @if (gameFilterService.filteredGames().length > 0) {
         <section class="tab">
+          @let allSessionBalls = sessionAllBallStats();
+          @let allSessionPatterns = sessionAllPatternStats();
           <app-stat-display
             [title]="'Overall Stats'"
             [statDefinitions]="sessionStatDefinitions"
             [currentStats]="sessionStats()"
             [prevStats]="statsService.currentStats()">
           </app-stat-display>
+          <app-ball-stats
+            [title]="'Most used ball'"
+            [bestBall]="sessionMostPlayedBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="allSessionBalls"></app-ball-stats>
+          <app-ball-stats
+            [title]="'Best ball'"
+            [bestBall]="sessionBestBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="allSessionBalls"></app-ball-stats>
+          <app-pattern-stats
+            [title]="'Most played pattern'"
+            [bestPattern]="sessionMostPlayedPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="allSessionPatterns"></app-pattern-stats>
+          <app-pattern-stats
+            [title]="'Best pattern'"
+            [bestPattern]="sessionBestPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="allSessionPatterns"></app-pattern-stats>
           <app-stat-display [title]="'Pin Stats'" [statDefinitions]="pinStatDefinitions" [currentStats]="sessionStats()"> </app-stat-display>
           <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
           </app-spare-display>

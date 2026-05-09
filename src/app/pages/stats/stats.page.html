@@ -179,12 +179,35 @@
             [currentStats]="sessionStats()"
             [prevStats]="statsService.currentStats()">
           </app-stat-display>
+          <app-ball-stats
+            [title]="'Most used ball'"
+            [bestBall]="sessionMostPlayedBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+          <app-ball-stats
+            [title]="'Best ball'"
+            [bestBall]="sessionBestBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+          <app-pattern-stats
+            [title]="'Most played pattern'"
+            [bestPattern]="sessionMostPlayedPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
+          <app-pattern-stats
+            [title]="'Best pattern'"
+            [bestPattern]="sessionBestPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
           <app-stat-display [title]="'Pin Stats'" [statDefinitions]="pinStatDefinitions" [currentStats]="sessionStats()"> </app-stat-display>
           <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
           </app-spare-display>
           <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
           <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
-          <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="sessionLeaves().common"></app-pin-leave-stats>
+          <app-pin-leave-stats
+            [title]="'Most Common Leaves'"
+            [leaveStats]="sessionLeaves().common"
+            [allLeaves]="sessionAllLeaves()"></app-pin-leave-stats>
         </section>
       }
     </ion-segment-content>

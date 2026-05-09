@@ -6,10 +6,11 @@ import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class BallsStore {
-  readonly url = 'https://bowwwl.com';
+  readonly url = BOWWWL_URL;
 
   #arsenal = signal<Ball[]>([]);
   #allBalls = signal<Ball[]>([]);
@@ -37,7 +38,7 @@ export class BallsStore {
 
   async loadArsenal(): Promise<void> {
     try {
-      const arsenal = await this.loadData<Ball>(STORAGE_PREFIX.arsenal);
+      const arsenal = await this.storageRepository.loadByPrefix<Ball>(STORAGE_PREFIX.arsenal);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.#arsenal.set(sortedArsenal);
     } catch (error) {
@@ -156,21 +157,6 @@ export class BallsStore {
       }
     } catch (error) {
       console.error('Background refresh failed for balls:', error);
-    }
-  }
-
-  private async loadData<T>(prefix: string): Promise<T[]> {
-    try {
-      const data: T[] = [];
-      await this.storageRepository.forEach((value, key) => {
-        if (key.startsWith(prefix)) {
-          data.push(value as T);
-        }
-      });
-      return data;
-    } catch (error) {
-      console.error(`Error loading data for prefix "${prefix}":`, error);
-      throw error;
     }
   }
 }

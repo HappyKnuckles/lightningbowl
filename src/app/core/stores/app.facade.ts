@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { BallsStore } from './balls.store';
@@ -21,6 +22,7 @@ export class AppFacade {
     private settingsStore: SettingsStore,
     private ballService: BallService,
     private analyticsService: AnalyticsService,
+    private ballFilterService: BallFilterService,
   ) {}
 
   async init(): Promise<void> {
@@ -48,8 +50,7 @@ export class AppFacade {
         console.warn('Persistent Storage API is not supported by this browser.');
       }
 
-      const ballFilter = localStorage.getItem('ball-filter');
-      const weight = ballFilter ? parseInt(JSON.parse(ballFilter).weight, 10) : 15;
+      const weight = parseInt(this.ballFilterService.filters().weight, 10);
       await this.loadInitialData(weight);
     } catch (error) {
       console.error('Error during AppFacade init:', error);

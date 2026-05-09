@@ -18,7 +18,7 @@ export class LeaguesStore {
 
   async loadLeagues(): Promise<string[]> {
     try {
-      const leagues = await this.loadData<string>(STORAGE_PREFIX.league);
+      const leagues = await this.storageRepository.loadByPrefix<string>(STORAGE_PREFIX.league);
       const reversedLeagues = [...leagues].reverse();
       this.#leagues.set(reversedLeagues);
       return reversedLeagues;
@@ -53,20 +53,5 @@ export class LeaguesStore {
 
   clearLeagues(): void {
     this.#leagues.set([]);
-  }
-
-  private async loadData<T>(prefix: string): Promise<T[]> {
-    try {
-      const data: T[] = [];
-      await this.storageRepository.forEach((value, key) => {
-        if (key.startsWith(prefix)) {
-          data.push(value as T);
-        }
-      });
-      return data;
-    } catch (error) {
-      console.error(`Error loading data for prefix "${prefix}":`, error);
-      throw error;
-    }
   }
 }

@@ -25,6 +25,16 @@ export class StorageRepository {
     await this.storage.forEach(callback);
   }
 
+  async loadByPrefix<T>(prefix: string): Promise<T[]> {
+    const data: T[] = [];
+    await this.storage.forEach((value, key) => {
+      if (key.startsWith(prefix)) {
+        data.push(value as T);
+      }
+    });
+    return data;
+  }
+
   async clear(): Promise<void> {
     await this.storage.clear();
   }

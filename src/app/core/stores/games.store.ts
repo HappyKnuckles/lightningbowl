@@ -23,7 +23,7 @@ export class GamesStore {
   async loadGameHistory(): Promise<Game[]> {
     this.loadingService.setLoading(true);
     try {
-      const gameHistory = await this.loadData<Game>(STORAGE_PREFIX.game);
+      const gameHistory = await this.storageRepository.loadByPrefix<Game>(STORAGE_PREFIX.game);
       let needsUpdate = false;
 
       gameHistory.forEach((game) => {
@@ -150,21 +150,6 @@ export class GamesStore {
   clearGames(): void {
     this.#games.set([]);
     this.updateFirstGameDate([]);
-  }
-
-  private async loadData<T>(prefix: string): Promise<T[]> {
-    try {
-      const data: T[] = [];
-      await this.storageRepository.forEach((value, key) => {
-        if (key.startsWith(prefix)) {
-          data.push(value as T);
-        }
-      });
-      return data;
-    } catch (error) {
-      console.error(`Error loading data for prefix "${prefix}":`, error);
-      throw error;
-    }
   }
 
   private updateFirstGameDate(games: Game[]): void {

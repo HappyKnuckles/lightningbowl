@@ -174,6 +174,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   sessionBestPatternStats = computed(() => this.statsService.calculateBestPatternStats(this.gamesForSelectedSession()));
   sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
+  sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
 
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';

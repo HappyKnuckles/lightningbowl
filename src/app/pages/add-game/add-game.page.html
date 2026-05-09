@@ -8,7 +8,7 @@
     <input type="file" id="upload" class="ion-hide" accept="image/*" />
     <ion-title (click)="presentActionSheet()" style="cursor: pointer">
       New {{ selectedMode === "Single" ? "Game" : selectedMode }}
-      <ion-icon [name]="sheetOpen ? 'chevron-up' : 'chevron-down'" size="small" style="vertical-align: middle"></ion-icon>
+      <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button fill="clear" (click)="togglePinInputMode()">

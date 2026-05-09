@@ -57,29 +57,43 @@
     <ng-template #content>
       @for (ball of displayedBalls; track ball.ball_id) {
         <ion-card role="article">
+          <div class="action-header">
+            <ion-select
+              #weightSelect
+              class="weight-change"
+              interface="popover"
+              [value]="ball.core_weight"
+              (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
+              [disabled]="loadingWeightBallId() === ball.ball_id + ball.core_weight"
+              aria-label="Weight">
+              @for (weight of availableWeights; track weight) {
+                <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
+              }
+            </ion-select>
+            <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
+              <ion-icon
+                [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
+                slot="icon-only"
+                style="color: var(--ion-color-primary); font-size: 24px">
+              </ion-icon>
+            </ion-button>
+          </div>
+
           <ion-card-header>
-            <ion-card-title style="display: flex; align-items: center; justify-content: space-between">
-              <span
-                (click)="getSimilarMovementBalls(ball)"
-                (keydown.enter)="getSimilarMovementBalls(ball)"
-                (keydown.space)="getSimilarMovementBalls(ball)"
-                tabindex="0"
-                role="button"
-                style="position: relative"
-                [attr.aria-label]="'Find balls with similar movement pattern to ' + ball.ball_name"
-                class="ion-activatable ripple-parent rounded-rectangle"
+            <ion-card-title
+              (click)="getSimilarMovementBalls(ball)"
+              (keydown.enter)="getSimilarMovementBalls(ball)"
+              (keydown.space)="getSimilarMovementBalls(ball)"
+              tabindex="0"
+              role="button"
+              style="position: relative"
+              [attr.aria-label]="'Find balls with similar movement pattern to ' + ball.ball_name"
+              class="ion-activatable ripple-parent rounded-rectangle">
+              <span style="position: relative"
                 >{{ ball.ball_name }}
                 <ion-icon style="position: absolute; color: rgb(153, 153, 153); font-size: 1rem; right: -18px" name="open-outline"></ion-icon>
-                <ion-ripple-effect style="width: calc(100% + 45px); border-radius: 5px; margin-left: -20px"></ion-ripple-effect
-              ></span>
-
-              <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
-                <ion-icon
-                  [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
-                  slot="icon-only"
-                  style="color: var(--ion-color-primary); font-size: 24px">
-                </ion-icon>
-              </ion-button>
+              </span>
+              <ion-ripple-effect style="width: calc(100% + 45px); border-radius: 5px; margin-left: -20px"></ion-ripple-effect>
             </ion-card-title>
             <ion-card-subtitle>
               {{ ball.brand_name }} ({{ ball.release_date }})
@@ -87,7 +101,7 @@
             </ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for' + ' ' + ball.ball_name"></ion-img>
+            <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for ' + ball.ball_name"></ion-img>
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">

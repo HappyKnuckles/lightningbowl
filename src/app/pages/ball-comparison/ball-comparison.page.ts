@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -17,10 +17,7 @@ import {
   IonHeader,
   IonIcon,
   IonImg,
-  IonItem,
-  IonList,
   IonModal,
-  IonPopover,
   IonRow,
   IonSegment,
   IonSegmentButton,
@@ -29,6 +26,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonSelect,
+  IonSelectOption,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
@@ -68,10 +67,7 @@ interface SavedEntry {
     IonButton,
     IonButtons,
     IonIcon,
-    IonItem,
-    IonList,
     IonModal,
-    IonPopover,
     IonText,
     IonImg,
     IonCard,
@@ -85,6 +81,8 @@ interface SavedEntry {
     IonSegmentView,
     IonSegmentContent,
     GenericTypeaheadComponent,
+    IonSelect,
+    IonSelectOption,
   ],
 })
 export class BallComparisonPage implements OnInit, OnDestroy {
@@ -92,7 +90,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
-  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
@@ -112,15 +109,11 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   readonly displayBalls = computed(() =>
     this.selectedBalls().map((ball) => {
       const metrics = getBallMetrics(ball);
-      const weightOptions = this.availableWeights.includes(ball.core_weight)
-        ? this.availableWeights
-        : [...this.availableWeights, ball.core_weight].sort((a, b) => Number(a) - Number(b));
       return {
         data: ball,
         metrics,
         hookBarColor: this.getMetricBarColor(metrics.hookScore),
         flareBarColor: this.getMetricBarColor(metrics.flareScore),
-        weightOptions,
       };
     }),
   );
@@ -128,7 +121,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   private chartInstance: Chart | null = null;
   private distChartInstance: Chart | null = null;
-  private readonly ballsByWeightCache = new Map<number, Ball[]>();
   private hasRestored = false;
 
   constructor() {
@@ -169,21 +161,18 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     });
   }
 
-  async onWeightSelect(ball: Ball, weight: string, popover: IonPopover): Promise<void> {
-    await popover.dismiss();
-    await this.changeBallWeight(ball, Number(weight));
-  }
-
-  private async changeBallWeight(ball: Ball, selectedWeight: number): Promise<void> {
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
+    const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    this.loadingWeightBallId.set(ball.ball_id);
+    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
 
     try {
-      const ballsAtWeight = await this.getBallsForWeight(selectedWeight);
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
 
       if (!replacementBall) {
+        selectEl.value = ball.core_weight;
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
         return;
       }
@@ -194,6 +183,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
         return updated;
       });
     } catch {
+      selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallId.set(null);
@@ -259,7 +249,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
       entries.map(async ({ id, weight }) => {
         const defaultBall = defaultBallMap.get(id);
         if (defaultBall && defaultBall.core_weight === weight) return defaultBall;
-        const ballsAtWeight = await this.getBallsForWeight(Number(weight));
+        const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
         return ballsAtWeight.find((b) => b.ball_id === id) ?? defaultBall ?? null;
       }),
     );
@@ -271,14 +261,6 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   private saveSelectedIds(balls: Ball[]): void {
     const entries: SavedEntry[] = balls.map((b) => ({ id: b.ball_id, weight: b.core_weight }));
     localStorage.setItem(BallComparisonPage.STORAGE_KEY, JSON.stringify(entries));
-  }
-
-  private async getBallsForWeight(weight: number): Promise<Ball[]> {
-    const cached = this.ballsByWeightCache.get(weight);
-    if (cached) return cached;
-    const fetched = await this.ballService.loadAllBalls(undefined, weight);
-    this.ballsByWeightCache.set(weight, fetched);
-    return fetched;
   }
 
   private destroyCharts(): void {

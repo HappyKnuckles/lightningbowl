@@ -51,6 +51,11 @@ ion-img {
   line-height: 1.5;
 }
 
+.stat-container.ripple-parent {
+  position: relative;
+  overflow: hidden;
+}
+
 .inner-stat-container {
   display: flex;
   flex-direction: row;

@@ -51,7 +51,18 @@
                   <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
                   <h1>{{ ball.ball_name }}</h1>
                   <div class="ball-info">
-                    <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
+                    <ion-chip>
+                      <ion-select
+                        #weightSelect
+                        [value]="ball.core_weight"
+                        style="min-height: 0"
+                        (click)="$event.stopPropagation()"
+                        [disabled]="loadingWeightBallId() === ball.ball_id + ball.core_weight"
+                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
+                        interface="popover">
+                        <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
+                      </ion-select>
+                    </ion-chip>
                     <ion-chip>{{ ball.core_type }}</ion-chip>
                     <ion-chip>{{ ball.coverstock_type }}</ion-chip>
                   </div>

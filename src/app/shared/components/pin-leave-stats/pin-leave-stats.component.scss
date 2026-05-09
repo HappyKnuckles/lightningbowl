@@ -10,6 +10,11 @@ ion-list-header {
   margin-bottom: 4px;
 }
 
+.stat-container.ripple-parent {
+  position: relative;
+  overflow: hidden;
+}
+
 .leave-item {
   --padding-start: 8px;
   --padding-end: 8px;

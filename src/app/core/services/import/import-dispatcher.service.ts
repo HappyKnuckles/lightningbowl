@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
-import { PinpalService } from 'src/app/core/services/pinpal/pinpal.service';
+import { PinpalService } from '../pinpal/pinpal.service';
 
 export type ImportType = 'excel' | 'pinpal';
 

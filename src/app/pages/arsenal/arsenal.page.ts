@@ -42,7 +42,7 @@ import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
@@ -98,18 +98,18 @@ export class ArsenalPage implements OnInit {
 
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
-    this.storageService
+    this.ballsStore
       .allBalls()
-      .filter((ball) => !this.storageService.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
-  readonly loadingWeightBallId = signal<string | null>(null);
+  readonly loadingWeightBallIds = signal<Set<string>>(new Set());
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
   constructor(
-    public storageService: StorageService,
+    public ballsStore: BallsStore,
     private hapticService: HapticService,
     private alertController: AlertController,
     private loadingService: LoadingService,
@@ -128,7 +128,7 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.storageService);
+    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
   }
 
   private generateBallDistributionChart(): void {
@@ -138,7 +138,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.storageService.arsenal(),
+        this.ballsStore.arsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -162,7 +162,7 @@ export class ArsenalPage implements OnInit {
             text: 'Delete',
             handler: async () => {
               try {
-                await this.storageService.removeFromArsenal(ball);
+                await this.ballsStore.removeFromArsenal(ball);
                 this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
@@ -183,20 +183,20 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.storageService.arsenal();
+    const arsenal = this.ballsStore.arsenal();
     const [movedItem] = arsenal.splice(event.detail.from, 1);
     arsenal.splice(event.detail.to, 0, movedItem);
 
     arsenal.forEach((ball, idx) => (ball.position = idx + 1));
 
-    await Promise.all(arsenal.map((ball) => this.storageService.saveBallToArsenal(ball)));
+    await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
   }
 
   saveBallToArsenal(ball: Ball[]): void {
     try {
       ball.forEach(async (ball) => {
         try {
-          await this.storageService.saveBallToArsenal(ball);
+          await this.ballsStore.saveBallToArsenal(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
           this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);
@@ -260,7 +260,8 @@ export class ArsenalPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    this.loadingWeightBallId.set(ball.ball_id + ball.core_weight);
+    const key = ball.ball_id + ball.core_weight;
+    this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
@@ -272,7 +273,7 @@ export class ArsenalPage implements OnInit {
         return;
       }
 
-      const alreadyInArsenal = this.storageService
+      const alreadyInArsenal = this.ballsStore
         .arsenal()
         .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
       if (alreadyInArsenal) {
@@ -281,13 +282,17 @@ export class ArsenalPage implements OnInit {
         return;
       }
 
-      await this.storageService.updateArsenalBall(ball, replacementBall);
+      await this.ballsStore.updateArsenalBall(ball, replacementBall);
       this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
     } catch {
       selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
-      this.loadingWeightBallId.set(null);
+      this.loadingWeightBallIds.update((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
     }
   }
 }

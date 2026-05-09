@@ -17,7 +17,7 @@ import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { NgIf } from '@angular/common';
 import { GenericItemStats } from 'src/app/core/models/stats.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-item-stats',
@@ -51,7 +51,7 @@ export class ItemStatsComponent {
 
   isModalOpen = signal(false);
 
-  constructor(public storageService: StorageService) {
+  constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });
   }
 

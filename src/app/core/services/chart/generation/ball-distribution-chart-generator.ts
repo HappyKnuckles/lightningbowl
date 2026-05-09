@@ -2,6 +2,7 @@ import { ElementRef } from '@angular/core';
 import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Ball } from 'src/app/core/models/ball.model';
+import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
 import { customAxisTitlesPlugin } from '../plugins/custom-axis-titles.plugin';
 
@@ -15,7 +16,7 @@ export function generateBallDistributionChart(
   isReload?: boolean,
 ): Chart {
   try {
-    const baseUrl = 'https://bowwwl.com';
+    const baseUrl = BOWWWL_URL;
     const canvas = ballDistributionChartCanvas.nativeElement as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) {

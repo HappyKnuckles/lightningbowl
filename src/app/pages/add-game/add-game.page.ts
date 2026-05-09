@@ -40,7 +40,7 @@ import { InputCustomEvent, ModalController } from '@ionic/angular';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
@@ -170,7 +170,7 @@ export class AddGamePage implements OnInit {
     private utilsService: UtilsService,
     private validationService: BowlingGameValidationService,
     private highScroreAlertService: HighScoreAlertService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
     private analyticsService: AnalyticsService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
@@ -587,7 +587,7 @@ export class AddGamePage implements OnInit {
       const savedGames = (await Promise.all(savePromises)).filter((g): g is Game => g !== null);
 
       if (savedGames.length > 0) {
-        const allGames = this.storageService.games();
+        const allGames = this.gamesStore.games();
         if (savedGames.length === 1) {
           await this.highScroreAlertService.checkAndDisplayHighScoreAlerts(savedGames[0], allGames);
         } else {
@@ -735,7 +735,7 @@ export class AddGamePage implements OnInit {
     }
     try {
       const gameData = this.transformGameService.transformGameData(game, seriesConfig);
-      await this.storageService.saveGameToLocalStorage(gameData);
+      await this.gamesStore.saveGameToLocalStorage(gameData);
       this.analyticsService.trackGameSaved({ score: gameData.totalScore });
       return gameData;
     } catch (error) {

@@ -27,7 +27,7 @@
           *ngIf="item().image"
           [class.round]="roundImage()"
           [class.pattern-img]="!roundImage()"
-          [src]="(imageUrlBase() ?? storageService.url) + item().image"></ion-img>
+          [src]="(imageUrlBase() ?? ballsStore.url) + item().image"></ion-img>
         <div class="item-stats">
           <div class="stat-line">
             <span class="stat-label">Avg:</span>
@@ -77,7 +77,7 @@
                 <ion-img
                   [class.round]="roundImage()"
                   [class.pattern-img]="!roundImage()"
-                  [src]="(imageUrlBase() ?? storageService.url) + item.image"></ion-img>
+                  [src]="(imageUrlBase() ?? ballsStore.url) + item.image"></ion-img>
                 <div class="item-stats">
                   <div class="stat-line">
                     <span class="stat-label">Avg:</span>

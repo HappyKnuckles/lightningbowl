@@ -2,10 +2,10 @@
   <ion-toolbar>
     <ion-title>Ball Library</ion-title>
     <ion-buttons slot="start">
-      <ion-button [href]="storageService.url">
+      <ion-button [href]="ballsStore.url">
         <div class="powered-by">powered by</div>
         <img
-          [src]="storageService.url + '/sites/default/files/logo/bowwwl-logo.svg'"
+          [src]="ballsStore.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
           title="bowwwl.com"
           style="height: 1.5rem; min-width: 80px" />
@@ -64,7 +64,7 @@
               interface="popover"
               [value]="ball.core_weight"
               (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
-              [disabled]="loadingWeightBallId() === ball.ball_id + ball.core_weight"
+              [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
               aria-label="Weight">
               @for (weight of availableWeights; track weight) {
                 <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
@@ -101,7 +101,7 @@
             </ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-img [src]="storageService.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for ' + ball.ball_name"></ion-img>
+            <ion-img [src]="ballsStore.url + ball.thumbnail_image" style="height: 15vmax" [alt]="'Image for' + ' ' + ball.ball_name"></ion-img>
             <div class="ball-info">
               <ion-list lines="none" (click)="getSameCoreBalls(ball)" class="ion-activatable ion-ripple-parent list">
                 <div class="core">

@@ -3,7 +3,7 @@
     <app-file-header-buttons></app-file-header-buttons>
     <ion-title> Stats </ion-title>
     <ion-buttons slot="end" class="action-sheet">
-      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
         <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
@@ -215,7 +215,7 @@
 
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
-    <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
+    <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
       <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>
     </ng-container>
   </ng-container>

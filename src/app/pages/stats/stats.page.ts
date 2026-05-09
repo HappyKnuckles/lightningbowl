@@ -42,8 +42,9 @@ import { GameFilterService } from 'src/app/core/services/game-filter/game-filter
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
@@ -142,7 +143,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
-    this.storageService.games().forEach((game) => {
+    this.gamesStore.games().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
       dateSet.add(date.getTime());
@@ -156,7 +157,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   });
   gamesForSelectedSession = computed(() => {
     const selDate = this.selectedDate();
-    const allGames = this.storageService.games();
+    const allGames = this.gamesStore.games();
 
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
@@ -200,7 +201,8 @@ export class StatsPage implements OnInit, AfterViewInit {
   constructor(
     public loadingService: LoadingService,
     public statsService: GameStatsService,
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    public ballsStore: BallsStore,
     public gameFilterService: GameFilterService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
@@ -250,7 +252,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
-      await this.storageService.loadGameHistory();
+      await this.gamesStore.loadGameHistory();
       this.generateCharts(true);
     } catch (error) {
       console.error(error);

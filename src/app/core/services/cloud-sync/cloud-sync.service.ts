@@ -1,7 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { CloudProvider, CloudSyncSettings, CloudSyncStatus, SyncFrequency } from '../../models/cloud-sync.model';
+import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';
-import { StorageService } from '../storage/storage.service';
+import { StorageRepository } from '../storage/storage.repository';
 import { ToastService } from '../toast/toast.service';
 import { CloudSyncApiService } from './cloud-sync-api.service';
 
@@ -31,26 +32,24 @@ export class CloudSyncService {
     return settings.enabled && settings.connectedProvider !== undefined;
   });
 
-  private readonly _settingsLoaded: Promise<void>;
-
   constructor(
-    private storageService: StorageService,
+    private storageRepository: StorageRepository,
+    private appFacade: AppFacade,
     private excelService: ExcelService,
     private toastService: ToastService,
     private cloudSyncApiService: CloudSyncApiService,
-  ) {
-    this._settingsLoaded = this.init();
-  }
+  ) {}
 
-  private async init(): Promise<void> {
+  public async init(): Promise<void> {
+    await this.appFacade.init();
     await this.loadSettings();
     // Fire-and-forget: startup sync runs in the background and should not
     // block other operations like handling the OAuth callback redirect.
-    this.checkAndSyncOnStartup();
+    void this.checkAndSyncOnStartup();
   }
 
   private async loadSettings(): Promise<void> {
-    const savedSettings = await this.storageService.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
+    const savedSettings = await this.storageRepository.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
     if (savedSettings) {
       this.#settings.set(savedSettings);
       this.#syncStatus.update((status) => ({
@@ -76,7 +75,7 @@ export class CloudSyncService {
       if (calculatedNextSync < now) {
         // First update the settings with the new frequency
         this.#settings.set(updatedSettings);
-        await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+        await this.storageRepository.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
 
         // Then trigger immediate sync (this will update lastSyncDate and nextSyncDate)
         try {
@@ -91,7 +90,7 @@ export class CloudSyncService {
             nextSync: new Date(newNextSync),
           }));
           this.#settings.set(updatedSettings);
-          await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+          await this.storageRepository.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
         }
         return;
       }
@@ -105,7 +104,7 @@ export class CloudSyncService {
     }
 
     this.#settings.set(updatedSettings);
-    await this.storageService.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
+    await this.storageRepository.set(CLOUD_SYNC_STORAGE_KEY, updatedSettings);
   }
 
   async authenticateWithProvider(provider: CloudProvider): Promise<void> {
@@ -125,8 +124,6 @@ export class CloudSyncService {
    * Called after the OAuth backend redirects to settings with callback query params
    */
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
-    await this._settingsLoaded;
-
     if (status === 'success') {
       const providerEnum = provider as CloudProvider;
       const now = Date.now();
@@ -289,8 +286,7 @@ export class CloudSyncService {
     }
 
     try {
-      // Wait until StorageService has finished loading game history
-      await this.storageService.gamesReady;
+      await this.appFacade.init();
       await this.syncNow();
     } catch (error) {
       console.error('Automatic sync on startup failed:', error);

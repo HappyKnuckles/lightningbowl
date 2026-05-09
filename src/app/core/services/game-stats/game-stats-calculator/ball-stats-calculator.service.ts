@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { BestBallStats } from 'src/app/core/models/stats.model';
-import { StorageService } from '../../storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BallStatsCalculatorService {
-  constructor(private storageService: StorageService) {}
+  constructor(private ballsStore: BallsStore) {}
 
   private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
     const gamesWithBalls = gameHistory.filter((game) => game.balls && game.balls.length > 0);
@@ -57,7 +57,7 @@ export class BallStatsCalculatorService {
     const finalStats: Record<string, BestBallStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
-      const ballImage = this.storageService.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';
+      const ballImage = this.ballsStore.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';
       const totalPossibleStrikes = stats.gameCount * 12;
       const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
 

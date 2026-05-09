@@ -5,10 +5,10 @@
 </ion-header>
 <ion-content>
   <ion-list>
-    @for (ball of storageService.arsenal(); track $index) {
+    @for (ball of ballsStore.arsenal(); track $index) {
       <ion-item [lines]="$last ? 'none' : ''">
         <ion-avatar slot="start" (click)="toggleBallSelection(ball.ball_name)">
-          <img [src]="storageService.url + ball.thumbnail_image" [alt]="ball.ball_name + 'image'" />
+          <img [src]="ballsStore.url + ball.thumbnail_image" [alt]="ball.ball_name + 'image'" />
         </ion-avatar>
         <ion-checkbox justify="space-between" [checked]="isBallSelected(ball.ball_name)" (ionChange)="toggleBallSelection(ball.ball_name)">
           <ion-label>

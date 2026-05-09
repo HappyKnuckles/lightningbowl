@@ -25,7 +25,8 @@ import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -68,7 +69,7 @@ export class GameFilterComponent implements OnInit {
   highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
   leagues: string[] = [];
   patterns = computed<string[]>(() => {
-    return this.storageService
+    return this.gamesStore
       .games()
       .map((game) => game.patterns)
       .flat()
@@ -81,7 +82,8 @@ export class GameFilterComponent implements OnInit {
     private modalCtrl: ModalController,
     public gameFilterService: GameFilterService,
     private sortUtilsService: SortUtilsService,
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    public ballsStore: BallsStore,
     private utilsService: UtilsService,
     private analyticsService: AnalyticsService,
   ) {
@@ -92,8 +94,8 @@ export class GameFilterComponent implements OnInit {
     if (!this.gameFilterService.filters().startDate && !this.gameFilterService.filters().endDate) {
       this.gameFilterService.filters.update((filters) => ({
         ...filters,
-        startDate: new Date(this.storageService.games()[this.storageService.games().length - 1].date).toISOString() || Date.now().toString(),
-        endDate: new Date(this.storageService.games()[0].date).toISOString() || Date.now().toString(),
+        startDate: new Date(this.gamesStore.games()[this.gamesStore.games().length - 1].date).toISOString() || Date.now().toString(),
+        endDate: new Date(this.gamesStore.games()[0].date).toISOString() || Date.now().toString(),
       }));
     }
     this.getHighlightedDates();
@@ -172,7 +174,7 @@ export class GameFilterComponent implements OnInit {
 
     this.gameFilterService.filters.update((filters) => ({ ...filters }));
     this.gameFilterService.saveFilters();
-    // this.filterService.filterGames(this.storageService.games());
+    // this.filterService.filterGames(this.gamesStore.games());
     this.getHighlightedDates();
 
     if (activeFilters > 0) {
@@ -194,7 +196,7 @@ export class GameFilterComponent implements OnInit {
   }
 
   private getLeagues(): void {
-    const gamesByLeague = this.sortUtilsService.sortGamesByLeagues(this.storageService.games(), false);
+    const gamesByLeague = this.sortUtilsService.sortGamesByLeagues(this.gamesStore.games(), false);
     this.leagues = Object.keys(gamesByLeague);
   }
 
@@ -202,7 +204,7 @@ export class GameFilterComponent implements OnInit {
     const textColor = '#000000';
     const rootStyles = getComputedStyle(document.documentElement);
     const backgroundColor = rootStyles.getPropertyValue('--ion-color-primary').trim();
-    this.highlightedDates = this.storageService.games().map((game) => {
+    this.highlightedDates = this.gamesStore.games().map((game) => {
       const date = new Date(game.date);
       const formattedDate = this.utilsService.transformDate(date);
       return {

@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { BestPatternStats } from 'src/app/core/models/stats.model';
-import { StorageService } from '../../storage/storage.service';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PatternStatsCalculatorService {
-  constructor(private storageService: StorageService) {}
+  constructor(private patternsStore: PatternsStore) {}
 
   private _calculateAllPatternStats(gameHistory: Game[]): Record<string, BestPatternStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);
@@ -57,7 +57,7 @@ export class PatternStatsCalculatorService {
     const finalStats: Record<string, BestPatternStats> = {};
     for (const patternName in tempStats) {
       const stats = tempStats[patternName];
-      const patternImage = this.storageService.patternImageMap()[patternName] ?? '';
+      const patternImage = this.patternsStore.patternImageMap()[patternName] ?? '';
       const totalPossibleStrikes = stats.gameCount * 12;
       const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
       finalStats[patternName] = {

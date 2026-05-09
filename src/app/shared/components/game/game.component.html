@@ -171,7 +171,7 @@
                 <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + $index">
                   <ng-template>
                     <app-generic-typeahead
-                      [items]="storageService.allPatterns()"
+                      [items]="patternsStore.allPatterns()"
                       [config]="patternTypeaheadConfig"
                       [prevSelectedItems]="game.patterns"
                       (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
@@ -183,10 +183,10 @@
                   id="ball-selector-{{ game.gameId }}"
                   button
                   detailIcon="chevron-expand-outline"
-                  [disabled]="storageService.arsenal().length === 0">
+                  [disabled]="ballsStore.arsenal().length === 0">
                   <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
                   <!-- <ion-select [(ngModel)]="game.balls" multiple="true" name="balls" label="Balls">
-                    <ion-select-option *ngFor="let ball of storageService.arsenal()" [value]="ball.ball_name">
+                    <ion-select-option *ngFor="let ball of ballsStore.arsenal()" [value]="ball.ball_name">
                       {{ ball.ball_name }}
                     </ion-select-option>
                   </ion-select> -->

@@ -38,7 +38,7 @@
       <ion-select
         label="Pin Input Mode"
         interface="action-sheet"
-        [value]="storageService.pinInputMode() ? 'hit' : 'missing'"
+        [value]="settingsStore.pinInputMode() ? 'hit' : 'missing'"
         (ionChange)="savePinInputMode($event.detail.value)">
         <ion-select-option value="missing">Missing Pins</ion-select-option>
         <ion-select-option value="hit">Hit Pins</ion-select-option>

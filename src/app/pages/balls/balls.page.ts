@@ -48,7 +48,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { SortService } from 'src/app/core/services/sort/sort.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
@@ -122,7 +122,7 @@ export class BallsPage implements OnInit {
   isPageLoading = signal(false);
   hasMoreData = true;
   filterDisplayCount = 100;
-  loadingWeightBallId = signal<string | null>(null);
+  loadingWeightBallIds = signal<Set<string>>(new Set());
   readonly availableWeights = ['12', '13', '14', '15', '16'];
   currentSortOption: BallSortOption = {
     field: BallSortField.RELEASE_DATE,
@@ -154,7 +154,7 @@ export class BallsPage implements OnInit {
         useExtendedSearch: false,
       };
 
-      const baseArray = this.isFilterActive() ? this.ballFilterService.filteredBalls() : this.storageService.allBalls();
+      const baseArray = this.isFilterActive() ? this.ballFilterService.filteredBalls() : this.ballsStore.allBalls();
 
       const fuseInstance = new Fuse(baseArray, options);
 
@@ -177,7 +177,7 @@ export class BallsPage implements OnInit {
     }
 
     // Apply sorting only when not searching
-    return this.sortService.sortBalls(result, this.currentSortOption, this.favoritesFirst(), this.storageService.allBalls());
+    return this.sortService.sortBalls(result, this.currentSortOption, this.favoritesFirst(), this.ballsStore.allBalls());
   }
 
   private lastLoadTime = 0;
@@ -186,7 +186,7 @@ export class BallsPage implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     public loadingService: LoadingService,
-    public storageService: StorageService,
+    public ballsStore: BallsStore,
     private toastService: ToastService,
     private hapticService: HapticService,
     private ballService: BallService,
@@ -232,7 +232,7 @@ export class BallsPage implements OnInit {
     const checkInterval = 100; // Check every 100ms
     let elapsed = 0;
 
-    while (this.storageService.allBalls().length === 0 && elapsed < maxWaitTime) {
+    while (this.ballsStore.allBalls().length === 0 && elapsed < maxWaitTime) {
       await new Promise((resolve) => setTimeout(resolve, checkInterval));
       elapsed += checkInterval;
     }
@@ -252,7 +252,7 @@ export class BallsPage implements OnInit {
       if (this.isFilterActive()) {
         this.filterDisplayCount = 100;
       }
-      await Promise.all([this.storageService.loadAllBalls(undefined, undefined, true), this.storageService.loadArsenal()]);
+      await Promise.all([this.ballsStore.loadAllBalls(undefined, undefined, true), this.ballsStore.loadArsenal()]);
       await this.loadBalls();
     } catch (error) {
       console.error(error);
@@ -272,7 +272,7 @@ export class BallsPage implements OnInit {
   async removeFromArsenal(ball: Ball): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
-      await this.storageService.removeFromArsenal(ball);
+      await this.ballsStore.removeFromArsenal(ball);
       this.toastService.showToast(`${ball.ball_name} removed from Arsenal.`, 'checkmark-outline');
     } catch (error) {
       console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);
@@ -283,7 +283,7 @@ export class BallsPage implements OnInit {
   async saveBallToArsenal(ball: Ball): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
-      await this.storageService.saveBallToArsenal(ball);
+      await this.ballsStore.saveBallToArsenal(ball);
       this.toastService.showToast(`${ball.ball_name} added to Arsenal.`, 'add');
     } catch (error) {
       console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);
@@ -427,7 +427,7 @@ export class BallsPage implements OnInit {
       this.loadingService.setLoading(true);
 
       // Use all available balls for comparison
-      const allBalls = this.storageService.allBalls();
+      const allBalls = this.ballsStore.allBalls();
       this.movementBalls = await this.ballService.getBallsByMovementPattern(ball, allBalls);
 
       if (this.movementBalls.length > 0) {
@@ -450,7 +450,7 @@ export class BallsPage implements OnInit {
   }
 
   isInArsenal(ball: Ball): boolean {
-    return this.storageService.arsenal().some((b: Ball) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+    return this.ballsStore.arsenal().some((b: Ball) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
   }
 
   isFilterActive(): boolean {
@@ -526,7 +526,8 @@ export class BallsPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
 
-    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
+    const key = ball.ball_id + ball.core_weight;
+    this.loadingWeightBallIds.update((s) => new Set([...s, key]));
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
@@ -540,7 +541,11 @@ export class BallsPage implements OnInit {
       selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
-      this.loadingWeightBallId.set(null);
+      this.loadingWeightBallIds.update((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
     }
   }
 

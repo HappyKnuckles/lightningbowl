@@ -99,7 +99,7 @@ export class BallComparisonPage implements OnInit, OnDestroy {
 
   readonly selectedBalls = signal<Ball[]>([]);
   readonly selectedSegment = model<'compare' | 'chart'>('compare');
-  readonly loadingWeightBallId = signal<string | null>(null);
+  readonly loadingWeightBallIds = signal<Set<string>>(new Set());
 
   presentingElement?: HTMLElement;
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
@@ -167,7 +167,8 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
+    const key = ball.ball_id + ball.core_weight;
+    this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
@@ -188,7 +189,11 @@ export class BallComparisonPage implements OnInit, OnDestroy {
       selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
-      this.loadingWeightBallId.set(null);
+      this.loadingWeightBallIds.update((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
     }
   }
 

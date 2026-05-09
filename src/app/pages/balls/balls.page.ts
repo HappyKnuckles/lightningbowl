@@ -122,7 +122,7 @@ export class BallsPage implements OnInit {
   isPageLoading = signal(false);
   hasMoreData = true;
   filterDisplayCount = 100;
-  loadingWeightBallId = signal<string | null>(null);
+  loadingWeightBallIds = signal<Set<string>>(new Set());
   readonly availableWeights = ['12', '13', '14', '15', '16'];
   currentSortOption: BallSortOption = {
     field: BallSortField.RELEASE_DATE,
@@ -526,7 +526,8 @@ export class BallsPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
 
-    this.loadingWeightBallId.set(ball.ball_id + selectedWeight);
+    const key = ball.ball_id + ball.core_weight;
+    this.loadingWeightBallIds.update((s) => new Set([...s, key]));
     try {
       const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
       const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
@@ -540,7 +541,11 @@ export class BallsPage implements OnInit {
       selectEl.value = ball.core_weight;
       this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
     } finally {
-      this.loadingWeightBallId.set(null);
+      this.loadingWeightBallIds.update((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
     }
   }
 

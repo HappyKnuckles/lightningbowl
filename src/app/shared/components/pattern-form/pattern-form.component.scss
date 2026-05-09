@@ -1,12 +1,4 @@
-.row-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-
-h4{
+h4 {
   margin: 0;
   padding-bottom: 0;
 }
@@ -14,4 +6,77 @@ h4{
 .confirm-btn {
   width: 90%;
   margin: 20px 0 32px;
+}
+
+.header-row {
+  ion-col {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+    text-align: center;
+    padding: 4px 2px;
+  }
+}
+
+.entry-label-row {
+  margin-top: 8px;
+
+  ion-col {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ion-color-medium-shade);
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+  }
+
+  ion-button {
+    --padding-start: 4px;
+    --padding-end: 4px;
+    height: 28px;
+  }
+}
+
+.data-row {
+  border-bottom: 1px solid var(--ion-color-light);
+
+  ion-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    gap: 2px;
+  }
+}
+
+.grid-input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(var(--ion-color-medium-rgb), 0.4);
+  color: var(--ion-text-color);
+  font-size: 0.75rem;
+  padding: 4px 2px;
+  outline: none;
+  text-align: center;
+  border-radius: 0;
+
+  &.half {
+    width: calc(50% - 4px);
+  }
+
+  &:focus {
+    border-bottom-color: var(--ion-color-primary);
+  }
+}
+
+.sep {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  color: var(--ion-color-medium);
+}
+
+.add-btn {
+  margin: 8px 16px 16px;
 }

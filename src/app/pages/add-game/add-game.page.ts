@@ -29,7 +29,7 @@ import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { cloneFrames, createEmptyGame, createThrow, Frame, Game, numberArraysToFrames, Throw } from 'src/app/core/models/game.model';
+import { cloneFrames, createEmptyGame, createThrow, Frame, Game, numberArraysToFrames, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
@@ -368,7 +368,7 @@ export class AddGamePage implements OnInit {
   onNoteChange(note: string, index = 0, isModal = false) {
     this.updateSingleGameProperty('note', note, index, isModal);
   }
-  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: string | undefined }, index = 0, isModal = false) {
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, index = 0, isModal = false) {
     const { frameIndex, throwIndex, ball } = event;
     if (isModal) {
       const frames = cloneFrames(this.gameData.frames);

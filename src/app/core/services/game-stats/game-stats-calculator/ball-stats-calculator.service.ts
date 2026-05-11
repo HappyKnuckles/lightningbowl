@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game, getGameBalls } from 'src/app/core/models/game.model';
+import { Game, formatThrowBall, getGameBalls } from 'src/app/core/models/game.model';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { StorageService } from '../../storage/storage.service';
 
@@ -119,7 +119,7 @@ export class BallStatsCalculatorService {
         frame.throws.forEach((throwData) => {
           if (throwData.ball) {
             hasThrowLevelBalls = true;
-            const ball = this.formatBallDisplayName(throwData.ball);
+            const ball = this.formatBallDisplayName(formatThrowBall(throwData.ball));
             if (!ball) return;
             throwBallCounts.set(ball, (throwBallCounts.get(ball) || 0) + 1);
             const isStrike = throwData.value === 10 && (frameIndex < 9 || frameIndex === 9);

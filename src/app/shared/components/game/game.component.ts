@@ -47,7 +47,7 @@ import {
 } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Frame, Game, cloneFrames, createThrow, getGameBalls } from 'src/app/core/models/game.model';
+import { Frame, Game, ThrowBall, cloneFrames, createThrow, formatThrowBall, getGameBalls } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
@@ -731,7 +731,7 @@ export class GameComponent implements OnInit {
     );
   }
 
-  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: string | undefined }, game: Game): void {
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
     const { frameIndex, throwIndex, ball } = event;
     const editedGame = this.editedGameStates[game.gameId];
     if (editedGame) {
@@ -770,42 +770,18 @@ export class GameComponent implements OnInit {
     return getGameBalls(game);
   }
 
-  private parseBallSelection(rawBallSelection: string | undefined): { name: string; weight?: string } | undefined {
-    const selection = rawBallSelection?.trim();
-    if (!selection) return undefined;
-
-    const weightedMatch = selection.match(/^(.*?)(?:\s*(\d{1,2})\s*(?:lbs?|lb|#)?)$/i);
-    if (!weightedMatch) {
-      return { name: selection };
-    }
-
-    const name = weightedMatch[1]?.trim();
-    const weight = weightedMatch[2]?.trim();
-
-    if (!name) {
-      return { name: selection };
-    }
-
-    return { name, weight };
+  private parseBallSelection(throwBall: ThrowBall | undefined): { name: string; weight?: string } | undefined {
+    if (!throwBall?.name) return undefined;
+    return { name: throwBall.name, weight: throwBall.weight };
   }
 
-  private formatBallDisplayName(rawBallSelection: string | undefined): string {
-    const parsedSelection = this.parseBallSelection(rawBallSelection);
-    if (!parsedSelection) return '';
-
-    const selectedBall = this.storageService
-      .arsenal()
-      .find((ball) => ball.ball_name === rawBallSelection || ball.ball_name === parsedSelection.name);
-
-    const displayName = selectedBall?.ball_name || parsedSelection.name;
-    const weight = parsedSelection.weight || selectedBall?.core_weight;
-
-    return weight ? `${displayName} ${weight}lbs` : displayName;
+  private formatBallDisplayName(throwBall: ThrowBall | undefined): string {
+    return formatThrowBall(throwBall);
   }
 
   getSelectedBallsText(game: Game): string {
     const balls = getGameBalls(game);
-    return balls.length > 0 ? balls.map((ball) => this.formatBallDisplayName(ball)).join(', ') : 'None';
+    return balls.length > 0 ? balls.join(', ') : 'None';
   }
 
   selectThrowForBallPreview(gameId: string, frameIndex: number, throwIndex: number): void {
@@ -816,8 +792,8 @@ export class GameComponent implements OnInit {
     const selectedThrow = this.selectedThrowByGame[game.gameId];
     if (!selectedThrow) return undefined;
 
-    const rawBallSelection = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
-    const formattedName = this.formatBallDisplayName(rawBallSelection);
+    const throwBall = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
+    const formattedName = formatThrowBall(throwBall);
 
     return formattedName || undefined;
   }
@@ -826,13 +802,12 @@ export class GameComponent implements OnInit {
     const selectedThrow = this.selectedThrowByGame[game.gameId];
     if (!selectedThrow) return undefined;
 
-    const rawBallSelection = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
-    const parsedSelection = this.parseBallSelection(rawBallSelection);
-    if (!parsedSelection) return undefined;
+    const throwBall = game.frames?.[selectedThrow.frameIndex]?.throws?.[selectedThrow.throwIndex]?.ball;
+    if (!throwBall?.name) return undefined;
 
     const selectedBall = this.storageService
       .arsenal()
-      .find((ball) => ball.ball_name === rawBallSelection || ball.ball_name === parsedSelection.name);
+      .find((ball) => ball.ball_name === throwBall.name && (!throwBall.weight || ball.core_weight === throwBall.weight));
 
     return selectedBall?.thumbnail_image;
   }

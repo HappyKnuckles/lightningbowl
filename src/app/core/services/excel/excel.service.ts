@@ -4,7 +4,7 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game, getGameBalls } from 'src/app/core/models/game.model';
+import { Game, ThrowBall, formatThrowBall, getGameBalls } from 'src/app/core/models/game.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { StorageService } from 'src/app/core/services/storage/storage.service';
@@ -151,7 +151,7 @@ export class ExcelService {
           const frameIndex = j;
           const frame: {
             frameIndex: number;
-            throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: string }[];
+            throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall }[];
           } = {
             frameIndex: frameIndex,
             throws: [],
@@ -180,14 +180,15 @@ export class ExcelService {
           const maxThrowsInFrame = frameIndex === 10 ? 3 : 2;
 
           for (let k = 0; k < throwValues.length && k < maxThrowsInFrame; k++) {
-            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: string } = {
+            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall } = {
               value: throwValues[k],
               throwIndex: k + 1,
             };
 
             const throwBall = throwBalls[k]?.trim();
             if (throwBall) {
-              throwObj.ball = this.formatBallDisplayName(throwBall);
+              const formattedName = this.formatBallDisplayName(throwBall);
+              throwObj.ball = formattedName ? { name: formattedName } : { name: throwBall };
             }
 
             if (isPinMode) {
@@ -273,8 +274,9 @@ export class ExcelService {
 
         for (const frame of game.frames) {
           for (const throwData of frame.throws) {
-            if (throwData.ball) {
-              ballMap.add(this.formatBallDisplayName(throwData.ball));
+            if (throwData.ball?.name) {
+              const formattedName = this.formatBallDisplayName(formatThrowBall(throwData.ball));
+              if (formattedName) ballMap.add(formattedName);
             }
           }
         }
@@ -395,8 +397,8 @@ export class ExcelService {
         const frameBalls: string[] = ['', '', ''];
 
         if (frame) {
-          const pins = frame.throws.map((t: any) => t.pinsLeftStanding?.join(',') || '');
-          const balls = frame.throws.map((t: any) => this.formatBallDisplayName(t.ball) || '');
+          const pins = frame.throws.map((t) => t.pinsLeftStanding?.join(',') || '');
+          const balls = frame.throws.map((t) => formatThrowBall(t.ball) || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {

@@ -95,7 +95,7 @@
 <ion-modal [isOpen]="isBallModalOpen" (didDismiss)="closeBallSelector()" class="ball-modal"
   [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation">
   <ng-template>
-    <app-ball-select [selectedBalls]="selectedBall() ? [selectedBall()!] : []" [singleSelect]="true"
+    <app-ball-select [selectedBalls]="selectedBallKeys" [singleSelect]="true"
       (ballSelect)="onBallSelection($event)"></app-ball-select>
   </ng-template>
 </ion-modal>

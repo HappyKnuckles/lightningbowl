@@ -203,33 +203,39 @@ export class StorageService {
           }
         }
 
+        // Legacy migration: check for old string-format balls or new ThrowBall objects
         const hasThrowLevelBalls = (game.frames || []).some((frame) =>
-          (frame.throws || []).some((throwData) => typeof throwData.ball === 'string' && throwData.ball.trim().length > 0),
+          (frame.throws || []).some((throwData) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const ball = (throwData as any).ball;
+            return (typeof ball === 'string' && ball.trim().length > 0) || (typeof ball === 'object' && ball !== null && ball.name);
+          }),
         );
 
         if (!hasThrowLevelBalls && game.balls && game.balls.length > 0) {
-          const fallbackBall = game.balls[0];
+          const fallbackBallName = game.balls[0];
           (game.frames || []).forEach((frame) => {
             (frame.throws || []).forEach((throwData) => {
               if (!throwData.ball) {
-                throwData.ball = fallbackBall;
+                throwData.ball = { name: fallbackBallName };
                 needsUpdate = true;
               }
             });
           });
         }
 
+        // Migrate legacy string ball data to ThrowBall objects
         (game.frames || []).forEach((frame) => {
           (frame.throws || []).forEach((throwData) => {
-            if (typeof throwData.ball === 'string') {
-              const trimmed = throwData.ball.trim();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rawBall = (throwData as any).ball;
+            if (typeof rawBall === 'string') {
+              const trimmed = rawBall.trim();
               if (trimmed.length === 0) {
-                if (throwData.ball !== undefined) {
-                  delete throwData.ball;
-                  needsUpdate = true;
-                }
-              } else if (trimmed !== throwData.ball) {
-                throwData.ball = trimmed;
+                delete throwData.ball;
+                needsUpdate = true;
+              } else {
+                throwData.ball = { name: trimmed };
                 needsUpdate = true;
               }
             }

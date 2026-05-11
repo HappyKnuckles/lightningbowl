@@ -21,7 +21,7 @@ import {
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
-import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
+import { Game, ThrowBall, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
@@ -87,7 +87,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
-  throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: string | undefined }>();
+  throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
 
@@ -164,7 +164,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
     this.pinUndoRequested.emit();
   }
 
-  onPinBallSelected(ball: string | undefined): void {
+  onPinBallSelected(ball: ThrowBall | undefined): void {
     this.throwBallChanged.emit({
       frameIndex: this.currentFrameIndex(),
       throwIndex: this.currentThrowIndex(),
@@ -279,7 +279,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
     return val.toString();
   }
 
-  getCurrentThrowBall(): string | undefined {
+  getCurrentThrowBall(): ThrowBall | undefined {
     const frameIndex = this.currentFrameIndex();
     const throwIndex = this.currentThrowIndex();
     return this.game()?.frames?.[frameIndex]?.throws?.[throwIndex]?.ball;

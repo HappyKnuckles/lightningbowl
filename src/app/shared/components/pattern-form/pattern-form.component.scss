@@ -28,12 +28,39 @@ h4 {
     padding: 0 2px;
     display: flex;
     align-items: center;
+    gap: 4px;
   }
 
   ion-button {
     --padding-start: 4px;
     --padding-end: 4px;
     height: 28px;
+  }
+}
+
+.entry-label {
+  white-space: nowrap;
+}
+
+.tank-label {
+  font-size: 0.7rem;
+  color: var(--ion-color-medium);
+  flex-shrink: 0;
+}
+
+.tank-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(var(--ion-color-medium-rgb), 0.4);
+  color: var(--ion-text-color);
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  outline: none;
+
+  &:focus {
+    border-bottom-color: var(--ion-color-primary);
   }
 }
 

@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from '../../models/pattern.model';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { BallService } from '../ball/ball.service';
@@ -203,11 +203,14 @@ export class StorageService {
           }
         }
 
-        // Legacy migration: check for old string-format balls or new ThrowBall objects
+        // Legacy migration: support games stored before ThrowBall was introduced
+        // (where throw.ball was a plain string)
+        type LegacyThrow = { ball?: string | ThrowBall };
+
+        // Check for old string-format balls or new ThrowBall objects
         const hasThrowLevelBalls = (game.frames || []).some((frame) =>
           (frame.throws || []).some((throwData) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const ball = (throwData as any).ball;
+            const ball = (throwData as LegacyThrow).ball;
             return (typeof ball === 'string' && ball.trim().length > 0) || (typeof ball === 'object' && ball !== null && ball.name);
           }),
         );
@@ -227,8 +230,7 @@ export class StorageService {
         // Migrate legacy string ball data to ThrowBall objects
         (game.frames || []).forEach((frame) => {
           (frame.throws || []).forEach((throwData) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const rawBall = (throwData as any).ball;
+            const rawBall = (throwData as LegacyThrow).ball;
             if (typeof rawBall === 'string') {
               const trimmed = rawBall.trim();
               if (trimmed.length === 0) {

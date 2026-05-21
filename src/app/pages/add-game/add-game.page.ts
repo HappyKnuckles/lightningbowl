@@ -578,15 +578,26 @@ export class AddGamePage implements OnInit {
 
     try {
       const seriesConfig = isSeries ? { isSeries, seriesId } : undefined;
-      const savePromises = games.map((game) => {
+      const gamesToPersist: Game[] = [];
+      for (const game of games) {
+        if (game.league === 'New') {
+          this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
+          continue;
+        }
+
         // Apply isPinMode to the game before saving
         const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
-        return this.saveGame(gameWithPinMode, seriesConfig);
-      });
+        gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
+      }
 
-      const savedGames = (await Promise.all(savePromises)).filter((g): g is Game => g !== null);
+      if (gamesToPersist.length > 0) {
+        await this.gamesStore.saveGamesToLocalStorage(gamesToPersist);
+      }
+
+      const savedGames = gamesToPersist;
 
       if (savedGames.length > 0) {
+        savedGames.forEach((gameData) => this.analyticsService.trackGameSaved({ score: gameData.totalScore }));
         const allGames = this.gamesStore.games();
         if (savedGames.length === 1) {
           await this.highScroreAlertService.checkAndDisplayHighScoreAlerts(savedGames[0], allGames);
@@ -725,22 +736,6 @@ export class AddGamePage implements OnInit {
       frame.throws.forEach((t, idx) => {
         t.throwIndex = idx + 1;
       });
-    }
-  }
-
-  private async saveGame(game: Game, seriesConfig?: { isSeries: boolean; seriesId: string }): Promise<Game | null> {
-    if (game.league === 'New') {
-      this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
-      return null;
-    }
-    try {
-      const gameData = this.transformGameService.transformGameData(game, seriesConfig);
-      await this.gamesStore.saveGameToLocalStorage(gameData);
-      this.analyticsService.trackGameSaved({ score: gameData.totalScore });
-      return gameData;
-    } catch (error) {
-      console.error('Error saving game:', error);
-      throw error;
     }
   }
 

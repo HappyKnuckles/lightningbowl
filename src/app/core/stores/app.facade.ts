@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { BallFilterService } from '@services/ball-filter/ball-filter.service';
+import { BallService } from '@services/ball/ball.service';
+import { StorageRepository } from '@services/storage/storage.repository';
 import { BallsStore } from './balls.store';
 import { GamesStore } from './games.store';
 import { LeaguesStore } from './leagues.store';

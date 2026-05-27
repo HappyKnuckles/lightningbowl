@@ -2,6 +2,11 @@ import { DecimalPipe, NgIf } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, QueryList, Signal, signal, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
+import { GameComponent } from '@components/game/game.component';
+import { SpareDisplayComponent } from '@components/spare-display/spare-display.component';
+import { StatDisplayComponent } from '@components/stat-display/stat-display.component';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { LongPressDirective } from '@directives/long-press/long-press.directive';
 import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
   IonButton,
@@ -24,10 +29,20 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
+import { Game } from '@models/game.model';
+import { BestBallStats, Stats } from '@models/stats.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { ChartGenerationService } from '@services/chart/chart-generation.service';
+import { GameStatsService } from '@services/game-stats/game-stats.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { HiddenLeagueSelectionService } from '@services/hidden-league/hidden-league.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { SortUtilsService } from '@services/sort-utils/sort-utils.service';
+import { ToastService } from '@services/toast/toast.service';
+import { AppFacade } from '@stores/app.facade';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
+import { LeaguesStore } from '@stores/leagues.store';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {
@@ -42,21 +57,6 @@ import {
   shareOutline,
   trashOutline,
 } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, Stats } from 'src/app/core/models/stats.model';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
-import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 

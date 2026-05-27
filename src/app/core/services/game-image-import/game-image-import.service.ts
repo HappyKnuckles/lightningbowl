@@ -1,15 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { AlertController, isPlatform } from '@ionic/angular/standalone';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Game, numberArraysToFrames } from 'src/app/core/models/game.model';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
-import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { AlertController, isPlatform } from '@ionic/angular/standalone';
+import { Game, numberArraysToFrames } from '@models/game.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { GameDataTransformerService } from '@services/game-transform/game-data-transform.service';
+import { GameUtilsService } from '@services/game-utils/game-utils.service';
+import { ImageProcesserService } from '@services/image-processer/image-processer.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ToastService } from '@services/toast/toast.service';
+import { UserService } from '@services/user/user.service';
 
 const WARNING_STORAGE_KEY = 'alert';
 const WARNING_TTL_DAYS = 7;

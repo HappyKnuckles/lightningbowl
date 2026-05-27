@@ -1,11 +1,11 @@
-import { Injectable, computed, signal, Signal } from '@angular/core';
-import { Game, Frame, Throw, createEmptyGame, cloneFrames, createThrow, getThrowValue } from 'src/app/core/models/game.model';
-import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
+import { Injectable, Signal, computed, signal } from '@angular/core';
+import { Frame, Game, Throw, cloneFrames, createEmptyGame, createThrow, getThrowValue } from '@models/game.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { GameScoreCalculatorService } from '@services/game-score-calculator/game-score-calculator.service';
+import { GameDataTransformerService } from '@services/game-transform/game-data-transform.service';
+import { BowlingGameValidationService } from '@services/game-utils/bowling-game-validation.service';
+import { HighScoreAlertService } from '@services/high-score-alert/high-score-alert.service';
+import { GamesStore } from '@stores/games.store';
 
 export interface PinModeState {
   currentFrameIndex: number;

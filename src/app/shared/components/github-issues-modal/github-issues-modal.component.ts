@@ -20,10 +20,10 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { GitHubIssue } from '@models/github-issue.model';
+import { GitHubService } from '@services/github/github.service';
 import { addIcons } from 'ionicons';
 import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
-import { GitHubIssue } from 'src/app/core/models/github-issue.model';
-import { GitHubService } from 'src/app/core/services/github/github.service';
 
 @Component({
   selector: 'app-github-issues-modal',

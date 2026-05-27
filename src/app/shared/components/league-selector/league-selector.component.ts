@@ -1,30 +1,30 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, EventEmitter, Input, Output, computed } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import { AlertController, SelectChangeEventDetail } from '@ionic/angular';
 import {
-  IonSelect,
-  IonInput,
   IonButton,
-  IonSelectOption,
-  IonItem,
-  IonIcon,
-  IonModal,
-  IonToolbar,
   IonButtons,
-  IonHeader,
-  IonTitle,
   IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonModal,
+  IonSelect,
+  IonSelectOption,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { IonSelectCustomEvent } from '@ionic/core';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { HiddenLeagueSelectionService } from '@services/hidden-league/hidden-league.service';
+import { ToastService } from '@services/toast/toast.service';
+import { AppFacade } from '@stores/app.facade';
+import { LeaguesStore } from '@stores/leagues.store';
 import { addIcons } from 'ionicons';
-import { addOutline, medalOutline, createOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { addOutline, createOutline, medalOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-league-selector',

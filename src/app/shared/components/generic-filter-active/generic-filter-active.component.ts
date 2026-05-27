@@ -1,7 +1,7 @@
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 import { IonChip } from '@ionic/angular/standalone';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { UtilsService } from '@services/utils/utils.service';
 
 export interface FilterConfig {
   key: string;

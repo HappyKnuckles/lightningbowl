@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { GamesStore } from '@stores/games.store';
 import { AddGamePage } from './add-game.page';
-import { GamesStore } from 'src/app/core/stores/games.store';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),

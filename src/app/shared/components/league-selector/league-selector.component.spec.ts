@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { AppFacade } from '@stores/app.facade';
+import { LeaguesStore } from '@stores/leagues.store';
 import { LeagueSelectorComponent } from './league-selector.component';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 
 const mockLeaguesStore = {
   leagues: jasmine.createSpy('leagues').and.returnValue([]),

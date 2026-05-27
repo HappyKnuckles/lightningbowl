@@ -1,10 +1,10 @@
 import { CommonModule, NgIf, NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, Input } from '@angular/core';
-import { IonText, IonCol, IonRow, IonIcon, IonGrid } from '@ionic/angular/standalone';
-import { PrevStats, SessionStats, Stats } from 'src/app/core/models/stats.model';
+import { IonCol, IonGrid, IonIcon, IonRow, IonText } from '@ionic/angular/standalone';
+import { PrevStats, SessionStats, Stats } from '@models/stats.model';
+import { UtilsService } from '@services/utils/utils.service';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 
 @Component({
   selector: 'app-spare-display',

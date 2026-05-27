@@ -1,3 +1,4 @@
+import { NgIf } from '@angular/common';
 import { Component, input, signal } from '@angular/core';
 import {
   IonButton,
@@ -13,11 +14,10 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { GenericItemStats } from '@models/stats.model';
+import { BallsStore } from '@stores/balls.store';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
-import { NgIf } from '@angular/common';
-import { GenericItemStats } from 'src/app/core/models/stats.model';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-item-stats',

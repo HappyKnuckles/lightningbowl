@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { StatsPage } from './stats.page';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { AngularDelegate } from '@ionic/angular';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
+import { StatsPage } from './stats.page';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),

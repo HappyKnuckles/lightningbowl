@@ -1,66 +1,66 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ImpactStyle } from '@capacitor/haptics';
+import { PatternInfoComponent } from '@components/pattern-info/pattern-info.component';
+import { SortHeaderComponent } from '@components/sort-header/sort-header.component';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { SearchBlurDirective } from '@directives/search-blur/search-blur.directive';
+import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
+  IonButton,
+  IonButtons,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonChip,
   IonContent,
   IonHeader,
-  IonTitle,
-  IonToolbar,
-  IonCard,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonCardHeader,
-  IonCardContent,
-  IonChip,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonRefresher,
-  IonSkeletonText,
-  IonSearchbar,
-  IonRefresherContent,
-  IonText,
-  IonModal,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  ModalController,
-  IonPopover,
   IonItem,
   IonLabel,
+  IonModal,
+  IonPopover,
+  IonRefresher,
+  IonRefresherContent,
+  IonSearchbar,
+  IonSkeletonText,
+  IonText,
+  IonTitle,
+  IonToolbar,
+  ModalController,
 } from '@ionic/angular/standalone';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
+import { Pattern } from '@models/pattern.model';
+import { PatternSortField, PatternSortOption, SortDirection } from '@models/sort.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { ChartGenerationService } from '@services/chart/chart-generation.service';
+import { FavoritesService } from '@services/favorites/favorites.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { NetworkService } from '@services/network/network.service';
+import { PatternService } from '@services/pattern/pattern.service';
+import { SortService } from '@services/sort/sort.service';
+import { ToastService } from '@services/toast/toast.service';
 import { addIcons } from 'ionicons';
 import {
-  chevronBack,
   add,
   addOutline,
-  arrowUpOutline,
   arrowDownOutline,
+  arrowUpOutline,
+  chevronBack,
+  documentOutline,
+  ellipsisVerticalOutline,
   heart,
   heartOutline,
-  ellipsisVerticalOutline,
-  documentOutline,
   linkOutline,
 } from 'ionicons/icons';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { DomSanitizer } from '@angular/platform-browser';
-import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
-import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
-import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
-import { SortService } from 'src/app/core/services/sort/sort.service';
-import { PatternSortOption, PatternSortField, SortDirection } from 'src/app/core/models/sort.model';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { environment } from 'src/environments/environment';
+import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
 
 @Component({
   selector: 'app-pattern',

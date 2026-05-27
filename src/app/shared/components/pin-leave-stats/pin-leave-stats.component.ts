@@ -14,9 +14,9 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { LeaveStats } from '@models/stats.model';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
-import { LeaveStats } from 'src/app/core/models/stats.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 @Component({

@@ -1,8 +1,8 @@
-import { Component, input, computed } from '@angular/core';
 import { NgIf } from '@angular/common';
-import { IonRow, IonCol } from '@ionic/angular/standalone';
+import { Component, computed, input } from '@angular/core';
+import { IonCol, IonRow } from '@ionic/angular/standalone';
+import { Game } from '@models/game.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
-import { Game } from 'src/app/core/models/game.model';
 
 @Component({
   selector: 'app-pin-deck-frame-row',

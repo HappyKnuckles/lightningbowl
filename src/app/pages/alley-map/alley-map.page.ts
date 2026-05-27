@@ -1,9 +1,9 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { IonToolbar, IonHeader, IonContent, IonSearchbar, IonTitle } from '@ionic/angular/standalone';
-import * as L from 'leaflet';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { SearchbarCustomEvent } from '@ionic/angular';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { IonContent, IonHeader, IonSearchbar, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import * as L from 'leaflet';
 
 // Type definitions for Overpass API
 interface OverpassTags {

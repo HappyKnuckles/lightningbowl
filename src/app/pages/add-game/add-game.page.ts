@@ -1,6 +1,10 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChild, ViewChildren } from '@angular/core';
+import { ToastMessages } from '@app/core/constants/toast-messages.constants';
 import { ImpactStyle } from '@capacitor/haptics';
+import { GameGridComponent } from '@components/game-grid/game-grid.component';
+import { GameScoreToolbarComponent } from '@components/game-score-toolbar/game-score-toolbar.component';
+import { ThrowConfirmedEvent } from '@components/pin-input/pin-input.component';
 import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
 import {
   ActionSheetController,
@@ -23,26 +27,22 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from '@models/game.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { GameDraftService } from '@services/game-draft/game-draft.service';
+import { GameImageImportService } from '@services/game-image-import/game-image-import.service';
+import { GameScoreCalculatorService } from '@services/game-score-calculator/game-score-calculator.service';
+import { GameDataTransformerService } from '@services/game-transform/game-data-transform.service';
+import { BowlingGameValidationService } from '@services/game-utils/bowling-game-validation.service';
+import { GameUtilsService } from '@services/game-utils/game-utils.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { HighScoreAlertService } from '@services/high-score-alert/high-score-alert.service';
+import { ToastService } from '@services/toast/toast.service';
+import { UtilsService } from '@services/utils/utils.service';
+import { GamesStore } from '@stores/games.store';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
-import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
-import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
-import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
-import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
-import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 
 const enum SeriesMode {
   Single = 'Single',

@@ -1,5 +1,5 @@
-import { Game } from 'src/app/core/models/game.model';
-import { Stats } from 'src/app/core/models/stats.model';
+import { Game } from '@models/game.model';
+import { Stats } from '@models/stats.model';
 
 export function calculateScoreChartData(gameHistory: Game[], viewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game') {
   switch (viewMode) {

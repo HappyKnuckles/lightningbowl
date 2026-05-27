@@ -1,10 +1,10 @@
 import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { IonText, IonIcon } from '@ionic/angular/standalone';
-import { ConditionalNumberPipe } from '../../pipes/number-pipe/conditional-number.pipe';
+import { IonIcon, IonText } from '@ionic/angular/standalone';
+import { UtilsService } from '@services/utils/utils.service';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { ConditionalNumberPipe } from '../../pipes/number-pipe/conditional-number.pipe';
 
 @Component({
   selector: 'app-stat-row',

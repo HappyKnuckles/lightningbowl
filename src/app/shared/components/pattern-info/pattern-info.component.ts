@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { IonCol, IonRow, IonGrid, IonListHeader, IonChip } from '@ionic/angular/standalone';
+import { IonChip, IonCol, IonGrid, IonListHeader, IonRow } from '@ionic/angular/standalone';
+import { Pattern } from '@models/pattern.model';
 import { environment } from 'src/environments/environment';
 
 @Component({

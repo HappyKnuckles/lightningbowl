@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AppFacade } from '@stores/app.facade';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
+import { LeaguesStore } from '@stores/leagues.store';
 import { LeaguePage } from './league.page';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),

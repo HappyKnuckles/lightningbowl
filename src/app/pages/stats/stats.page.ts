@@ -15,6 +15,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
+import { FileHeaderButtonsComponent } from '@components/file-header-buttons/file-header-buttons.component';
+import { GameFilterComponent } from '@components/game-filter/game-filter.component';
+import { GenericFilterActiveComponent } from '@components/generic-filter-active/generic-filter-active.component';
+import { SpareDisplayComponent } from '@components/spare-display/spare-display.component';
+import { StatDisplayComponent } from '@components/stat-display/stat-display.component';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
   IonContent,
@@ -31,27 +37,21 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { SessionStats } from '@models/stats.model';
+import { ChartGenerationService } from '@services/chart/chart-generation.service';
+import { GameFilterService } from '@services/game-filter/game-filter.service';
+import { GameStatsService } from '@services/game-stats/game-stats.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { SortUtilsService } from '@services/sort-utils/sort-utils.service';
+import { ToastService } from '@services/toast/toast.service';
+import { UtilsService } from '@services/utils/utils.service';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { SessionStats } from 'src/app/core/models/stats.model';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
-import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
-import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs//filter-configs';
 import {
   overallStatDefinitions,
   pinStatDefinitions,

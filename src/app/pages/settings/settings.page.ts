@@ -3,6 +3,11 @@ import { AfterViewInit, Component, DestroyRef, inject, OnInit } from '@angular/c
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CloudSyncSettingsComponent } from '@components/cloud-sync-settings/cloud-sync-settings.component';
+import { GithubIssuesModalComponent } from '@components/github-issues-modal/github-issues-modal.component';
+import { LeagueSelectorComponent } from '@components/league-selector/league-selector.component';
+import { SpareNamesComponent } from '@components/spare-names/spare-names.component';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import emailjs from '@emailjs/browser';
 import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular';
 import {
@@ -27,6 +32,14 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { CloudSyncService } from '@services/cloud-sync/cloud-sync.service';
+import { GameStatsService } from '@services/game-stats/game-stats.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ThemeChangerService } from '@services/theme-changer/theme-changer.service';
+import { ToastService } from '@services/toast/toast.service';
+import { UserService } from '@services/user/user.service';
+import { SettingsStore } from '@stores/settings.store';
 import { addIcons } from 'ionicons';
 import {
   addOutline,
@@ -41,20 +54,7 @@ import {
   refreshCircleOutline,
   sendOutline,
 } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
-import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
-import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
-import { SpareNamesComponent } from 'src/app/shared/components/spare-names/spare-names.component';
 import { environment } from 'src/environments/environment';
-import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 @Component({
   selector: 'app-settings',

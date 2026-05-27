@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { BallsStore } from '@stores/balls.store';
+import { PatternsStore } from '@stores/patterns.store';
+import { SettingsStore } from '@stores/settings.store';
 import { GameGridComponent } from './game-grid.component';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 
 const mockSettingsStore = {
   pinInputMode: jasmine.createSpy('pinInputMode').and.returnValue(true),

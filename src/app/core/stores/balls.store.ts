@@ -1,12 +1,12 @@
 import { Injectable, signal } from '@angular/core';
-import { Ball } from 'src/app/core/models/ball.model';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { BOWWWL_URL } from '@constants/app.constants';
+import { Ball } from '@models/ball.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { BallService } from '@services/ball/ball.service';
+import { CacheService } from '@services/cache/cache.service';
+import { NetworkService } from '@services/network/network.service';
+import { STORAGE_PREFIX, StorageKeys } from '@services/storage/storage-keys';
+import { StorageRepository } from '@services/storage/storage.repository';
 
 @Injectable({ providedIn: 'root' })
 export class BallsStore {

@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
-import { BestPatternStats } from 'src/app/core/models/stats.model';
-import { ItemStatsComponent } from '../item-stats/item-stats.component';
+import { BestPatternStats } from '@models/stats.model';
 import { environment } from 'src/environments/environment';
+import { ItemStatsComponent } from '../item-stats/item-stats.component';
 
 @Component({
   selector: 'app-pattern-stats',

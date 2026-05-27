@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
+import { Ball, Brand, Core, Coverstock } from '@models/ball.model';
 import { firstValueFrom, retry } from 'rxjs';
-import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';

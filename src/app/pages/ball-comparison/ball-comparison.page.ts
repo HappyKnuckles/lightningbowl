@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GenericTypeaheadComponent } from '@components/generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '@components/generic-typeahead/typeahead-config.interface';
+import { createBallTypeaheadConfig } from '@components/generic-typeahead/typeahead-configs';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import { ModalController } from '@ionic/angular';
 import {
   IonButton,
@@ -23,25 +27,21 @@ import {
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
+  IonSelect,
+  IonSelectOption,
   IonText,
   IonTitle,
   IonToolbar,
-  IonSelect,
-  IonSelectOption,
 } from '@ionic/angular/standalone';
+import { Ball } from '@models/ball.model';
+import { getBallMetrics } from '@services/ball/ball-metrics.util';
+import { BallService } from '@services/ball/ball.service';
+import { ChartGenerationService } from '@services/chart/chart-generation.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Ball } from 'src/app/core/models/ball.model';
-import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 interface SavedEntry {
   id: string;

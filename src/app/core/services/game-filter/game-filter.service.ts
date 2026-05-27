@@ -1,8 +1,8 @@
 import { computed, Injectable, Signal, signal } from '@angular/core';
-import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
-import { Game } from 'src/app/core/models/game.model';
+import { GameFilter, TimeRange } from '@models/filter.model';
+import { Game } from '@models/game.model';
+import { GamesStore } from '@stores/games.store';
 import { UtilsService } from '../utils/utils.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
 
 @Injectable({
   providedIn: 'root',

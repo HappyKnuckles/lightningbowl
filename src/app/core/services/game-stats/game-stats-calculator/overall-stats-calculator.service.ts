@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { SeriesStats, SessionStats, Stats } from 'src/app/core/models/stats.model';
+import { Game } from '@models/game.model';
+import { SeriesStats, SessionStats, Stats } from '@models/stats.model';
 import { GameUtilsService } from '../../game-utils/game-utils.service';
 
 const MAX_FRAMES = 10;

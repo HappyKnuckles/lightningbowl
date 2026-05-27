@@ -1,40 +1,40 @@
+import { DatePipe, NgIf } from '@angular/common';
 import { Component, ViewChild } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Filesystem } from '@capacitor/filesystem';
+import { ImpactStyle } from '@capacitor/haptics';
+import { FileHeaderButtonsComponent } from '@components/file-header-buttons/file-header-buttons.component';
+import { GameFilterComponent } from '@components/game-filter/game-filter.component';
+import { GameComponent } from '@components/game/game.component';
+import { GenericFilterActiveComponent } from '@components/generic-filter-active/generic-filter-active.component';
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { ModalController, RefresherCustomEvent } from '@ionic/angular';
 import {
   AlertController,
-  IonHeader,
-  IonToolbar,
-  IonButton,
-  IonIcon,
-  IonTitle,
-  IonBadge,
-  IonContent,
-  IonRefresher,
-  IonText,
-  IonButtons,
   IonAccordionGroup,
+  IonBadge,
+  IonButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonRefresher,
   IonRefresherContent,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { Filesystem } from '@capacitor/filesystem';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { ExcelService } from '@services/excel/excel.service';
+import { GameFilterService } from '@services/game-filter/game-filter.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ToastService } from '@services/toast/toast.service';
+import { AppFacade } from '@stores/app.facade';
+import { GamesStore } from '@stores/games.store';
 import { addIcons } from 'ionicons';
-import { trashOutline, createOutline, shareOutline, documentTextOutline, filterOutline, medalOutline, swapVertical } from 'ionicons/icons';
-import { NgIf, DatePipe } from '@angular/common';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ModalController, RefresherCustomEvent } from '@ionic/angular';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ExcelService } from 'src/app/core/services/excel/excel.service';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
-import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
-import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
+import { createOutline, documentTextOutline, filterOutline, medalOutline, shareOutline, swapVertical, trashOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-history',

@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ModalController } from '@ionic/angular/standalone';
+import { BallFilterService } from '@services/ball-filter/ball-filter.service';
+import { BallService } from '@services/ball/ball.service';
+import { FavoritesService } from '@services/favorites/favorites.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { NetworkService } from '@services/network/network.service';
+import { SortService } from '@services/sort/sort.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
 import { of } from 'rxjs';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { SortService } from 'src/app/core/services/sort/sort.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { BallsPage } from './balls.page';
 
 describe('BallsPage', () => {

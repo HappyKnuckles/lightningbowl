@@ -1,10 +1,10 @@
+import { NgFor, NgStyle } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { IonToast } from '@ionic/angular/standalone';
+import { ToastService } from '@services/toast/toast.service';
 import { addIcons } from 'ionicons';
 import * as allIcons from 'ionicons/icons';
-import { NgFor, NgStyle } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 interface ToastData {
   id: number;

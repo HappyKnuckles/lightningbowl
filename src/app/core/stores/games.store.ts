@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { Game } from '@models/game.model';
+import { LoadingService } from '@services/loader/loading.service';
+import { SortUtilsService } from '@services/sort-utils/sort-utils.service';
+import { STORAGE_PREFIX, StorageKeys } from '@services/storage/storage-keys';
+import { StorageRepository } from '@services/storage/storage.repository';
 
 @Injectable({ providedIn: 'root' })
 export class GamesStore {

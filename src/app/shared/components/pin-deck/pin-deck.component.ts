@@ -1,6 +1,6 @@
-import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { Component, computed, inject, input } from '@angular/core';
+import { GameUtilsService } from '@services/game-utils/game-utils.service';
 
 interface Pin {
   id: number;

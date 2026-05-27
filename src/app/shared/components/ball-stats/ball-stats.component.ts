@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { BestBallStats } from 'src/app/core/models/stats.model';
+import { BestBallStats } from '@models/stats.model';
 import { ItemStatsComponent } from '../item-stats/item-stats.component';
 
 @Component({

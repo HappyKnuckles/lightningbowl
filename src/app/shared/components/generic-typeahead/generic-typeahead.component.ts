@@ -1,28 +1,28 @@
-import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
-import Fuse from 'fuse.js';
-import {
-  IonToolbar,
-  IonTitle,
-  IonHeader,
-  IonInfiniteScrollContent,
-  IonInfiniteScroll,
-  IonContent,
-  IonItem,
-  IonCheckbox,
-  IonLabel,
-  IonSearchbar,
-  IonList,
-  IonButtons,
-  IonButton,
-  IonAvatar,
-  IonImg,
-  IonText,
-} from '@ionic/angular/standalone';
 import { NgClass, NgIf } from '@angular/common';
-import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { Component, computed, EventEmitter, input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core';
+import { SearchBlurDirective } from '@directives/search-blur/search-blur.directive';
+import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
+import {
+  IonAvatar,
+  IonButton,
+  IonButtons,
+  IonCheckbox,
+  IonContent,
+  IonHeader,
+  IonImg,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonSearchbar,
+  IonText,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular/standalone';
+import { LoadingService } from '@services/loader/loading.service';
+import Fuse from 'fuse.js';
 import { TypeaheadConfig } from './typeahead-config.interface';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
 
 @Component({
   selector: 'app-generic-typeahead',

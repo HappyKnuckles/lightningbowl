@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
-import { StatRowComponent } from '../stat-row/stat-row.component';
-import { GameStats } from 'src/app/core/models/stats.model';
-import { IonList, IonListHeader } from '@ionic/angular/standalone';
 import { NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { IonList, IonListHeader } from '@ionic/angular/standalone';
+import { StatDefinition } from '@models/stat-definitions.model';
+import { GameStats } from '@models/stats.model';
+import { StatRowComponent } from '../stat-row/stat-row.component';
 
 @Component({
   selector: 'app-stat-display',

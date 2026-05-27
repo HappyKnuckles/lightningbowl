@@ -1,43 +1,42 @@
-import { Component, OnInit, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed } from '@angular/core';
-import { Platform } from '@ionic/angular';
-import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, computed, input, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { Keyboard } from '@capacitor/keyboard';
+import { InputCustomEvent, Platform } from '@ionic/angular';
 import {
-  IonGrid,
-  IonModal,
-  IonRow,
-  IonCol,
-  IonInput,
-  IonItem,
-  IonTextarea,
-  IonCheckbox,
-  IonList,
-  IonLabel,
   IonAccordion,
   IonAccordionGroup,
+  IonCheckbox,
+  IonCol,
+  IonGrid,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonModal,
+  IonRow,
+  IonTextarea,
 } from '@ionic/angular/standalone';
-import { FormsModule } from '@angular/forms';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
-import { InputCustomEvent } from '@ionic/angular';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { Keyboard } from '@capacitor/keyboard';
+import { Game, createEmptyGame, getThrowValue } from '@models/game.model';
+import { Pattern } from '@models/pattern.model';
+import { HapticService } from '@services/haptic/haptic.service';
+import { PatternService } from '@services/pattern/pattern.service';
+import { UtilsService } from '@services/utils/utils.service';
+import { BallsStore } from '@stores/balls.store';
+import { PatternsStore } from '@stores/patterns.store';
+import { SettingsStore } from '@stores/settings.store';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { Subscription } from 'rxjs';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
+import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 
 @Component({
   selector: 'app-game-grid',

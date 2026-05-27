@@ -24,6 +24,8 @@ import {
   IonToggle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { CloudProvider, SyncFrequency } from '@models/cloud-sync.model';
+import { CloudSyncService } from '@services/cloud-sync/cloud-sync.service';
 import { addIcons } from 'ionicons';
 import {
   calendarOutline,
@@ -36,8 +38,6 @@ import {
   unlinkOutline,
   warningOutline,
 } from 'ionicons/icons';
-import { CloudProvider, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
-import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 
 @Component({
   selector: 'app-cloud-sync-settings',

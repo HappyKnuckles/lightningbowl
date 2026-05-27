@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { ModalController } from '@ionic/angular';
-import { TimeRange } from 'src/app/core/models/filter.model';
+import { TimeRange } from '@models/filter.model';
+import { GameFilterService } from '@services/game-filter/game-filter.service';
 import { BehaviorSubject } from 'rxjs';
 import { GameFilterComponent } from './game-filter.component';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 
 const mockFilters = {
   excludePractice: false,

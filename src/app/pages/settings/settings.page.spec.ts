@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SettingsStore } from '@stores/settings.store';
 import { SettingsPage } from './settings.page';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 const mockSettingsStore = {
   pinInputMode: jasmine.createSpy('pinInputMode').and.returnValue(true),

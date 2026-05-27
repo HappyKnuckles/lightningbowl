@@ -1,4 +1,4 @@
-import { Ball } from 'src/app/core/models/ball.model';
+import { Ball } from '@models/ball.model';
 
 export interface BallMetrics {
   hookScore: number;

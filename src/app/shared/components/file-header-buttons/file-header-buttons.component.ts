@@ -1,17 +1,17 @@
 import { NgIf } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { Filesystem } from '@capacitor/filesystem';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import { AlertController } from '@ionic/angular';
 import { IonButton, IonButtons, IonIcon, IonSpinner } from '@ionic/angular/standalone';
+import { ExcelService } from '@services/excel/excel.service';
+import { ImportDispatcherService } from '@services/import/import-dispatcher.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
 import { addIcons } from 'ionicons';
 import { cloudDownloadOutline, cloudUploadOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { ExcelService } from 'src/app/core/services/excel/excel.service';
-import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-file-header-buttons',

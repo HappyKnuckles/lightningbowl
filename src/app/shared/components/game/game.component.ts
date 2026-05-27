@@ -1,75 +1,75 @@
-import { NgIf, NgFor, DatePipe } from '@angular/common';
-import { Component, Renderer2, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal } from '@angular/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { Component, OnInit, QueryList, Renderer2, ViewChild, ViewChildren, computed, input, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { LongPressDirective } from '@directives/long-press/long-press.directive';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonButton,
-  IonSelect,
-  IonSelectOption,
-  IonItemSliding,
-  IonAccordionGroup,
-  IonItemOption,
-  IonIcon,
-  IonItemOptions,
-  IonItem,
   IonAccordion,
-  IonTextarea,
-  IonGrid,
-  IonRow,
+  IonAccordionGroup,
+  IonBadge,
+  IonButton,
   IonCol,
-  IonInput,
+  IonGrid,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonText,
-  IonList,
+  IonInput,
+  IonItem,
   IonItemDivider,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
-  IonBadge,
+  IonList,
   IonModal,
+  IonRow,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonTextarea,
 } from '@ionic/angular/standalone';
+import { Frame, Game, cloneFrames, createThrow } from '@models/game.model';
+import { Pattern } from '@models/pattern.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { GameScoreCalculatorService } from '@services/game-score-calculator/game-score-calculator.service';
+import { BowlingGameValidationService } from '@services/game-utils/bowling-game-validation.service';
+import { GameUtilsService } from '@services/game-utils/game-utils.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { PatternService } from '@services/pattern/pattern.service';
+import { ToastService } from '@services/toast/toast.service';
+import { UtilsService } from '@services/utils/utils.service';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
+import { LeaguesStore } from '@stores/leagues.store';
+import { PatternsStore } from '@stores/patterns.store';
+import { SettingsStore } from '@stores/settings.store';
 import { toPng } from 'html-to-image';
 import { addIcons } from 'ionicons';
 import {
-  cloudUploadOutline,
-  cloudDownloadOutline,
-  filterOutline,
-  trashOutline,
-  createOutline,
-  shareOutline,
-  documentTextOutline,
-  medalOutline,
   bowlingBallOutline,
+  cloudDownloadOutline,
+  cloudUploadOutline,
+  createOutline,
+  documentTextOutline,
+  filterOutline,
   gridOutline,
+  medalOutline,
+  shareOutline,
+  trashOutline,
 } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Game, Frame, cloneFrames, createThrow } from 'src/app/core/models/game.model';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Router } from '@angular/router';
-import { GameGridComponent } from '../game-grid/game-grid.component';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GameGridComponent } from '../game-grid/game-grid.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
+import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 
 interface MonthHeader {
   name: string;

@@ -1,8 +1,8 @@
 import { ElementRef } from '@angular/core';
+import { BOWWWL_URL } from '@constants/app.constants';
+import { Ball } from '@models/ball.model';
 import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { Ball } from 'src/app/core/models/ball.model';
-import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
 import { customAxisTitlesPlugin } from '../plugins/custom-axis-titles.plugin';
 

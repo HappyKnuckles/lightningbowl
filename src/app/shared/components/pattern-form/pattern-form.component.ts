@@ -1,27 +1,27 @@
 import { CommonModule } from '@angular/common';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import {
   IonButton,
-  IonItem,
-  IonInput,
-  IonIcon,
   IonButtons,
-  IonToolbar,
-  IonHeader,
-  IonTitle,
   IonContent,
-  ModalController,
   IonFooter,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonTitle,
+  IonToolbar,
+  ModalController,
 } from '@ionic/angular/standalone';
+import { ForwardsData, Pattern, ReverseData } from '@models/pattern.model';
+import { LoadingService } from '@services/loader/loading.service';
+import { PatternService } from '@services/pattern/pattern.service';
+import { ToastService } from '@services/toast/toast.service';
 import { addIcons } from 'ionicons';
-import { trashOutline, chevronBack, close } from 'ionicons/icons';
-import { startWith, combineLatestWith } from 'rxjs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { ForwardsData, Pattern, ReverseData } from 'src/app/core/models/pattern.model';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { chevronBack, close, trashOutline } from 'ionicons/icons';
+import { combineLatestWith, startWith } from 'rxjs';
 
 @Component({
   selector: 'app-pattern-form',

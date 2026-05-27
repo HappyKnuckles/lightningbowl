@@ -1,9 +1,7 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BallService } from 'src/app/core/services/ball/ball.service';
 import { CommonModule } from '@angular/common';
-import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import {
   IonButton,
   IonButtons,
@@ -22,19 +20,21 @@ import {
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { Brand, Core, Coverstock } from '@models/ball.model';
+import { BallFilter, CoreType, CoverstockType, Market } from '@models/filter.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { BallFilterService } from '@services/ball-filter/ball-filter.service';
+import { BallService } from '@services/ball/ball.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import {
+  createBallBrandTypeaheadConfig,
   createBallCoreTypeaheadConfig,
   createBallCoverstockTypeaheadConfig,
-  createBallBrandTypeaheadConfig,
 } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 @Component({
   selector: 'app-ball-filter',
   templateUrl: './ball-filter.component.html',

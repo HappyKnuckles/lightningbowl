@@ -2,6 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, Signal, ViewChild, computed, effect, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
+import { BallListComponent } from '@components/ball-list/ball-list.component';
+import { GenericTypeaheadComponent } from '@components/generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from '@components/generic-typeahead/typeahead-config.interface';
+import { createBallTypeaheadConfig } from '@components/generic-typeahead/typeahead-configs';
+import { ToastMessages } from '@constants/toast-messages.constants';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
   IonButton,
@@ -33,21 +38,16 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { Ball } from '@models/ball.model';
+import { BallService } from '@services/ball/ball.service';
+import { ChartGenerationService } from '@services/chart/chart-generation.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
 import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Ball } from 'src/app/core/models/ball.model';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 @Component({
   selector: 'app-arsenal',

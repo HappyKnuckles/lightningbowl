@@ -3,35 +3,35 @@ import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, Input, OnInit } from '@ang
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
-  IonContent,
-  IonHeader,
-  IonTitle,
-  IonButtons,
-  IonToolbar,
-  IonItem,
   IonButton,
-  IonInput,
-  IonLabel,
-  IonDatetimeButton,
+  IonButtons,
+  IonContent,
   IonDatetime,
-  IonModal,
-  IonToggle,
+  IonDatetimeButton,
   IonFooter,
-  IonSelectOption,
-  IonSelect,
+  IonHeader,
+  IonInput,
+  IonItem,
+  IonLabel,
   IonList,
+  IonModal,
+  IonSelect,
+  IonSelectOption,
+  IonTitle,
+  IonToggle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
-import { Game } from 'src/app/core/models/game.model';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { GameFilter, TimeRange } from '@models/filter.model';
+import { Game } from '@models/game.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { GameFilterService } from '@services/game-filter/game-filter.service';
+import { SortUtilsService } from '@services/sort-utils/sort-utils.service';
+import { UtilsService } from '@services/utils/utils.service';
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
+import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 
 @Component({

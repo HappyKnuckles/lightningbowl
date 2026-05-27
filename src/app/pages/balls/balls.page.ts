@@ -3,6 +3,12 @@ import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild } from '@
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
+import { BallFilterComponent } from '@components/ball-filter/ball-filter.component';
+import { BallListComponent } from '@components/ball-list/ball-list.component';
+import { GenericFilterActiveComponent } from '@components/generic-filter-active/generic-filter-active.component';
+import { SortHeaderComponent } from '@components/sort-header/sort-header.component';
+import { ToastMessages } from '@constants/toast-messages.constants';
+import { SearchBlurDirective } from '@directives/search-blur/search-blur.directive';
 import { InfiniteScrollCustomEvent, ModalController, RefresherCustomEvent, SearchbarCustomEvent } from '@ionic/angular';
 import {
   IonButton,
@@ -31,29 +37,23 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
+import { Ball } from '@models/ball.model';
+import { BallSortField, BallSortOption, SortDirection } from '@models/sort.model';
+import { AnalyticsService } from '@services/analytics/analytics.service';
+import { BallFilterService } from '@services/ball-filter/ball-filter.service';
+import { BallService } from '@services/ball/ball.service';
+import { FavoritesService } from '@services/favorites/favorites.service';
+import { HapticService } from '@services/haptic/haptic.service';
+import { LoadingService } from '@services/loader/loading.service';
+import { NetworkService } from '@services/network/network.service';
+import { SortService } from '@services/sort/sort.service';
+import { ToastService } from '@services/toast/toast.service';
+import { BallsStore } from '@stores/balls.store';
 import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
 import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
 import { Subject } from 'rxjs';
-import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
-import { Ball } from 'src/app/core/models/ball.model';
-import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { SortService } from 'src/app/core/services/sort/sort.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
-import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
+import { BALL_FILTER_CONFIGS } from 'src/app/core/configs//filter-configs';
 
 @Component({
   selector: 'app-balls',

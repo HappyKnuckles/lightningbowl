@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
-import { NetworkService } from 'src/app/core/services/network/network.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { Pattern } from '@models/pattern.model';
+import { CacheService } from '@services/cache/cache.service';
+import { NetworkService } from '@services/network/network.service';
+import { PatternService } from '@services/pattern/pattern.service';
 
 @Injectable({ providedIn: 'root' })
 export class PatternsStore {

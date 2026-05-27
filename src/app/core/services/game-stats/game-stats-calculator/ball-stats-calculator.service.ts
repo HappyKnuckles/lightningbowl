@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats } from 'src/app/core/models/stats.model';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { Game } from '@models/game.model';
+import { BestBallStats } from '@models/stats.model';
+import { BallsStore } from '@stores/balls.store';
 
 @Injectable({
   providedIn: 'root',

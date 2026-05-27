@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
+import { BallsStore } from '@stores/balls.store';
+import { GamesStore } from '@stores/games.store';
+import { LeaguesStore } from '@stores/leagues.store';
+import { PatternsStore } from '@stores/patterns.store';
+import { SettingsStore } from '@stores/settings.store';
 import { GameComponent } from './game.component';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),

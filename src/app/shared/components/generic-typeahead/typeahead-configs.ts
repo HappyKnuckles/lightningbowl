@@ -1,7 +1,7 @@
+import { Ball, Brand, Core, Coverstock } from '@models/ball.model';
+import { Pattern } from '@models/pattern.model';
+import { BallsStore } from '@stores/balls.store';
 import { TypeaheadConfig } from './typeahead-config.interface';
-import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 
 export function createBallBrandTypeaheadConfig(): TypeaheadConfig<Brand> {
   return {

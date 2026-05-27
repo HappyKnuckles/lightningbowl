@@ -1,7 +1,7 @@
 import { ElementRef } from '@angular/core';
-import Chart, { Plugin, ChartEvent, LegendItem, ChartOptions, LegendElement, ChartDataset } from 'chart.js/auto';
-import { Game } from 'src/app/core/models/game.model';
-import { calculateScoreChartData, calculateAverageScoreChartData } from '../data-calculation/chart-data-calculators';
+import { Game } from '@models/game.model';
+import Chart, { ChartDataset, ChartEvent, ChartOptions, LegendElement, LegendItem, Plugin } from 'chart.js/auto';
+import { calculateAverageScoreChartData, calculateScoreChartData } from '../data-calculation/chart-data-calculators';
 
 /**
  * Generate score chart showing average over time and difference from average

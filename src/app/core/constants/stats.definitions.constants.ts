@@ -1,4 +1,4 @@
-import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
+import { StatDefinition } from '@models/stat-definitions.model';
 
 export const overallStatDefinitions: StatDefinition[] = [
   { label: 'Games', key: 'totalGames', id: 'totalGames' },

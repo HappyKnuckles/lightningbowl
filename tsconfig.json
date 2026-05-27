@@ -3,6 +3,16 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
+      "paths": {
+      "@app/*": ["src/app/*"],
+      "@core/*": ["src/app/core/*"],
+      "@services/*": ["src/app/core/services/*"],
+      "@directives/*": ["src/app/core/directives/*"],
+      "@stores/*": ["src/app/core/stores/*"],
+      "@models/*": ["src/app/core/models/*"],
+      "@constants/*": ["src/app/core/constants/*"],
+      "@components/*": ["src/app/shared/components/*"]
+    },
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,

@@ -1,19 +1,19 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import {
-  IonButtons,
-  IonFooter,
-  IonToolbar,
+  IonAvatar,
   IonButton,
+  IonButtons,
   IonCheckbox,
   IonContent,
+  IonFooter,
   IonHeader,
-  IonTitle,
+  IonItem,
   IonLabel,
   IonList,
-  IonAvatar,
-  IonItem,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BallsStore } from '@stores/balls.store';
 
 @Component({
   selector: 'app-ball-select',

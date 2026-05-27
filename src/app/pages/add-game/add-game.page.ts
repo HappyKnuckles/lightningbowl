@@ -36,7 +36,7 @@ import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { InputCustomEvent, ModalController } from '@ionic/angular';
+import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
@@ -55,10 +55,16 @@ const enum SeriesMode {
   Series6 = '6 Series',
 }
 
+export interface PinModeState {
+  currentFrameIndex: number;
+  currentThrowIndex: number;
+  throwsData: Throw[][];
+}
+
 interface GameDraft {
   timestamp: number;
   games: Game[];
-  pinModeState: { currentFrameIndex: number; currentThrowIndex: number; throwsData: Throw[][] }[];
+  pinModeState: PinModeState[];
   totalScores: number[];
   maxScores: number[];
   isPinInputMode: boolean;
@@ -121,13 +127,7 @@ export class AddGamePage implements OnInit {
   // Pin input mode state
   isPinInputMode = false;
 
-  pinModeState = signal<
-    {
-      currentFrameIndex: number;
-      currentThrowIndex: number;
-      throwsData: Throw[][];
-    }[]
-  >(
+  pinModeState = signal<PinModeState[]>(
     Array.from({ length: 19 }, () => ({
       currentFrameIndex: 0,
       currentThrowIndex: 0,
@@ -412,8 +412,8 @@ export class AddGamePage implements OnInit {
   }
 
   // UI INTERACTION
-  onSegmentChange(event: any): void {
-    this.selectedSegment = event.detail.value;
+  onSegmentChange(event: SegmentCustomEvent): void {
+    this.selectedSegment = event.detail.value as string;
   }
 
   togglePinInputMode(): void {
@@ -579,12 +579,13 @@ export class AddGamePage implements OnInit {
     try {
       const seriesConfig = isSeries ? { isSeries, seriesId } : undefined;
       const gamesToPersist: Game[] = [];
-      for (const game of games) {
+      const baseDate = Date.now();
+      for (const [i, game] of games.entries()) {
         if (game.league === 'New') {
           this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
-          continue;
+          return false;
         }
-
+        game.date = baseDate + i;
         // Apply isPinMode to the game before saving
         const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
@@ -928,7 +929,7 @@ export class AddGamePage implements OnInit {
   }
   private saveDraft(
     games: Game[],
-    pinModeState: any[],
+    pinModeState: PinModeState[],
     totalScores: number[],
     maxScores: number[],
     selectedMode: SeriesMode,

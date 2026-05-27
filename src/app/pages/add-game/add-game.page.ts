@@ -1,51 +1,48 @@
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, OnInit, QueryList, signal, ViewChild, ViewChildren, effect, untracked } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChild, ViewChildren } from '@angular/core';
+import { ImpactStyle } from '@capacitor/haptics';
+import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
 import {
   ActionSheetController,
   AlertController,
-  IonModal,
-  isPlatform,
-  IonHeader,
-  IonToolbar,
-  IonButton,
-  IonIcon,
-  IonTitle,
   IonAlert,
+  IonButton,
+  IonButtons,
+  IonCol,
   IonContent,
   IonGrid,
+  IonHeader,
+  IonIcon,
+  IonLabel,
+  IonModal,
   IonRow,
-  IonCol,
-  IonButtons,
   IonSegment,
   IonSegmentButton,
-  IonSegmentView,
   IonSegmentContent,
-  IonLabel,
+  IonSegmentView,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Game, Frame, createEmptyGame, numberArraysToFrames, cloneFrames, createThrow, Throw } from 'src/app/core/models/game.model';
-import { addIcons } from 'ionicons';
-import { add, chevronDown, chevronUp, cameraOutline, documentTextOutline, medalOutline, bowlingBallOutline, bowlingBall } from 'ionicons/icons';
-import { NgIf, NgFor } from '@angular/common';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { addIcons } from 'ionicons';
+import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
+import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
-import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -53,24 +50,6 @@ const enum SeriesMode {
   Series4 = '4 Series',
   Series5 = '5 Series',
   Series6 = '6 Series',
-}
-
-export interface PinModeState {
-  currentFrameIndex: number;
-  currentThrowIndex: number;
-  throwsData: Throw[][];
-}
-
-interface GameDraft {
-  timestamp: number;
-  games: Game[];
-  pinModeState: PinModeState[];
-  totalScores: number[];
-  maxScores: number[];
-  isPinInputMode: boolean;
-  selectedMode: SeriesMode;
-  gameIndex: string;
-  segments: string[];
 }
 
 defineCustomElements(window);
@@ -153,18 +132,13 @@ export class AddGamePage implements OnInit {
   private isStorageReady = false;
   private seriesId = '';
   private activeGameIndex = 0;
-  private readonly DRAFT_KEY = 'bowling_game_draft';
-  private readonly DRAFT_TTL = 4 * 60 * 60 * 1000;
 
   constructor(
     private actionSheetCtrl: ActionSheetController,
-    private imageProcessingService: ImageProcesserService,
     private alertController: AlertController,
     private toastService: ToastService,
     private gameScoreCalculatorService: GameScoreCalculatorService,
     private transformGameService: GameDataTransformerService,
-    private loadingService: LoadingService,
-    private userService: UserService,
     private hapticService: HapticService,
     private gameUtilsService: GameUtilsService,
     private utilsService: UtilsService,
@@ -172,6 +146,8 @@ export class AddGamePage implements OnInit {
     private highScroreAlertService: HighScoreAlertService,
     private gamesStore: GamesStore,
     private analyticsService: AnalyticsService,
+    private gameDraftService: GameDraftService,
+    private gameImageImport: GameImageImportService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
@@ -187,7 +163,7 @@ export class AddGamePage implements OnInit {
 
       if (!this.isStorageReady) return;
 
-      this.saveDraft({
+      this.gameDraftService.save({
         games,
         pinModeState,
         totalScores,
@@ -397,7 +373,7 @@ export class AddGamePage implements OnInit {
     const frames = cloneFrames(currentGame.frames);
 
     if (value.length === 0) {
-      this.removeThrow(frames, frameIndex, throwIndex);
+      this.gameUtilsService.removeThrow(frames, frameIndex, throwIndex);
       this.updateGameState(frames, index, isModal);
       return;
     }
@@ -411,7 +387,7 @@ export class AddGamePage implements OnInit {
       return;
     }
 
-    this.recordThrow(frames, frameIndex, throwIndex, parsedValue);
+    this.gameUtilsService.recordThrow(frames, frameIndex, throwIndex, parsedValue);
     this.updateGameState(frames, index, isModal);
     this.focusNextInputUI(index, frameIndex, throwIndex, isModal);
   }
@@ -490,27 +466,13 @@ export class AddGamePage implements OnInit {
     await actionSheet.present();
   }
 
-  async presentWarningAlert() {
-    localStorage.removeItem('alert');
-    const alert = await this.alertController.create({
-      header: 'Warning!',
-      subHeader: 'Experimental Feature',
-      message: 'It only works in certain alleys and will probably NOT work in yours!',
-      buttons: [
-        { text: 'Dismiss', role: 'cancel' },
-        { text: 'OK', role: 'confirm' },
-      ],
-    });
-    await alert.present();
-    alert.onDidDismiss().then((data) => {
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 7);
-      const alertData = { value: 'true', expiration: expirationDate.getTime() };
-      localStorage.setItem('alert', JSON.stringify(alertData));
-      if (data.role === 'confirm') {
-        this.handleImageUpload();
-      }
-    });
+  // IMAGE IMPORT
+  async handleImageUpload(): Promise<void> {
+    const game = await this.gameImageImport.captureAndParseGame();
+    if (game) {
+      this.gameData = game;
+      this.isModalOpen = true;
+    }
   }
 
   // SAVE & RESET LOGIC
@@ -539,7 +501,7 @@ export class AddGamePage implements OnInit {
           throwsData: Array.from({ length: 10 }, () => []),
         })),
       );
-      this.clearDraft();
+      this.gameDraftService.clear();
     }
     this.toastService.showToast(ToastMessages.gameResetSuccess, 'refresh-outline');
   }
@@ -555,12 +517,12 @@ export class AddGamePage implements OnInit {
     const isSeries = this.selectedMode !== SeriesMode.Single;
 
     if (isSeries) {
-      this.seriesId = this.generateUniqueSeriesId();
+      this.seriesId = this.gameUtilsService.generateUniqueSeriesId();
     }
 
     const success = await this.processAndSaveGames(gamesToSave, isSeries, this.seriesId);
     if (success) {
-      this.clearDraft();
+      this.gameDraftService.clear();
       const perfectGame = gamesToSave.some((g) => g.totalScore === 300);
       if (perfectGame) {
         this.is300 = true;
@@ -631,6 +593,7 @@ export class AddGamePage implements OnInit {
     const pinInputMode = localStorage.getItem('pinInputMode');
     this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
   }
+
   private updateGameState(frames: Frame[], index: number, isModal: boolean): void {
     const scoreResult = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
     const maxScore = this.gameScoreCalculatorService.calculateMaxScoreFromFrames(frames, scoreResult.totalScore);
@@ -729,30 +692,6 @@ export class AddGamePage implements OnInit {
   }
 
   // PRIVATE HELPERS - VALIDATION
-  private recordThrow(frames: Frame[], frameIndex: number, throwIndex: number, value: number): void {
-    const frame = frames[frameIndex];
-    if (!frame) return;
-    while (frame.throws.length <= throwIndex) {
-      frame.throws.push(createThrow(0, frame.throws.length + 1));
-    }
-    frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
-  }
-
-  private removeThrow(frames: Frame[], frameIndex: number, throwIndex: number): void {
-    const frame = frames[frameIndex];
-    if (!frame || !frame.throws) return;
-    if (throwIndex >= 0 && throwIndex < frame.throws.length) {
-      frame.throws.splice(throwIndex, 1);
-      frame.throws.forEach((t, idx) => {
-        t.throwIndex = idx + 1;
-      });
-    }
-  }
-
-  private generateUniqueSeriesId(): string {
-    return 'series-' + Math.random().toString(36).substring(2, 15);
-  }
-
   private handleInvalidInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
     this.hapticService.vibrate(ImpactStyle.Heavy);
     const grid = isModal ? this.modalGrid : this.gameGrids.toArray()[index];
@@ -771,86 +710,35 @@ export class AddGamePage implements OnInit {
     };
   }
 
-  // CAMERA / OCR LOGIC
-  async handleImageUpload(): Promise<void> {
-    const alertData = localStorage.getItem('alert');
-    if (!alertData) {
-      await this.presentWarningAlert();
+  // SESSION DRAFT
+  private async checkAndRestoreDraft(): Promise<void> {
+    const draft = this.gameDraftService.load();
+
+    if (!draft) {
+      this.isStorageReady = true;
       return;
     }
 
-    const { value, expiration } = JSON.parse(alertData);
-    if (value !== 'true' || new Date().getTime() >= expiration) {
-      await this.presentWarningAlert();
-      return;
-    }
+    const isSeries = draft.selectedMode !== SeriesMode.Single;
+    const typeText = isSeries ? 'series' : 'game';
 
-    try {
-      const imageUrl: File | Blob | undefined = await this.takeOrChoosePicture();
-      if (imageUrl instanceof File) {
-        this.loadingService.setLoading(true);
-        const gameText = await this.imageProcessingService.performOCR(imageUrl);
-        this.parseBowlingScores(gameText!);
-        await this.analyticsService.trackOCRUsed(!!gameText);
-      } else {
-        this.toastService.showToast(ToastMessages.noImage, 'bug', true);
-      }
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.imageUploadError, 'bug', true);
-      console.error(error);
-      await this.analyticsService.trackError('ocr_error', error instanceof Error ? error.message : String(error));
-    } finally {
-      this.loadingService.setLoading(false);
-    }
-  }
-
-  private async takeOrChoosePicture(): Promise<File | Blob | undefined> {
-    if ((isPlatform('android') || isPlatform('ios')) && !isPlatform('mobileweb')) {
-      const permissionRequestResult = await Camera.checkPermissions();
-      if (permissionRequestResult.photos === 'prompt' || permissionRequestResult.photos === 'denied') {
-        const permissions = await Camera.requestPermissions();
-        if (!permissions.photos) {
-          await this.showPermissionDeniedAlert();
-          return undefined;
-        }
-      }
-      const image = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Prompt,
-      });
-      return await fetch(image.webPath!).then((r) => r.blob());
-    } else {
-      return await this.openFileInput();
-    }
-  }
-
-  private async openFileInput(): Promise<File | undefined> {
-    return new Promise((resolve) => {
-      try {
-        const fileInput = document.getElementById('upload') as HTMLInputElement;
-        fileInput.value = '';
-        fileInput.onchange = () => resolve(fileInput.files?.[0]);
-        fileInput.click();
-      } catch (error) {
-        console.error('Upload Error:', error);
-        this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
-        resolve(undefined);
-      }
-    });
-  }
-
-  private async showPermissionDeniedAlert(): Promise<void> {
     const alert = await this.alertController.create({
-      header: 'Permission Denied',
-      message: 'To take or choose a picture, you need to grant camera access.',
+      header: 'Resume Session?',
+      message: `We found an unfinished ${typeText} from earlier. Do you want to restore it?`,
+      backdropDismiss: false,
       buttons: [
         {
-          text: 'OK',
-          handler: async () => {
-            const res = await Camera.requestPermissions();
-            if (res.photos === 'granted') this.takeOrChoosePicture();
+          text: 'No, Start New',
+          role: 'cancel',
+          handler: () => {
+            this.gameDraftService.clear();
+            this.isStorageReady = true;
+          },
+        },
+        {
+          text: 'Yes, Resume',
+          handler: () => {
+            this.restoreDraft(draft);
           },
         },
       ],
@@ -858,117 +746,10 @@ export class AddGamePage implements OnInit {
     await alert.present();
   }
 
-  private parseBowlingScores(input: string): void {
-    try {
-      const { frames, frameScores, totalScore } = this.gameUtilsService.parseBowlingScores(input, this.userService.username());
-      const framesAsFrameArray = numberArraysToFrames(frames);
-
-      // Build a game object for transformation
-      const parsedGame: Game = {
-        gameId: '',
-        date: 0,
-        frames: framesAsFrameArray,
-        frameScores,
-        totalScore,
-        isPractice: true,
-        isPinMode: false,
-        isClean: false,
-        isPerfect: false,
-        patterns: [],
-        balls: [],
-      };
-
-      this.gameData = this.transformGameService.transformGameData(parsedGame);
-      this.isModalOpen = true;
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
-      console.error(error);
-    }
-  }
-
-  // SESSION DRAFT LOGIC
-  private async checkAndRestoreDraft(): Promise<void> {
-    const draftJson = localStorage.getItem(this.DRAFT_KEY);
-
-    if (!draftJson) {
-      this.isStorageReady = true;
-      return;
-    }
-
-    try {
-      const draft: GameDraft = JSON.parse(draftJson);
-      const now = Date.now();
-
-      if (now - draft.timestamp > this.DRAFT_TTL) {
-        this.clearDraft();
-        this.isStorageReady = true;
-        return;
-      }
-
-      const isSeries = draft.selectedMode !== SeriesMode.Single;
-      const typeText = isSeries ? 'series' : 'game';
-
-      const alert = await this.alertController.create({
-        header: 'Resume Session?',
-        message: `We found an unfinished ${typeText} from earlier. Do you want to restore it?`,
-        backdropDismiss: false,
-        buttons: [
-          {
-            text: 'No, Start New',
-            role: 'cancel',
-            handler: () => {
-              this.clearDraft();
-              this.isStorageReady = true;
-            },
-          },
-          {
-            text: 'Yes, Resume',
-            handler: () => {
-              this.restoreDraft(draft);
-            },
-          },
-        ],
-      });
-      await alert.present();
-    } catch (e) {
-      console.error('Error parsing draft', e);
-      this.clearDraft();
-      this.isStorageReady = true;
-    }
-  }
-
-  private saveDraft(draft: Omit<GameDraft, 'timestamp'>): void {
-    const hasData = draft.games.some((game) => game.frames.some((f) => f.throws && f.throws.length > 0));
-
-    if (!hasData) {
-      this.clearDraft();
-      return;
-    }
-
-    const fullDraft: GameDraft = {
-      ...draft,
-      timestamp: Date.now(),
-    };
-
-    try {
-      const tmpKey = this.DRAFT_KEY + '.tmp';
-      const payload = JSON.stringify(fullDraft);
-      localStorage.setItem(tmpKey, payload);
-      localStorage.setItem(this.DRAFT_KEY, payload);
-      localStorage.removeItem(tmpKey);
-    } catch (err) {
-      console.error('Failed to save draft', err);
-    }
-  }
-
-  private clearDraft(): void {
-    localStorage.removeItem(this.DRAFT_KEY);
-  }
-
   private restoreDraft(draft: GameDraft): void {
     this.isStorageReady = true;
 
-    this.selectedMode = draft.selectedMode;
+    this.selectedMode = draft.selectedMode as SeriesMode;
     this.isPinInputMode = draft.isPinInputMode;
     this.updateSegments();
 

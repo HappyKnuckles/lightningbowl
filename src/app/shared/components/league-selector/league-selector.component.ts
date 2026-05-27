@@ -30,6 +30,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
   selector: 'app-league-selector',
   templateUrl: './league-selector.component.html',
   styleUrls: ['./league-selector.component.scss'],
+  standalone: true,
   imports: [
     IonContent,
     IonTitle,

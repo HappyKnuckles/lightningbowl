@@ -19,6 +19,30 @@ export interface Frame {
 }
 
 /**
+ * Represents the state of the pin input mode for a game, including current frame/throw and the data for all throws
+ */
+export interface PinModeState {
+  currentFrameIndex: number;
+  currentThrowIndex: number;
+  throwsData: Throw[][];
+}
+
+/**
+ * Represents a draft of a game or series being tracked, used for auto-saving and restoring in-progress data
+ */
+export interface GameDraft {
+  timestamp: number;
+  games: Game[];
+  pinModeState: PinModeState[];
+  totalScores: number[];
+  maxScores: number[];
+  isPinInputMode: boolean;
+  selectedMode: string;
+  gameIndex: string;
+  segments: string[];
+}
+
+/**
  * Represents a complete bowling game
  */
 export interface Game {

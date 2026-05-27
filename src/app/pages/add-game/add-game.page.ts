@@ -175,19 +175,28 @@ export class AddGamePage implements OnInit {
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
-      const gameState = this.games();
-      const pinState = this.pinModeState();
-      const totals = this.totalScores();
-      const maxs = this.maxScores();
+      const games = this.games();
+      const pinModeState = this.pinModeState();
+      const totalScores = this.totalScores();
+      const maxScores = this.maxScores();
 
-      const mode = untracked(() => this.selectedMode);
-      const isPinMode = untracked(() => this.isPinInputMode);
-      const selectedSegment = untracked(() => this.selectedSegment);
+      const selectedMode = untracked(() => this.selectedMode);
+      const isPinInputMode = untracked(() => this.isPinInputMode);
+      const gameIndex = untracked(() => this.selectedSegment);
       const segments = untracked(() => this.segments);
 
       if (!this.isStorageReady) return;
 
-      this.saveDraft(gameState, pinState, totals, maxs, mode, isPinMode, selectedSegment, segments);
+      this.saveDraft({
+        games,
+        pinModeState,
+        totalScores,
+        maxScores,
+        selectedMode,
+        isPinInputMode,
+        gameIndex,
+        segments,
+      });
     });
   }
 
@@ -927,41 +936,23 @@ export class AddGamePage implements OnInit {
       this.isStorageReady = true;
     }
   }
-  private saveDraft(
-    games: Game[],
-    pinModeState: PinModeState[],
-    totalScores: number[],
-    maxScores: number[],
-    selectedMode: SeriesMode,
-    isPinInputMode: boolean,
-    gameIndex: string,
-    segments: string[],
-  ): void {
-    const hasData = games.some((game) => {
-      const hasThrows = game.frames.some((f) => f.throws && f.throws.length > 0);
 
-      return hasThrows;
-    });
+  private saveDraft(draft: Omit<GameDraft, 'timestamp'>): void {
+    const hasData = draft.games.some((game) => game.frames.some((f) => f.throws && f.throws.length > 0));
 
     if (!hasData) {
       this.clearDraft();
       return;
     }
 
-    const draft: GameDraft = {
+    const fullDraft: GameDraft = {
+      ...draft,
       timestamp: Date.now(),
-      games,
-      pinModeState,
-      totalScores,
-      maxScores,
-      selectedMode,
-      gameIndex,
-      isPinInputMode,
-      segments,
     };
+
     try {
       const tmpKey = this.DRAFT_KEY + '.tmp';
-      const payload = JSON.stringify(draft);
+      const payload = JSON.stringify(fullDraft);
       localStorage.setItem(tmpKey, payload);
       localStorage.setItem(this.DRAFT_KEY, payload);
       localStorage.removeItem(tmpKey);

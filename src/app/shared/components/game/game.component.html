@@ -1,13 +1,13 @@
 <ion-accordion-group color="dark" multiple="true" #accordionGroup (ionChange)="hideContent($event)">
   <ion-list>
     <!-- <ion-button (click)="deleteAll()"> Alles löschen</ion-button> -->
-    @for (item of showingDisplayItems(); track item.type === 'series' ? item.group.seriesId : item.game.gameId; let i = $index) {
+    @for (item of showingDisplayItems(); track item.type === "series" ? item.group.seriesId : item.game.gameId; let i = $index) {
       <ion-item-divider *ngIf="monthHeaders().get(i) as header" style="padding: 8px; font-size: 1.2rem">
         <ion-badge slot="end">{{ header.count }}</ion-badge>
         <ion-label>{{ header.name }} </ion-label>
       </ion-item-divider>
 
-      @if (item.type === 'single') {
+      @if (item.type === "single") {
         <!-- Single game item -->
         <ion-item-sliding class="sliding" #slidingItem>
           <ion-item-options side="end" (ionSwipe)="deleteGame(item.game.gameId); slidingItem.closeOpened()">
@@ -16,7 +16,10 @@
             </ion-item-option>
           </ion-item-options>
 
-          <ion-item-options side="start" *ngIf="!isEditMode[item.game.gameId]" (ionSwipe)="saveOriginalStateAndEnableEdit(item.game); slidingItem.closeOpened()">
+          <ion-item-options
+            side="start"
+            *ngIf="!isEditMode[item.game.gameId]"
+            (ionSwipe)="saveOriginalStateAndEnableEdit(item.game); slidingItem.closeOpened()">
             <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(item.game); slidingItem.closeOpened()">
               <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
             </ion-item-option>
@@ -166,7 +169,7 @@
                   <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + item.game.gameId">
                     <ng-template>
                       <app-generic-typeahead
-                        [items]="storageService.allPatterns()"
+                        [items]="patternsStore.allPatterns()"
                         [config]="patternTypeaheadConfig"
                         [prevSelectedItems]="item.game.patterns"
                         (selectedItemsChange)="item.game.patterns = $event; updateSeries(item.game, undefined, item.game.patterns)">
@@ -178,7 +181,7 @@
                     id="ball-selector-{{ item.game.gameId }}"
                     button
                     detailIcon="chevron-expand-outline"
-                    [disabled]="storageService.arsenal().length === 0">
+                    [disabled]="ballsStore.arsenal().length === 0">
                     <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
                     <ion-label>Balls</ion-label>
                     <span class="ion-text-right">{{ getSelectedBallsText(item.game) }}</span>
@@ -245,7 +248,10 @@
                   </ion-item-option>
                 </ion-item-options>
 
-                <ion-item-options side="start" *ngIf="!isEditMode[game.gameId]" (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+                <ion-item-options
+                  side="start"
+                  *ngIf="!isEditMode[game.gameId]"
+                  (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
                   <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
                     <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
                   </ion-item-option>
@@ -299,7 +305,9 @@
                                   type="text"
                                   inputmode="numeric"
                                   [class.is-split]="frame?.throws?.[0]?.isSplit"
-                                  [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
+                                  [value]="
+                                    frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value
+                                  ">
                                 </ion-input>
                               </ion-col>
                               <ion-col class="input-col">
@@ -324,7 +332,9 @@
                                   type="text"
                                   inputmode="numeric"
                                   [class.is-split]="frame?.throws?.[0]?.isSplit"
-                                  [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
+                                  [value]="
+                                    frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value
+                                  ">
                                 </ion-input>
                               </ion-col>
                               <ion-col class="input-col">
@@ -392,7 +402,7 @@
                         <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + game.gameId">
                           <ng-template>
                             <app-generic-typeahead
-                              [items]="storageService.allPatterns()"
+                              [items]="patternsStore.allPatterns()"
                               [config]="patternTypeaheadConfig"
                               [prevSelectedItems]="game.patterns"
                               (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
@@ -404,7 +414,7 @@
                           id="ball-selector-{{ game.gameId }}"
                           button
                           detailIcon="chevron-expand-outline"
-                          [disabled]="storageService.arsenal().length === 0">
+                          [disabled]="ballsStore.arsenal().length === 0">
                           <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
                           <ion-label>Balls</ion-label>
                           <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>

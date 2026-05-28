@@ -2,7 +2,7 @@
 
 import { computed, Injectable, Signal } from '@angular/core';
 import { PrevStats, Stats } from 'src/app/core/models/stats.model';
-import { StorageService } from '../storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { UtilsService } from '../utils/utils.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
@@ -12,7 +12,7 @@ import { SeriesStatsCalculatorService } from './game-stats-calculator/series-sta
 })
 export class StatsPersistenceService {
   constructor(
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
     private utilsService: UtilsService,
     private overallStatsCalculatorService: OverallStatsCalculatorService,
     private seriesStatsCalculatorService: SeriesStatsCalculatorService,
@@ -85,7 +85,7 @@ export class StatsPersistenceService {
   }
 
   public prevStats: Signal<PrevStats> = computed(() => {
-    const gameHistory = this.storageService.games();
+    const gameHistory = this.gamesStore.games();
     const lastComparisonDate = parseInt(localStorage.getItem('lastComparisonDate') ?? '0');
     const today = Date.now();
 

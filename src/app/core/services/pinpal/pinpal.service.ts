@@ -6,7 +6,9 @@ import { GameFilterService } from 'src/app/core/services/game-filter/game-filter
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { ToastService } from '../toast/toast.service';
 
 interface GameRow {
@@ -31,7 +33,9 @@ export class PinpalService {
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
-    private storageService: StorageService,
+    private ballsStore: BallsStore,
+    private patternsStore: PatternsStore,
+    private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
     private gameUtilsService: GameUtilsService,
     private sortUtils: SortUtilsService,
@@ -52,10 +56,10 @@ export class PinpalService {
       const timestamp = Date.now();
 
       // Namen für Matching laden
-      const availableBalls = this.storageService.allBalls();
+      const availableBalls = this.ballsStore.allBalls();
       const availableBallNames = availableBalls.map((b) => b.ball_name);
       const availableBallsByName = new Map(availableBalls.map((ball) => [ball.ball_name.toLowerCase(), ball]));
-      const availablePatternNames = this.storageService.allPatterns().map((p) => p.title || '');
+      const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
       const ballsToAddToArsenal = new Map<string, Ball>();
 
       const games: Game[] = [];
@@ -100,10 +104,8 @@ export class PinpalService {
       }
 
       const sortedGames = this.sortUtils.sortGameHistoryByDate(games);
-      await this.storageService.saveGamesToLocalStorage(sortedGames);
-      const arsenalSaveResults = await Promise.allSettled(
-        [...ballsToAddToArsenal.values()].map((ball) => this.storageService.saveBallToArsenal(ball)),
-      );
+      await this.gamesStore.saveGamesToLocalStorage(sortedGames);
+      const arsenalSaveResults = await Promise.allSettled([...ballsToAddToArsenal.values()].map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {
         this.toastService.showToast("Import finished, but some balls couldn't be added to the arsenal.", 'bug-outline');

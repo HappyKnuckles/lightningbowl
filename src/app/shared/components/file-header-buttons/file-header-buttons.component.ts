@@ -9,7 +9,8 @@ import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
@@ -19,7 +20,8 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
   styleUrl: './file-header-buttons.component.css',
 })
 export class FileHeaderButtonsComponent {
-  storageService = inject(StorageService);
+  gamesStore = inject(GamesStore);
+  ballsStore = inject(BallsStore);
   loadingService = inject(LoadingService);
   excelService = inject(ExcelService);
   importDispatcherService = inject(ImportDispatcherService);
@@ -58,7 +60,7 @@ export class FileHeaderButtonsComponent {
       return;
     }
 
-    if (this.storageService.games().length === 0) {
+    if (this.gamesStore.games().length === 0) {
       const importInfoAlert = await this.alertController.create({
         header: 'Info',
         message: 'You can import files from PinPal or our custom Excel file.',

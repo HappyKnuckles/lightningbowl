@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Frame, getThrowValue, Throw } from '../../models/game.model';
+import { createThrow, Frame, getThrowValue, Throw } from '../../models/game.model';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];
@@ -37,6 +37,10 @@ export class GameUtilsService {
     6: 6,
     10: 7,
   };
+
+  generateUniqueSeriesId(): string {
+    return 'series-' + Math.random().toString(36).substring(2, 15);
+  }
 
   // PIN PROCESSING
   processPinThrow(frames: Frame[], frameIndex: number, throwIndex: number, pinsKnockedDown: number[]): PinThrowResult {
@@ -113,6 +117,26 @@ export class GameUtilsService {
       nextFrameIndex: targetFrameIdx,
       nextThrowIndex: targetThrowIdx,
     };
+  }
+
+  recordThrow(frames: Frame[], frameIndex: number, throwIndex: number, value: number): void {
+    const frame = frames[frameIndex];
+    if (!frame) return;
+    while (frame.throws.length <= throwIndex) {
+      frame.throws.push(createThrow(0, frame.throws.length + 1));
+    }
+    frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  }
+
+  removeThrow(frames: Frame[], frameIndex: number, throwIndex: number): void {
+    const frame = frames[frameIndex];
+    if (!frame?.throws) return;
+    if (throwIndex >= 0 && throwIndex < frame.throws.length) {
+      frame.throws.splice(throwIndex, 1);
+      frame.throws.forEach((t, idx) => {
+        t.throwIndex = idx + 1;
+      });
+    }
   }
 
   // NAVIGATION & STATE CALCULATION

@@ -3,7 +3,7 @@
     <app-file-header-buttons></app-file-header-buttons>
     <ion-title> Stats </ion-title>
     <ion-buttons slot="end" class="action-sheet">
-      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
         <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
@@ -72,19 +72,23 @@
         <app-ball-stats
           [title]="'Most used ball'"
           [bestBall]="statsService.mostPlayedBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"></app-ball-stats>
+          [totalGames]="statsService.currentStats().totalGames"
+          [allBalls]="statsService.allBallStats()"></app-ball-stats>
         <app-ball-stats
           [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"></app-ball-stats>
+          [totalGames]="statsService.currentStats().totalGames"
+          [allBalls]="statsService.allBallStats()"></app-ball-stats>
         <app-pattern-stats
           [title]="'Most played pattern'"
           [bestPattern]="statsService.mostPlayedPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"></app-pattern-stats>
+          [totalGames]="statsService.currentStats().totalGames"
+          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
         <app-pattern-stats
           [title]="'Best pattern'"
           [bestPattern]="statsService.bestPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"></app-pattern-stats>
+          [totalGames]="statsService.currentStats().totalGames"
+          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
         <app-stat-display
           [title]="'Series Stats'"
           [statDefinitions]="seriesStatDefinitions"
@@ -161,7 +165,8 @@
         </app-stat-display>
         <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="statsService.bestLeaves()"> </app-pin-leave-stats>
         <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="statsService.worstLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()"> </app-pin-leave-stats>
+        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+        </app-pin-leave-stats>
       </section>
     </ion-segment-content>
 
@@ -174,12 +179,35 @@
             [currentStats]="sessionStats()"
             [prevStats]="statsService.currentStats()">
           </app-stat-display>
+          <app-ball-stats
+            [title]="'Most used ball'"
+            [bestBall]="sessionMostPlayedBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+          <app-ball-stats
+            [title]="'Best ball'"
+            [bestBall]="sessionBestBallStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+          <app-pattern-stats
+            [title]="'Most played pattern'"
+            [bestPattern]="sessionMostPlayedPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
+          <app-pattern-stats
+            [title]="'Best pattern'"
+            [bestPattern]="sessionBestPatternStats()"
+            [totalGames]="sessionStats().totalGames"
+            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
           <app-stat-display [title]="'Pin Stats'" [statDefinitions]="pinStatDefinitions" [currentStats]="sessionStats()"> </app-stat-display>
           <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
           </app-spare-display>
           <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
           <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
-          <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="sessionLeaves().common"></app-pin-leave-stats>
+          <app-pin-leave-stats
+            [title]="'Most Common Leaves'"
+            [leaveStats]="sessionLeaves().common"
+            [allLeaves]="sessionAllLeaves()"></app-pin-leave-stats>
         </section>
       }
     </ion-segment-content>
@@ -187,7 +215,7 @@
 
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
-    <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
+    <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
       <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>
     </ng-container>
   </ng-container>

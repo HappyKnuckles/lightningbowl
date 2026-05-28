@@ -13,7 +13,7 @@
         storageKey="games-sort-option"
         (sortChanged)="onSortChanged($event)">
       </app-sort-header> -->
-      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="storageService.games().length <= 0 && !loadingService.isLoading()">
+      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
         <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
@@ -31,7 +31,7 @@
   </ion-refresher>
 
   <!-- Show this message if there are no game history items and it's not loading -->
-  <ng-container *ngIf="storageService.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
+  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
     <ion-text class="no-game-text"> Start playing a few games to see your history here! </ion-text>
   </ng-container>
   <ng-template #checkFilteredGames>

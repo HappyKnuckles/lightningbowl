@@ -46,15 +46,15 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
 import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
 import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
-import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
 import { SpareNamesComponent } from 'src/app/shared/components/spare-names/spare-names.component';
 import { environment } from 'src/environments/environment';
+import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 @Component({
   selector: 'app-settings',
@@ -118,7 +118,7 @@ export class SettingsPage implements OnInit, AfterViewInit {
     private statsService: GameStatsService,
     private alertCtrl: AlertController,
     private analyticsService: AnalyticsService,
-    public storageService: StorageService,
+    public settingsStore: SettingsStore,
     public cloudSyncService: CloudSyncService,
     private route: ActivatedRoute,
   ) {
@@ -192,7 +192,7 @@ export class SettingsPage implements OnInit, AfterViewInit {
   }
 
   savePinInputMode(pinMode: string): void {
-    this.storageService.savePinInputMode(pinMode);
+    this.settingsStore.savePinInputMode(pinMode);
   }
 
   async getGameCountForAverage(event: InputCustomEvent): Promise<void> {

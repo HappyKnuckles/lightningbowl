@@ -1,6 +1,16 @@
-<ion-list style="background: none">
-  <ion-list-header style="margin-bottom: 4px">{{ title() }}</ion-list-header>
-  <div class="stat-container">
+<ion-list style="background: none" (click)="openModal()" (keydown.enter)="openModal()">
+  <ion-list-header style="margin-bottom: 4px">
+    {{ title() }}
+    @if (allItems()?.length) {
+      <ion-icon name="chevron-forward-outline" class="open-icon"></ion-icon>
+    }
+  </ion-list-header>
+  <div
+    class="stat-container"
+    [class.ion-activatable]="allItems()?.length"
+    [class.ripple-parent]="allItems()?.length"
+    [attr.tabindex]="allItems()?.length ? '0' : null"
+    [attr.aria-label]="allItems()?.length ? 'View all ' + title().toLowerCase() : null">
     @if (item().gameCount === 0) {
       <div class="inner-stat-container">
         <p>{{ emptyMessage() }}</p>
@@ -14,9 +24,10 @@
       </div>
       <div class="inner-stat-container">
         <ion-img
+          *ngIf="item().image"
           [class.round]="roundImage()"
           [class.pattern-img]="!roundImage()"
-          [src]="(imageUrlBase() ?? storageService.url) + item().image"></ion-img>
+          [src]="(imageUrlBase() ?? ballsStore.url) + item().image"></ion-img>
         <div class="item-stats">
           <div class="stat-line">
             <span class="stat-label">Avg:</span>
@@ -33,5 +44,59 @@
         </div>
       </div>
     }
+    @if (allItems()?.length) {
+      <ion-ripple-effect></ion-ripple-effect>
+    }
   </div>
 </ion-list>
+
+@if (allItems()?.length) {
+  <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button color="medium" (click)="closeModal()">
+              <ion-icon name="chevron-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>All balls</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list style="background: none; padding: 8px 0 16px">
+          @for (item of allItems(); track item.name) {
+            <div class="stat-container">
+              <div class="header-container">
+                <ion-list-header class="item-name">
+                  {{ item.name }}
+                </ion-list-header>
+                <span class="game-count-ratio">{{ item.gameCount }} / {{ totalGames() }}</span>
+              </div>
+              <div class="inner-stat-container">
+                <ion-img
+                  [class.round]="roundImage()"
+                  [class.pattern-img]="!roundImage()"
+                  [src]="(imageUrlBase() ?? ballsStore.url) + item.image"></ion-img>
+                <div class="item-stats">
+                  <div class="stat-line">
+                    <span class="stat-label">Avg:</span>
+                    <span class="stat-value">{{ item.avg }}</span>
+                  </div>
+                  <div class="stat-line">
+                    <span class="stat-label">High:</span>
+                    <span class="stat-value">{{ item.highestGame }}</span>
+                  </div>
+                  <div class="stat-line">
+                    <span class="stat-label">Low:</span>
+                    <span class="stat-value">{{ item.lowestGame }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}

@@ -21,6 +21,7 @@ export interface TypeaheadConfig<T> {
   valueKey?: keyof T;
   maxSelections?: number;
   showImages?: boolean;
+  imageShape?: 'round' | 'rect';
   imageUrlGenerator?: (item: T) => string;
   customDisplayLogic?: (item: T) => { cssClass?: string; disabled?: boolean };
   customDisplayFormatter?: (item: T, fieldKey: string) => string;

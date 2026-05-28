@@ -1,15 +1,9 @@
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
 import { SwUpdate } from '@angular/service-worker';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { Observable } from 'rxjs'; // Import `of` to create observables
-import { StorageService } from './core/services/storage/storage.service';
-
-const mockStorageService = {
-  getItem: jasmine.createSpy('getItem').and.returnValue(Promise.resolve(null)),
-  setItem: jasmine.createSpy('setItem').and.returnValue(Promise.resolve()),
-};
+import { AppComponent } from './app.component';
 
 const mockSwUpdate = {
   isEnabled: false,
@@ -27,11 +21,7 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
       imports: [AppComponent],
-      providers: [
-        { provide: StorageService, useValue: mockStorageService },
-        { provide: SwUpdate, useValue: mockSwUpdate },
-        provideHttpClient(withInterceptorsFromDi()),
-      ],
+      providers: [{ provide: SwUpdate, useValue: mockSwUpdate }, provideHttpClient(withInterceptorsFromDi())],
     }).compileComponents();
   });
 

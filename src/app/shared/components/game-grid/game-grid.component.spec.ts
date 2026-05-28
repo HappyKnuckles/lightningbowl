@@ -1,19 +1,22 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { GameGridComponent } from './game-grid.component';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { of } from 'rxjs';
-const mockStorageService = {
-  getItem: jasmine.createSpy('getItem').and.returnValue(Promise.resolve(null)),
-  setItem: jasmine.createSpy('setItem').and.returnValue(Promise.resolve()),
-  loadLeagues: jasmine.createSpy('loadLeagues').and.returnValue(Promise.resolve([])),
-  loadGameHistory: jasmine.createSpy('loadGameHistory').and.returnValue(Promise.resolve([])),
-  newGameAdded: of(null),
-  gameDeleted: of(null),
-  gameEditLeague: of(null),
-  newLeagueAdded: of(null),
-  leagueDeleted: of(null),
-  leagueChanged: of(null),
+import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+
+const mockSettingsStore = {
+  pinInputMode: jasmine.createSpy('pinInputMode').and.returnValue(true),
 };
+
+const mockPatternsStore = {
+  allPatterns: jasmine.createSpy('allPatterns').and.returnValue([]),
+};
+
+const mockBallsStore = {
+  allBalls: jasmine.createSpy('allBalls').and.returnValue([]),
+  arsenal: jasmine.createSpy('arsenal').and.returnValue([]),
+};
+
 describe('TrackGridComponent', () => {
   let component: GameGridComponent;
   let fixture: ComponentFixture<GameGridComponent>;
@@ -21,7 +24,11 @@ describe('TrackGridComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       imports: [GameGridComponent],
-      providers: [{ provide: StorageService, useValue: mockStorageService }],
+      providers: [
+        { provide: SettingsStore, useValue: mockSettingsStore },
+        { provide: PatternsStore, useValue: mockPatternsStore },
+        { provide: BallsStore, useValue: mockBallsStore },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GameGridComponent);

@@ -8,10 +8,8 @@ import {
   IonButtons,
   IonCard,
   IonCardContent,
-  IonCol,
   IonContent,
   IonFooter,
-  IonGrid,
   IonHeader,
   IonIcon,
   IonInput,
@@ -19,7 +17,6 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonRow,
   IonSelect,
   IonSelectOption,
   IonSpinner,
@@ -37,6 +34,7 @@ import {
   linkOutline,
   syncOutline,
   unlinkOutline,
+  warningOutline,
 } from 'ionicons/icons';
 import { CloudProvider, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
 import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
@@ -52,9 +50,6 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
     IonBadge,
     IonListHeader,
     IonList,
-    IonGrid,
-    IonRow,
-    IonCol,
     IonToolbar,
     IonFooter,
     NgIf,
@@ -125,6 +120,7 @@ export class CloudSyncSettingsComponent {
       unlinkOutline,
       folderOutline,
       calendarOutline,
+      warningOutline,
     });
   }
 

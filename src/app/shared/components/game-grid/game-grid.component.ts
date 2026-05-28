@@ -19,7 +19,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { InputCustomEvent } from '@ionic/angular';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
@@ -134,7 +136,9 @@ export class GameGridComponent implements OnInit, OnDestroy {
   }
 
   constructor(
-    public storageService: StorageService,
+    public settingsStore: SettingsStore,
+    public patternsStore: PatternsStore,
+    public ballsStore: BallsStore,
     private hapticService: HapticService,
     public utilsService: UtilsService,
     private platform: Platform,

@@ -3,7 +3,7 @@ import { Game, Frame, Throw, createEmptyGame, cloneFrames, createThrow, getThrow
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 
@@ -44,7 +44,7 @@ export class GameSessionFacade {
     private scoreCalculator: GameScoreCalculatorService,
     private validationService: BowlingGameValidationService,
     private transformerService: GameDataTransformerService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
     private analyticsService: AnalyticsService,
     private highScoreService: HighScoreAlertService,
   ) {}
@@ -300,7 +300,7 @@ export class GameSessionFacade {
         const gameWithPinMode: Game = { ...game, isPinMode: config.isPinMode };
         const gameData = this.transformerService.transformGameData(gameWithPinMode, seriesConfig);
 
-        await this.storageService.saveGameToLocalStorage(gameData);
+        await this.gamesStore.saveGameToLocalStorage(gameData);
         savedGameObjects.push(gameData);
       }
 
@@ -310,7 +310,7 @@ export class GameSessionFacade {
           score: savedGameObjects[0].totalScore, // tracking first game score/avg
         });
 
-        const allGames = this.storageService.games();
+        const allGames = this.gamesStore.games();
         if (savedGameObjects.length === 1) {
           await this.highScoreService.checkAndDisplayHighScoreAlerts(savedGameObjects[0], allGames);
         } else {

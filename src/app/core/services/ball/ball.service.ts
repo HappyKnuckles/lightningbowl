@@ -23,6 +23,7 @@ export class BallService {
   get coverstocks() {
     return this.#coverstocks;
   }
+  private readonly pending = new Map<string, Promise<unknown>>();
 
   constructor(
     private http: HttpClient,
@@ -91,6 +92,10 @@ export class BallService {
     }
   }
 
+  async getBallsByWeight(weight: number): Promise<Ball[]> {
+    return this.fetchWithCache(`balls_weight_${weight}`, () => this.loadAllBalls(undefined, weight), 24 * 60 * 60 * 1000);
+  }
+
   async getBallsByCore(ball: Ball): Promise<Ball[]> {
     try {
       const response = await firstValueFrom(
@@ -140,126 +145,36 @@ export class BallService {
   }
 
   async getBrands(): Promise<Brand[]> {
-    const cacheKey = 'brands';
-
-    try {
-      const cachedBrands = await this.cacheService.get<Brand[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedBrands && (isCacheValid || this.networkService.isOffline)) {
-        this.brands.set(cachedBrands);
-        return cachedBrands;
-      }
-
-      if (this.networkService.isOffline) {
-        console.warn('Cannot load brands: offline and no cached data available');
-        return [];
-      }
-
-      const response = await firstValueFrom(this.http.get<Brand[]>(`${environment.bowwwlEndpoint}brands`));
-      this.brands.set(response);
-
-      if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
-      }
-
-      return response;
-    } catch (error) {
-      console.error('Error loading brands:', error);
-
-      // Try to use cached data as fallback
-      const cachedBrands = await this.cacheService.get<Brand[]>(cacheKey);
-      if (cachedBrands) {
-        this.brands.set(cachedBrands);
-        return cachedBrands;
-      }
-
-      throw error;
-    }
+    return this.fetchWithCache(
+      'brands',
+      () => firstValueFrom(this.http.get<Brand[]>(`${environment.bowwwlEndpoint}brands`)),
+      7 * 24 * 60 * 60 * 1000,
+      (data) => this.#brands.set(data),
+    );
   }
 
   async getCores(): Promise<Core[]> {
-    const cacheKey = 'cores';
-
-    try {
-      const cachedCores = await this.cacheService.get<Core[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedCores && (isCacheValid || this.networkService.isOffline)) {
-        cachedCores.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.cores.set(cachedCores);
-        return cachedCores;
-      }
-
-      if (this.networkService.isOffline) {
-        console.warn('Cannot load cores: offline and no cached data available');
-        return [];
-      }
-
-      const response = await firstValueFrom(this.http.get<Core[]>(`${environment.bowwwlEndpoint}cores`));
-      response.sort((a, b) => a.brand.localeCompare(b.brand));
-      this.cores.set(response);
-
-      if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
-      }
-
-      return response;
-    } catch (error) {
-      console.error('Error loading cores:', error);
-
-      // Try to use cached data as fallback
-      const cachedCores = await this.cacheService.get<Core[]>(cacheKey);
-      if (cachedCores) {
-        cachedCores.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.cores.set(cachedCores);
-        return cachedCores;
-      }
-
-      throw error;
-    }
+    return this.fetchWithCache(
+      'cores',
+      () => firstValueFrom(this.http.get<Core[]>(`${environment.bowwwlEndpoint}cores`)),
+      7 * 24 * 60 * 60 * 1000,
+      (data) => {
+        data.sort((a, b) => a.brand.localeCompare(b.brand));
+        this.#cores.set(data);
+      },
+    );
   }
 
   async getCoverstocks(): Promise<Coverstock[]> {
-    const cacheKey = 'coverstocks';
-
-    try {
-      const cachedCoverstocks = await this.cacheService.get<Coverstock[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedCoverstocks && (isCacheValid || this.networkService.isOffline)) {
-        cachedCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.coverstocks.set(cachedCoverstocks);
-        return cachedCoverstocks;
-      }
-
-      if (this.networkService.isOffline) {
-        console.warn('Cannot load coverstocks: offline and no cached data available');
-        return [];
-      }
-
-      const response = await firstValueFrom(this.http.get<Coverstock[]>(`${environment.bowwwlEndpoint}coverstocks`));
-      response.sort((a, b) => a.brand.localeCompare(b.brand));
-      this.coverstocks.set(response);
-
-      if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 7 * 24 * 60 * 60 * 1000); // 7 days
-      }
-
-      return response;
-    } catch (error) {
-      console.error('Error loading coverstocks:', error);
-
-      // Try to use cached data as fallback
-      const cachedCoverstocks = await this.cacheService.get<Coverstock[]>(cacheKey);
-      if (cachedCoverstocks) {
-        cachedCoverstocks.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.coverstocks.set(cachedCoverstocks);
-        return cachedCoverstocks;
-      }
-
-      throw error;
-    }
+    return this.fetchWithCache(
+      'coverstocks',
+      () => firstValueFrom(this.http.get<Coverstock[]>(`${environment.bowwwlEndpoint}coverstocks`)),
+      7 * 24 * 60 * 60 * 1000,
+      (data) => {
+        data.sort((a, b) => a.brand.localeCompare(b.brand));
+        this.#coverstocks.set(data);
+      },
+    );
   }
 
   async getBallsByMovementPattern(ball: Ball, allBalls: Ball[]): Promise<Ball[]> {
@@ -321,5 +236,51 @@ export class BallService {
       console.error(`Error finding balls with similar movement pattern for ball ID ${ball.ball_id}:`, error);
       throw error;
     }
+  }
+
+  private async fetchWithCache<T>(cacheKey: string, fetcher: () => Promise<T[]>, ttl: number, onData?: (data: T[]) => void): Promise<T[]> {
+    const cached = await this.cacheService.get<T[]>(cacheKey);
+    const isCacheValid = await this.cacheService.isValid(cacheKey);
+
+    if (cached && (isCacheValid || this.networkService.isOffline)) {
+      onData?.(cached);
+      return cached;
+    }
+
+    if (this.networkService.isOffline) return [];
+
+    if (this.pending.has(cacheKey)) {
+      try {
+        const data = await (this.pending.get(cacheKey) as Promise<T[]>);
+        onData?.(data);
+        return data;
+      } catch (error) {
+        if (cached) {
+          onData?.(cached);
+          return cached;
+        }
+        throw error;
+      }
+    }
+
+    const request = (async () => {
+      try {
+        const data = await fetcher();
+        onData?.(data);
+        if (data.length > 0) await this.cacheService.set(cacheKey, data, ttl);
+        return data;
+      } catch (error) {
+        if (cached) {
+          onData?.(cached);
+          return cached;
+        }
+        throw error;
+      } finally {
+        this.pending.delete(cacheKey);
+      }
+    })();
+
+    this.pending.set(cacheKey, request);
+    return request;
   }
 }

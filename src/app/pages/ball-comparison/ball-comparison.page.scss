@@ -69,12 +69,28 @@ ion-card-content {
   .ball-header {
     display: flex;
     justify-content: space-between;
-    margin: 4px 6px 8px;
+    align-items: center;
+    margin: 2px 6px 8px 12px;
     color: var(--ion-color-medium);
 
-    ion-button:first-child {
+    .weight-change {
       border: 1px solid var(--ion-border-color, #2b2828);
       border-radius: 7px;
+      --padding-end: 4px;
+      --padding-start: 4px;
+      min-height: 25px;
+      margin: 0;
+      width: fit-content;
+      color: rgb(241, 239, 239);
+      font-size: 13px;
+
+      &:hover {
+        opacity: 0.6;
+      }
+
+      &::part(icon) {
+        height: 16px;
+      }
     }
   }
 

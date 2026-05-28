@@ -13,7 +13,7 @@ import {
   IonAvatar,
   IonItem,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-ball-select',
@@ -22,7 +22,7 @@ import { StorageService } from 'src/app/core/services/storage/storage.service';
   styleUrls: ['./ball-select.component.scss'],
 })
 export class BallSelectComponent implements OnInit {
-  storageService = inject(StorageService);
+  ballsStore = inject(BallsStore);
 
   selectedBalls = input.required<string[] | undefined>();
 

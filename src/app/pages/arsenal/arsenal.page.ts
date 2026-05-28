@@ -1,51 +1,55 @@
-import { Component, OnInit, computed, Signal, ViewChild, ElementRef, effect, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnInit, Signal, ViewChild, computed, effect, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonContent,
-  IonThumbnail,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-  IonImg,
-  IonList,
-  IonItem,
-  IonLabel,
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardContent,
+  IonChip,
+  IonContent,
+  IonHeader,
   IonIcon,
-  IonModal,
-  IonText,
-  IonItemSliding,
+  IonImg,
+  IonItem,
   IonItemOption,
   IonItemOptions,
-  IonChip,
-  IonReorderGroup,
+  IonItemSliding,
+  IonLabel,
+  IonList,
+  IonListHeader,
+  IonModal,
   IonReorder,
+  IonReorderGroup,
+  IonRippleEffect,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
-  IonListHeader,
-  IonRippleEffect,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonThumbnail,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { Ball } from 'src/app/core/models/ball.model';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { addIcons } from 'ionicons';
-import { chevronBack, add, openOutline, trashOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ImpactStyle } from '@capacitor/haptics';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
 import { Chart } from 'chart.js';
+import { addIcons } from 'ionicons';
+import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { Ball } from 'src/app/core/models/ball.model';
+import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
+import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
+import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 @Component({
   selector: 'app-arsenal',
@@ -83,6 +87,10 @@ import { ChartGenerationService } from 'src/app/core/services/chart/chart-genera
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    IonCard,
+    IonCardContent,
+    IonSelect,
+    IonSelectOption,
   ],
 })
 export class ArsenalPage implements OnInit {
@@ -91,17 +99,21 @@ export class ArsenalPage implements OnInit {
   coverstockBalls: Ball[] = [];
   coreBalls: Ball[] = [];
   presentingElement?: HTMLElement;
+
   ballTypeaheadConfig!: TypeaheadConfig<Ball>;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
-    this.storageService
+    this.ballsStore
       .allBalls()
-      .filter((ball) => !this.storageService.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
+  readonly loadingWeightBallIds = signal<Set<string>>(new Set());
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
+
   constructor(
-    public storageService: StorageService,
+    public ballsStore: BallsStore,
     private hapticService: HapticService,
     private alertController: AlertController,
     private loadingService: LoadingService,
@@ -110,7 +122,7 @@ export class ArsenalPage implements OnInit {
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
   ) {
-    addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline });
+    addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
       if (this.selectedSegment() === 'compare') {
         this.generateBallDistributionChart();
@@ -120,7 +132,7 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.storageService);
+    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
   }
 
   private generateBallDistributionChart(): void {
@@ -130,7 +142,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.storageService.arsenal(),
+        this.ballsStore.arsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -154,7 +166,7 @@ export class ArsenalPage implements OnInit {
             text: 'Delete',
             handler: async () => {
               try {
-                await this.storageService.removeFromArsenal(ball);
+                await this.ballsStore.removeFromArsenal(ball);
                 this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
@@ -175,20 +187,20 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.storageService.arsenal();
+    const arsenal = this.ballsStore.arsenal();
     const [movedItem] = arsenal.splice(event.detail.from, 1);
     arsenal.splice(event.detail.to, 0, movedItem);
 
     arsenal.forEach((ball, idx) => (ball.position = idx + 1));
 
-    await Promise.all(arsenal.map((ball) => this.storageService.saveBallToArsenal(ball)));
+    await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
   }
 
   saveBallToArsenal(ball: Ball[]): void {
     try {
       ball.forEach(async (ball) => {
         try {
-          await this.storageService.saveBallToArsenal(ball);
+          await this.ballsStore.saveBallToArsenal(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
           this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);
@@ -245,6 +257,46 @@ export class ArsenalPage implements OnInit {
       this.toastService.showToast(`Error fetching balls for coverstock ${ball.coverstock_name}`, 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
+    }
+  }
+
+  async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
+    const selectedWeight = Number(weight);
+    if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
+
+    const key = ball.ball_id + ball.core_weight;
+    this.loadingWeightBallIds.update((s) => new Set([...s, key]));
+
+    try {
+      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
+      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+
+      if (!replacementBall) {
+        selectEl.value = ball.core_weight;
+        this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
+        return;
+      }
+
+      const alreadyInArsenal = this.ballsStore
+        .arsenal()
+        .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
+      if (alreadyInArsenal) {
+        selectEl.value = ball.core_weight;
+        this.toastService.showToast(`${ball.ball_name} at ${selectedWeight}lbs is already in your arsenal.`, 'information-circle-outline', true);
+        return;
+      }
+
+      await this.ballsStore.updateArsenalBall(ball, replacementBall);
+      this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
+    } catch {
+      selectEl.value = ball.core_weight;
+      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+    } finally {
+      this.loadingWeightBallIds.update((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
     }
   }
 }

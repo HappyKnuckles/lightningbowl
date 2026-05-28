@@ -267,7 +267,16 @@ export class OverallStatsCalculatorService {
         }
 
         // 10th frame fill ball split detection (only for pin mode games with pin data)
-        if (idx === MAX_FRAMES - 1 && isStrike && throw2 !== undefined && !isSecondStrike && game.isPinMode && frame.throws && frame.throws[1] && frame.throws[1].pinsLeftStanding) {
+        if (
+          idx === MAX_FRAMES - 1 &&
+          isStrike &&
+          throw2 !== undefined &&
+          !isSecondStrike &&
+          game.isPinMode &&
+          frame.throws &&
+          frame.throws[1] &&
+          frame.throws[1].pinsLeftStanding
+        ) {
           const pinsLeft = frame.throws[1].pinsLeftStanding;
           if (pinsLeft.length > 1) {
             const isSplit = this.gameUtilsService.isSplit(pinsLeft);

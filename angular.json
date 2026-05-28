@@ -109,6 +109,7 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
+              "outputHashing": "none",
               "namedChunks": true
             },
             "ci": {
@@ -183,7 +184,8 @@
       "@schematics/angular:component": {
         "path": "src/app/shared/components",
         "style": "scss",
-        "flat": false
+        "flat": false,
+        "type": "component"
       },
       "@schematics/angular:page": {
         "path": "src/app/pages",
@@ -192,7 +194,8 @@
       },
       "@schematics/angular:service": {
         "path": "src/app/core/services",
-        "flat": false
+        "flat": false,
+        "type": "service"
       },
       "@schematics/angular:pipe": {
         "path": "src/app/shared/pipes",
@@ -200,7 +203,8 @@
       },
       "@schematics/angular:directive": {
         "path": "src/app/core/directives",
-        "flat": false
+        "flat": false,
+        "type": "directive"
       },
       "@schematics/angular:class": {
         "path": "src/app/core/models"

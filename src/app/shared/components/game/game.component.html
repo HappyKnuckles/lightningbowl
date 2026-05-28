@@ -228,15 +228,14 @@
         <!-- Series group -->
         <div class="series-group">
           <ion-item class="series-group-header" lines="none">
-            <ion-icon name="layers-outline" slot="start" class="series-icon"></ion-icon>
             <ion-label class="game-info">
               <p>{{ item.group.games[0].date | date: "MM.dd.yyyy" }}</p>
-              <h2 class="title">Series ({{ item.group.games.length }} games)</h2>
+              <h2 class="title">{{ item.group.games.length }} Series</h2>
               <p class="score" *ngIf="item.group.games[0].league && !isLeaguePage()">League/Tournament: {{ item.group.games[0].league }}</p>
               <p class="score" *ngIf="item.group.games[0].patterns && item.group.games[0].patterns.length > 0">
                 Patterns: {{ item.group.games[0].patterns.join(", ") }}
               </p>
-              <p class="score series-total">Total: {{ item.group.totalScore }}</p>
+              <p class="score series-total">Total: {{ item.group.totalScore }} (Avg: {{ item.group.averageScore | number: "1.2-2" }})</p>
             </ion-label>
           </ion-item>
           <div class="series-games">

@@ -1,4 +1,4 @@
-import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { NgIf, NgFor, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, Renderer2, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
@@ -80,6 +80,7 @@ interface MonthHeader {
 interface SeriesGroup {
   seriesId: string;
   games: Game[];
+  averageScore: number;
   totalScore: number;
   date: number;
 }
@@ -132,6 +133,7 @@ type DisplayItem = { type: 'single'; game: Game } | { type: 'series'; group: Ser
     GenericTypeaheadComponent,
     BallSelectComponent,
     PinDeckFrameRowComponent,
+    DecimalPipe,
   ],
 })
 export class GameComponent implements OnInit {
@@ -190,6 +192,7 @@ export class GameComponent implements OnInit {
             seriesId: game.seriesId,
             games: sortedSeriesGames,
             totalScore: sortedSeriesGames.reduce((sum, g) => sum + g.totalScore, 0),
+            averageScore: sortedSeriesGames.length ? sortedSeriesGames.reduce((sum, g) => sum + g.totalScore, 0) / sortedSeriesGames.length : 0,
             date: game.date,
           },
         });

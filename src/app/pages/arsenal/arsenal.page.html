@@ -121,9 +121,9 @@
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
-      <ion-list-header style="margin-bottom: 4px">Coverstock</ion-list-header>
+      <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
       <ion-card
-        class="ion-activatable"
+        class="ion-activatable ion-ripple-parent"
         button
         (click)="getSameCoverstockBalls(ball)"
         (keydown.enter)="getSameCoverstockBalls(ball)"
@@ -136,20 +136,24 @@
             <div class="coverstock-image">
               <ion-img [src]="storageService.url + ball.thumbnail_image"></ion-img>
             </div>
-            <ion-item>
-              <ion-label>
-                <h2>{{ ball.coverstock_name }}</h2>
-                <p>Type: {{ ball.coverstock_type }}</p>
-                <p>Factory Finish: {{ ball.factory_finish }}</p>
-              </ion-label>
-            </ion-item>
+            <div class="info-container">
+              <ion-text
+                >Type:&nbsp;
+                <p class="info">{{ ball.coverstock_type }}</p></ion-text
+              >
+              <ion-text
+                >Factory Finish:&nbsp;
+                <p class="info">{{ ball.factory_finish }}</p></ion-text
+              >
+            </div>
           </div>
         </ion-card-content>
+        <ion-ripple-effect></ion-ripple-effect>
       </ion-card>
 
-      <ion-list-header style="margin-bottom: 4px">Core</ion-list-header>
+      <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
       <ion-card
-        class="ion-activatable"
+        class="ion-activatable ion-ripple-parent"
         button
         (click)="getSameCoreBalls(ball)"
         (keydown.enter)="getSameCoreBalls(ball)"
@@ -162,17 +166,27 @@
             <div class="core-image">
               <ion-img [src]="storageService.url + ball.core_image"></ion-img>
             </div>
-            <ion-item>
-              <ion-label>
-                <h2>{{ ball.core_name }}</h2>
-                <p>RG: {{ ball.core_rg }}</p>
-                <p>Diff: {{ ball.core_diff }}</p>
-                <p *ngIf="ball.core_int_diff">Int. Diff: {{ ball.core_int_diff }}</p>
-                <p>Type: {{ ball.core_type }}</p>
-              </ion-label>
-            </ion-item>
+            <div class="info-container">
+              <ion-text
+                >Type:&nbsp;
+                <p class="info">{{ ball.core_type }}</p></ion-text
+              >
+              <ion-text
+                >RG:&nbsp;
+                <p class="info">{{ ball.core_rg }}</p></ion-text
+              >
+              <ion-text
+                >Diff:&nbsp;
+                <p class="info">{{ ball.core_diff }}</p></ion-text
+              >
+              <ion-text
+                >Int. Diff:&nbsp;
+                <p class="info">{{ ball.core_int_diff }}</p></ion-text
+              >
+            </div>
           </div>
         </ion-card-content>
+        <ion-ripple-effect></ion-ripple-effect>
       </ion-card>
     </ion-content>
   </ng-template>

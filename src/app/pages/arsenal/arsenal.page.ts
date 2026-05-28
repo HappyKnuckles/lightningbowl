@@ -23,6 +23,7 @@ import {
   IonModal,
   IonReorder,
   IonReorderGroup,
+  IonRippleEffect,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
@@ -54,6 +55,7 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
   styleUrls: ['./arsenal.page.scss'],
   providers: [ModalController],
   imports: [
+    IonRippleEffect,
     IonListHeader,
     IonSegmentButton,
     IonSegment,

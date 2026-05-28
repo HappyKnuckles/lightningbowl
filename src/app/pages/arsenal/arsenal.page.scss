@@ -10,13 +10,19 @@
   }
 }
 
-.card-content {
-  color: white;
-
-  .header {
-    font-size: 1.125rem;
-    font-weight: 600;
+.info-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  ion-text{
+    display: inherit;
+    color: white;
+      .info {
+    font-size: 1rem;
+    color: lightgray;
   }
+  }
+
 }
 
 ion-thumbnail {
@@ -38,10 +44,6 @@ ion-header {
       text-align: center;
     }
   }
-}
-
-ion-card-title {
-  padding-bottom: 12px;
 }
 
 .sliding {

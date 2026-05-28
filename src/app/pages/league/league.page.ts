@@ -1,61 +1,64 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, ViewChildren, QueryList, computed, Signal, signal, effect } from '@angular/core';
 import { DecimalPipe, NgIf } from '@angular/common';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, QueryList, Signal, signal, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
-  IonContent,
-  IonHeader,
-  IonSegment,
-  IonSegmentButton,
-  IonTitle,
-  IonToolbar,
   IonButton,
   IonButtons,
+  IonContent,
+  IonHeader,
   IonIcon,
-  IonText,
   IonItem,
-  IonLabel,
-  IonItemSliding,
   IonItemOption,
   IonItemOptions,
+  IonItemSliding,
+  IonLabel,
   IonModal,
   IonRefresher,
-  IonSegmentView,
+  IonSegment,
+  IonSegmentButton,
   IonSegmentContent,
+  IonSegmentView,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {
+  addOutline,
+  cameraOutline,
+  checkmarkOutline,
+  chevronBack,
   chevronForward,
-  trashOutline,
   createOutline,
   documentTextOutline,
-  shareOutline,
   medalOutline,
-  cameraOutline,
-  addOutline,
-  chevronBack,
-  checkmarkOutline,
+  shareOutline,
+  trashOutline,
 } from 'ionicons/icons';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { BestBallStats, Stats } from 'src/app/core/models/stats.model';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { ImpactStyle } from '@capacitor/haptics';
+import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import Chart from 'chart.js/auto';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
+import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 
 @Component({
   selector: 'app-league',
@@ -102,14 +105,14 @@ export class LeaguePage {
   segments: string[] = ['Overall', 'Spares', 'Games'];
   isEditMode: Record<string, boolean> = {};
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
-    const games = this.storageService.games();
+    const games = this.gamesStore.games();
     return this.sortUtilsService.sortGamesByLeagues(games, true);
   });
   leagueKeys: Signal<string[]> = computed(() => {
     return Object.keys(this.gamesByLeague());
   });
   overallStats: Signal<Stats> = computed(() => {
-    const games = this.storageService.games();
+    const games = this.gamesStore.games();
     return this.statService.calculateBowlingStats(games);
   });
   gamesByLeagueReverse: Signal<Record<string, Game[]>> = computed(() => {
@@ -169,7 +172,10 @@ export class LeaguePage {
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
 
   constructor(
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    public ballsStore: BallsStore,
+    public leaguesStore: LeaguesStore,
+    private appFacade: AppFacade,
     private sortUtilsService: SortUtilsService,
     private hapticService: HapticService,
     private statService: GameStatsService,
@@ -192,12 +198,9 @@ export class LeaguePage {
       documentTextOutline,
       medalOutline,
     });
-    effect(
-      () => {
-        this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
+    });
   }
   updateLeagueSelection(league: string, checked: boolean) {
     this.hiddenLeagueSelectionService.updateSelection(league, checked);
@@ -248,7 +251,7 @@ export class LeaguePage {
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
-      await this.storageService.loadGameHistory();
+      await this.gamesStore.loadGameHistory();
     } catch (error) {
       console.error(error);
       this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
@@ -282,7 +285,7 @@ export class LeaguePage {
   }
 
   generateCharts(league: string, isReload?: boolean): void {
-    if (this.storageService.games().length > 0) {
+    if (this.gamesStore.games().length > 0) {
       if (this.selectedSegment === 'Overall') {
         this.generateScoreChart(league, isReload);
       } else if (this.selectedSegment === 'Spares') {
@@ -293,7 +296,7 @@ export class LeaguePage {
 
   async saveLeague(league: string): Promise<void> {
     try {
-      await this.storageService.addLeague(league);
+      await this.leaguesStore.addLeague(league);
       this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
     } catch (error) {
       this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
@@ -322,7 +325,7 @@ export class LeaguePage {
           text: 'Add',
           handler: async (data: { league: string }) => {
             try {
-              await this.storageService.addLeague(data.league);
+              await this.leaguesStore.addLeague(data.league);
               this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
 
               void this.analyticsService.trackLeagueCreated({ name: data.league });
@@ -352,7 +355,7 @@ export class LeaguePage {
           text: 'Delete',
           handler: async () => {
             try {
-              await this.storageService.deleteLeague(league);
+              await this.leaguesStore.deleteLeague(league);
               this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'remove-outline');
             } catch (error) {
               this.toastService.showToast(ToastMessages.leagueDeleteError, 'bug', true);
@@ -390,7 +393,7 @@ export class LeaguePage {
             const newLeagueName = data.league;
             const oldLeagueName = league;
             try {
-              await this.storageService.editLeague(newLeagueName, oldLeagueName);
+              await this.appFacade.editLeague(newLeagueName, oldLeagueName);
               this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
             } catch (error) {
               this.toastService.showToast(ToastMessages.leagueEditError, 'bug', true);

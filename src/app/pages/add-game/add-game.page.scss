@@ -1,3 +1,12 @@
+.mode-chevron {
+  vertical-align: middle;
+  transition: 300ms transform cubic-bezier(0.25, 0.8, 0.5, 1);;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
 ion-buttons {
   padding: 4px;
 
@@ -6,11 +15,6 @@ ion-buttons {
       background: none;
 
       --background-activated: none;
-    }
-
-    .chevron {
-      margin-left: 5px;
-      font-size: 15px !important;
     }
   }
 }

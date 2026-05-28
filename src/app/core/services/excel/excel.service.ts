@@ -1,15 +1,17 @@
 import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import * as ExcelJS from 'exceljs';
-import { isPlatform } from '@ionic/angular';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
+import { isPlatform } from '@ionic/angular';
+import * as ExcelJS from 'exceljs';
 import { Game } from 'src/app/core/models/game.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BestBallStats, BestPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { SortUtilsService } from '../sort-utils/sort-utils.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
-import { Stats } from 'src/app/core/models/stats.model';
 import { GameUtilsService } from '../game-utils/game-utils.service';
 
 type ExcelCellValue = string | number | boolean | Date | null;
@@ -21,7 +23,9 @@ type ExcelRow = Record<string, ExcelCellValue>;
 export class ExcelService {
   constructor(
     private hapticService: HapticService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
+    private ballsStore: BallsStore,
+    private leaguesStore: LeaguesStore,
     private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
@@ -31,41 +35,9 @@ export class ExcelService {
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
   async exportToExcel(): Promise<boolean> {
     try {
-      const gameData = this.getGameDataForExport(this.storageService.games());
-      const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
-        this.statsService.currentStats(),
-      );
-
-      const workbook = new ExcelJS.Workbook();
-      const gameWorksheet = workbook.addWorksheet('Game History');
-      const statsWorksheet = workbook.addWorksheet('Statistics');
-
-      // Game History Table
-      this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
-
-      // Stats Tables
-      const sections = [
-        { name: 'OverallStats', start: 'A1', headers: ['Overall', 'Value'], data: overall },
-        { name: 'SparesStats', start: 'D1', headers: ['Spares', 'Value'], data: spares },
-        { name: 'ThrowStats', start: 'G1', headers: ['Throw', 'Value'], data: throwStats },
-        { name: 'PinStats', start: 'J1', headers: ['Pin', 'Value'], data: pinStats },
-        { name: 'StrikeStats', start: 'M1', headers: ['Strike', 'Value'], data: strike },
-        { name: 'SpecialStats', start: 'P1', headers: ['Special', 'Value'], data: special },
-        { name: 'PlayFrequency', start: 'S1', headers: ['Frequency', 'Value'], data: playFrequency },
-        { name: 'SeriesStats', start: 'V1', headers: ['Series', 'Value'], data: series },
-      ];
-
-      sections.forEach(({ name, start, headers, data }) => {
-        this.addTable(statsWorksheet, name, start, headers, data);
-      });
-
-      // Set column widths for each section
-      sections.forEach(({ headers, data }, idx) => {
-        const startColIndex = idx * 3; // each section is 2 cols + 1-col gap
-        this.setColumnWidths(statsWorksheet, headers, data, startColIndex + 1);
-      });
-
-      this.setColumnWidths(gameWorksheet, Object.keys(gameData[0]), gameData, 1);
+      const isTemplateExport = this.gamesStore.games().length === 0;
+      const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.gamesStore.games();
+      const buffer = await this.generateExcelWorkbook(gamesForExport);
 
       const date = new Date();
       const formattedDate = date.toLocaleString('de-DE', {
@@ -75,18 +47,16 @@ export class ExcelService {
       });
 
       const isIos = isPlatform('ios');
-      const permissionsGranted = isIos ? (await Filesystem.requestPermissions()).publicStorage === 'granted' : true;
-
-      if (isIos && !permissionsGranted) {
+      if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
-        if (!permissionRequestResult) {
-          throw new Error('Permission not granted to save file.');
+        if (permissionRequestResult.publicStorage !== 'granted') {
+          return false;
         }
       }
 
       this.hapticService.vibrate(ImpactStyle.Light);
       let suffix = '';
-      const fileName = `game_data_${formattedDate}`;
+      const fileName = isTemplateExport ? 'lightningbowl_import_template' : `game_data_${formattedDate}`;
       let i = 1;
       const existingFiles = JSON.parse(localStorage.getItem('savedFilenames') || '[]');
 
@@ -100,7 +70,6 @@ export class ExcelService {
         }
       }
 
-      const buffer = await workbook.xlsx.writeBuffer();
       await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
 
       if (isPlatform('mobileweb')) {
@@ -112,6 +81,10 @@ export class ExcelService {
       console.error('Error exporting to Excel:', error);
       throw new Error(`Export failed: ${error}`);
     }
+  }
+
+  async generateExcelArrayBuffer(): Promise<ArrayBuffer> {
+    return await this.generateExcelWorkbook();
   }
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
@@ -257,21 +230,83 @@ export class ExcelService {
       }
 
       for (const league of leagueMap.values()) {
-        await this.storageService.addLeague(league);
+        await this.leaguesStore.addLeague(league);
       }
 
       for (const ball of ballMap.values()) {
-        const ballToAdd = this.storageService.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.storageService.arsenal().some((b) => b.ball_name === ball)) {
-          await this.storageService.saveBallToArsenal(ballToAdd);
+        const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
+        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+          await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
       const sortedGames = this.sortUtils.sortGameHistoryByDate(gameData);
-      await this.storageService.saveGamesToLocalStorage(sortedGames);
+      await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       this.gameFilterService.setDefaultFilters();
     } catch (error) {
       console.error('Error transforming data:', error);
       throw new Error(`Data transformation failed: ${error}`);
+    }
+  }
+
+  private async generateExcelWorkbook(gameHistory: Game[] = this.gamesStore.games()): Promise<ArrayBuffer> {
+    try {
+      const gameData = this.getGameDataForExport(gameHistory);
+      const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
+        this.statsService.currentStats(),
+      );
+
+      const workbook = new ExcelJS.Workbook();
+      const gameWorksheet = workbook.addWorksheet('Game History');
+      const statsWorksheet = workbook.addWorksheet('Statistics');
+
+      // Game History Table
+      this.addTable(gameWorksheet, 'GameHistoryTable', 'A1', Object.keys(gameData[0]), gameData);
+      this.addHeaderNotes(gameWorksheet, 1, this.getGameHistoryNotes());
+
+      // Stats Tables
+      const sections = [
+        { name: 'OverallStats', start: 'A1', headers: ['Overall', 'Value'], data: overall },
+        { name: 'SparesStats', start: 'D1', headers: ['Spares', 'Value'], data: spares },
+        { name: 'ThrowStats', start: 'G1', headers: ['Throw', 'Value'], data: throwStats },
+        { name: 'PinStats', start: 'J1', headers: ['Pin', 'Value'], data: pinStats },
+        { name: 'StrikeStats', start: 'M1', headers: ['Strike', 'Value'], data: strike },
+        { name: 'SpecialStats', start: 'P1', headers: ['Special', 'Value'], data: special },
+        { name: 'PlayFrequency', start: 'S1', headers: ['Frequency', 'Value'], data: playFrequency },
+        { name: 'SeriesStats', start: 'V1', headers: ['Series', 'Value'], data: series },
+      ];
+
+      sections.forEach(({ name, start, headers, data }) => {
+        this.addTable(statsWorksheet, name, start, headers, data);
+      });
+
+      // Set column widths for each section
+      sections.forEach(({ headers, data }, idx) => {
+        const startColIndex = idx * 3; // each section is 2 cols + 1-col gap
+        this.setColumnWidths(statsWorksheet, headers, data, startColIndex + 1);
+      });
+
+      this.setColumnWidths(gameWorksheet, Object.keys(gameData[0]), gameData, 1);
+
+      const allBallStats = this.statsService.allBallStats();
+      if (allBallStats.length > 0) {
+        this.addBallStatsWorksheet(workbook, allBallStats);
+      }
+
+      const allPatternStats = this.statsService.allPatternStats();
+      if (allPatternStats.length > 0) {
+        this.addPatternStatsWorksheet(workbook, allPatternStats);
+      }
+
+      const allLeaves = this.statsService.allLeaves();
+      if (allLeaves.length > 0) {
+        this.addLeaveStatsWorksheet(workbook, allLeaves);
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      return buffer;
+    } catch (error) {
+      console.error('Error generating Excel workbook:', error);
+      throw new Error(`Excel generation failed: ${error}`);
     }
   }
 
@@ -406,6 +441,53 @@ export class ExcelService {
     });
   }
 
+  private getGameHistoryNotes(): Record<string, string> {
+    const notes: Record<string, string> = {
+      Game: 'Unique game ID. Keep existing IDs when updating imports. For new games, any unique value is fine.',
+      Date: 'Date in MM/DD/YYYY format.',
+      'Total Score': 'Final game score (sum of all frames).',
+      'Frame Scores': 'Comma-separated cumulative frame totals. Example: 20, 40, 59, ...',
+      League: 'League name for this game. Leave empty if not a league game.',
+      Practice: 'Boolean value: true or false. Use true for practice games.',
+      Clean: 'Boolean value: true or false. True means no open frames in the game.',
+      Perfect: 'Boolean value: true or false. True means a 300 game.',
+      Series: 'Boolean value: true or false. Set true if this game belongs to a series.',
+      'Series ID': 'Use the same Series ID on each game that belongs to the same series.',
+      Patterns: 'Optional. One or two pattern names separated by comma and space.',
+      Balls: 'Optional. Ball names separated by comma and space.',
+      Notes: 'Optional free-text note for the game.',
+      isPinMode: 'Enter true for pin-layout mode, false for score-only mode.',
+    };
+
+    for (let frameIndex = 1; frameIndex <= 10; frameIndex++) {
+      notes[`Frame ${frameIndex}`] = 'Throw values separated by " / ". Examples: "10", "9 / 1", "10 / 10 / 10" (10th frame).';
+      notes[`Frame ${frameIndex} Throw 1`] = 'Pins left standing after throw 1, comma-separated (e.g. 7,10). Leave empty if none.';
+      notes[`Frame ${frameIndex} Throw 2`] = 'Pins left standing after throw 2, comma-separated. Only relevant when isPinMode=true.';
+      if (frameIndex === 10) {
+        notes[`Frame ${frameIndex} Throw 3`] = 'Pins left standing after throw 3 in 10th frame (if present).';
+      }
+    }
+
+    return notes;
+  }
+
+  private addHeaderNotes(worksheet: ExcelJS.Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
+    const row = worksheet.getRow(rowNumber);
+    row.eachCell((cell) => {
+      const headerName = cell.value?.toString();
+      if (headerName && notesMap[headerName]) {
+        cell.dataValidation = {
+          type: 'custom',
+          formulae: ['TRUE'],
+          allowBlank: true,
+          showInputMessage: true,
+          promptTitle: headerName,
+          prompt: notesMap[headerName],
+        };
+      }
+    });
+  }
+
   // TODO add new stats to export
   private getStatsTablesForExport(stats: Stats): Record<string, Record<string, ExcelCellValue>[]> {
     const formatPercent = (v: number) => `${v.toFixed(2)}%`;
@@ -531,6 +613,96 @@ export class ExcelService {
     return { overall, spares, throwStats, strike, special, playFrequency, series, pinStats };
   }
 
+  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: BestBallStats[]): void {
+    const worksheet = workbook.addWorksheet('Ball Stats');
+    const headers = ['Ball', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
+
+    const rows = [...allBallStats]
+      .sort((a, b) => b.ballAvg - a.ballAvg)
+      .map((ball) => ({
+        Ball: ball.ballName,
+        Games: ball.gameCount,
+        Avg: ball.ballAvg.toFixed(2),
+        High: ball.ballHighestGame,
+        Low: ball.ballLowestGame,
+        'Strike Rate %': ball.strikeRate !== undefined ? `${ball.strikeRate.toFixed(2)}%` : '',
+        'Clean Games': ball.cleanGameCount ?? '',
+      }));
+
+    this.addTable(worksheet, 'BallStats', 'A1', headers, rows);
+    this.setColumnWidths(worksheet, headers, rows, 1);
+  }
+
+  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: BestPatternStats[]): void {
+    const worksheet = workbook.addWorksheet('Pattern Stats');
+    const headers = ['Pattern', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
+
+    const rows = [...allPatternStats]
+      .sort((a, b) => b.patternAvg - a.patternAvg)
+      .map((pattern) => ({
+        Pattern: pattern.patternName,
+        Games: pattern.gameCount,
+        Avg: pattern.patternAvg.toFixed(2),
+        High: pattern.patternHighestGame,
+        Low: pattern.patternLowestGame,
+        'Strike Rate %': pattern.strikeRate !== undefined ? `${pattern.strikeRate.toFixed(2)}%` : '',
+        'Clean Games': pattern.cleanGameCount ?? '',
+      }));
+
+    this.addTable(worksheet, 'PatternStats', 'A1', headers, rows);
+    this.setColumnWidths(worksheet, headers, rows, 1);
+  }
+
+  private addLeaveStatsWorksheet(workbook: ExcelJS.Workbook, allLeaves: LeaveStats[]): void {
+    const leaveWorksheet = workbook.addWorksheet('Pin Leave Stats');
+    const sharedCols = ['Occurrences', 'Pickups', 'Pickup %', 'Misses', 'Miss %'];
+
+    const formatLeave = (leave: LeaveStats, firstColName: string): Record<string, ExcelCellValue> => {
+      const misses = leave.occurrences - leave.pickups;
+      const missPercent = leave.occurrences > 0 ? (misses / leave.occurrences) * 100 : 0;
+      return {
+        [firstColName]: leave.pins.join('-'),
+        Occurrences: leave.occurrences,
+        Pickups: leave.pickups,
+        'Pickup %': `${leave.pickupPercentage.toFixed(2)}%`,
+        Misses: misses,
+        'Miss %': `${missPercent.toFixed(2)}%`,
+      };
+    };
+
+    const sortedAllLeaves = [...allLeaves].sort((a, b) => b.occurrences - a.occurrences);
+    const commonLeaves = this.statsService.commonLeaves();
+    const bestLeaves = this.statsService.bestLeaves();
+    const worstLeaves = this.statsService.worstLeaves();
+
+    const leaveSections = [
+      { name: 'MostCommonLeaves', firstCol: 'Most Common Leave (Top 10)', data: commonLeaves },
+      { name: 'BestSpares', firstCol: 'Best Spare Leave', data: bestLeaves },
+      { name: 'WorstSpares', firstCol: 'Worst Spare Leave', data: worstLeaves },
+      { name: 'AllLeaves', firstCol: 'All Leaves (by frequency)', data: sortedAllLeaves },
+    ].filter((s) => s.data.length > 0);
+
+    const sectionWidth = 7; // 6 data cols + 1 gap col
+    leaveSections.forEach(({ name, firstCol, data }, idx) => {
+      const headers = [firstCol, ...sharedCols];
+      const rows = data.map((leave) => formatLeave(leave, firstCol));
+      const startColNum = idx * sectionWidth + 1;
+      const start = `${this.columnNumberToLetter(startColNum)}1`;
+      this.addTable(leaveWorksheet, name, start, headers, rows);
+      this.setColumnWidths(leaveWorksheet, headers, rows, startColNum);
+    });
+  }
+
+  private columnNumberToLetter(colNum: number): string {
+    let result = '';
+    while (colNum > 0) {
+      const rem = (colNum - 1) % 26;
+      result = String.fromCharCode(65 + rem) + result;
+      colNum = Math.floor((colNum - 1) / 26);
+    }
+    return result;
+  }
+
   private addTable(worksheet: ExcelJS.Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {
     worksheet.addTable({
       name,
@@ -573,5 +745,71 @@ export class ExcelService {
       };
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  private createSampleGame(): Game {
+    return {
+      gameId: '1775331174465_1u39gi6',
+      date: 1775331174465,
+      frames: [
+        {
+          frameIndex: 1,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [] },
+          ],
+        },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        {
+          frameIndex: 4,
+          throws: [
+            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [5] },
+          ],
+        },
+        {
+          frameIndex: 5,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [3] },
+          ],
+        },
+        {
+          frameIndex: 6,
+          throws: [
+            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10] },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [2] },
+          ],
+        },
+        {
+          frameIndex: 7,
+          throws: [
+            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2] },
+            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2] },
+          ],
+        },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        {
+          frameIndex: 10,
+          throws: [
+            { value: 10, throwIndex: 1, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 2, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 3, pinsLeftStanding: [] },
+          ],
+        },
+      ],
+      frameScores: [20, 40, 60, 77, 95, 112, 119, 149, 179, 209],
+      totalScore: 209,
+      isClean: false,
+      isPerfect: false,
+      isPractice: false,
+      isPinMode: true,
+      league: 'Example League',
+      note: 'Example note',
+      patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
+      balls: ['Rocket A.I.'],
+    };
   }
 }

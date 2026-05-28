@@ -22,14 +22,18 @@ import {
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createBallCoreTypeaheadConfig, createBallCoverstockTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import {
+  createBallCoreTypeaheadConfig,
+  createBallCoverstockTypeaheadConfig,
+  createBallBrandTypeaheadConfig,
+} from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { Core, Coverstock } from 'src/app/core/models/ball.model';
+import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 @Component({
   selector: 'app-ball-filter',
@@ -66,6 +70,7 @@ export class BallFilterComponent implements OnInit {
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
   weights: string[] = ['12', '13', '14', '15', '16'];
   presentingElement?: HTMLElement;
+  brandTypeaheadConfig!: TypeaheadConfig<Brand>;
   coreTypeaheadConfig!: TypeaheadConfig<Core>;
   coverstockTypeaheadConfig!: TypeaheadConfig<Coverstock>;
 
@@ -73,13 +78,14 @@ export class BallFilterComponent implements OnInit {
     public ballFilterService: BallFilterService,
     private modalCtrl: ModalController,
     public ballService: BallService,
-    private storageService: StorageService,
+    private ballsStore: BallsStore,
     private toastService: ToastService,
     private loadingService: LoadingService,
     private analyticsService: AnalyticsService,
   ) {}
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page')!;
+    this.brandTypeaheadConfig = createBallBrandTypeaheadConfig();
     this.coreTypeaheadConfig = createBallCoreTypeaheadConfig();
     this.coverstockTypeaheadConfig = createBallCoverstockTypeaheadConfig();
   }
@@ -135,7 +141,7 @@ export class BallFilterComponent implements OnInit {
   async changeWeight(weight: number): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      await this.storageService.loadAllBalls(undefined, weight);
+      await this.ballsStore.loadAllBalls(undefined, weight);
     } catch (error) {
       console.error('Error loading balls:', error);
       this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);

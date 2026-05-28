@@ -13,7 +13,7 @@
       -->
       <ion-item (click)="onBallClick(ball)" button>
         <ion-avatar slot="start">
-          <ion-img [src]="storageService.url + ball.thumbnail_image"></ion-img>
+          <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
         </ion-avatar>
         <ion-label>
           <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>

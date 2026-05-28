@@ -37,6 +37,11 @@
                 "input": "public/.well-known",
                 "output": ".well-known"
               },
+              {
+                "glob": "sql-wasm.wasm",
+                "input": "node_modules/sql.js/dist",
+                "output": "assets"
+              },
               "src/robots.txt",
               "src/sitemap.xml",
               "src/manifest.webmanifest"
@@ -46,6 +51,7 @@
         "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css","src/global.scss", "src/theme/variables.scss"],
             "scripts": ["node_modules/leaflet/dist/leaflet.js",
         "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"],
+            "allowedCommonJsDependencies": ["sql.js"],
             "browser": "src/main.ts"
           },
           "configurations": {
@@ -103,6 +109,7 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
+              "outputHashing": "none",
               "namedChunks": true
             },
             "ci": {
@@ -177,7 +184,8 @@
       "@schematics/angular:component": {
         "path": "src/app/shared/components",
         "style": "scss",
-        "flat": false
+        "flat": false,
+        "type": "component"
       },
       "@schematics/angular:page": {
         "path": "src/app/pages",
@@ -186,7 +194,8 @@
       },
       "@schematics/angular:service": {
         "path": "src/app/core/services",
-        "flat": false
+        "flat": false,
+        "type": "service"
       },
       "@schematics/angular:pipe": {
         "path": "src/app/shared/pipes",
@@ -194,7 +203,8 @@
       },
       "@schematics/angular:directive": {
         "path": "src/app/core/directives",
-        "flat": false
+        "flat": false,
+        "type": "directive"
       },
       "@schematics/angular:class": {
         "path": "src/app/core/models"

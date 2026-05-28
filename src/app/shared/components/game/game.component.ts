@@ -48,7 +48,11 @@ import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { Game, Frame, cloneFrames, createThrow } from 'src/app/core/models/game.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -133,7 +137,7 @@ export class GameComponent implements OnInit {
 
   // Computed Signals
   leagues = computed(() => {
-    const savedLeagues = this.storageService.leagues();
+    const savedLeagues = this.leaguesStore.leagues();
     if (!this.games) return savedLeagues;
     const leagueKeys = this.games().reduce((acc: string[], game: Game) => {
       if (game.league && !acc.includes(game.league)) {
@@ -214,7 +218,11 @@ export class GameComponent implements OnInit {
   constructor(
     private alertController: AlertController,
     private toastService: ToastService,
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    public ballsStore: BallsStore,
+    public settingsStore: SettingsStore,
+    public patternsStore: PatternsStore,
+    private leaguesStore: LeaguesStore,
     private loadingService: LoadingService,
     private datePipe: DatePipe,
     private hapticService: HapticService,
@@ -313,7 +321,7 @@ export class GameComponent implements OnInit {
           text: 'Delete',
           handler: async () => {
             try {
-              await this.storageService.deleteGame(gameId);
+              await this.gamesStore.deleteGame(gameId);
               this.toastService.showToast(ToastMessages.gameDeleteSuccess, 'remove-outline');
             } catch (error) {
               console.error('Error deleting game:', error);
@@ -522,9 +530,9 @@ export class GameComponent implements OnInit {
         const newPatterns = updatedGame.patterns;
         const newIsPractice = !newLeague;
 
-        await this.storageService.saveGameToLocalStorage(updatedGame);
+        await this.gamesStore.saveGameToLocalStorage(updatedGame);
 
-        const gamesToUpdateInStorage = this.storageService
+        const gamesToUpdateInStorage = this.gamesStore
           .games()
           .filter((g) => g.seriesId === seriesIdToUpdate && g.gameId !== updatedGame.gameId)
           .map((g) => ({
@@ -533,9 +541,9 @@ export class GameComponent implements OnInit {
             patterns: newPatterns,
             isPractice: newIsPractice,
           }));
-        await this.storageService.saveGamesToLocalStorage(gamesToUpdateInStorage);
+        await this.gamesStore.saveGamesToLocalStorage(gamesToUpdateInStorage);
       } else {
-        await this.storageService.saveGameToLocalStorage(updatedGame);
+        await this.gamesStore.saveGameToLocalStorage(updatedGame);
       }
 
       this.toastService.showToast(ToastMessages.gameUpdateSuccess, 'refresh-outline');
@@ -715,7 +723,7 @@ export class GameComponent implements OnInit {
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
     if (!game.isSeries) return;
 
-    this.storageService.games.update((gamesArr) =>
+    this.gamesStore.updateGamesInMemory((gamesArr) =>
       gamesArr.map((g) => {
         if (g.seriesId === game.seriesId) {
           return {

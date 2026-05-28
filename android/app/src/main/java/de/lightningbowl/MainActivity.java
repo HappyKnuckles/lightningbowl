@@ -1,4 +1,4 @@
-package io.ionic.bowling;
+package de.lightningbowl;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -3,7 +3,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { BestBallStats, BestPatternStats, LeaveStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GameFilterService } from '../game-filter/game-filter.service';
-import { StorageService } from '../storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 
 import { StatsPersistenceService } from './stats-persistance.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
@@ -18,7 +18,7 @@ import { PinStatsCalculatorService } from './game-stats-calculator/pin-stats-cal
 export class GameStatsService {
   constructor(
     private gameFilterService: GameFilterService,
-    private storageService: StorageService,
+    private gamesStore: GamesStore,
     private overallStatsCalculatorService: OverallStatsCalculatorService,
     private seriesStatsCalculatorService: SeriesStatsCalculatorService,
     private ballStatsCalculatorService: BallStatsCalculatorService,
@@ -45,6 +45,20 @@ export class GameStatsService {
     return this.#mostPlayedBallStats;
   }
 
+  #allBallStats: Signal<BestBallStats[]> = computed(() => {
+    return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
+  });
+  get allBallStats(): Signal<BestBallStats[]> {
+    return this.#allBallStats;
+  }
+
+  #allPatternStats: Signal<BestPatternStats[]> = computed(() => {
+    return this.patternStatsCalculatorService.calculateAllPatternStats(this.gameFilterService.filteredGames());
+  });
+  get allPatternStats(): Signal<BestPatternStats[]> {
+    return this.#allPatternStats;
+  }
+
   #bestPatternStats: Signal<BestPatternStats> = computed(() => {
     return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
   });
@@ -62,6 +76,10 @@ export class GameStatsService {
   #allLeaves: Signal<LeaveStats[]> = computed(() => {
     return this.calculateAllLeaves(this.gameFilterService.filteredGames());
   });
+
+  get allLeaves(): Signal<LeaveStats[]> {
+    return this.#allLeaves;
+  }
 
   #commonLeaves = computed(() => {
     return this.calculateMostCommonLeaves(this.#allLeaves());
@@ -93,7 +111,7 @@ export class GameStatsService {
   }
 
   #overallStats: Signal<Stats> = computed(() => {
-    const games = this.storageService.games();
+    const games = this.gamesStore.games();
     return this.calculateBowlingStats(games) as Stats;
   });
   get overallStats(): Signal<Stats> {
@@ -101,7 +119,7 @@ export class GameStatsService {
   }
 
   get seriesStats(): SeriesStats {
-    this.seriesStatsCalculatorService.calculateSeriesStats(this.storageService.games());
+    this.seriesStatsCalculatorService.calculateSeriesStats(this.gamesStore.games());
     return this.seriesStatsCalculatorService.seriesStats;
   }
 
@@ -148,6 +166,22 @@ export class GameStatsService {
 
   calculateMostPlayedBall(gameHistory: Game[]): BestBallStats {
     return this.ballStatsCalculatorService.calculateMostPlayedBall(gameHistory);
+  }
+
+  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
+    return this.ballStatsCalculatorService.calculateAllBallStats(gameHistory);
+  }
+
+  calculateBestPatternStats(gameHistory: Game[]): BestPatternStats {
+    return this.patternStatsCalculatorService.calculateBestPatternStats(gameHistory);
+  }
+
+  calculateMostPlayedPatternStats(gameHistory: Game[]): BestPatternStats {
+    return this.patternStatsCalculatorService.calculateMostPlayedPattern(gameHistory);
+  }
+
+  calculateAllPatternStats(gameHistory: Game[]): BestPatternStats[] {
+    return this.patternStatsCalculatorService.calculateAllPatternStats(gameHistory);
   }
 
   calculateGamesForTargetAverage(targetAvg: number, steps = 15): { score: number; gamesNeeded: number }[] {

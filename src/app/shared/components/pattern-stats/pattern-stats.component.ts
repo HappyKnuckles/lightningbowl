@@ -13,6 +13,7 @@ export class PatternStatsComponent {
   bestPattern = input.required<BestPatternStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
+  allPatterns = input<BestPatternStats[]>();
 
   imagesUrl = environment.imagesUrl;
 
@@ -26,5 +27,18 @@ export class PatternStatsComponent {
       lowestGame: p.patternLowestGame,
       gameCount: p.gameCount,
     };
+  });
+
+  allPatternsGeneric = computed(() => {
+    return this.allPatterns()
+      ?.map((p) => ({
+        name: p.patternName,
+        image: p.patternImage,
+        avg: p.patternAvg,
+        highestGame: p.patternHighestGame,
+        lowestGame: p.patternLowestGame,
+        gameCount: p.gameCount,
+      }))
+      .sort((a, b) => b.gameCount - a.gameCount);
   });
 }

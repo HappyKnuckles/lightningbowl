@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SettingsPage } from './settings.page';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-const mockStorageService = {
-  getItem: jasmine.createSpy('getItem').and.returnValue(Promise.resolve(null)),
-  setItem: jasmine.createSpy('setItem').and.returnValue(Promise.resolve()),
+import { SettingsStore } from 'src/app/core/stores/settings.store';
+
+const mockSettingsStore = {
+  pinInputMode: jasmine.createSpy('pinInputMode').and.returnValue(true),
+  savePinInputMode: jasmine.createSpy('savePinInputMode'),
 };
 
 describe('SettingsPage', () => {
@@ -13,7 +14,7 @@ describe('SettingsPage', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SettingsPage],
-      providers: [{ provide: StorageService, useValue: mockStorageService }],
+      providers: [{ provide: SettingsStore, useValue: mockSettingsStore }],
     }).compileComponents();
     fixture = TestBed.createComponent(SettingsPage);
     component = fixture.componentInstance;

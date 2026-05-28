@@ -10,7 +10,7 @@ export class SearchBlurDirective {
   constructor(private el: ElementRef<any>) {}
 
   @HostListener('keydown.enter', ['$event'])
-  onEnterKeyDown(event: KeyboardEvent): void {
+  onEnterKeyDown(event: Event): void {
     // Ensure the directive is applied to an ion-searchbar or its input
     let inputElement: HTMLInputElement | undefined;
 

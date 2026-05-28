@@ -22,13 +22,15 @@ import { addOutline, medalOutline, createOutline } from 'ionicons/icons';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { AppFacade } from 'src/app/core/stores/app.facade';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-league-selector',
   templateUrl: './league-selector.component.html',
   styleUrls: ['./league-selector.component.scss'],
+  standalone: true,
   imports: [
     IonContent,
     IonTitle,
@@ -57,7 +59,7 @@ export class LeagueSelectorComponent {
   leagueToChange = '';
   isModalOpen = false;
   leagues = computed(() => {
-    const savedLeagues = this.storageService.leagues();
+    const savedLeagues = this.leaguesStore.leagues();
     this.hiddenLeagueSelectionService.selectionState();
     const savedJson = localStorage.getItem('leagueSelection');
     if (!savedJson) {
@@ -69,7 +71,8 @@ export class LeagueSelectorComponent {
     });
   });
   constructor(
-    public storageService: StorageService,
+    public leaguesStore: LeaguesStore,
+    private appFacade: AppFacade,
     private toastService: ToastService,
     private alertController: AlertController,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
@@ -95,7 +98,7 @@ export class LeagueSelectorComponent {
 
   async saveLeague(): Promise<void> {
     try {
-      await this.storageService.addLeague(this.newLeague);
+      await this.leaguesStore.addLeague(this.newLeague);
       this.selectedLeague = this.newLeague;
       this.leagueChanged.emit(this.selectedLeague);
       this.newLeague = '';
@@ -115,7 +118,7 @@ export class LeagueSelectorComponent {
 
   async editLeague(): Promise<void> {
     try {
-      await this.storageService.editLeague(this.newLeague, this.leagueToChange);
+      await this.appFacade.editLeague(this.newLeague, this.leagueToChange);
       this.newLeague = '';
       this.leagueToChange = '';
       this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
@@ -129,7 +132,7 @@ export class LeagueSelectorComponent {
   private async deleteLeague(): Promise<void> {
     try {
       for (const league of this.leaguesToDelete) {
-        await this.storageService.deleteLeague(league);
+        await this.leaguesStore.deleteLeague(league);
       }
       this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'checkmark-outline');
       this.isModalOpen = false;
@@ -144,7 +147,7 @@ export class LeagueSelectorComponent {
       .create({
         header: 'Delete League',
         message: 'Select the leagues to delete',
-        inputs: this.storageService.leagues().map((league) => {
+        inputs: this.leaguesStore.leagues().map((league) => {
           return {
             name: league,
             type: 'checkbox',

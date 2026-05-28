@@ -2,7 +2,7 @@ import { computed, Injectable, Signal, signal } from '@angular/core';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import { UtilsService } from '../utils/utils.service';
 import { Ball } from 'src/app/core/models/ball.model';
-import { StorageService } from '../storage/storage.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Injectable({
   providedIn: 'root',
@@ -49,7 +49,7 @@ export class BallFilterService {
   }
 
   #filteredBalls = computed(() => {
-    const balls = this.storageService.allBalls();
+    const balls = this.ballsStore.allBalls();
     const filters = this.filters();
     return this.filterBalls(balls, filters);
   });
@@ -59,7 +59,7 @@ export class BallFilterService {
 
   constructor(
     private utilsService: UtilsService,
-    private storageService: StorageService,
+    private ballsStore: BallsStore,
   ) {}
 
   saveFilters(): void {
@@ -85,7 +85,7 @@ export class BallFilterService {
         filters.maxRg >= parseFloat(ball.core_rg) &&
         filters.minDiff <= parseFloat(ball.core_diff) &&
         filters.maxDiff >= parseFloat(ball.core_diff) &&
-        (!filters.inArsenal || this.storageService.arsenal().some((arsenalBall) => arsenalBall.ball_id === ball.ball_id))
+        (!filters.inArsenal || this.ballsStore.arsenal().some((arsenalBall) => arsenalBall.ball_id === ball.ball_id))
       );
     });
     return filteredBalls;

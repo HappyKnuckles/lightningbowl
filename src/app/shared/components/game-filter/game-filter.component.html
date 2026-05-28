@@ -128,7 +128,7 @@
       button
       detail="true"
       detailIcon="chevron-expand-outline"
-      [disabled]="storageService.arsenal().length === 0">
+      [disabled]="ballsStore.arsenal().length === 0">
       <ion-label>Balls</ion-label>
       <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
     </ion-item>
@@ -147,11 +147,13 @@
         (ionChange)="updateFilter('patterns', $event.detail.value)">
         <ion-select-option value="all">All</ion-select-option>
         <ion-select-option value="">None</ion-select-option>
-        <ion-select-option *ngFor="let league of patterns()" [value]="league">{{ league }}</ion-select-option>
+        <ion-select-option *ngFor="let pattern of patterns()" [value]="pattern">{{ pattern }}</ion-select-option>
       </ion-select>
     </ion-item>
   </ion-list>
 </ion-content>
-<ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" (click)="confirm()">Confirm ({{ gameFilterService.filteredGames().length }} Games)</ion-button>
+<ion-footer>
+  <ion-toolbar>
+    <ion-button class="confirm-btn" expand="block" (click)="confirm()">Confirm ({{ gameFilterService.filteredGames().length }} Games)</ion-button>
+  </ion-toolbar>
 </ion-footer>

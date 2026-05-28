@@ -74,6 +74,10 @@ ion-header {
 ion-card {
   margin-top: 12px;
 
+  ion-card-header {
+    padding-top: 12px;
+  }
+
   ion-card-title {
     font-size: 1.375rem;
   }
@@ -105,4 +109,31 @@ ion-card {
   border-radius: 7px;
   z-index: 15555;
   font-size: 14px;
+}
+
+.action-header {
+  padding: 12px 20px 0;  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+.weight-change {
+    border: 1px solid var(--ion-border-color, #2b2828);
+    border-radius: 7px;
+    --padding-end: 4px;
+    --padding-start: 4px;
+    min-height: 25px;
+    margin: 0;
+    width: fit-content;
+    color: rgb(241, 239, 239);
+    font-size: 13px;
+
+    &:hover{
+      opacity: 0.6;
+    }
+
+    &::part(icon) {
+      height: 16px;
+    }
+  }
 }

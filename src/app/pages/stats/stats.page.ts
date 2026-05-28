@@ -1,71 +1,71 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
+  computed,
   CUSTOM_ELEMENTS_SCHEMA,
+  effect,
   ElementRef,
   OnInit,
-  ViewChild,
-  AfterViewInit,
-  computed,
   Signal,
   signal,
-  ChangeDetectionStrategy,
-  effect,
+  ViewChild,
 } from '@angular/core';
-import Chart from 'chart.js/auto';
+import { FormsModule } from '@angular/forms';
+import { ImpactStyle } from '@capacitor/haptics';
+import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
+  IonHeader,
+  IonLabel,
   IonRefresher,
-  IonText,
   IonSegment,
   IonSegmentButton,
-  IonLabel,
+  IonSegmentContent,
+  IonSegmentView,
   IonSelect,
   IonSelectOption,
-  IonSegmentView,
-  IonSegmentContent,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { NgIf, NgFor, DecimalPipe, DatePipe } from '@angular/common';
-import { ImpactStyle } from '@capacitor/haptics';
+import Chart from 'chart.js/auto';
+import { addIcons } from 'ionicons';
+import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { SessionStats } from 'src/app/core/models/stats.model';
+import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { FormsModule } from '@angular/forms';
-import { addIcons } from 'ionicons';
-import { calendarNumber, calendarNumberOutline, filterOutline, cloudUploadOutline, cloudDownloadOutline } from 'ionicons/icons';
-import { SessionStats } from 'src/app/core/models/stats.model';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
-import { AlertController, ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import {
-  overallStatDefinitions,
-  seriesStatDefinitions,
-  sessionStatDefinitions,
-  throwStatDefinitions,
-  playFrequencyStatDefinitions,
-  specialStatDefinitions,
-  strikeStatDefinitions,
-  pinStatDefinitions,
-  spareStatDefinitions,
-} from '../../core/constants/stats.definitions.constants';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ExcelService } from 'src/app/core/services/excel/excel.service';
-import { Filesystem } from '@capacitor/filesystem';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
+import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
+import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
+import {
+  overallStatDefinitions,
+  pinStatDefinitions,
+  playFrequencyStatDefinitions,
+  seriesStatDefinitions,
+  sessionStatDefinitions,
+  spareStatDefinitions,
+  specialStatDefinitions,
+  strikeStatDefinitions,
+  throwStatDefinitions,
+} from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 
 @Component({
   selector: 'app-stats',
@@ -125,6 +125,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     BallStatsComponent,
     PinLeaveStatsComponent,
     PatternStatsComponent,
+    FileHeaderButtonsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -142,7 +143,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
-    this.storageService.games().forEach((game) => {
+    this.gamesStore.games().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
       dateSet.add(date.getTime());
@@ -156,7 +157,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   });
   gamesForSelectedSession = computed(() => {
     const selDate = this.selectedDate();
-    const allGames = this.storageService.games();
+    const allGames = this.gamesStore.games();
 
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
@@ -166,6 +167,15 @@ export class StatsPage implements OnInit, AfterViewInit {
   });
 
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
+
+  sessionBestBallStats = computed(() => this.statsService.calculateBestBallStats(this.gamesForSelectedSession()));
+  sessionMostPlayedBallStats = computed(() => this.statsService.calculateMostPlayedBallStats(this.gamesForSelectedSession()));
+  sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
+
+  sessionBestPatternStats = computed(() => this.statsService.calculateBestPatternStats(this.gamesForSelectedSession()));
+  sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
+  sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
+  sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
 
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
@@ -191,7 +201,8 @@ export class StatsPage implements OnInit, AfterViewInit {
   constructor(
     public loadingService: LoadingService,
     public statsService: GameStatsService,
-    public storageService: StorageService,
+    public gamesStore: GamesStore,
+    public ballsStore: BallsStore,
     public gameFilterService: GameFilterService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
@@ -199,10 +210,8 @@ export class StatsPage implements OnInit, AfterViewInit {
     private utilsService: UtilsService,
     private chartService: ChartGenerationService,
     private toastService: ToastService,
-    private excelService: ExcelService,
-    private alertController: AlertController,
   ) {
-    addIcons({ cloudUploadOutline, cloudDownloadOutline, filterOutline, calendarNumberOutline, calendarNumber });
+    addIcons({ filterOutline, calendarNumberOutline, calendarNumber });
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {
         this.generateCharts(true);
@@ -243,7 +252,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
-      await this.storageService.loadGameHistory();
+      await this.gamesStore.loadGameHistory();
       this.generateCharts(true);
     } catch (error) {
       console.error(error);
@@ -258,69 +267,6 @@ export class StatsPage implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.content.scrollToTop(300);
     }, 300);
-  }
-
-  async handleFileUpload(event: Event): Promise<void> {
-    try {
-      this.loadingService.setLoading(true);
-      const input = event.target as HTMLInputElement;
-      if (!input.files || input.files.length === 0) return;
-      const file = input.files[0];
-      const gameData = await this.excelService.readExcelData(file);
-      await this.excelService.transformData(gameData);
-      this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileUploadError, 'bug', true);
-      console.error(error);
-    } finally {
-      const input = event.target as HTMLInputElement;
-      input.value = '';
-      this.loadingService.setLoading(false);
-    }
-  }
-
-  openExcelFileInput(): void {
-    const fileInput = document.getElementById('excelUpload');
-    if (fileInput) {
-      fileInput.click();
-    }
-  }
-
-  async exportToExcel(): Promise<void> {
-    try {
-      const gotPermission = await this.excelService.exportToExcel();
-      if (gotPermission) {
-        this.toastService.showToast(ToastMessages.excelFileDownloadSuccess, 'checkmark-outline');
-      } else {
-        await this.showPermissionDeniedAlert();
-      }
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileDownloadError, 'bug', true);
-      console.error('Error exporting to Excel:', error);
-    }
-  }
-
-  private async showPermissionDeniedAlert(): Promise<void> {
-    const alert = await this.alertController.create({
-      header: 'Permission Denied',
-      message: 'To save to Gamedata.xlsx, you need to give permissions!',
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Try again',
-          handler: async () => {
-            const permissionRequestResult = await Filesystem.requestPermissions();
-            if (permissionRequestResult.publicStorage === 'granted') {
-              this.exportToExcel();
-            }
-          },
-        },
-      ],
-    });
-    await alert.present();
   }
 
   private generateCharts(isReload?: boolean): void {

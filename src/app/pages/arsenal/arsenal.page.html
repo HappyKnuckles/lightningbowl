@@ -7,17 +7,17 @@
       </ion-button>
     </ion-buttons>
     <ion-buttons slot="start">
-      <ion-button [href]="storageService.url">
+      <ion-button [href]="ballsStore.url">
         <div class="powered-by">powered by</div>
         <img
-          [src]="storageService.url + '/sites/default/files/logo/bowwwl-logo.svg'"
+          [src]="ballsStore.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
           title="bowwwl.com"
           style="height: 1.5rem; min-width: 80px" />
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  @if (storageService.arsenal().length > 0) {
+  @if (ballsStore.arsenal().length > 0) {
     <ion-toolbar>
       <ion-segment [(ngModel)]="selectedSegment">
         <ion-segment-button value="arsenal" contentId="arsenal">Arsenal</ion-segment-button>
@@ -30,10 +30,10 @@
 <ion-content [fullscreen]="true">
   <ion-segment-view>
     <ion-segment-content id="arsenal">
-      @if (storageService.arsenal().length > 0) {
+      @if (ballsStore.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            <ion-item-sliding *ngFor="let ball of storageService.arsenal()" #slidingItem class="sliding">
+            <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
               <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
                 <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
                   <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
@@ -43,7 +43,7 @@
               <ion-item button [id]="ball.ball_id + ball.core_weight">
                 <ion-reorder slot="start">
                   <ion-thumbnail>
-                    <ion-img [src]="storageService.url + ball.thumbnail_image"></ion-img>
+                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
                   </ion-thumbnail>
                 </ion-reorder>
 
@@ -51,7 +51,17 @@
                   <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
                   <h1>{{ ball.ball_name }}</h1>
                   <div class="ball-info">
-                    <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
+                    <ion-chip (click)="$event.stopPropagation()">
+                      <ion-select
+                        #weightSelect
+                        [value]="ball.core_weight"
+                        style="min-height: 0"
+                        [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
+                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
+                        interface="popover">
+                        <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
+                      </ion-select>
+                    </ion-chip>
                     <ion-chip>{{ ball.core_type }}</ion-chip>
                     <ion-chip>{{ ball.coverstock_type }}</ion-chip>
                   </div>
@@ -64,7 +74,7 @@
     </ion-segment-content>
 
     <ion-segment-content id="compare">
-      @if (storageService.arsenal().length > 0) {
+      @if (ballsStore.arsenal().length > 0) {
         <div class="arsenal-chart-container">
           <canvas #balls style="width: 600px; height: 800px; max-height: 100%"> </canvas>
         </div>
@@ -72,13 +82,13 @@
     </ion-segment-content>
   </ion-segment-view>
 
-  <ng-container *ngIf="storageService.arsenal().length <= 0">
+  <ng-container *ngIf="ballsStore.arsenal().length <= 0">
     <ion-text class="no-game-text"> You have no balls in your arsenal. Add a ball to get started! </ion-text>
   </ng-container>
   <!-- <ng-template #content>
     <ion-list>
       <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-        <ion-item-sliding *ngFor="let ball of storageService.arsenal()" #slidingItem class="sliding">
+        <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
           <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
             <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
               <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
@@ -88,7 +98,7 @@
           <ion-item button [id]="ball.ball_id + ball.core_weight">
             <ion-reorder slot="start">
               <ion-thumbnail>
-                <ion-img [src]="storageService.url + ball.thumbnail_image"></ion-img>
+                <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
               </ion-thumbnail>
             </ion-reorder>
 
@@ -108,7 +118,7 @@
   </ng-template> -->
 </ion-content>
 
-<ion-modal *ngFor="let ball of storageService.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
+<ion-modal *ngFor="let ball of ballsStore.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
   <ng-template>
     <ion-header [translucent]="true">
       <ion-toolbar>
@@ -134,7 +144,7 @@
         <ion-card-content>
           <div class="coverstock-container">
             <div class="coverstock-image">
-              <ion-img [src]="storageService.url + ball.thumbnail_image"></ion-img>
+              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
             </div>
             <div class="info-container">
               <ion-text
@@ -164,7 +174,7 @@
         <ion-card-content>
           <div class="core-container">
             <div class="core-image">
-              <ion-img [src]="storageService.url + ball.core_image"></ion-img>
+              <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
             </div>
             <div class="info-container">
               <ion-text

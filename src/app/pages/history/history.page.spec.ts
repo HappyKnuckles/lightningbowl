@@ -1,20 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HistoryPage } from './history.page';
-import { StorageService } from 'src/app/core/services/storage/storage.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { AppFacade } from 'src/app/core/stores/app.facade';
 import { AngularDelegate } from '@ionic/angular';
-import { of } from 'rxjs';
 
-const mockStorageService = {
-  getItem: jasmine.createSpy('getItem').and.returnValue(Promise.resolve(null)),
-  setItem: jasmine.createSpy('setItem').and.returnValue(Promise.resolve()),
-  loadLeagues: jasmine.createSpy('loadLeagues').and.returnValue(Promise.resolve([])),
+const mockGamesStore = {
+  games: jasmine.createSpy('games').and.returnValue([]),
   loadGameHistory: jasmine.createSpy('loadGameHistory').and.returnValue(Promise.resolve([])),
-  newGameAdded: of(null),
-  gameDeleted: of(null),
-  gameEditLeague: of(null),
-  newLeagueAdded: of(null),
-  leagueDeleted: of(null),
-  leagueChanged: of(null),
+};
+
+const mockAppFacade = {
+  deleteAllData: jasmine.createSpy('deleteAllData').and.returnValue(Promise.resolve()),
 };
 
 describe('HistoryPage', () => {
@@ -24,7 +20,7 @@ describe('HistoryPage', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HistoryPage],
-      providers: [{ provide: StorageService, useValue: mockStorageService }, AngularDelegate],
+      providers: [{ provide: GamesStore, useValue: mockGamesStore }, { provide: AppFacade, useValue: mockAppFacade }, AngularDelegate],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HistoryPage);

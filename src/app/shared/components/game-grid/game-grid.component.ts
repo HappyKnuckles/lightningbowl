@@ -100,6 +100,9 @@ export class GameGridComponent implements OnInit, OnDestroy {
   // Pin Input Mode - Events from Child to Parent
   pinThrowConfirmed = output<ThrowConfirmedEvent>();
   pinUndoRequested = output<void>();
+  seriesStatsClick = output<void>();
+
+  showStatsButton = input<boolean>(false);
 
   // Pin mode edit - score cell clicked
   scoreCellClick = output<{ frameIndex: number; throwIndex: number }>();

@@ -212,6 +212,24 @@ export function removeThrowFromFrame(frame: Frame, throwIndex: number): void {
 }
 
 /**
+ * Check if a game is fully complete (all 10 frames done including the 10th)
+ */
+export function isAllFramesComplete(game: Game): boolean {
+  if (!game.frames || game.frames.length < 10) return false;
+  return isFrameComplete(game.frames[9], 9);
+}
+
+/**
+ * Return a copy of a game containing only its completed frames, for partial live-stats calculation.
+ * totalScore is set to the last available frameScore so rate denominators stay correct.
+ */
+export function toCompletedFramesGame(game: Game): Game {
+  const completedFrames = game.frames.filter((f, i) => isFrameComplete(f, i));
+  const lastScore = completedFrames.length > 0 ? (game.frameScores[completedFrames.length - 1] ?? 0) : 0;
+  return { ...game, frames: completedFrames, totalScore: lastScore };
+}
+
+/**
  * Deep clone a Frame array
  */
 export function cloneFrames(frames: Frame[]): Frame[] {

@@ -76,6 +76,7 @@
         [isGameComplete]="isGameComplete(i)"
         [patternModalId]="i.toString()"
         [ballSelectorId]="'modal-ball-selector' + i"
+        [showStatsButton]="selectedMode !== 'Single'"
         (throwInput)="handleThrowInput($event, i)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
@@ -86,7 +87,8 @@
         (toolbarStateChanged)="onToolbarStateChange($event)"
         (noteChanged)="onNoteChange($event, i)"
         (ballsChanged)="onBallsChange($event, i)"
-        (inputFocused)="onInputFocused($event, i)">
+        (inputFocused)="onInputFocused($event, i)"
+        (seriesStatsClick)="onSeriesStatsClick()">
       </app-game-grid>
 
       <ion-grid *ngIf="selectedMode !== 'Single'">
@@ -125,6 +127,33 @@
     </ion-row>
   </ion-grid>
 </ion-content>
+
+<!-- Modal for Live Series Stats -->
+<ion-modal [isOpen]="isLiveStatsOpen" (didDismiss)="isLiveStatsOpen = false" [breakpoints]="[0, 0.75, 1]" [initialBreakpoint]="0.75">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Series Stats</ion-title>
+        <ion-buttons slot="start">
+          <ion-button (click)="isLiveStatsOpen = false">Close</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content [fullscreen]="true">
+      <p style="text-align: center; color: var(--ion-color-medium); font-size: 0.85rem; margin: 8px 0 0">
+        {{ liveStatsContext.complete }} of {{ liveStatsContext.total }} games complete
+      </p>
+      @if (liveStats) {
+        <app-stat-display [currentStats]="liveStats" [statDefinitions]="liveStatDefinitions"></app-stat-display>
+        <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="liveLeaves.best"></app-pin-leave-stats>
+        <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="liveLeaves.worst"></app-pin-leave-stats>
+        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="liveLeaves.common" [allLeaves]="liveAllLeaves"></app-pin-leave-stats>
+      } @else {
+        <p style="text-align: center; padding: 32px; color: var(--ion-color-medium)">No frames bowled yet.</p>
+      }
+    </ion-content>
+  </ng-template>
+</ion-modal>
 
 <!-- Modal for OCR -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false" #modal>

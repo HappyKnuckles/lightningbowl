@@ -64,7 +64,7 @@ export class OverallStatsCalculatorService {
       let isAllSpares = true;
       let dutchOk = true;
       let patternStartsWithStrike = false;
-      totalFirstThrowCount += 10;
+      totalFirstThrowCount += game.frames.length;
       totalPins += game.totalScore;
 
       if (game.totalScore === 200) {

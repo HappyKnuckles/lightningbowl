@@ -26,8 +26,21 @@ import {
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { liveSeriesStatDefinitions } from 'src/app/core/constants/stats.definitions.constants';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import {
+  cloneFrames,
+  createEmptyGame,
+  Frame,
+  Game,
+  GameDraft,
+  isAllFramesComplete,
+  PinModeState,
+  toCompletedFramesGame,
+} from 'src/app/core/models/game.model';
+import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
+import { LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
@@ -43,6 +56,8 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { PinLeaveStatsComponent } from 'src/app/shared/components/pin-leave-stats/pin-leave-stats.component';
+import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -81,10 +96,20 @@ defineCustomElements(window);
     NgFor,
     GameGridComponent,
     GameScoreToolbarComponent,
+    StatDisplayComponent,
+    PinLeaveStatsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AddGamePage implements OnInit {
+  // Live stats
+  liveStats: Stats | null = null;
+  liveLeaves: { best: LeaveStats[]; worst: LeaveStats[]; common: LeaveStats[] } = { best: [], worst: [], common: [] };
+  liveAllLeaves: LeaveStats[] = [];
+  isLiveStatsOpen = false;
+  liveStatsContext = { complete: 0, total: 0 };
+  readonly liveStatDefinitions: StatDefinition[] = liveSeriesStatDefinitions;
+
   // UI State
   selectedMode: SeriesMode = SeriesMode.Single;
   sheetOpen = false;
@@ -148,6 +173,7 @@ export class AddGamePage implements OnInit {
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameImageImport: GameImageImportService,
+    private gameStatsService: GameStatsService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
@@ -626,6 +652,45 @@ export class AddGamePage implements OnInit {
     const countMatch = this.selectedMode.match(/\d+/);
     const count = countMatch ? parseInt(countMatch[0], 10) : 1;
     return Array.from({ length: count }, (_, i) => i);
+  }
+
+  onSeriesStatsClick(): void {
+    const activeIndexes = this.getActiveTrackIndexes();
+    const relevantGames = this.games().filter((_, i) => activeIndexes.includes(i));
+
+    const completeGames = relevantGames.filter((g) => isAllFramesComplete(g));
+    const allCompletedFrameGames = relevantGames.map((g) => toCompletedFramesGame(g)).filter((g) => g.frames.length > 0);
+
+    this.liveStatsContext = { complete: completeGames.length, total: activeIndexes.length };
+
+    if (allCompletedFrameGames.length === 0) {
+      this.liveStats = null;
+      this.liveLeaves = { best: [], worst: [], common: [] };
+      this.liveAllLeaves = [];
+      this.isLiveStatsOpen = true;
+      return;
+    }
+
+    const frameStats = this.gameStatsService.calculateBowlingStats(allCompletedFrameGames);
+    const gameStats = completeGames.length > 0 ? this.gameStatsService.calculateBowlingStats(completeGames) : null;
+
+    this.liveStats = {
+      ...frameStats,
+      totalGames: completeGames.length,
+      averageScore: gameStats?.averageScore ?? 0,
+      highGame: gameStats?.highGame ?? 0,
+      lowGame: gameStats?.['lowGame'] ?? 0,
+      cleanGameCount: gameStats?.cleanGameCount ?? 0,
+      cleanGamePercentage: gameStats?.cleanGamePercentage ?? 0,
+      perfectGameCount: gameStats?.perfectGameCount ?? 0,
+    };
+
+    // Pin leave stats: set isPinMode so the calculator picks up pinsLeftStanding data
+    const pinModeGames = allCompletedFrameGames.map((g) => ({ ...g, isPinMode: true }));
+    this.liveLeaves = this.gameStatsService.calculateLeaveAnalytics(pinModeGames);
+    this.liveAllLeaves = this.gameStatsService.calculateAllLeaves(pinModeGames);
+
+    this.isLiveStatsOpen = true;
   }
 
   private propagateMetadataToSeries(): void {

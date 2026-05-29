@@ -83,8 +83,10 @@
     [canUndo]="canUndo()"
     [isGameComplete]="isGameComplete()"
     [selectHitPins]="settingsStore.pinInputMode()"
+    [showStatsButton]="showStatsButton()"
     (throwConfirmed)="onPinThrowConfirmed($event)"
-    (undoRequested)="onPinUndoRequested()">
+    (undoRequested)="onPinUndoRequested()"
+    (statsClick)="seriesStatsClick.emit()">
   </app-pin-input>
 } @else {
   <!-- Standard Grid Mode -->

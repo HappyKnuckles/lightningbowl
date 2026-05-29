@@ -322,6 +322,31 @@ export const pinStatDefinitions: StatDefinition[] = [
   },
 ];
 
+export const liveSeriesStatDefinitions: StatDefinition[] = [
+  // Game-level: only from fully complete games
+  { label: 'Complete games', key: 'totalGames', id: 'live-totalGames' },
+  { label: 'Average', key: 'averageScore', id: 'live-averageScore' },
+  { label: 'High game', key: 'highGame', id: 'live-highGame' },
+  {
+    label: 'Clean games',
+    key: 'cleanGameCount',
+    id: 'live-cleanGameCount',
+    toolTip: 'A clean game means every frame is filled with either a strike or a spare.',
+  },
+  // Frame-level: computed from all completed frames across all games
+  { label: 'First ball average', key: 'averageFirstCount', id: 'live-averageFirstCount' },
+  { label: 'Strike %', key: 'strikePercentage', id: 'live-strikePercentage', isPercentage: true },
+  { label: 'Spare %', key: 'overallSpareRate', id: 'live-sparePercentage', isPercentage: true },
+  { label: 'Open %', key: 'overallMissedRate', id: 'live-openPercentage', isPercentage: true },
+  { label: 'Mark %', key: 'markPercentage', id: 'live-markPercentage', isPercentage: true },
+  { label: 'Strikes per game', key: 'averageStrikesPerGame', id: 'live-averageStrikesPerGame' },
+  { label: 'Strike to strike %', key: 'strikeToStrikePercentage', id: 'live-strikeToStrikePercentage', isPercentage: true },
+  { label: 'Longest strike streak', key: 'longestStrikeStreak', id: 'live-longestStrikeStreak' },
+  { label: 'Total strikes', key: 'totalStrikes', id: 'live-totalStrikes' },
+  { label: 'Total spares', key: 'totalSpares', id: 'live-totalSpares' },
+  { label: 'Total opens', key: 'totalSparesMissed', id: 'live-totalSparesMissed' },
+];
+
 export const sessionStatDefinitions: StatDefinition[] = [
   { label: 'Games', key: 'totalGames', id: 'sessionTotalGames' },
   {

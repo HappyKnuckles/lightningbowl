@@ -7,11 +7,14 @@
   height: 70px;
   --background: rgb(226, 226, 226);
   --background-activated: var(--ion-color-quartiary);
-    --padding-top: 0;
-      --padding-bottom: 0;
-      --padding-start: 0;
-      --padding-end: 0;  cursor: pointer;
-  transition: color 0.3s ease, background-color 0.3s ease;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease;
   color: black;
   font-size: 28px;
   --border-radius: 100%;

@@ -7,9 +7,5 @@
 <app-toast></app-toast>
 
 <!-- PWA Install Prompt -->
-<app-pwa-install-prompt
-  [isOpen]="showPwaInstallPrompt"
-  [canInstall]="canInstallPwa"
-  (install)="onPwaInstall()"
-  (dismiss)="onPwaDismiss()">
+<app-pwa-install-prompt [isOpen]="showPwaInstallPrompt" [canInstall]="canInstallPwa" (install)="onPwaInstall()" (dismiss)="onPwaDismiss()">
 </app-pwa-install-prompt>

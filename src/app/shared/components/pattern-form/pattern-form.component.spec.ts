@@ -8,10 +8,9 @@ describe('PatternFormComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PatternFormComponent]
-    })
-    .compileComponents();
-    
+      imports: [PatternFormComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(PatternFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

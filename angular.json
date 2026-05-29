@@ -46,11 +46,14 @@
               "src/sitemap.xml",
               "src/manifest.webmanifest"
             ],
-            "styles": ["node_modules/leaflet/dist/leaflet.css",
-        "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
-        "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css","src/global.scss", "src/theme/variables.scss"],
-            "scripts": ["node_modules/leaflet/dist/leaflet.js",
-        "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"],
+            "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
+              "src/global.scss",
+              "src/theme/variables.scss"
+            ],
+            "scripts": ["node_modules/leaflet/dist/leaflet.js", "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"],
             "allowedCommonJsDependencies": ["sql.js"],
             "browser": "src/main.ts"
           },
@@ -181,38 +184,38 @@
     "analytics": false
   },
   "schematics": {
-      "@schematics/angular:component": {
-        "path": "src/app/shared/components",
-        "style": "scss",
-        "flat": false,
-        "type": "component"
-      },
-      "@schematics/angular:page": {
-        "path": "src/app/pages",
-        "style": "scss",
-        "flat": false
-      },
-      "@schematics/angular:service": {
-        "path": "src/app/core/services",
-        "flat": false,
-        "type": "service"
-      },
-      "@schematics/angular:pipe": {
-        "path": "src/app/shared/pipes",
-        "flat": false
-      },
-      "@schematics/angular:directive": {
-        "path": "src/app/core/directives",
-        "flat": false,
-        "type": "directive"
-      },
-      "@schematics/angular:class": {
-        "path": "src/app/core/models"
-      },
-      "@angular-eslint/schematics:application": {
-        "setParserOptionsProject": true
-      },
-      "@angular-eslint/schematics:library": {
+    "@schematics/angular:component": {
+      "path": "src/app/shared/components",
+      "style": "scss",
+      "flat": false,
+      "type": "component"
+    },
+    "@schematics/angular:page": {
+      "path": "src/app/pages",
+      "style": "scss",
+      "flat": false
+    },
+    "@schematics/angular:service": {
+      "path": "src/app/core/services",
+      "flat": false,
+      "type": "service"
+    },
+    "@schematics/angular:pipe": {
+      "path": "src/app/shared/pipes",
+      "flat": false
+    },
+    "@schematics/angular:directive": {
+      "path": "src/app/core/directives",
+      "flat": false,
+      "type": "directive"
+    },
+    "@schematics/angular:class": {
+      "path": "src/app/core/models"
+    },
+    "@angular-eslint/schematics:application": {
+      "setParserOptionsProject": true
+    },
+    "@angular-eslint/schematics:library": {
       "setParserOptionsProject": true
     }
   }

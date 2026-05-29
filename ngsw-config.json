@@ -6,13 +6,7 @@
       "name": "app",
       "installMode": "prefetch",
       "resources": {
-        "files": [
-          "/favicon.ico",
-          "/index.html",
-          "/manifest.webmanifest",
-          "/*.css",
-          "/*.js"
-        ]
+        "files": ["/favicon.ico", "/index.html", "/manifest.webmanifest", "/*.css", "/*.js"]
       }
     },
     {
@@ -20,21 +14,14 @@
       "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
-        "files": [
-          "/assets/**",
-          "/*.svg",
-          "/*.jpg",
-          "/*.png"
-        ]
+        "files": ["/assets/**", "/*.svg", "/*.jpg", "/*.png"]
       }
     }
   ],
   "dataGroups": [
     {
       "name": "ball-images",
-      "urls": [
-        "https://bowwwl.com/sites/default/files/styles/medium/public/balls/**"
-      ],
+      "urls": ["https://bowwwl.com/sites/default/files/styles/medium/public/balls/**"],
       "cacheConfig": {
         "strategy": "performance",
         "maxSize": 500,
@@ -44,9 +31,7 @@
     },
     {
       "name": "ball-api",
-      "urls": [
-        "https://bowwwl.com/api/**"
-      ],
+      "urls": ["https://bowwwl.com/api/**"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 100,
@@ -55,9 +40,7 @@
     },
     {
       "name": "pattern-api",
-      "urls": [
-        "https://pattern.lightningbowl.de/api/**"
-      ],
+      "urls": ["https://pattern.lightningbowl.de/api/**"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 5000,

@@ -54,7 +54,6 @@ ion-header {
     .coverstock-info-container {
       ion-text {
         justify-content: end;
-
       }
     }
 
@@ -112,12 +111,12 @@ ion-card {
 }
 
 .action-header {
-  padding: 12px 20px 0;  
+  padding: 12px 20px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-.weight-change {
+  .weight-change {
     border: 1px solid var(--ion-border-color, #2b2828);
     border-radius: 7px;
     --padding-end: 4px;
@@ -128,7 +127,7 @@ ion-card {
     color: rgb(241, 239, 239);
     font-size: 13px;
 
-    &:hover{
+    &:hover {
       opacity: 0.6;
     }
 

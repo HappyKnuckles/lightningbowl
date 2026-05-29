@@ -10,9 +10,7 @@ describe('CacheService', () => {
     const spy = jasmine.createSpyObj('Storage', ['set', 'get', 'remove', 'keys']);
 
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Storage, useValue: spy }
-      ]
+      providers: [{ provide: Storage, useValue: spy }],
     });
 
     service = TestBed.inject(CacheService);
@@ -38,9 +36,9 @@ describe('CacheService', () => {
         metadata: jasmine.objectContaining({
           lastUpdated: jasmine.any(Number),
           version: '1.0',
-          expires: jasmine.any(Number)
-        })
-      })
+          expires: jasmine.any(Number),
+        }),
+      }),
     );
   });
 
@@ -53,8 +51,8 @@ describe('CacheService', () => {
       metadata: {
         lastUpdated: now,
         version: '1.0',
-        expires: now + 1000 * 60 * 60 // 1 hour from now
-      }
+        expires: now + 1000 * 60 * 60, // 1 hour from now
+      },
     };
 
     storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
@@ -74,8 +72,8 @@ describe('CacheService', () => {
       metadata: {
         lastUpdated: now - 1000 * 60 * 60 * 2, // 2 hours ago
         version: '1.0',
-        expires: now - 1000 * 60 * 60 // 1 hour ago (expired)
-      }
+        expires: now - 1000 * 60 * 60, // 1 hour ago (expired)
+      },
     };
 
     storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
@@ -93,13 +91,15 @@ describe('CacheService', () => {
     const mockMetadata = {
       lastUpdated: now,
       version: '1.0',
-      expires: now + 1000 * 60 * 60 // 1 hour from now
+      expires: now + 1000 * 60 * 60, // 1 hour from now
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve({ 
-      data: {}, 
-      metadata: mockMetadata 
-    }));
+    storageSpy.get.and.returnValue(
+      Promise.resolve({
+        data: {},
+        metadata: mockMetadata,
+      }),
+    );
 
     const isValid = await service.isValid(cacheKey);
     expect(isValid).toBe(true);
@@ -111,13 +111,15 @@ describe('CacheService', () => {
     const mockMetadata = {
       lastUpdated: now - 1000 * 60 * 60 * 25, // 25 hours ago
       version: '1.0',
-      expires: now + 1000 * 60 * 60 // 1 hour from now (not expired but stale)
+      expires: now + 1000 * 60 * 60, // 1 hour from now (not expired but stale)
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve({ 
-      data: {}, 
-      metadata: mockMetadata 
-    }));
+    storageSpy.get.and.returnValue(
+      Promise.resolve({
+        data: {},
+        metadata: mockMetadata,
+      }),
+    );
 
     const isStale = await service.isStale(cacheKey);
     expect(isStale).toBe(true);

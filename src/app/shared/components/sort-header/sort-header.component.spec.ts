@@ -8,10 +8,9 @@ describe('SortHeaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SortHeaderComponent]
-    })
-    .compileComponents();
-    
+      imports: [SortHeaderComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(SortHeaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

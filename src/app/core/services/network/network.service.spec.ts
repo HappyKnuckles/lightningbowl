@@ -8,7 +8,7 @@ describe('NetworkService', () => {
     // Mock navigator.onLine
     Object.defineProperty(navigator, 'onLine', {
       writable: true,
-      value: true
+      value: true,
     });
 
     TestBed.configureTestingModule({});
@@ -28,7 +28,7 @@ describe('NetworkService', () => {
     // Simulate going offline
     Object.defineProperty(navigator, 'onLine', {
       writable: true,
-      value: false
+      value: false,
     });
 
     // Trigger offline event

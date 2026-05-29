@@ -14,15 +14,14 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  ion-text{
+  ion-text {
     display: inherit;
     color: white;
-      .info {
-    font-size: 1rem;
-    color: lightgray;
+    .info {
+      font-size: 1rem;
+      color: lightgray;
+    }
   }
-  }
-
 }
 
 ion-thumbnail {

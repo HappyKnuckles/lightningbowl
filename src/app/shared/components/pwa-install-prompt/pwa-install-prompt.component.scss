@@ -103,7 +103,9 @@
         padding: 0;
         cursor: pointer;
         border-radius: 8px;
-        transition: transform 0.2s ease, opacity 0.2s ease;
+        transition:
+          transform 0.2s ease,
+          opacity 0.2s ease;
 
         &:hover {
           transform: scale(1.05);

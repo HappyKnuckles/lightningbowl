@@ -70,7 +70,7 @@ export class FavoritesService {
 
     this._favoritePatterns.set(currentFavorites);
     this.saveFavoritesToStorage();
-    
+
     return isFavorited;
   }
 
@@ -113,7 +113,7 @@ export class FavoritesService {
 
     this._favoriteBalls.set(currentFavorites);
     this.saveFavoritesToStorage();
-    
+
     return isFavorited;
   }
 

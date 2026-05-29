@@ -18,11 +18,11 @@ describe('SortService', () => {
 
   describe('sortBalls', () => {
     const mockBalls: Ball[] = [
-      { 
-        ball_name: 'Ball C', 
-        brand_name: 'Brand B', 
-        core_rg: '2.55', 
-        core_diff: '0.045', 
+      {
+        ball_name: 'Ball C',
+        brand_name: 'Brand B',
+        core_rg: '2.55',
+        core_diff: '0.045',
         release_date: '2022',
         core_type: 'Symmetric',
         coverstock_type: 'Reactive',
@@ -40,13 +40,13 @@ describe('SortService', () => {
         last_update: '',
         thumbnail_image: '',
         us_int: 'US',
-        availability: 'Available'
+        availability: 'Available',
       } as Ball,
-      { 
-        ball_name: 'Ball A', 
-        brand_name: 'Brand A', 
-        core_rg: '2.50', 
-        core_diff: '0.035', 
+      {
+        ball_name: 'Ball A',
+        brand_name: 'Brand A',
+        core_rg: '2.50',
+        core_diff: '0.035',
         release_date: '2023',
         core_type: 'Asymmetric',
         coverstock_type: 'Pearl',
@@ -64,13 +64,13 @@ describe('SortService', () => {
         last_update: '',
         thumbnail_image: '',
         us_int: 'US',
-        availability: 'Available'
+        availability: 'Available',
       } as Ball,
-      { 
-        ball_name: 'Ball B', 
-        brand_name: 'Brand C', 
-        core_rg: '2.60', 
-        core_diff: '0.040', 
+      {
+        ball_name: 'Ball B',
+        brand_name: 'Brand C',
+        core_rg: '2.60',
+        core_diff: '0.040',
         release_date: '2021',
         core_type: 'Symmetric',
         coverstock_type: 'Solid',
@@ -88,17 +88,17 @@ describe('SortService', () => {
         last_update: '',
         thumbnail_image: '',
         us_int: 'US',
-        availability: 'Available'
-      } as Ball
+        availability: 'Available',
+      } as Ball,
     ];
 
     it('should sort balls by name ascending', () => {
       const sorted = service.sortBalls(mockBalls, {
         field: BallSortField.BALL_NAME,
         direction: SortDirection.ASC,
-        label: 'Name (A-Z)'
+        label: 'Name (A-Z)',
       });
-      
+
       expect(sorted[0].ball_name).toBe('Ball A');
       expect(sorted[1].ball_name).toBe('Ball B');
       expect(sorted[2].ball_name).toBe('Ball C');
@@ -108,9 +108,9 @@ describe('SortService', () => {
       const sorted = service.sortBalls(mockBalls, {
         field: BallSortField.CORE_RG,
         direction: SortDirection.DESC,
-        label: 'RG (High to Low)'
+        label: 'RG (High to Low)',
       });
-      
+
       expect(sorted[0].core_rg).toBe('2.60');
       expect(sorted[1].core_rg).toBe('2.55');
       expect(sorted[2].core_rg).toBe('2.50');
@@ -120,9 +120,9 @@ describe('SortService', () => {
       const sorted = service.sortBalls(mockBalls, {
         field: BallSortField.RELEASE_DATE,
         direction: SortDirection.DESC,
-        label: 'Newest First'
+        label: 'Newest First',
       });
-      
+
       expect(sorted[0].release_date).toBe('2023');
       expect(sorted[1].release_date).toBe('2022');
       expect(sorted[2].release_date).toBe('2021');
@@ -142,7 +142,7 @@ describe('SortService', () => {
         pump: '1000',
         url: 'pattern-c',
         forwards_data: [],
-        reverse_data: []
+        reverse_data: [],
       } as Pattern,
       {
         title: 'Pattern A',
@@ -155,7 +155,7 @@ describe('SortService', () => {
         pump: '1200',
         url: 'pattern-a',
         forwards_data: [],
-        reverse_data: []
+        reverse_data: [],
       } as Pattern,
       {
         title: 'Pattern B',
@@ -168,17 +168,17 @@ describe('SortService', () => {
         pump: '800',
         url: 'pattern-b',
         forwards_data: [],
-        reverse_data: []
-      } as Pattern
+        reverse_data: [],
+      } as Pattern,
     ];
 
     it('should sort patterns by title ascending', () => {
       const sorted = service.sortPatterns(mockPatterns, {
         field: PatternSortField.TITLE,
         direction: SortDirection.ASC,
-        label: 'Title (A-Z)'
+        label: 'Title (A-Z)',
       });
-      
+
       expect(sorted[0].title).toBe('Pattern A');
       expect(sorted[1].title).toBe('Pattern B');
       expect(sorted[2].title).toBe('Pattern C');
@@ -188,9 +188,9 @@ describe('SortService', () => {
       const sorted = service.sortPatterns(mockPatterns, {
         field: PatternSortField.DISTANCE,
         direction: SortDirection.ASC,
-        label: 'Distance (Low to High)'
+        label: 'Distance (Low to High)',
       });
-      
+
       expect(sorted[0].distance).toBe('35');
       expect(sorted[1].distance).toBe('39');
       expect(sorted[2].distance).toBe('42');
@@ -200,9 +200,9 @@ describe('SortService', () => {
       const sorted = service.sortPatterns(mockPatterns, {
         field: PatternSortField.RATIO,
         direction: SortDirection.DESC,
-        label: 'Ratio (High to Low)'
+        label: 'Ratio (High to Low)',
       });
-      
+
       expect(sorted[0].ratio).toBe('4.2:1');
       expect(sorted[1].ratio).toBe('3.5:1');
       expect(sorted[2].ratio).toBe('2.8:1');

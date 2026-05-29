@@ -174,18 +174,19 @@
 
             <ion-segment-content id="Pins-{{ league }}">
               <section class="tab">
+                @let leagueLeaves = leaveStatsByLeague()[league];
                 <app-stat-display
                   [title]="'Pin Stats'"
                   [statDefinitions]="pinStatDefinitions"
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"> </app-pin-leave-stats>
-                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"> </app-pin-leave-stats>
+                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="leagueLeaves.best"> </app-pin-leave-stats>
+                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="leagueLeaves.worst"> </app-pin-leave-stats>
                 <app-pin-leave-stats
                   [title]="'Most Common Leaves'"
-                  [leaveStats]="leaveStatsByLeague()[league].common"
-                  [allLeaves]="leaveStatsByLeague()[league].all">
+                  [leaveStats]="leagueLeaves.common"
+                  [allLeaves]="leagueLeaves.all">
                 </app-pin-leave-stats>
               </section>
             </ion-segment-content>

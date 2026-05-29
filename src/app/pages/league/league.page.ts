@@ -62,6 +62,8 @@ import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stat
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 
+type LeagueLeaveStats = { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] };
+
 @Component({
   selector: 'app-league',
   templateUrl: './league.page.html',
@@ -181,9 +183,9 @@ export class LeaguePage {
     });
     return allPatternsByLeague;
   });
-  leaveStatsByLeague: Signal<Record<string, { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] }>> = computed(() => {
+  leaveStatsByLeague: Signal<Record<string, LeagueLeaveStats>> = computed(() => {
     const gamesByLeague = this.gamesByLeague();
-    const leaveStatsByLeague: Record<string, { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] }> = {};
+    const leaveStatsByLeague: Record<string, LeagueLeaveStats> = {};
     Object.keys(gamesByLeague).forEach((league) => {
       const allLeaves = this.statService.calculateAllLeaves(gamesByLeague[league] ?? []);
       leaveStatsByLeague[league] = {

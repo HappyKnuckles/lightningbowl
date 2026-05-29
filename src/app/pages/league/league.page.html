@@ -180,12 +180,12 @@
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="bestLeavesByLeague()[league]"> </app-pin-leave-stats>
-                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="worstLeavesByLeague()[league]"> </app-pin-leave-stats>
+                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"> </app-pin-leave-stats>
+                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"> </app-pin-leave-stats>
                 <app-pin-leave-stats
                   [title]="'Most Common Leaves'"
-                  [leaveStats]="commonLeavesByLeague()[league]"
-                  [allLeaves]="allLeavesByLeague()[league]">
+                  [leaveStats]="leaveStatsByLeague()[league].common"
+                  [allLeaves]="leaveStatsByLeague()[league].all">
                 </app-pin-leave-stats>
               </section>
             </ion-segment-content>

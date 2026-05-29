@@ -124,9 +124,11 @@ describe('LeaguePage', () => {
     spyOn(statService, 'calculateBestSpares').and.returnValue(bestLeaves);
     spyOn(statService, 'calculateWorstSpares').and.returnValue(worstLeaves);
 
-    expect(component.allLeavesByLeague()['League A']).toEqual(allLeaves);
-    expect(component.commonLeavesByLeague()['League A']).toEqual(commonLeaves);
-    expect(component.bestLeavesByLeague()['League A']).toEqual(bestLeaves);
-    expect(component.worstLeavesByLeague()['League A']).toEqual(worstLeaves);
+    expect(component.leaveStatsByLeague()['League A']).toEqual({
+      all: allLeaves,
+      common: commonLeaves,
+      best: bestLeaves,
+      worst: worstLeaves,
+    });
   });
 });

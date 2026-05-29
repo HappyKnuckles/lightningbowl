@@ -181,37 +181,19 @@ export class LeaguePage {
     });
     return allPatternsByLeague;
   });
-  allLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
+  leaveStatsByLeague: Signal<Record<string, { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] }>> = computed(() => {
     const gamesByLeague = this.gamesByLeague();
-    const allLeavesByLeague: Record<string, LeaveStats[]> = {};
+    const leaveStatsByLeague: Record<string, { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] }> = {};
     Object.keys(gamesByLeague).forEach((league) => {
-      allLeavesByLeague[league] = this.statService.calculateAllLeaves(gamesByLeague[league] || []);
+      const allLeaves = this.statService.calculateAllLeaves(gamesByLeague[league] ?? []);
+      leaveStatsByLeague[league] = {
+        all: allLeaves,
+        common: this.statService.calculateMostCommonLeaves(allLeaves),
+        best: this.statService.calculateBestSpares(allLeaves),
+        worst: this.statService.calculateWorstSpares(allLeaves),
+      };
     });
-    return allLeavesByLeague;
-  });
-  commonLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
-    const allLeavesByLeague = this.allLeavesByLeague();
-    const commonLeavesByLeague: Record<string, LeaveStats[]> = {};
-    Object.keys(allLeavesByLeague).forEach((league) => {
-      commonLeavesByLeague[league] = this.statService.calculateMostCommonLeaves(allLeavesByLeague[league] || []);
-    });
-    return commonLeavesByLeague;
-  });
-  bestLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
-    const allLeavesByLeague = this.allLeavesByLeague();
-    const bestLeavesByLeague: Record<string, LeaveStats[]> = {};
-    Object.keys(allLeavesByLeague).forEach((league) => {
-      bestLeavesByLeague[league] = this.statService.calculateBestSpares(allLeavesByLeague[league] || []);
-    });
-    return bestLeavesByLeague;
-  });
-  worstLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
-    const allLeavesByLeague = this.allLeavesByLeague();
-    const worstLeavesByLeague: Record<string, LeaveStats[]> = {};
-    Object.keys(allLeavesByLeague).forEach((league) => {
-      worstLeavesByLeague[league] = this.statService.calculateWorstSpares(allLeavesByLeague[league] || []);
-    });
-    return worstLeavesByLeague;
+    return leaveStatsByLeague;
   });
 
   statDefinitions = leagueStatDefinitions;

@@ -43,3 +43,26 @@ export interface Brand {
   id: string;
   logo: string;
 }
+
+export interface BallMetrics {
+  hookScore: number;
+  lengthScore: number;
+  flareScore: number;
+  hookLabel: string;
+  lengthLabel: string;
+  flareLabel: string;
+  laneCondition: string;
+  laneConditionColor: string;
+}
+
+export interface BallTraits {
+  isPlastic: boolean;
+  isUrethane: boolean;
+  isSolid: boolean;
+  isHybrid: boolean;
+  isPearl: boolean;
+  finishGrit: number | null;
+  isPolished: boolean;
+  rg: number;
+  diff: number;
+}

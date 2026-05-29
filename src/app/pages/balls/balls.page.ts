@@ -54,6 +54,7 @@ import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
+import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
 
 @Component({
   selector: 'app-balls',
@@ -356,33 +357,11 @@ export class BallsPage implements OnInit {
   }
 
   getLengthPotential(ball: Ball): string {
-    const rg = parseFloat(ball.core_rg);
-    if (isNaN(rg)) {
-      return '';
-    }
-
-    if (rg < 2.52) {
-      return 'Early Roll';
-    } else if (rg < 2.58) {
-      return 'Medium Roll';
-    } else {
-      return 'Late Roll';
-    }
+    return getLengthLabel(ball);
   }
 
   getFlarePotential(ball: Ball): string {
-    const diff = parseFloat(ball.core_diff);
-    if (isNaN(diff)) {
-      return '';
-    }
-
-    if (diff < 0.035) {
-      return 'Low Flare';
-    } else if (diff < 0.05) {
-      return 'Medium Flare';
-    } else {
-      return 'High Flare';
-    }
+    return getFlareLabel(ball);
   }
 
   async getSameCoreBalls(ball: Ball): Promise<void> {

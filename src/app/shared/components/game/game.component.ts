@@ -1,9 +1,7 @@
-import { NgIf, NgFor, DatePipe } from '@angular/common';
-import { Component, Renderer2, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal } from '@angular/core';
+import { NgIf, NgFor, DatePipe, DecimalPipe } from '@angular/common';
+import { Component, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
-import { Share } from '@capacitor/share';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
   IonButton,
@@ -30,7 +28,6 @@ import {
   IonBadge,
   IonModal,
 } from '@ionic/angular/standalone';
-import { toPng } from 'html-to-image';
 import { addIcons } from 'ionicons';
 import {
   cloudUploadOutline,
@@ -43,11 +40,13 @@ import {
   medalOutline,
   bowlingBallOutline,
   gridOutline,
+  layersOutline,
 } from 'ionicons/icons';
+import { Router } from '@angular/router';
+
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { Game, Frame, cloneFrames, createThrow } from 'src/app/core/models/game.model';
+import { Game } from 'src/app/core/models/game.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
@@ -55,21 +54,21 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { Pattern } from 'src/app/core/models/pattern.model';
+import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
+import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
+
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { Pattern } from 'src/app/core/models/pattern.model';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Router } from '@angular/router';
+import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { GameGridComponent } from '../game-grid/game-grid.component';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 
 interface MonthHeader {
   name: string;
@@ -80,7 +79,7 @@ interface MonthHeader {
   selector: 'app-game',
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.scss'],
-  providers: [DatePipe, ModalController],
+  providers: [DatePipe, ModalController, GameEditService],
   imports: [
     IonModal,
     IonBadge,
@@ -97,27 +96,22 @@ interface MonthHeader {
     IonTextarea,
     IonAccordion,
     IonItem,
-    IonAccordion,
     IonAccordionGroup,
-    IonTextarea,
     IonItemOption,
     IonItemOptions,
-    IonItem,
     IonItemSliding,
     IonButton,
     IonIcon,
-    IonGrid,
-    IonRow,
-    IonCol,
-    IonInput,
-    NgIf,
-    NgFor,
     IonSelect,
     IonSelectOption,
+    NgIf,
+    NgFor,
     ReactiveFormsModule,
     FormsModule,
-    LongPressDirective,
     DatePipe,
+    DecimalPipe,
+    LongPressDirective,
+    AccordionDelayedCloseDirective,
     GameGridComponent,
     GenericTypeaheadComponent,
     BallSelectComponent,
@@ -125,9 +119,10 @@ interface MonthHeader {
   ],
 })
 export class GameComponent implements OnInit {
-  // DOM Elements
+  // DOM
   @ViewChild('modal', { static: false }) modal!: IonModal;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
+  @ViewChild(AccordionDelayedCloseDirective) delayedClose!: AccordionDelayedCloseDirective;
   @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
 
   // Inputs
@@ -135,25 +130,47 @@ export class GameComponent implements OnInit {
   isLeaguePage = input<boolean>(false);
   gameCount = input<number | undefined>(undefined);
 
-  // Computed Signals
+  // Services
+  public editService = inject(GameEditService);
+  public gamesStore = inject(GamesStore);
+  public ballsStore = inject(BallsStore);
+  public settingsStore = inject(SettingsStore);
+  public patternsStore = inject(PatternsStore);
+
+  private alertController = inject(AlertController);
+  private toastService = inject(ToastService);
+  private leaguesStore = inject(LeaguesStore);
+  private hapticService = inject(HapticService);
+  private utilsService = inject(UtilsService);
+  private router = inject(Router);
+  private modalCtrl = inject(ModalController);
+  private patternService = inject(PatternService);
+  private validationService = inject(BowlingGameValidationService);
+  private shareService = inject(GameShareService);
+
+  // Computed
   leagues = computed(() => {
     const savedLeagues = this.leaguesStore.leagues();
     if (!this.games) return savedLeagues;
     const leagueKeys = this.games().reduce((acc: string[], game: Game) => {
-      if (game.league && !acc.includes(game.league)) {
-        acc.push(game.league);
-      }
+      if (game.league && !acc.includes(game.league)) acc.push(game.league);
       return acc;
     }, []);
     return [...new Set([...leagueKeys, ...savedLeagues])];
   });
 
-  sortedGames = computed(() => {
-    return [...this.games()].sort((a, b) => b.date - a.date);
-  });
+  sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
 
   showingGames = computed(() => {
     return this.sortedGames().slice(0, this.loadedCount());
+  });
+
+  gameNumberMap = computed(() => {
+    const allGames = this.sortedGames();
+    const total = allGames.length;
+    const map = new Map<string, number>();
+    allGames.forEach((game, idx) => map.set(game.gameId, total - idx));
+    return map;
   });
 
   monthHeaders = computed(() => {
@@ -198,44 +215,17 @@ export class GameComponent implements OnInit {
 
     return headers;
   });
-
-  // State Properties
+  // Pagination state
   private batchSize = 100;
   public loadedCount = signal(this.batchSize);
   public presentingElement?: HTMLElement;
-  public isEditMode: Record<string, boolean> = {};
-  public delayedCloseMap: Record<string, boolean> = {};
-  private originalGameState: Record<string, Game> = {};
-  public editedGameStates: Record<string, Game> = {};
-  public editedFocus: Record<string, { frameIndex: number; throwIndex: number }> = {};
-  private closeTimers: Record<string, NodeJS.Timeout> = {};
 
   // Config
   patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
-  constructor(
-    private alertController: AlertController,
-    private toastService: ToastService,
-    public gamesStore: GamesStore,
-    public ballsStore: BallsStore,
-    public settingsStore: SettingsStore,
-    public patternsStore: PatternsStore,
-    private leaguesStore: LeaguesStore,
-    private loadingService: LoadingService,
-    private datePipe: DatePipe,
-    private hapticService: HapticService,
-    private renderer: Renderer2,
-    private utilsService: UtilsService,
-    private router: Router,
-    private modalCtrl: ModalController,
-    private patternService: PatternService,
-    private analyticsService: AnalyticsService,
-    private validationService: BowlingGameValidationService,
-    private gameUtilsService: GameUtilsService,
-    private gameScoreCalculatorService: GameScoreCalculatorService,
-  ) {
+  constructor() {
     addIcons({
       trashOutline,
       createOutline,
@@ -247,12 +237,13 @@ export class GameComponent implements OnInit {
       cloudUploadOutline,
       cloudDownloadOutline,
       filterOutline,
+      layersOutline,
     });
   }
 
   ngOnInit(): void {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
+    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((q) => this.patternService.searchPattern(q));
   }
 
   // PAGINATION
@@ -260,63 +251,33 @@ export class GameComponent implements OnInit {
     setTimeout(() => {
       this.loadedCount.update((count) => count + this.batchSize);
       event.target.complete();
-      if (this.loadedCount() >= this.games().length) {
+      if (this.loadedCount() >= this.showingGames().length) {
         event.target.disabled = true;
       }
     }, 50);
   }
 
-  // NAVIGATION & UI
+  // ACCORDION
   openExpansionPanel(accordionId?: string): void {
-    const nativeEl = this.accordionGroup;
-    if (nativeEl.value === accordionId) nativeEl.value = undefined;
-    else nativeEl.value = accordionId;
+    const el = this.accordionGroup;
+    el.value = el.value === accordionId ? undefined : accordionId;
   }
 
-  hideContent(event: CustomEvent): void {
-    const openGameIds: string[] = event.detail.value || [];
-
-    openGameIds.forEach((gameId) => {
-      if (this.closeTimers[gameId]) {
-        clearTimeout(this.closeTimers[gameId]);
-        delete this.closeTimers[gameId];
-      }
-      this.delayedCloseMap[gameId] = true;
-    });
-
-    Object.keys(this.delayedCloseMap).forEach((gameId) => {
-      if (!openGameIds.includes(gameId)) {
-        if (!this.closeTimers[gameId]) {
-          this.closeTimers[gameId] = setTimeout(() => {
-            if (!(this.accordionGroup?.value || []).includes(gameId)) {
-              this.delayedCloseMap[gameId] = false;
-            }
-            delete this.closeTimers[gameId];
-          }, 500);
-        }
-      }
-    });
-  }
-
+  // NAVIGATION
   navigateToBallsPage(balls: string[]): void {
     const searchQuery = balls.join(', ');
-    if (this.isLeaguePage()) {
-      this.modalCtrl.dismiss();
-    }
+    if (this.isLeaguePage()) this.modalCtrl.dismiss();
     this.router.navigate(['tabs/balls'], { queryParams: { search: searchQuery } });
   }
 
-  // GAME ACTIONS (DELETE / SHARE)
+  // DELETE
   async deleteGame(gameId: string): Promise<void> {
     this.hapticService.vibrate(ImpactStyle.Heavy);
     const alert = await this.alertController.create({
       header: 'Confirm Deletion',
       message: 'Are you sure you want to delete this game?',
       buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
+        { text: 'Cancel', role: 'cancel' },
         {
           text: 'Delete',
           handler: async () => {
@@ -331,418 +292,124 @@ export class GameComponent implements OnInit {
         },
       ],
     });
-
     await alert.present();
   }
 
+  // SHARE
   async takeScreenshotAndShare(game: Game): Promise<void> {
-    this.delayedCloseMap[game.gameId] = true;
+    this.delayedClose.markVisible(game.gameId);
+
     const accordion = document.getElementById(game.gameId);
     if (!accordion) {
-      throw new Error('Accordion not found');
+      console.error('Accordion not found');
+      return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await new Promise((r) => setTimeout(r, 30));
 
     const scoreTemplate = accordion.querySelector('.grid-container') as HTMLElement;
-
     if (!scoreTemplate) {
-      throw new Error('Score template not found in the accordion');
+      console.error('Score template not found');
+      return;
     }
 
-    const accordionGroupEl = this.accordionGroup;
-    const accordionGroupValues = this.accordionGroup.value;
-    const accordionIsOpen = accordionGroupEl.value?.includes(game.gameId) ?? false;
+    const previousValue = this.accordionGroup.value;
+    const accordionIsOpen = this.accordionGroup.value?.includes(game.gameId) ?? false;
+    if (!accordionIsOpen) this.openExpansionPanel(game.gameId);
 
-    if (!accordionIsOpen) {
-      this.openExpansionPanel(game.gameId);
-    }
     const childNode = accordion.childNodes[1] as HTMLElement;
 
-    const originalWidth = childNode.style.width;
-
     try {
-      this.loadingService.setLoading(true);
-
-      this.renderer.setStyle(childNode, 'width', '700px');
-
-      const formattedDate = this.datePipe.transform(game.date, 'dd.MM.yy');
-
-      const messageParts = [
-        game.totalScore === 300
-          ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
-          : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
-
-        game.balls && game.balls.length > 0
-          ? game.balls.length === 1
-            ? `Bowled with: ${game.balls[0]}`
-            : `Bowled with: ${game.balls.join(', ')}`
-          : null,
-
-        game.patterns && game.patterns.length > 0 ? `Patterns: ${game.patterns.join(', ')}` : null,
-      ];
-
-      const message = messageParts.filter((part) => part !== null).join('\n');
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const dataUrl = await toPng(scoreTemplate, { quality: 0.7 });
-      const base64Data = dataUrl.split(',')[1];
-
-      if (navigator.share && navigator.canShare({ files: [new File([], '')] })) {
-        const blob = await (await fetch(dataUrl)).blob();
-        const filesArray = [
-          new File([blob], `score_${game.gameId}.png`, {
-            type: blob.type,
-          }),
-        ];
-
-        await navigator.share({
-          title: 'Game Score',
-          text: message,
-          files: filesArray,
-        });
-      } else {
-        const fileName = `score_${game.gameId}.png`;
-
-        await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8,
-        });
-
-        const fileUri = await Filesystem.getUri({
-          directory: Directory.Cache,
-          path: fileName,
-        });
-
-        await Share.share({
-          title: 'Game Score',
-          text: message,
-          url: fileUri.uri,
-          dialogTitle: 'Share Game Score',
-        });
-        this.toastService.showToast(ToastMessages.screenshotShareSuccess, 'share-social-outline');
-      }
-    } catch (error) {
-      console.error('Error taking screenshot and sharing', error);
-      this.toastService.showToast(ToastMessages.screenshotShareError, 'bug', true);
+      await this.shareService.shareGame(game, scoreTemplate, childNode);
     } finally {
-      this.renderer.setStyle(childNode, 'width', originalWidth);
-      this.accordionGroup.value = accordionGroupValues;
-      this.delayedCloseMap[game.gameId] = false;
-      this.loadingService.setLoading(false);
+      this.accordionGroup.value = previousValue;
+      this.delayedClose.clear(game.gameId);
     }
   }
 
-  // EDIT MODE LIFECYCLE
+  // EDIT
   saveOriginalStateAndEnableEdit(game: Game): void {
-    if (!this.isEditMode[game.gameId]) {
-      this.originalGameState[game.gameId] = structuredClone(game);
-      this.editedGameStates[game.gameId] = structuredClone(game);
-
-      this.enableEdit(game, game.gameId);
-
-      if (game.isPinMode) {
-        const edited = this.editedGameStates[game.gameId];
-        let lastFrameIndex = 9;
-        let lastThrowIndex = 0;
-
-        for (let i = 9; i >= 0; i--) {
-          const f = edited.frames[i];
-          if (f && f.throws && f.throws.length > 0) {
-            lastFrameIndex = i;
-            lastThrowIndex = Math.max(0, f.throws.length - 1);
-            break;
-          }
-        }
-        this.editedFocus[game.gameId] = { frameIndex: lastFrameIndex, throwIndex: lastThrowIndex };
-      }
+    if (!this.editService.isEditMode(game.gameId)) {
+      this.editService.startEdit(game);
+      this.openExpansionPanel(game.gameId);
+      this.delayedClose.markVisible(game.gameId);
     } else {
       this.cancelEdit(game);
     }
   }
 
-  enableEdit(game: Game, accordionId?: string): void {
-    this.isEditMode[game.gameId] = !this.isEditMode[game.gameId];
-    this.hapticService.vibrate(ImpactStyle.Light);
-
-    if (accordionId) {
-      this.openExpansionPanel(accordionId);
-      this.delayedCloseMap[game.gameId] = true;
-    }
-  }
-
   cancelEdit(game: Game): void {
-    const saved = this.originalGameState[game.gameId];
-    if (saved) {
-      Object.assign(game, saved);
-      delete this.originalGameState[game.gameId];
-    }
-
-    delete this.editedGameStates[game.gameId];
-
-    if (game.isSeries) {
-      this.updateSeries(game, game.league, game.patterns);
-    }
-
-    this.isEditMode[game.gameId] = false;
-    this.hapticService.vibrate(ImpactStyle.Light);
-
-    const wasOpen = this.delayedCloseMap[game.gameId];
+    this.editService.cancelEdit(game);
+    const wasOpen = this.delayedClose.isVisible(game.gameId);
     this.openExpansionPanel(wasOpen ? game.gameId : undefined);
-    delete this.delayedCloseMap[game.gameId];
+    this.delayedClose.clear(game.gameId);
   }
 
   async saveEdit(game: Game): Promise<void> {
-    try {
-      const editedState = this.editedGameStates[game.gameId];
+    const success = await this.editService.saveEdit(game);
+    if (!success) return;
 
-      const updatedGame: Game = editedState
-        ? {
-            ...game,
-            frames: editedState.frames,
-            frameScores: editedState.frameScores,
-            totalScore: editedState.totalScore,
-            isPractice: !game.league,
-            isPerfect: editedState.totalScore === 300,
-            isClean: this.gameUtilsService.calculateIsClean(editedState.frames),
-          }
-        : {
-            ...game,
-            isPractice: !game.league,
-          };
+    const wasOpen = this.delayedClose.isVisible(game.gameId);
+    this.openExpansionPanel(wasOpen ? game.gameId : undefined);
+    this.delayedClose.clear(game.gameId);
+  }
 
-      if (!this.isGameValid(updatedGame)) {
-        this.hapticService.vibrate(ImpactStyle.Heavy);
-        this.toastService.showToast(ToastMessages.invalidInput, 'bug', true);
-        return;
-      }
+  // EDIT INPUT
+  onEditThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, game: Game): void {
+    const result = this.editService.handleThrowInput(event, game);
 
-      const originalGameSnapshot = this.originalGameState[game.gameId];
-      const leagueChanged = originalGameSnapshot && originalGameSnapshot.league !== updatedGame.league;
-      const patternsChanged = originalGameSnapshot && JSON.stringify(originalGameSnapshot.patterns) !== JSON.stringify(updatedGame.patterns);
+    if (result === 'invalid') {
+      const grid = this.gameGrids.find((g) => g.game()?.gameId === game.gameId);
+      grid?.handleInvalidInput(event.frameIndex, event.throwIndex);
+      return;
+    }
 
-      if (updatedGame.isSeries && (leagueChanged || patternsChanged)) {
-        const seriesIdToUpdate = updatedGame.seriesId;
-        const newLeague = updatedGame.league;
-        const newPatterns = updatedGame.patterns;
-        const newIsPractice = !newLeague;
-
-        await this.gamesStore.saveGameToLocalStorage(updatedGame);
-
-        const gamesToUpdateInStorage = this.gamesStore
-          .games()
-          .filter((g) => g.seriesId === seriesIdToUpdate && g.gameId !== updatedGame.gameId)
-          .map((g) => ({
-            ...g,
-            league: newLeague,
-            patterns: newPatterns,
-            isPractice: newIsPractice,
-          }));
-        await this.gamesStore.saveGamesToLocalStorage(gamesToUpdateInStorage);
-      } else {
-        await this.gamesStore.saveGameToLocalStorage(updatedGame);
-      }
-
-      this.toastService.showToast(ToastMessages.gameUpdateSuccess, 'refresh-outline');
-      this.isEditMode[game.gameId] = false;
-      this.hapticService.vibrate(ImpactStyle.Light);
-
-      const wasOpen = this.delayedCloseMap[game.gameId];
-      this.openExpansionPanel(wasOpen ? game.gameId : undefined);
-
-      this.analyticsService.trackGameEdited();
-      delete this.originalGameState[game.gameId];
-      delete this.editedGameStates[game.gameId];
-      delete this.delayedCloseMap[game.gameId];
-    } catch (error) {
-      this.toastService.showToast(ToastMessages.gameUpdateError, 'bug', true);
-      console.error('Error saving game edit:', error);
+    if (result === 'recorded') {
+      const grid = this.gameGrids.find((g) => g.game()?.gameId === game.gameId);
+      grid?.focusNextInput(event.frameIndex, event.throwIndex);
     }
   }
 
-  // PIN MODE LOGIC & INTERACTION
+  // PIN MODE
   onScoreCellClick(game: Game, frameIndex: number, throwIndex: number): void {
-    if (!this.isEditMode[game.gameId] || !game.isPinMode) return;
-
-    const editedGame = this.editedGameStates[game.gameId];
-    const canClick = this.gameUtilsService.isCellAccessible(editedGame.frames, frameIndex, throwIndex);
-
-    if (canClick) {
-      this.editedFocus[game.gameId] = { frameIndex, throwIndex };
-    }
+    this.editService.selectCell(game, frameIndex, throwIndex);
   }
 
   onPinThrowConfirmed(event: { pinsKnockedDown: number[] }, game: Game): void {
-    if (!this.isEditMode[game.gameId] || !game.isPinMode) return;
-
-    const focus = this.editedFocus[game.gameId] || { frameIndex: 0, throwIndex: 0 };
-    const editedGame = this.editedGameStates[game.gameId] || structuredClone(game);
-
-    const result = this.gameUtilsService.processPinThrow(editedGame.frames, focus.frameIndex, focus.throwIndex, event.pinsKnockedDown || []);
-
-    this.editedFocus[game.gameId] = {
-      frameIndex: result.nextFrameIndex,
-      throwIndex: result.nextThrowIndex,
-    };
-
-    this.updateEditedGameWithNewFrames(game.gameId, result.updatedFrames);
+    this.editService.confirmPinThrow(event.pinsKnockedDown ?? [], game);
   }
 
   handlePinUndoRequested(game: Game): void {
-    if (!this.isEditMode[game.gameId] || !game.isPinMode) return;
-    const focus = this.editedFocus[game.gameId];
-    if (!focus) return;
-
-    const editedGame = this.editedGameStates[game.gameId];
-
-    const result = this.gameUtilsService.applyPinModeUndo(editedGame.frames, focus.frameIndex, focus.throwIndex);
-
-    if (!result) return;
-
-    this.editedFocus[game.gameId] = {
-      frameIndex: result.nextFrameIndex,
-      throwIndex: result.nextThrowIndex,
-    };
-
-    this.updateEditedGameWithNewFrames(game.gameId, result.updatedFrames);
+    this.editService.undoPinThrow(game);
   }
 
   getPinsLeftStandingForEditedGame(game: Game): number[] {
-    const focus = this.editedFocus[game.gameId];
-    if (!focus) return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-    const editedGame = this.editedGameStates[game.gameId];
-    const frame = editedGame.frames[focus.frameIndex];
-    const throws = frame.throws || [];
-
-    return this.gameUtilsService.getAvailablePins(focus.frameIndex, focus.throwIndex, throws);
+    return this.editService.getPinsLeftStanding(game);
   }
 
   canRecordStrike(game: Game): boolean {
-    const pinsLeft = this.getPinsLeftStandingForEditedGame(game);
-    return pinsLeft.length === 10;
+    return this.editService.canRecordStrike(game);
   }
 
   canRecordSpare(game: Game): boolean {
-    const pinsLeft = this.getPinsLeftStandingForEditedGame(game);
-    return pinsLeft.length > 0 && pinsLeft.length < 10;
+    return this.editService.canRecordSpare(game);
   }
 
   canUndoForPinMode(game: Game): boolean {
-    const focus = this.editedFocus[game.gameId];
-    if (!focus) return false;
-
-    const editedGame = this.editedGameStates[game.gameId];
-
-    return this.validationService.canUndoLastThrow(editedGame.frames, focus.frameIndex, focus.throwIndex);
+    return this.editService.canUndoPinThrow(game);
   }
 
-  // INPUT HANDLING
-  onEditThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, game: Game): void {
-    const { frameIndex, throwIndex, value } = event;
-
-    const editedGame = this.editedGameStates[game.gameId] || structuredClone(game);
-    const frames = cloneFrames(editedGame.frames);
-
-    if (value.length === 0) {
-      this.removeThrow(frames, frameIndex, throwIndex);
-      this.updateEditedGameWithNewFrames(game.gameId, frames);
-      return;
-    }
-
-    const parsedValue = this.gameUtilsService.parseInputValue(value, frameIndex, throwIndex, frames);
-
-    if (!this.utilsService.isValidNumber0to10(parsedValue)) {
-      this.handleEditInvalidInput(game.gameId, frameIndex, throwIndex);
-      return;
-    }
-
-    if (!this.validationService.isValidFrameScore(parsedValue, frameIndex, throwIndex, frames)) {
-      this.handleEditInvalidInput(game.gameId, frameIndex, throwIndex);
-      return;
-    }
-
-    this.recordThrow(frames, frameIndex, throwIndex, parsedValue);
-    this.updateEditedGameWithNewFrames(game.gameId, frames);
-
-    const grid = this.gameGrids.find((g) => g.game()?.gameId === game.gameId);
-    if (grid) {
-      grid.focusNextInput(frameIndex, throwIndex);
-    }
-  }
-
-  private handleEditInvalidInput(gameId: string, frameIndex: number, throwIndex: number): void {
-    this.hapticService.vibrate(ImpactStyle.Heavy);
-    const grid = this.gameGrids.find((g) => g.game()?.gameId === gameId);
-    if (grid) {
-      grid.handleInvalidInput(frameIndex, throwIndex);
-    }
-  }
-
-  // GAME STATE UPDATE HANDLERS
-  private recordThrow(frames: Frame[], frameIndex: number, throwIndex: number, value: number): void {
-    const frame = frames[frameIndex];
-    if (!frame) return;
-
-    while (frame.throws.length <= throwIndex) {
-      frame.throws.push(createThrow(0, frame.throws.length + 1));
-    }
-
-    frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
-  }
-
-  private removeThrow(frames: Frame[], frameIndex: number, throwIndex: number): void {
-    const frame = frames[frameIndex];
-    if (!frame || !frame.throws) return;
-
-    if (throwIndex >= 0 && throwIndex < frame.throws.length) {
-      frame.throws.splice(throwIndex, 1);
-      frame.throws.forEach((t, idx) => {
-        t.throwIndex = idx + 1;
-      });
-    }
-  }
-
-  private updateEditedGameWithNewFrames(gameId: string, frames: Frame[]): void {
-    const scoreResult = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
-    const editedGame = this.editedGameStates[gameId];
-
-    if (editedGame) {
-      this.editedGameStates[gameId] = {
-        ...editedGame,
-        frames,
-        frameScores: scoreResult.frameScores,
-        totalScore: scoreResult.totalScore,
-      };
-    }
-  }
-
-  updateSeries(game: Game, league?: string, patterns?: string[]): void {
-    if (!game.isSeries) return;
-
-    this.gamesStore.updateGamesInMemory((gamesArr) =>
-      gamesArr.map((g) => {
-        if (g.seriesId === game.seriesId) {
-          return {
-            ...g,
-            ...(league !== undefined && { league }),
-            ...(patterns !== undefined && { patterns }),
-          };
-        }
-        return g;
-      }),
-    );
-  }
-
+  // BALLS / SERIES
   onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
     modal.dismiss();
     game.balls = selectedBalls;
   }
 
-  // VALIDATION & HELPERS
+  updateSeries(game: Game, league?: string, patterns?: string[]): void {
+    this.editService.propagateSeriesFields(game, league, patterns);
+  }
+
+  // HELPERS
   isGameValid(game: Game): boolean {
     return this.validationService.isGameValid(game);
   }

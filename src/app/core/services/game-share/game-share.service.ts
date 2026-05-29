@@ -1,0 +1,108 @@
+import { inject, Injectable, LOCALE_ID, Renderer2, RendererFactory2 } from '@angular/core';
+import { formatDate } from '@angular/common';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { toPng } from 'html-to-image';
+import { Game } from 'src/app/core/models/game.model';
+import { LoadingService } from '../loader/loading.service';
+import { ToastService } from '../toast/toast.service';
+import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+
+@Injectable({ providedIn: 'root' })
+export class GameShareService {
+  private renderer: Renderer2;
+  private locale = inject(LOCALE_ID);
+
+  constructor(
+    rendererFactory: RendererFactory2,
+    private loadingService: LoadingService,
+    private toastService: ToastService,
+  ) {
+    this.renderer = rendererFactory.createRenderer(null, null);
+  }
+
+  async shareGame(game: Game, scoreTemplate: HTMLElement, resizableContainer: HTMLElement): Promise<void> {
+    const originalWidth = resizableContainer.style.width;
+
+    try {
+      this.loadingService.setLoading(true);
+      this.renderer.setStyle(resizableContainer, 'width', '700px');
+
+      await new Promise((r) => setTimeout(r, 100));
+
+      const message = this.buildShareMessage(game);
+      const dataUrl = await toPng(scoreTemplate, { quality: 0.7 });
+
+      if (this.canUseNavigatorShare()) {
+        await this.shareViaNavigator(dataUrl, game.gameId, message);
+      } else {
+        await this.shareViaCapacitor(dataUrl, game.gameId, message);
+        this.toastService.showToast(ToastMessages.screenshotShareSuccess, 'share-social-outline');
+      }
+    } catch (error) {
+      console.error('Error taking screenshot and sharing', error);
+      this.toastService.showToast(ToastMessages.screenshotShareError, 'bug', true);
+    } finally {
+      this.renderer.setStyle(resizableContainer, 'width', originalWidth);
+      this.loadingService.setLoading(false);
+    }
+  }
+
+  private buildShareMessage(game: Game): string {
+    const formattedDate = formatDate(game.date, 'dd.MM.yy', this.locale);
+
+    const parts = [
+      game.totalScore === 300
+        ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
+        : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
+      this.formatBallsPart(game.balls),
+      game.patterns?.length ? `Patterns: ${game.patterns.join(', ')}` : null,
+    ];
+
+    return parts.filter((p): p is string => p !== null).join('\n');
+  }
+
+  private formatBallsPart(balls?: string[]): string | null {
+    if (!balls?.length) return null;
+    return balls.length === 1 ? `Bowled with: ${balls[0]}` : `Bowled with: ${balls.join(', ')}`;
+  }
+
+  private canUseNavigatorShare(): boolean {
+    return !!navigator.share && navigator.canShare({ files: [new File([], '')] });
+  }
+
+  private async shareViaNavigator(dataUrl: string, gameId: string, message: string): Promise<void> {
+    const blob = await (await fetch(dataUrl)).blob();
+    const files = [new File([blob], `score_${gameId}.png`, { type: blob.type })];
+
+    await navigator.share({
+      title: 'Game Score',
+      text: message,
+      files,
+    });
+  }
+
+  private async shareViaCapacitor(dataUrl: string, gameId: string, message: string): Promise<void> {
+    const base64Data = dataUrl.split(',')[1];
+    const fileName = `score_${gameId}.png`;
+
+    await Filesystem.writeFile({
+      path: fileName,
+      data: base64Data,
+      directory: Directory.Cache,
+      encoding: Encoding.UTF8,
+    });
+
+    const fileUri = await Filesystem.getUri({
+      directory: Directory.Cache,
+      path: fileName,
+    });
+
+    await Share.share({
+      title: 'Game Score',
+      text: message,
+      url: fileUri.uri,
+      dialogTitle: 'Share Game Score',
+    });
+  }
+}

@@ -53,7 +53,7 @@
             ">
             {{ frameScores()[i - 1] }}
           </ng-container>
-          <ng-container *ngIf="i === 10 && !isGameComplete()">
+          <ng-container *ngIf="i === 10 && !isGameComplete() && maxScore() !== undefined">
             <span style="color: var(--ion-color-secondary)"> ({{ maxScore() }}) </span>
           </ng-container>
         </ion-col>

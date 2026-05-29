@@ -45,7 +45,7 @@ import {
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, BestPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { BestBallStats, BestPatternStats, LeagueLeaveStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -61,8 +61,6 @@ import { leagueStatDefinitions, pinStatDefinitions } from '../../core/constants/
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
-
-type LeagueLeaveStats = { all: LeaveStats[]; common: LeaveStats[]; best: LeaveStats[]; worst: LeaveStats[] };
 
 @Component({
   selector: 'app-league',

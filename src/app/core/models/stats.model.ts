@@ -164,4 +164,11 @@ export interface LeaveStats {
   pickupPercentage: number;
 }
 
+export type LeagueLeaveStats = {
+  all: LeaveStats[];
+  common: LeaveStats[];
+  best: LeaveStats[];
+  worst: LeaveStats[];
+};
+
 export type GameStats = Stats | SessionStats | SeriesStats | PrevStats;

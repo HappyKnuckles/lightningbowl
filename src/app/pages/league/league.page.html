@@ -174,7 +174,7 @@
 
             <ion-segment-content id="Pins-{{ league }}">
               <section class="tab">
-                @let leagueLeaves = leaveStatsByLeague()[league];
+                @let leagueLeaves = leaveStatsByLeague()[league] ?? emptyLeaveStats;
                 <app-stat-display
                   [title]="'Pin Stats'"
                   [statDefinitions]="pinStatDefinitions"

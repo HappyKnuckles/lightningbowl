@@ -5,6 +5,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { pinStatDefinitions } from 'src/app/core/constants/stats.definitions.constants';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),
@@ -72,7 +73,7 @@ describe('LeaguePage', () => {
       gameCount: 3,
     };
 
-    const statService = (component as any).statService;
+    const statService = TestBed.inject(GameStatsService);
     spyOn(statService, 'calculateMostPlayedPatternStats').and.returnValue(mostPlayedPattern);
     spyOn(statService, 'calculateBestPatternStats').and.returnValue(bestPattern);
     spyOn(statService, 'calculateAllPatternStats').and.returnValue([mostPlayedPattern, bestPattern]);
@@ -118,7 +119,7 @@ describe('LeaguePage', () => {
       },
     ];
 
-    const statService = (component as any).statService;
+    const statService = TestBed.inject(GameStatsService);
     spyOn(statService, 'calculateAllLeaves').and.returnValue(allLeaves);
     spyOn(statService, 'calculateMostCommonLeaves').and.returnValue(commonLeaves);
     spyOn(statService, 'calculateBestSpares').and.returnValue(bestLeaves);

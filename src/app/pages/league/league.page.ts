@@ -185,7 +185,7 @@ export class LeaguePage {
     const gamesByLeague = this.gamesByLeague();
     const leaveStatsByLeague: Record<string, LeagueLeaveStats> = {};
     Object.keys(gamesByLeague).forEach((league) => {
-      const allLeaves = this.statService.calculateAllLeaves(gamesByLeague[league] ?? []);
+      const allLeaves = this.statService.calculateAllLeaves(gamesByLeague[league] || []);
       leaveStatsByLeague[league] = {
         all: allLeaves,
         common: this.statService.calculateMostCommonLeaves(allLeaves),
@@ -198,6 +198,7 @@ export class LeaguePage {
 
   statDefinitions = leagueStatDefinitions;
   pinStatDefinitions = pinStatDefinitions;
+  readonly emptyLeaveStats: LeagueLeaveStats = { all: [], common: [], best: [], worst: [] };
   private scoreChartInstances: Record<string, Chart> = {};
   private pinChartInstances: Record<string, Chart> = {};
 

@@ -45,7 +45,7 @@ import {
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, BestPatternStats, Stats } from 'src/app/core/models/stats.model';
+import { BestBallStats, BestPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -60,6 +60,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { leagueStatDefinitions, pinStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
+import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 
 @Component({
   selector: 'app-league',
@@ -95,6 +96,7 @@ import { PatternStatsComponent } from '../../shared/components/pattern-stats/pat
     LongPressDirective,
     BallStatsComponent,
     PatternStatsComponent,
+    PinLeaveStatsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -104,7 +106,7 @@ export class LeaguePage {
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
   selectedSegment = 'Overall';
-  segments: string[] = ['Overall', 'Spares', 'Games'];
+  segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
   isEditMode: Record<string, boolean> = {};
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
     const games = this.gamesStore.games();
@@ -178,6 +180,38 @@ export class LeaguePage {
       allPatternsByLeague[league] = this.statService.calculateAllPatternStats(gamesByLeague[league] || []);
     });
     return allPatternsByLeague;
+  });
+  allLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
+    const gamesByLeague = this.gamesByLeague();
+    const allLeavesByLeague: Record<string, LeaveStats[]> = {};
+    Object.keys(gamesByLeague).forEach((league) => {
+      allLeavesByLeague[league] = this.statService.calculateAllLeaves(gamesByLeague[league] || []);
+    });
+    return allLeavesByLeague;
+  });
+  commonLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
+    const allLeavesByLeague = this.allLeavesByLeague();
+    const commonLeavesByLeague: Record<string, LeaveStats[]> = {};
+    Object.keys(allLeavesByLeague).forEach((league) => {
+      commonLeavesByLeague[league] = this.statService.calculateMostCommonLeaves(allLeavesByLeague[league] || []);
+    });
+    return commonLeavesByLeague;
+  });
+  bestLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
+    const allLeavesByLeague = this.allLeavesByLeague();
+    const bestLeavesByLeague: Record<string, LeaveStats[]> = {};
+    Object.keys(allLeavesByLeague).forEach((league) => {
+      bestLeavesByLeague[league] = this.statService.calculateBestSpares(allLeavesByLeague[league] || []);
+    });
+    return bestLeavesByLeague;
+  });
+  worstLeavesByLeague: Signal<Record<string, LeaveStats[]>> = computed(() => {
+    const allLeavesByLeague = this.allLeavesByLeague();
+    const worstLeavesByLeague: Record<string, LeaveStats[]> = {};
+    Object.keys(allLeavesByLeague).forEach((league) => {
+      worstLeavesByLeague[league] = this.statService.calculateWorstSpares(allLeavesByLeague[league] || []);
+    });
+    return worstLeavesByLeague;
   });
 
   statDefinitions = leagueStatDefinitions;

@@ -108,11 +108,22 @@
                   <h2 class="title">Core:</h2>
                   <ion-icon name="open-outline"></ion-icon>
                 </div>
-                <p class="info">{{ ball.core_name }}</p>
-                <p class="info">RG: {{ ball.core_rg }} ({{ getLengthPotential(ball) }})</p>
-                <p class="info">Diff: {{ ball.core_diff }} ({{ getFlarePotential(ball) }})</p>
-                <p class="info" *ngIf="ball.core_int_diff">Int. Diff: {{ ball.core_int_diff }}</p>
-                <p class="info">{{ ball.core_type }}</p>
+                <div class="core-info-container">
+                  <p class="info">{{ ball.core_name }}</p>
+                  <p class="info">{{ ball.core_type }}</p>
+                  <ion-text
+                    >RG:&nbsp;
+                    <p class="info">{{ ball.core_rg }} ({{ getLengthPotential(ball) }})</p>
+                  </ion-text>
+                  <ion-text
+                    >Diff:&nbsp;
+                    <p class="info">{{ ball.core_diff }} ({{ getFlarePotential(ball) }})</p>
+                  </ion-text>
+                  <ion-text *ngIf="ball.core_int_diff"
+                    >Int. Diff:&nbsp;
+                    <p class="info">{{ ball.core_int_diff }}</p>
+                  </ion-text>
+                </div>
                 <ion-ripple-effect></ion-ripple-effect>
               </ion-list>
               <ion-list lines="none" (click)="getSameCoverstockBalls(ball)" class="ion-activatable ion-ripple-parent list">
@@ -120,9 +131,15 @@
                   <h2 class="title">Coverstock:</h2>
                   <ion-icon name="open-outline"></ion-icon>
                 </div>
-                <p class="info">{{ ball.coverstock_type }}</p>
-                <p class="info">{{ ball.coverstock_name }}</p>
-                <p class="info">{{ ball.factory_finish }}</p>
+                <div class="coverstock-info-container">
+                  <p class="info">{{ ball.coverstock_name }}</p>
+
+                  <p class="info">{{ ball.coverstock_type }}</p>
+                  <ion-text
+                    >Finish:&nbsp;
+                    <p class="info">{{ ball.factory_finish }}</p>
+                  </ion-text>
+                </div>
                 <ion-ripple-effect></ion-ripple-effect>
               </ion-list>
             </div>

@@ -10,13 +10,19 @@
   }
 }
 
-.card-content {
-  color: white;
-
-  .header {
-    font-size: 1.125rem;
-    font-weight: 600;
+.info-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  ion-text{
+    display: inherit;
+    color: white;
+      .info {
+    font-size: 1rem;
+    color: lightgray;
   }
+  }
+
 }
 
 ion-thumbnail {
@@ -40,10 +46,6 @@ ion-header {
   }
 }
 
-ion-card-title {
-  padding-bottom: 12px;
-}
-
 .sliding {
   .title {
     font-weight: 600;
@@ -56,7 +58,6 @@ ion-img::part(image) {
 }
 
 .ball-info {
-
   ion-chip {
     text-align: center;
     padding: 6px;
@@ -80,48 +81,30 @@ ion-img::part(image) {
   max-height: 70dvh;
 }
 
-.ball-info-list {
-  min-height: fit-content;
-  height: calc(100dvh - 44px);
+ion-card {
+  margin-top: 0;
+}
+
+.coverstock-container,
+.core-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
 
-  .core-container,
-  .coverstock-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .coverstock-image,
+  .core-image {
+    margin-bottom: 12px;
 
-    .core-image,
-    .coverstock-image {
-      margin-bottom: 12px;
-
-      ion-img {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-      }
-    }
-
-    ion-item {
-      width: 100%;
-      --padding-start: 16px;
-      --padding-end: 16px;
-      pointer-events: none;
+    ion-img {
+      width: 120px;
+      height: 120px;
     }
   }
 
-  .coverstock-section,
-  .core-section {
-    position: relative;
-
-    ion-ripple-effect {
-      z-index: 1000;
-    }
-  }
-
-  .core-section {
-    margin-top: auto;
-    margin-bottom: 15dvh;
+  ion-item {
+    width: 100%;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    pointer-events: none;
   }
 }

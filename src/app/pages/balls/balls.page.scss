@@ -46,6 +46,18 @@ ion-header {
       }
     }
 
+    ion-text {
+      display: flex;
+      color: white;
+    }
+
+    .coverstock-info-container {
+      ion-text {
+        justify-content: end;
+
+      }
+    }
+
     .info {
       font-size: 1rem;
       color: lightgray;

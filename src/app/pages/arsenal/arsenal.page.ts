@@ -6,6 +6,8 @@ import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic
 import {
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardContent,
   IonChip,
   IonContent,
   IonHeader,
@@ -85,6 +87,8 @@ import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typ
     GenericTypeaheadComponent,
     IonSegmentContent,
     IonSegmentView,
+    IonCard,
+    IonCardContent,
     IonSelect,
     IonSelectOption,
   ],

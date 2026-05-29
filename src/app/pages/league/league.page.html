@@ -144,6 +144,22 @@
                   [title]="'Best ball'"
                   [bestBall]="bestBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
+                <app-pattern-stats
+                  [title]="'Most played pattern'"
+                  [bestPattern]="mostPlayedPatternsByLeague()[league]"
+                  [totalGames]="statsByLeague()[league].totalGames"
+                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
+                <app-pattern-stats
+                  [title]="'Best pattern'"
+                  [bestPattern]="bestPatternsByLeague()[league]"
+                  [totalGames]="statsByLeague()[league].totalGames"
+                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
+                <app-stat-display
+                  [title]="'Pin Stats'"
+                  [statDefinitions]="pinStatDefinitions"
+                  [currentStats]="statsByLeague()[league]"
+                  [prevStats]="overallStats()">
+                </app-stat-display>
                 <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
                 <div class="stat-container">
                   <canvas #scoreChart style="width: 300px; height: 400px; max-height: 700px"></canvas>

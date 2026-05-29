@@ -45,7 +45,7 @@ import {
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, Stats } from 'src/app/core/models/stats.model';
+import { BestBallStats, BestPatternStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -57,8 +57,9 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
+import { leagueStatDefinitions, pinStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
+import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 
 @Component({
   selector: 'app-league',
@@ -93,6 +94,7 @@ import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stat
     IonSegmentContent,
     LongPressDirective,
     BallStatsComponent,
+    PatternStatsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -153,8 +155,33 @@ export class LeaguePage {
     });
     return mostUsedBallsByLeague;
   });
+  bestPatternsByLeague: Signal<Record<string, BestPatternStats>> = computed(() => {
+    const gamesByLeague = this.gamesByLeague();
+    const bestPatternsByLeague: Record<string, BestPatternStats> = {};
+    Object.keys(gamesByLeague).forEach((league) => {
+      bestPatternsByLeague[league] = this.statService.calculateBestPatternStats(gamesByLeague[league] || []);
+    });
+    return bestPatternsByLeague;
+  });
+  mostPlayedPatternsByLeague: Signal<Record<string, BestPatternStats>> = computed(() => {
+    const gamesByLeague = this.gamesByLeague();
+    const mostPlayedPatternsByLeague: Record<string, BestPatternStats> = {};
+    Object.keys(gamesByLeague).forEach((league) => {
+      mostPlayedPatternsByLeague[league] = this.statService.calculateMostPlayedPatternStats(gamesByLeague[league] || []);
+    });
+    return mostPlayedPatternsByLeague;
+  });
+  allPatternsByLeague: Signal<Record<string, BestPatternStats[]>> = computed(() => {
+    const gamesByLeague = this.gamesByLeague();
+    const allPatternsByLeague: Record<string, BestPatternStats[]> = {};
+    Object.keys(gamesByLeague).forEach((league) => {
+      allPatternsByLeague[league] = this.statService.calculateAllPatternStats(gamesByLeague[league] || []);
+    });
+    return allPatternsByLeague;
+  });
 
   statDefinitions = leagueStatDefinitions;
+  pinStatDefinitions = pinStatDefinitions;
   private scoreChartInstances: Record<string, Chart> = {};
   private pinChartInstances: Record<string, Chart> = {};
 

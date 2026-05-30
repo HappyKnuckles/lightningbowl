@@ -35,7 +35,6 @@ import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
 import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
 import { Subject } from 'rxjs';
-import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Ball } from 'src/app/core/models/ball.model';
@@ -47,7 +46,6 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
-import { SortService } from 'src/app/core/services/sort/sort.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
@@ -55,6 +53,8 @@ import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
+import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
+import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 
 @Component({
   selector: 'app-balls',
@@ -193,7 +193,7 @@ export class BallsPage implements OnInit {
     private ballService: BallService,
     public ballFilterService: BallFilterService,
     private route: ActivatedRoute,
-    public sortService: SortService,
+    public sortService: BallSortService,
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,

@@ -55,12 +55,12 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
-import { SortService } from 'src/app/core/services/sort/sort.service';
 import { PatternSortOption, PatternSortField, SortDirection } from 'src/app/core/models/sort.model';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { environment } from 'src/environments/environment';
+import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.service';
 
 @Component({
   selector: 'app-pattern',
@@ -137,7 +137,7 @@ export class PatternPage implements OnInit {
     private chartService: ChartGenerationService,
     private sanitizer: DomSanitizer,
     private modalCtrl: ModalController,
-    public sortService: SortService,
+    public sortService: PatternSortService,
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,

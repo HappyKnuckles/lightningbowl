@@ -1,4 +1,4 @@
-import { NgIf, NgFor, DatePipe, DecimalPipe } from '@angular/common';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { Component, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -109,7 +109,6 @@ interface MonthHeader {
     ReactiveFormsModule,
     FormsModule,
     DatePipe,
-    DecimalPipe,
     LongPressDirective,
     AccordionDelayedCloseDirective,
     GameGridComponent,

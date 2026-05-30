@@ -34,7 +34,6 @@ import {
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { SessionStats } from 'src/app/core/models/stats.model';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
@@ -52,20 +51,22 @@ import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import {
-  overallStatDefinitions,
-  pinStatDefinitions,
-  playFrequencyStatDefinitions,
-  seriesStatDefinitions,
-  sessionStatDefinitions,
-  spareStatDefinitions,
-  specialStatDefinitions,
-  strikeStatDefinitions,
-  throwStatDefinitions,
-} from '../../core/constants/stats.definitions.constants';
+
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
+import {
+  overallStatDefinitions,
+  seriesStatDefinitions,
+  throwStatDefinitions,
+  sessionStatDefinitions,
+  playFrequencyStatDefinitions,
+  specialStatDefinitions,
+  strikeStatDefinitions,
+  spareStatDefinitions,
+  pinStatDefinitions,
+} from 'src/app/core/configs/stat-definitions/stat-definitions';
 
 @Component({
   selector: 'app-stats',

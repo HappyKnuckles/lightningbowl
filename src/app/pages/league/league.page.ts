@@ -57,8 +57,8 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { leagueStatDefinitions } from '../../core/constants/stats.definitions.constants';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
+import { leagueStatDefinitions } from 'src/app/core/configs/stat-definitions/stat-definitions';
 
 @Component({
   selector: 'app-league',

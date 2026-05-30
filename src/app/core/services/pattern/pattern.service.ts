@@ -31,6 +31,12 @@ interface PatternChartsResult {
   }[];
 }
 
+interface AddPatternResponse {
+  success: boolean;
+  pattern_id?: string;
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -184,11 +190,17 @@ export class PatternService {
     }
   }
 
-  async addPattern(pattern: Partial<Pattern>): Promise<void> {
-    try {
-      await firstValueFrom(this.http.post<Partial<Pattern>>(`${environment.patternEndpoint}add-pattern`, pattern));
-    } catch (error) {
-      console.error('Error adding pattern:', error);
+  async addPattern(pattern: Partial<Pattern>): Promise<string> {
+    const response = await firstValueFrom(this.http.post<AddPatternResponse>(`${environment.patternEndpoint}add-pattern`, pattern));
+
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to add pattern');
     }
+
+    if (!response.pattern_id) {
+      throw new Error('Pattern created successfully but backend did not return pattern_id (unexpected API response)');
+    }
+
+    return response.pattern_id;
   }
 }

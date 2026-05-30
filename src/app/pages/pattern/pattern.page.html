@@ -13,6 +13,9 @@
         (sortChanged)="onSortChanged($event)"
         (favoritesFirstChanged)="onFavoritesFirstChange($event)">
       </app-sort-header>
+      <ion-button (click)="openAddPatternModal()" aria-label="Add custom pattern">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar>

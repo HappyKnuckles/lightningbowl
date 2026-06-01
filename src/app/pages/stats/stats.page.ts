@@ -67,6 +67,7 @@ import {
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { GameFilter } from 'src/app/core/models/filter.model';
 
 @Component({
   selector: 'app-stats',
@@ -198,6 +199,13 @@ export class StatsPage implements OnInit, AfterViewInit {
   private averageScoreChartInstance: Chart | null = null;
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
+  get currentFilters(): GameFilter {
+    return this.gameFilterService.filters();
+  }
+
+  get defaultFilters(): GameFilter {
+    return this.gameFilterService.defaultFilters;
+  }
 
   constructor(
     public loadingService: LoadingService,
@@ -418,13 +426,5 @@ export class StatsPage implements OnInit, AfterViewInit {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating throw chart:', error);
     }
-  }
-
-  get currentFilters(): Record<string, unknown> {
-    return this.gameFilterService.filters() as unknown as Record<string, unknown>;
-  }
-
-  get defaultFilters(): Record<string, unknown> {
-    return this.gameFilterService.defaultFilters as unknown as Record<string, unknown>;
   }
 }

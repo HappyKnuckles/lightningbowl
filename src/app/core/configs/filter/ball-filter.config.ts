@@ -1,5 +1,4 @@
-import { FilterConfig } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { CoreType, Market } from '../../models/filter.model';
+import { CoreType, FilterConfig, Market } from '../../models/filter.model';
 
 export const BALL_FILTER_CONFIGS: FilterConfig[] = [
   {

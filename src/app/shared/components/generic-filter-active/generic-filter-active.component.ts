@@ -1,22 +1,8 @@
 import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { IonChip } from '@ionic/angular/standalone';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
-
-export interface FilterConfig {
-  key: string;
-  label?: string;
-  type: 'boolean' | 'string' | 'number' | 'array' | 'date' | 'range' | 'enum';
-  displayValue?: (value: unknown) => string;
-  isRange?: boolean;
-  rangeKeys?: {
-    min: string;
-    max: string;
-  };
-  suffix?: string;
-  prefix?: string;
-  enumValues?: Record<string, string>;
-}
+import { FilterConfig, IndexableFilter } from 'src/app/core/models/filter.model';
 
 @Component({
   selector: 'app-generic-filter-active',
@@ -24,20 +10,13 @@ export interface FilterConfig {
   templateUrl: './generic-filter-active.component.html',
   styleUrl: './generic-filter-active.component.scss',
 })
-export class GenericFilterActiveComponent implements OnInit {
-  @Input() filters: Record<string, unknown> = {};
-  @Input() defaultFilters: Record<string, unknown> = {};
+export class GenericFilterActiveComponent {
+  @Input({ required: true }) filters!: IndexableFilter;
+  @Input({ required: true }) defaultFilters!: IndexableFilter;
   @Input() filterConfigs: FilterConfig[] = [];
   @Input() title?: string;
 
   constructor(private utilsService: UtilsService) {}
-
-  ngOnInit() {
-    // Ensure we have valid inputs
-    if (!this.filters || !this.defaultFilters || !this.filterConfigs) {
-      console.warn('GenericFilterActiveComponent: Missing required inputs');
-    }
-  }
 
   isFilterActive(config: FilterConfig): boolean {
     const filterValue = this.filters[config.key];
@@ -155,5 +134,19 @@ export class GenericFilterActiveComponent implements OnInit {
     }
 
     return true;
+  }
+
+  /**
+   * True when an array filter represents a "none" selection: either empty
+   * or holding only the empty-string sentinel (['']). Used to show just the
+   * display value ("No Patterns") without the field label.
+   */
+  isEmptyArrayFilter(config: FilterConfig): boolean {
+    if (config.type !== 'array') {
+      return false;
+    }
+    const value = this.filters[config.key];
+    const arrayValue = Array.isArray(value) ? value : [];
+    return arrayValue.length === 0 || (arrayValue.length === 1 && arrayValue[0] === '');
   }
 }

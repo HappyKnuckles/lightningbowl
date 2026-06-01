@@ -63,11 +63,26 @@ export class GameFilterService {
   }
 
   filterGames(games: Game[], filters: GameFilter): Game[] {
-    const filteredGames = games.filter((game) => {
-      const formatDate = (date: string) => date.split('T')[0];
+    const formatDate = (date: string) => date.split('T')[0];
+    const startDate = formatDate(filters.startDate!);
+    const endDate = formatDate(filters.endDate!);
+
+    const matchesMultiSelect = (selected: string[], gameValues: string[]): boolean => {
+      if (selected.includes('all') || selected.length === 0) {
+        return true;
+      }
+
+      const wantsNone = selected.includes('');
+      const specific = selected.filter((value) => value !== '' && value !== 'all');
+
+      const noneMatch = wantsNone && gameValues.length === 0;
+      const specificMatch = specific.length > 0 && gameValues.some((value) => specific.includes(value));
+
+      return noneMatch || specificMatch;
+    };
+
+    return games.filter((game) => {
       const gameDate = formatDate(new Date(game.date).toISOString());
-      const startDate = formatDate(filters.startDate!);
-      const endDate = formatDate(filters.endDate!);
 
       return (
         gameDate >= startDate &&
@@ -78,11 +93,10 @@ export class GameFilterService {
         (!filters.isPerfect || game.isPerfect) &&
         (!filters.isClean || game.isClean) &&
         (filters.leagues.includes('all') || filters.leagues.length === 0 || filters.leagues.includes(game.league || '')) &&
-        (filters.patterns.includes('all') || filters.patterns.length === 0 || game.patterns!.some((pattern) => filters.patterns.includes(pattern))) &&
-        (filters.balls.includes('all') || filters.balls.length === 0 || game.balls!.some((ball) => filters.balls.includes(ball)))
+        matchesMultiSelect(filters.patterns, game.patterns ?? []) &&
+        matchesMultiSelect(filters.balls, game.balls ?? [])
       );
     });
-    return filteredGames;
   }
 
   saveFilters(): void {

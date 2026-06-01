@@ -4,6 +4,8 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
+import { pinStatDefinitions } from 'src/app/core/configs/stat-definitions/stat-definitions';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),
@@ -45,5 +47,89 @@ describe('LeaguePage', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should expose pin stat definitions used by stats page', () => {
+    expect(component.pinStatDefinitions).toBe(pinStatDefinitions);
+  });
+
+  it('should calculate pattern stats per league', () => {
+    mockGamesStore.games.and.returnValue([{ league: 'League A' } as any]);
+
+    const mostPlayedPattern = {
+      patternName: 'Pattern Most Played',
+      patternImage: '',
+      patternAvg: 200,
+      patternHighestGame: 250,
+      patternLowestGame: 180,
+      gameCount: 5,
+    };
+    const bestPattern = {
+      patternName: 'Pattern Best',
+      patternImage: '',
+      patternAvg: 215,
+      patternHighestGame: 270,
+      patternLowestGame: 190,
+      gameCount: 3,
+    };
+
+    const statService = TestBed.inject(GameStatsService);
+    spyOn(statService, 'calculateMostPlayedPatternStats').and.returnValue(mostPlayedPattern);
+    spyOn(statService, 'calculateBestPatternStats').and.returnValue(bestPattern);
+    spyOn(statService, 'calculateAllPatternStats').and.returnValue([mostPlayedPattern, bestPattern]);
+
+    expect(component.mostPlayedPatternsByLeague()['League A']).toEqual(mostPlayedPattern);
+    expect(component.bestPatternsByLeague()['League A']).toEqual(bestPattern);
+    expect(component.allPatternsByLeague()['League A']).toEqual([mostPlayedPattern, bestPattern]);
+  });
+
+  it('should calculate pin leave stats per league', () => {
+    mockGamesStore.games.and.returnValue([{ league: 'League A' } as any]);
+
+    const allLeaves = [
+      {
+        pins: [7, 10],
+        occurrences: 3,
+        pickups: 1,
+        pickupPercentage: 33.3,
+      },
+    ];
+    const commonLeaves = [
+      {
+        pins: [7, 10],
+        occurrences: 3,
+        pickups: 1,
+        pickupPercentage: 33.3,
+      },
+    ];
+    const bestLeaves = [
+      {
+        pins: [2, 4],
+        occurrences: 2,
+        pickups: 2,
+        pickupPercentage: 100,
+      },
+    ];
+    const worstLeaves = [
+      {
+        pins: [4, 6, 7, 10],
+        occurrences: 2,
+        pickups: 0,
+        pickupPercentage: 0,
+      },
+    ];
+
+    const statService = TestBed.inject(GameStatsService);
+    spyOn(statService, 'calculateAllLeaves').and.returnValue(allLeaves);
+    spyOn(statService, 'calculateMostCommonLeaves').and.returnValue(commonLeaves);
+    spyOn(statService, 'calculateBestSpares').and.returnValue(bestLeaves);
+    spyOn(statService, 'calculateWorstSpares').and.returnValue(worstLeaves);
+
+    expect(component.leaveStatsByLeague()['League A']).toEqual({
+      all: allLeaves,
+      common: commonLeaves,
+      best: bestLeaves,
+      worst: worstLeaves,
+    });
   });
 });

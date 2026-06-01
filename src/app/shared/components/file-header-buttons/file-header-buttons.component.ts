@@ -5,13 +5,13 @@ import { AlertController } from '@ionic/angular';
 import { IonButton, IonButtons, IonIcon, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { cloudDownloadOutline, cloudUploadOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 
 @Component({
   selector: 'app-file-header-buttons',
@@ -42,12 +42,12 @@ export class FileHeaderButtonsComponent {
       const importResult = await this.importDispatcherService.importFromFile(file);
 
       if (importResult.type === 'pinpal') {
-        this.toastService.showToast(`${ToastMessages.pinpalImportSuccess} (${importResult.importedGames} games)`, 'checkmark-outline');
+        this.toastService.showToast(`${TOAST_MESSAGES.pinpalImportSuccess} (${importResult.importedGames} games)`, 'checkmark-outline');
       } else {
-        this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
+        this.toastService.showToast(TOAST_MESSAGES.excelFileUploadSuccess, 'checkmark-outline');
       }
     } catch {
-      this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.unexpectedError, 'bug', true);
     } finally {
       const input = this.fileImport.nativeElement;
       input.value = '';
@@ -92,12 +92,12 @@ export class FileHeaderButtonsComponent {
     try {
       const gotPermission = await this.excelService.exportToExcel();
       if (gotPermission) {
-        this.toastService.showToast(ToastMessages.excelFileDownloadSuccess, 'checkmark-outline');
+        this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
       } else {
         await this.showPermissionDeniedAlert();
       }
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileDownloadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadError, 'bug', true);
       console.error('Error exporting to Excel:', error);
     }
   }

@@ -26,7 +26,7 @@ import {
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
@@ -502,7 +502,7 @@ export class AddGamePage implements OnInit {
       );
       this.gameDraftService.clear();
     }
-    this.toastService.showToast(ToastMessages.gameResetSuccess, 'refresh-outline');
+    this.toastService.showToast(TOAST_MESSAGES.gameResetSuccess, 'refresh-outline');
   }
 
   async confirm(modal: IonModal): Promise<void> {
@@ -552,7 +552,7 @@ export class AddGamePage implements OnInit {
       const baseDate = Date.now();
       for (const [i, game] of games.entries()) {
         if (game.league === 'New') {
-          this.toastService.showToast(ToastMessages.selectLeague, 'bug', true);
+          this.toastService.showToast(TOAST_MESSAGES.selectLeague, 'bug', true);
           return false;
         }
         game.date = baseDate + i;
@@ -576,12 +576,12 @@ export class AddGamePage implements OnInit {
           await this.highScroreAlertService.checkAndDisplayHighScoreAlertsForMultipleGames(savedGames, allGames);
         }
         this.hapticService.vibrate(ImpactStyle.Medium);
-        this.toastService.showToast(ToastMessages.gameSaveSuccess, 'add');
+        this.toastService.showToast(TOAST_MESSAGES.gameSaveSuccess, 'add');
         return true;
       }
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameSaveError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.gameSaveError, 'bug', true);
       await this.analyticsService.trackError('game_save_error', error instanceof Error ? error.message : String(error));
     }
     return false;

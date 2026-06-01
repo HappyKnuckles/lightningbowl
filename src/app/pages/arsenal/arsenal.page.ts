@@ -38,14 +38,14 @@ import {
 import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
@@ -143,7 +143,7 @@ export class ArsenalPage {
       );
     } catch (error) {
       console.error('Error generating ball distribution chart:', error);
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
     }
   }
 
@@ -166,7 +166,7 @@ export class ArsenalPage {
                 this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
-                this.toastService.showToast(ToastMessages.ballDeleteError, 'bug', true);
+                this.toastService.showToast(TOAST_MESSAGES.ballDeleteError, 'bug', true);
               }
             },
           },
@@ -176,7 +176,7 @@ export class ArsenalPage {
       await alert.present();
     } catch (error) {
       console.error('Error displaying removal alert:', error);
-      this.toastService.showToast(ToastMessages.unexpectedError, 'warning', true);
+      this.toastService.showToast(TOAST_MESSAGES.unexpectedError, 'warning', true);
     }
   }
 
@@ -192,22 +192,15 @@ export class ArsenalPage {
     await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
   }
 
-  saveBallToArsenal(ball: Ball[]): void {
-    try {
-      ball.forEach(async (ball) => {
-        try {
-          await this.ballsStore.saveBallToArsenal(ball);
-        } catch (error) {
-          console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
-          this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);
-        }
-      });
+  async saveBallToArsenal(balls: Ball[]): Promise<void> {
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((b) => !failed.includes(b));
 
-      const ball_names = ball.map((ball) => ball.ball_name).join(', ');
-      this.toastService.showToast(`Balls added to arsenal: ${ball_names}`, 'checkmark-outline');
-    } catch (error) {
-      console.error('Error saving balls to arsenal:', error);
-      this.toastService.showToast(ToastMessages.ballSaveError, 'bug', true);
+    if (saved.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+    if (failed.length) {
+      this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
 
@@ -286,7 +279,7 @@ export class ArsenalPage {
       this.toastService.showToast(`${ball.ball_name} updated to ${selectedWeight}lbs.`, 'checkmark-outline');
     } catch {
       selectEl.value = ball.core_weight;
-      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallIds.update((s) => {
         const next = new Set(s);

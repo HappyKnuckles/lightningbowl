@@ -1,15 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { AlertController, isPlatform } from '@ionic/angular/standalone';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { AlertController, isPlatform } from '@ionic/angular/standalone';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, numberArraysToFrames } from 'src/app/core/models/game.model';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
+import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 
 const WARNING_STORAGE_KEY = 'alert';
 const WARNING_TTL_DAYS = 7;
@@ -38,7 +38,7 @@ export class GameImageImportService {
     try {
       const image = await this.takeOrChoosePicture();
       if (!(image instanceof File)) {
-        this.toastService.showToast(ToastMessages.noImage, 'bug', true);
+        this.toastService.showToast(TOAST_MESSAGES.noImage, 'bug', true);
         return null;
       }
 
@@ -49,7 +49,7 @@ export class GameImageImportService {
       if (!gameText) return null;
       return this.parseBowlingScores(gameText);
     } catch (error) {
-      this.toastService.showToast(ToastMessages.imageUploadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.imageUploadError, 'bug', true);
       console.error(error);
       await this.analyticsService.trackError('ocr_error', error instanceof Error ? error.message : String(error));
       return null;
@@ -123,7 +123,7 @@ export class GameImageImportService {
         fileInput.click();
       } catch (error) {
         console.error('Upload Error:', error);
-        this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
+        this.toastService.showToast(TOAST_MESSAGES.unexpectedError, 'bug', true);
         resolve(undefined);
       }
     });
@@ -167,7 +167,7 @@ export class GameImageImportService {
 
       return this.transformGameService.transformGameData(parsedGame);
     } catch (error) {
-      this.toastService.showToast(ToastMessages.unexpectedError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.unexpectedError, 'bug', true);
       console.error(error);
       return null;
     }

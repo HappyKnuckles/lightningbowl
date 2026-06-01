@@ -23,16 +23,16 @@ import {
   IonSegmentButton,
   IonSegmentContent,
   IonSegmentView,
+  IonSelect,
+  IonSelectOption,
   IonText,
   IonTitle,
   IonToolbar,
-  IonSelect,
-  IonSelectOption,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
@@ -183,7 +183,7 @@ export class BallComparisonPage implements OnDestroy {
       });
     } catch {
       selectEl.value = ball.core_weight;
-      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallIds.update((s) => {
         const next = new Set(s);
@@ -291,7 +291,7 @@ export class BallComparisonPage implements OnDestroy {
       );
     } catch (error) {
       console.error('Error generating ball distribution chart:', error);
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
     }
   }
 }

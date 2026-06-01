@@ -37,6 +37,8 @@ import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.c
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { Ball } from 'src/app/core/models/ball.model';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-game-grid',
@@ -117,6 +119,7 @@ export class GameGridComponent implements OnDestroy {
   leaveAnimation = alertLeaveAnimation;
   presentingElement: HTMLElement = document.querySelector('.ion-page')!;
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
   showButtonToolbar = false;
   keyboardOffset = 0;
@@ -142,6 +145,7 @@ export class GameGridComponent implements OnDestroy {
     public utilsService: UtilsService,
     private platform: Platform,
     private typeaheadConfigService: TypeaheadConfigService,
+    private toastService: ToastService,
   ) {
     this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
@@ -324,6 +328,13 @@ export class GameGridComponent implements OnDestroy {
   };
 
   // --- Passthrough Event Emitters ---
+  onBallAdd(ballIds: string[]) {
+    const allBalls = this.ballsStore.allBalls();
+    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    this.ballsChanged.emit(selected.map((b) => b.ball_name));
+    this.saveBallToArsenal(selected);
+  }
+
   onLeagueChanged(league: string) {
     this.leagueChanged.emit(league);
   }
@@ -361,5 +372,17 @@ export class GameGridComponent implements OnDestroy {
 
   trackByFrameIndex(index: number): number {
     return index;
+  }
+
+  private async saveBallToArsenal(balls: Ball[]): Promise<void> {
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((b) => !failed.includes(b));
+
+    if (saved.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+    if (failed.length) {
+      this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
+    }
   }
 }

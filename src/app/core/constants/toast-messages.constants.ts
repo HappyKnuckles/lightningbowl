@@ -1,4 +1,4 @@
-export const ToastMessages = {
+export const TOAST_MESSAGES = {
   noImage: 'No image uploaded.',
   imageUploadError: 'Error uploading image.',
   gameSaveSuccess: 'Game saved successfully.',

@@ -1,6 +1,6 @@
 import { buildSection } from './stat-definitions.registry';
 
-export const overallStatDefinitions = buildSection([
+export const OVERALL_STAT_DEFINITIONS = buildSection([
   'totalGames',
   'perfectGameCount',
   'cleanGameCount',
@@ -15,9 +15,9 @@ export const overallStatDefinitions = buildSection([
   'openPercentage',
 ]);
 
-export const specialStatDefinitions = buildSection(['dutch200Count', 'varipapa300Count', 'allSparesGameCount']);
+export const SPECIAL_STAT_DEFINITIONS = buildSection(['dutch200Count', 'varipapa300Count', 'allSparesGameCount']);
 
-export const playFrequencyStatDefinitions = buildSection([
+export const PLAY_FREQUENCY_STAT_DEFINITIONS = buildSection([
   'averageGamesPerWeek',
   'averageGamesPerMonth',
   'averageSessionsPerWeek',
@@ -25,7 +25,7 @@ export const playFrequencyStatDefinitions = buildSection([
   'averageGamesPerSession',
 ]);
 
-export const seriesStatDefinitions = buildSection([
+export const SERIES_STAT_DEFINITIONS = buildSection([
   'average3SeriesScore',
   'high3Series',
   'average4SeriesScore',
@@ -36,7 +36,7 @@ export const seriesStatDefinitions = buildSection([
   'high6Series',
 ]);
 
-export const leagueStatDefinitions = buildSection(
+export const LEAGUE_STAT_DEFINITIONS = buildSection(
   [
     'totalGames',
     'perfectGameCount',
@@ -60,7 +60,7 @@ export const leagueStatDefinitions = buildSection(
   'league-',
 );
 
-export const throwStatDefinitions = buildSection([
+export const THROW_STAT_DEFINITIONS = buildSection([
   'totalStrikes',
   'averageStrikesPerGame',
   'totalSpares',
@@ -70,7 +70,7 @@ export const throwStatDefinitions = buildSection([
   'longestOpenStreak',
 ]);
 
-export const strikeStatDefinitions = buildSection([
+export const STRIKE_STAT_DEFINITIONS = buildSection([
   'turkeyCount',
   'bagger4Count',
   'bagger5Count',
@@ -85,9 +85,9 @@ export const strikeStatDefinitions = buildSection([
   'strikeoutCount',
 ]);
 
-export const spareStatDefinitions = buildSection(['singlePinSpares', 'multiPinSpares', 'singlePinSparePercentage', 'multiPinSparePercentage']);
+export const SPARE_STAT_DEFINITIONS = buildSection(['singlePinSpares', 'multiPinSpares', 'singlePinSparePercentage', 'multiPinSparePercentage']);
 
-export const pinStatDefinitions = buildSection([
+export const PIN_STAT_DEFINITIONS = buildSection([
   'pocketHits',
   'pocketHitPercentage',
   'nonSplitSpares',
@@ -98,7 +98,7 @@ export const pinStatDefinitions = buildSection([
   'makeableSplitPercentage',
 ]);
 
-export const sessionStatDefinitions = buildSection(
+export const SESSION_STAT_DEFINITIONS = buildSection(
   [
     'totalGames',
     'perfectGameCount',

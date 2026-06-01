@@ -1,15 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { Game, Frame, cloneFrames } from 'src/app/core/models/game.model';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { Frame, Game, cloneFrames } from 'src/app/core/models/game.model';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { GameScoreCalculatorService } from '../game-score-calculator/game-score-calculator.service';
+import { BowlingGameValidationService } from '../game-utils/bowling-game-validation.service';
+import { GameUtilsService } from '../game-utils/game-utils.service';
 import { HapticService } from '../haptic/haptic.service';
 import { ToastService } from '../toast/toast.service';
 import { UtilsService } from '../utils/utils.service';
-import { GameUtilsService } from '../game-utils/game-utils.service';
-import { BowlingGameValidationService } from '../game-utils/bowling-game-validation.service';
-import { GameScoreCalculatorService } from '../game-score-calculator/game-score-calculator.service';
-import { AnalyticsService } from '../analytics/analytics.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 
 export interface EditFocus {
   frameIndex: number;
@@ -85,7 +85,7 @@ export class GameEditService {
 
       if (!this.validationService.isGameValid(updatedGame)) {
         this.hapticService.vibrate(ImpactStyle.Heavy);
-        this.toastService.showToast(ToastMessages.invalidInput, 'bug', true);
+        this.toastService.showToast(TOAST_MESSAGES.invalidInput, 'bug', true);
         return false;
       }
 
@@ -99,7 +99,7 @@ export class GameEditService {
         await this.gamesStore.saveGameToLocalStorage(updatedGame);
       }
 
-      this.toastService.showToast(ToastMessages.gameUpdateSuccess, 'refresh-outline');
+      this.toastService.showToast(TOAST_MESSAGES.gameUpdateSuccess, 'refresh-outline');
       this.hapticService.vibrate(ImpactStyle.Light);
       this.analyticsService.trackGameEdited();
 
@@ -110,7 +110,7 @@ export class GameEditService {
 
       return true;
     } catch (error) {
-      this.toastService.showToast(ToastMessages.gameUpdateError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.gameUpdateError, 'bug', true);
       console.error('Error saving game edit:', error);
       return false;
     }

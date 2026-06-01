@@ -1,9 +1,5 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CommonModule } from '@angular/common';
-import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import {
   IonButton,
   IonButtons,
@@ -22,15 +18,19 @@ import {
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
+import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
+import { BallService } from 'src/app/core/services/ball/ball.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-ball-filter',
@@ -136,7 +136,7 @@ export class BallFilterComponent {
       await this.ballsStore.loadAllBalls(undefined, weight);
     } catch (error) {
       console.error('Error loading balls:', error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

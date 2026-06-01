@@ -4,69 +4,68 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonButton,
-  IonSelect,
-  IonSelectOption,
-  IonItemSliding,
-  IonAccordionGroup,
-  IonItemOption,
-  IonIcon,
-  IonItemOptions,
-  IonItem,
   IonAccordion,
-  IonTextarea,
-  IonGrid,
-  IonRow,
+  IonAccordionGroup,
+  IonBadge,
+  IonButton,
   IonCol,
-  IonInput,
+  IonGrid,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonText,
-  IonList,
+  IonInput,
+  IonItem,
   IonItemDivider,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
-  IonBadge,
+  IonList,
   IonModal,
+  IonRow,
+  IonSelect,
+  IonSelectOption,
+  IonText,
+  IonTextarea,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
-  cloudUploadOutline,
-  cloudDownloadOutline,
-  filterOutline,
-  trashOutline,
-  createOutline,
-  shareOutline,
-  documentTextOutline,
-  medalOutline,
   bowlingBallOutline,
+  cloudDownloadOutline,
+  cloudUploadOutline,
+  createOutline,
+  documentTextOutline,
+  filterOutline,
   gridOutline,
   layersOutline,
+  medalOutline,
+  shareOutline,
+  trashOutline,
 } from 'ionicons/icons';
-import { Router } from '@angular/router';
-
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
-import { GameGridComponent } from '../game-grid/game-grid.component';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GameGridComponent } from '../game-grid/game-grid.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { Router } from '@angular/router';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 interface MonthHeader {
   name: string;
@@ -275,10 +274,10 @@ export class GameComponent {
           handler: async () => {
             try {
               await this.gamesStore.deleteGame(gameId);
-              this.toastService.showToast(ToastMessages.gameDeleteSuccess, 'remove-outline');
+              this.toastService.showToast(TOAST_MESSAGES.gameDeleteSuccess, 'remove-outline');
             } catch (error) {
               console.error('Error deleting game:', error);
-              this.toastService.showToast(ToastMessages.gameDeleteError, 'bug', true);
+              this.toastService.showToast(TOAST_MESSAGES.gameDeleteError, 'bug', true);
             }
           },
         },

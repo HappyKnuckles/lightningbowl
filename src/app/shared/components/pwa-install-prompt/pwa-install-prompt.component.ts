@@ -44,7 +44,7 @@ export class PwaInstallPromptComponent implements OnInit {
   @Input() canInstall = false;
   @Output() install = new EventEmitter<void>();
   @Output() dismiss = new EventEmitter<void>();
-  presentingElement!: HTMLElement | null;
+  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
 
   isChrome = false;
   isIOS = false;
@@ -76,7 +76,6 @@ export class PwaInstallPromptComponent implements OnInit {
 
   ngOnInit(): void {
     this.detectBrowser();
-    this.presentingElement = document.querySelector('.ion-page');
   }
 
   private detectBrowser(): void {

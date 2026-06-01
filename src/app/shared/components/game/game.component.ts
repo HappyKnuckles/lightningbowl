@@ -1,5 +1,5 @@
 import { NgIf, NgFor, DatePipe } from '@angular/common';
-import { Component, ViewChild, ViewChildren, QueryList, computed, OnInit, input, signal, inject } from '@angular/core';
+import { Component, ViewChild, ViewChildren, QueryList, computed, input, signal, inject } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
@@ -54,21 +54,19 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
-
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { GameGridComponent } from '../game-grid/game-grid.component';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 
 interface MonthHeader {
   name: string;
@@ -117,7 +115,7 @@ interface MonthHeader {
     PinDeckFrameRowComponent,
   ],
 })
-export class GameComponent implements OnInit {
+export class GameComponent {
   // DOM
   @ViewChild('modal', { static: false }) modal!: IonModal;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
@@ -143,9 +141,9 @@ export class GameComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private patternService = inject(PatternService);
   private validationService = inject(BowlingGameValidationService);
   private shareService = inject(GameShareService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
 
   // Computed
   leagues = computed(() => {
@@ -217,10 +215,10 @@ export class GameComponent implements OnInit {
   // Pagination state
   private batchSize = 100;
   public loadedCount = signal(this.batchSize);
-  public presentingElement?: HTMLElement;
+  public presentingElement: HTMLElement = document.querySelector('.ion-page')!;
 
   // Config
-  patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
+  patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -238,11 +236,6 @@ export class GameComponent implements OnInit {
       filterOutline,
       layersOutline,
     });
-  }
-
-  ngOnInit(): void {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((q) => this.patternService.searchPattern(q));
   }
 
   // PAGINATION

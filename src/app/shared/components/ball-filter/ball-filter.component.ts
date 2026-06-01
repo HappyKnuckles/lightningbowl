@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -27,14 +27,11 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import {
-  createBallCoreTypeaheadConfig,
-  createBallCoverstockTypeaheadConfig,
-  createBallBrandTypeaheadConfig,
-} from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+
 @Component({
   selector: 'app-ball-filter',
   templateUrl: './ball-filter.component.html',
@@ -64,15 +61,15 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BallFilterComponent implements OnInit {
+export class BallFilterComponent {
   markets: Market[] = [Market.ALL, Market.US, Market.INT];
   coreTypes: CoreType[] = [CoreType.ALL, CoreType.ASYMMETRIC, CoreType.SYMMETRIC];
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
   weights: string[] = ['12', '13', '14', '15', '16'];
-  presentingElement?: HTMLElement;
-  brandTypeaheadConfig!: TypeaheadConfig<Brand>;
-  coreTypeaheadConfig!: TypeaheadConfig<Core>;
-  coverstockTypeaheadConfig!: TypeaheadConfig<Coverstock>;
+  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  brandTypeaheadConfig: TypeaheadConfig<Brand> = this.typeaheadConfigService.brand;
+  coreTypeaheadConfig: TypeaheadConfig<Core> = this.typeaheadConfigService.core;
+  coverstockTypeaheadConfig: TypeaheadConfig<Coverstock> = this.typeaheadConfigService.coverstock;
 
   constructor(
     public ballFilterService: BallFilterService,
@@ -82,13 +79,8 @@ export class BallFilterComponent implements OnInit {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private analyticsService: AnalyticsService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {}
-  ngOnInit() {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.brandTypeaheadConfig = createBallBrandTypeaheadConfig();
-    this.coreTypeaheadConfig = createBallCoreTypeaheadConfig();
-    this.coverstockTypeaheadConfig = createBallCoverstockTypeaheadConfig();
-  }
   cancel(): Promise<boolean> {
     this.ballFilterService.filters.update(() =>
       localStorage.getItem('ball-filter') ? JSON.parse(localStorage.getItem('ball-filter')!) : this.ballFilterService.filters,

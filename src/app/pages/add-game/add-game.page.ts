@@ -126,7 +126,7 @@ export class AddGamePage implements OnInit {
   // View Children & DOM References
   @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
   @ViewChild('modalGrid', { static: false }) modalGrid!: GameGridComponent;
-  presentingElement!: HTMLElement;
+  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
 
   // Internal Logic State
   private isStorageReady = false;
@@ -177,7 +177,6 @@ export class AddGamePage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.presentingElement = document.querySelector('.ion-page')!;
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
   }

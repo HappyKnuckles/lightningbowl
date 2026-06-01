@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed } from '@angular/core';
+import { Component, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
@@ -27,9 +27,6 @@ import { InputCustomEvent } from '@ionic/angular';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { Keyboard } from '@capacitor/keyboard';
 import { addIcons } from 'ionicons';
@@ -38,6 +35,8 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 
 @Component({
   selector: 'app-game-grid',
@@ -67,7 +66,7 @@ import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-r
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class GameGridComponent implements OnInit, OnDestroy {
+export class GameGridComponent implements OnDestroy {
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -116,8 +115,8 @@ export class GameGridComponent implements OnInit, OnDestroy {
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
-  presentingElement?: HTMLElement;
-  patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
+  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
 
   showButtonToolbar = false;
   keyboardOffset = 0;
@@ -142,15 +141,10 @@ export class GameGridComponent implements OnInit, OnDestroy {
     private hapticService: HapticService,
     public utilsService: UtilsService,
     private platform: Platform,
-    private patternService: PatternService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {
     this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
-  }
-
-  async ngOnInit(): Promise<void> {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
   }
 
   ngOnDestroy() {

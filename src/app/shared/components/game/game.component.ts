@@ -405,7 +405,7 @@ export class GameComponent {
     return this.validationService.isGameValid(game);
   }
 
-  parseIntValue(value: unknown): number {
+  parseIntValue(value: string): number {
     return this.utilsService.parseIntValue(value) as number;
   }
 

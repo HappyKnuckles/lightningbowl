@@ -437,8 +437,8 @@ export class BallsPage implements OnInit {
     return this.ballFilterService.activeFilterCount() > 0;
   }
 
-  onSortChanged(sortOption: unknown): void {
-    this.currentSortOption = sortOption as BallSortOption;
+  onSortChanged(sortOption: BallSortOption): void {
+    this.currentSortOption = sortOption;
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);

@@ -19,7 +19,7 @@
         clearOnEdit="true"
         inputmode="numeric"
         label="Score range"
-        (ionChange)="updateFilter('minScore', $event.detail.value)"></ion-input>
+        (ionChange)="updateNumericFilter('minScore', $event.detail.value)"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
         label="-"
@@ -29,7 +29,7 @@
         name="maxScore"
         clearOnEdit="true"
         inputmode="numeric"
-        (ionChange)="updateFilter('maxScore', $event.detail.value)"></ion-input>
+        (ionChange)="updateNumericFilter('maxScore', $event.detail.value)"></ion-input>
     </ion-item>
     <ion-item>
       <ion-select name="timeRange" label="Time Range" (ionChange)="startDateChange($event)" [ngModel]="gameFilterService.filters().timeRange">
@@ -66,7 +66,7 @@
           [ngModel]="gameFilterService.filters().startDate"
           name="startDate"
           [highlightedDates]="highlightedDates"
-          (ionChange)="updateFilter('startDate', $event.detail.value)"
+          (ionChange)="updateDateFilter('startDate', $event.detail.value)"
           presentation="date"
           [min]="defaultFilters.startDate"
           [max]="gameFilterService.filters().endDate"></ion-datetime>
@@ -87,7 +87,7 @@
           [ngModel]="gameFilterService.filters().endDate"
           name="endDate"
           [highlightedDates]="highlightedDates"
-          (ionChange)="updateFilter('endDate', $event.detail.value)"
+          (ionChange)="updateDateFilter('endDate', $event.detail.value)"
           presentation="date"
           [min]="gameFilterService.filters().startDate"></ion-datetime>
       </ng-template>

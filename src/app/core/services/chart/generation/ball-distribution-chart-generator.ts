@@ -148,7 +148,7 @@ export function generateBallDistributionChart(
               mode: 'xy',
               onPanStart: ({ chart, event }) => {
                 const { left, right, top, bottom } = chart.chartArea;
-                const panEvent = event as unknown as { center: { x: number; y: number } };
+                const panEvent = event as { center: { x: number; y: number } };
                 return (
                   panEvent.center.x >= left + 25 && panEvent.center.x <= right + 30 && panEvent.center.y >= top && panEvent.center.y <= bottom + 50
                 );

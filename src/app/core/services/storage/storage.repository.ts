@@ -13,7 +13,7 @@ export class StorageRepository {
     return this.storage.get(key);
   }
 
-  async set(key: string, value: unknown): Promise<void> {
+  async set<T>(key: string, value: T): Promise<void> {
     await this.storage.set(key, value);
   }
 

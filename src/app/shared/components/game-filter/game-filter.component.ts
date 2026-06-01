@@ -160,8 +160,18 @@ export class GameFilterComponent implements OnInit {
     this.updateFilter('balls', filteredBalls);
   }
 
-  updateFilter<T extends keyof GameFilter>(key: T, value: unknown): void {
+  updateFilter<T extends keyof GameFilter>(key: T, value: GameFilter[T]): void {
     this.gameFilterService.filters.update((filters) => ({ ...filters, [key]: value }));
+  }
+  updateNumericFilter<T extends keyof GameFilter>(key: T, raw: string | undefined | null): void {
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isNaN(parsed)) return;
+    this.updateFilter(key, parsed as GameFilter[T]);
+  }
+
+  updateDateFilter(key: 'startDate' | 'endDate', value: string | string[] | null | undefined): void {
+    const date = Array.isArray(value) ? value[0] : value;
+    this.updateFilter(key, date ?? undefined);
   }
 
   reset(): void {

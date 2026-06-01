@@ -30,7 +30,7 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     key: 'leagues',
     label: 'Leagues',
     type: 'array',
-    displayValue: (value: unknown) => {
+    displayValue: (value) => {
       const leagues = Array.isArray(value) ? value : [];
       if (leagues.length === 0 || (leagues.length === 1 && leagues[0] === '')) {
         return 'No Leagues';
@@ -47,7 +47,7 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     key: 'patterns',
     label: 'Patterns',
     type: 'array',
-    displayValue: (value: unknown) => {
+    displayValue: (value) => {
       const patterns = Array.isArray(value) ? value : [];
       if (patterns.length === 0 || (patterns.length === 1 && patterns[0] === '')) {
         return 'No Patterns';

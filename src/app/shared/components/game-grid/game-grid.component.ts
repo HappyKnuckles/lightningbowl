@@ -358,7 +358,7 @@ export class GameGridComponent implements OnDestroy {
     return balls.length > 0 ? balls.join(', ') : 'None';
   }
 
-  isNumber(value: unknown): boolean {
+  isNumber(value: unknown): value is number {
     return this.utilsService.isNumber(value);
   }
 

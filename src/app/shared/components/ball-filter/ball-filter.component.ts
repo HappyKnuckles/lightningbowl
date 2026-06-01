@@ -92,7 +92,7 @@ export class BallFilterComponent {
     this.ballFilterService.resetFilters();
   }
 
-  async updateFilter<T extends keyof BallFilter>(key: T, value: unknown): Promise<void> {
+  async updateFilter<T extends keyof BallFilter>(key: T, value: BallFilter[T]): Promise<void> {
     if (key === 'weight') {
       await this.changeWeight(value as number);
     }
@@ -100,6 +100,15 @@ export class BallFilterComponent {
       ...filters,
       [key]: value,
     }));
+  }
+
+  updateNumericFilter<T extends keyof BallFilter>(key: T, raw: string | null | undefined): void {
+    const normalized = raw?.replace(',', '.').trim();
+    const parsed = normalized ? Number(normalized) : NaN;
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+    this.updateFilter(key, parsed as BallFilter[T]);
   }
 
   confirm(): Promise<boolean> {

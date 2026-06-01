@@ -21,7 +21,7 @@ export const BALL_FILTER_CONFIGS: FilterConfig[] = [
     key: 'availability',
     label: 'Availability',
     type: 'boolean',
-    displayValue: (value: unknown) => (value ? 'Available' : 'Discontinued'),
+    displayValue: (value) => (value ? 'Available' : 'Discontinued'),
   },
   {
     key: 'market',
@@ -52,7 +52,7 @@ export const BALL_FILTER_CONFIGS: FilterConfig[] = [
     key: 'coverstockTypes',
     label: 'Coverstock Types',
     type: 'array',
-    displayValue: (value: unknown) => {
+    displayValue: (value) => {
       const types = Array.isArray(value) ? value : [];
       return types.join(', ');
     },

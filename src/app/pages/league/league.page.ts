@@ -135,9 +135,7 @@ export class LeaguePage {
       worst: this.statService.calculateWorstSpares(all),
     };
   });
-  private perLeague<R>(fn: (games: Game[]) => R): Signal<Record<string, R>> {
-    return computed(() => Object.fromEntries(Object.entries(this.gamesByLeague()).map(([league, games]) => [league, fn(games ?? [])])));
-  }
+
   statDefinitions = LEAGUE_STAT_DEFINITIONS;
   PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
   private scoreChartInstances: Record<string, Chart> = {};
@@ -390,6 +388,10 @@ export class LeaguePage {
     });
 
     await alert.present();
+  }
+
+  private perLeague<R>(fn: (games: Game[]) => R): Signal<Record<string, R>> {
+    return computed(() => Object.fromEntries(Object.entries(this.gamesByLeague()).map(([league, games]) => [league, fn(games ?? [])])));
   }
 
   private generateScoreChart(league: string, isReload?: boolean): void {

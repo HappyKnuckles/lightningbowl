@@ -53,19 +53,19 @@
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <app-stat-display
           [title]="'Overall Stats'"
-          [statDefinitions]="overallStatDefinitions"
+          [statDefinitions]="OVERALL_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
         <app-stat-display
           [title]="'Play Frequency Stats'"
-          [statDefinitions]="playFrequencyStatDefinitions"
+          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
         <app-stat-display
           [title]="'Special Stats'"
-          [statDefinitions]="specialStatDefinitions"
+          [statDefinitions]="SPECIAL_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
@@ -91,7 +91,7 @@
           [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
         <app-stat-display
           [title]="'Series Stats'"
-          [statDefinitions]="seriesStatDefinitions"
+          [statDefinitions]="SERIES_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
@@ -114,13 +114,13 @@
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <app-stat-display
           [title]="'Throw Stats'"
-          [statDefinitions]="throwStatDefinitions"
+          [statDefinitions]="THROW_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
         <app-stat-display
           [title]="'Strike Stats'"
-          [statDefinitions]="strikeStatDefinitions"
+          [statDefinitions]="STRIKE_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
@@ -140,7 +140,7 @@
           id="overalSpareStats"></app-spare-display>
         <app-stat-display
           [title]="'Spare Conversion by Pin Count'"
-          [statDefinitions]="spareStatDefinitions"
+          [statDefinitions]="SPARE_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
@@ -159,7 +159,7 @@
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <app-stat-display
           [title]="'Pin Stats'"
-          [statDefinitions]="pinStatDefinitions"
+          [statDefinitions]="PIN_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
@@ -175,7 +175,7 @@
         <section class="tab">
           <app-stat-display
             [title]="'Overall Stats'"
-            [statDefinitions]="sessionStatDefinitions"
+            [statDefinitions]="SESSION_STAT_DEFINITIONS"
             [currentStats]="sessionStats()"
             [prevStats]="statsService.currentStats()">
           </app-stat-display>
@@ -199,7 +199,7 @@
             [bestPattern]="sessionBestPatternStats()"
             [totalGames]="sessionStats().totalGames"
             [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
-          <app-stat-display [title]="'Pin Stats'" [statDefinitions]="pinStatDefinitions" [currentStats]="sessionStats()"> </app-stat-display>
+          <app-stat-display [title]="'Pin Stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"> </app-stat-display>
           <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
           </app-spare-display>
           <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>

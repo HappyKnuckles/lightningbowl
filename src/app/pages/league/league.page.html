@@ -144,6 +144,16 @@
                   [title]="'Best ball'"
                   [bestBall]="bestBallsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
+                <app-pattern-stats
+                  [title]="'Most played pattern'"
+                  [bestPattern]="mostPlayedPatternsByLeague()[league]"
+                  [totalGames]="statsByLeague()[league].totalGames"
+                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
+                <app-pattern-stats
+                  [title]="'Best pattern'"
+                  [bestPattern]="bestPatternsByLeague()[league]"
+                  [totalGames]="statsByLeague()[league].totalGames"
+                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
                 <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
                 <div class="stat-container">
                   <canvas #scoreChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
@@ -159,6 +169,24 @@
                 <div class="stat-container">
                   <canvas #pinChart style="width: 300px; height: 300px; max-height: 700px"></canvas>
                 </div>
+              </section>
+            </ion-segment-content>
+
+            <ion-segment-content id="Pins-{{ league }}">
+              <section class="tab">
+                <app-stat-display
+                  [title]="'Pin Stats'"
+                  [statDefinitions]="PIN_STAT_DEFINITIONS"
+                  [currentStats]="statsByLeague()[league]"
+                  [prevStats]="overallStats()">
+                </app-stat-display>
+                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-pin-leave-stats>
+                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-pin-leave-stats>
+                <app-pin-leave-stats
+                  [title]="'Most Common Leaves'"
+                  [leaveStats]="leaveStatsByLeague()[league].common"
+                  [allLeaves]="leaveStatsByLeague()[league].all">
+                </app-pin-leave-stats>
               </section>
             </ion-segment-content>
 

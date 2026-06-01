@@ -35,26 +35,26 @@ import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
 import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
 import { Subject } from 'rxjs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
+import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
-import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
-import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
-import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 
 @Component({
   selector: 'app-balls',
@@ -257,7 +257,7 @@ export class BallsPage implements OnInit {
       await this.loadBalls();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'bug', true);
     } finally {
       event.target.complete();
       this.isPageLoading.set(false);
@@ -277,7 +277,7 @@ export class BallsPage implements OnInit {
       this.toastService.showToast(`${ball.ball_name} removed from Arsenal.`, 'checkmark-outline');
     } catch (error) {
       console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);
-      this.toastService.showToast(ToastMessages.ballDeleteError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballDeleteError, 'bug', true);
     }
   }
 
@@ -288,7 +288,7 @@ export class BallsPage implements OnInit {
       this.toastService.showToast(`${ball.ball_name} added to Arsenal.`, 'add');
     } catch (error) {
       console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);
-      this.toastService.showToast(ToastMessages.ballSaveError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
     }
   }
 
@@ -345,7 +345,7 @@ export class BallsPage implements OnInit {
       }
     } catch (error) {
       console.error('Error fetching balls:', error);
-      this.toastService.showToast(ToastMessages.ballLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'bug', true);
     } finally {
       if (!event) {
         this.loadingService.setLoading(false);
@@ -518,7 +518,7 @@ export class BallsPage implements OnInit {
       this.balls.update((list) => list.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? replacementBall : b)));
     } catch {
       selectEl.value = ball.core_weight;
-      this.toastService.showToast(ToastMessages.ballLoadError, 'alert-circle-outline', true);
+      this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'alert-circle-outline', true);
     } finally {
       this.loadingWeightBallIds.update((s) => {
         const next = new Set(s);

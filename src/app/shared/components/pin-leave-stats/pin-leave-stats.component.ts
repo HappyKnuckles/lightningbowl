@@ -58,7 +58,7 @@ export class PinLeaveStatsComponent {
   }
 
   openModal(): void {
-    if (this.allLeaves()) {
+    if (this.allLeaves()?.length) {
       this.isModalOpen.set(true);
     }
   }

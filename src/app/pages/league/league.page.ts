@@ -24,10 +24,6 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {
@@ -42,10 +38,11 @@ import {
   shareOutline,
   trashOutline,
 } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { LEAGUE_STAT_DEFINITIONS, PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, Stats } from 'src/app/core/models/stats.model';
+import { LeagueLeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -54,11 +51,16 @@ import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-leagu
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { leagueStatDefinitions } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
+import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
 
 @Component({
   selector: 'app-league',
@@ -93,6 +95,8 @@ import { leagueStatDefinitions } from 'src/app/core/configs/stat-definitions/sta
     IonSegmentContent,
     LongPressDirective,
     BallStatsComponent,
+    PatternStatsComponent,
+    PinLeaveStatsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -102,7 +106,7 @@ export class LeaguePage {
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
   selectedSegment = 'Overall';
-  segments: string[] = ['Overall', 'Spares', 'Games'];
+  segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
   isEditMode: Record<string, boolean> = {};
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
     const games = this.gamesStore.games();
@@ -115,46 +119,25 @@ export class LeaguePage {
     const games = this.gamesStore.games();
     return this.statService.calculateBowlingStats(games);
   });
-  gamesByLeagueReverse: Signal<Record<string, Game[]>> = computed(() => {
-    const gamesByLeague = this.gamesByLeague();
-    const gamesByLeagueReverse: Record<string, Game[]> = {};
-
-    Object.keys(gamesByLeague).forEach((league) => {
-      gamesByLeagueReverse[league] = this.sortUtilsService.sortGameHistoryByDate(gamesByLeague[league] || [], true);
-    });
-
-    return gamesByLeagueReverse;
-  });
-  statsByLeague: Signal<Record<string, Stats>> = computed(() => {
-    const gamesByLeague = this.gamesByLeague();
-    const statsByLeague: Record<string, Stats> = {};
-
-    Object.keys(gamesByLeague).forEach((league) => {
-      statsByLeague[league] = this.statService.calculateBowlingStats(gamesByLeague[league] || []);
-    });
-
-    return statsByLeague;
+  gamesByLeagueReverse = this.perLeague((games) => this.sortUtilsService.sortGameHistoryByDate(games, true));
+  statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
+  bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
+  mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBall(games));
+  bestPatternsByLeague = this.perLeague((games) => this.statService.calculateBestPatternStats(games));
+  mostPlayedPatternsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedPatternStats(games));
+  allPatternsByLeague = this.perLeague((games) => this.statService.calculateAllPatternStats(games));
+  leaveStatsByLeague = this.perLeague<LeagueLeaveStats>((games) => {
+    const all = this.statService.calculateAllLeaves(games);
+    return {
+      all,
+      common: this.statService.calculateMostCommonLeaves(all),
+      best: this.statService.calculateBestSpares(all),
+      worst: this.statService.calculateWorstSpares(all),
+    };
   });
 
-  bestBallsByLeague: Signal<Record<string, BestBallStats>> = computed(() => {
-    const gamesByLeague = this.gamesByLeague();
-    const bestBallsByLeague: Record<string, BestBallStats> = {};
-    Object.keys(gamesByLeague).forEach((league) => {
-      bestBallsByLeague[league] = this.statService.calculateBestBallStats(gamesByLeague[league] || []);
-    });
-    return bestBallsByLeague;
-  });
-
-  mostPlayedBallsByLeague: Signal<Record<string, BestBallStats>> = computed(() => {
-    const gamesByLeague = this.gamesByLeague();
-    const mostUsedBallsByLeague: Record<string, BestBallStats> = {};
-    Object.keys(gamesByLeague).forEach((league) => {
-      mostUsedBallsByLeague[league] = this.statService.calculateMostPlayedBall(gamesByLeague[league] || []);
-    });
-    return mostUsedBallsByLeague;
-  });
-
-  statDefinitions = leagueStatDefinitions;
+  statDefinitions = LEAGUE_STAT_DEFINITIONS;
+  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
   private scoreChartInstances: Record<string, Chart> = {};
   private pinChartInstances: Record<string, Chart> = {};
 
@@ -217,7 +200,7 @@ export class LeaguePage {
 
     if (newState) {
       this.previousLeagueSelectionState = { ...this.hiddenLeagueSelectionService.selectionState() };
-      this.toastService.showToast(ToastMessages.leagueEditMode, 'eye-outline');
+      this.toastService.showToast(TOAST_MESSAGES.leagueEditMode, 'eye-outline');
     } else {
       const current = this.hiddenLeagueSelectionService.selectionState();
       const previous = this.previousLeagueSelectionState;
@@ -254,7 +237,7 @@ export class LeaguePage {
       await this.gamesStore.loadGameHistory();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -297,9 +280,9 @@ export class LeaguePage {
   async saveLeague(league: string): Promise<void> {
     try {
       await this.leaguesStore.addLeague(league);
-      this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
     } catch (error) {
-      this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
       console.error('Error saving league:', error);
     }
   }
@@ -326,11 +309,11 @@ export class LeaguePage {
           handler: async (data: { league: string }) => {
             try {
               await this.leaguesStore.addLeague(data.league);
-              this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+              this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
 
               void this.analyticsService.trackLeagueCreated({ name: data.league });
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+              this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
               console.error('Error saving league:', error);
             }
           },
@@ -356,9 +339,9 @@ export class LeaguePage {
           handler: async () => {
             try {
               await this.leaguesStore.deleteLeague(league);
-              this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'remove-outline');
+              this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'remove-outline');
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueDeleteError, 'bug', true);
+              this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);
               console.error('Error deleting league:', error);
             }
           },
@@ -394,9 +377,9 @@ export class LeaguePage {
             const oldLeagueName = league;
             try {
               await this.appFacade.editLeague(newLeagueName, oldLeagueName);
-              this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
+              this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
             } catch (error) {
-              this.toastService.showToast(ToastMessages.leagueEditError, 'bug', true);
+              this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
               console.error('Error editing league:', error);
             }
           },
@@ -405,6 +388,10 @@ export class LeaguePage {
     });
 
     await alert.present();
+  }
+
+  private perLeague<R>(fn: (games: Game[]) => R): Signal<Record<string, R>> {
+    return computed(() => Object.fromEntries(Object.entries(this.gamesByLeague()).map(([league, games]) => [league, fn(games ?? [])])));
   }
 
   private generateScoreChart(league: string, isReload?: boolean): void {
@@ -422,7 +409,7 @@ export class LeaguePage {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating score chart:', error);
     }
   }
@@ -440,7 +427,7 @@ export class LeaguePage {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);
     }
   }

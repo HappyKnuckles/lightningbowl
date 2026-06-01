@@ -3,21 +3,21 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonButton,
-  IonItem,
-  IonInput,
-  IonIcon,
   IonButtons,
-  IonToolbar,
-  IonHeader,
-  IonTitle,
   IonContent,
-  ModalController,
   IonFooter,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonTitle,
+  IonToolbar,
+  ModalController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { trashOutline, chevronBack, close } from 'ionicons/icons';
-import { startWith, combineLatestWith } from 'rxjs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { chevronBack, close, trashOutline } from 'ionicons/icons';
+import { combineLatestWith, startWith } from 'rxjs';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ForwardsData, Pattern, ReverseData } from 'src/app/core/models/pattern.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
@@ -229,11 +229,11 @@ export class PatternFormComponent implements OnInit {
     try {
       this.loadingService.setLoading(true);
       await this.patternService.addPattern(pattern);
-      this.toastService.showToast(ToastMessages.patternAddSuccess, 'checkmark');
+      this.toastService.showToast(TOAST_MESSAGES.patternAddSuccess, 'checkmark');
       this.cancel();
     } catch (error) {
       console.error('Error adding pattern:', error);
-      this.toastService.showToast(ToastMessages.patternAddError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.patternAddError, 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
     }

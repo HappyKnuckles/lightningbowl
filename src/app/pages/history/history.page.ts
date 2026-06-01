@@ -1,40 +1,40 @@
+import { DatePipe, NgIf } from '@angular/common';
 import { Component, ViewChild } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Filesystem } from '@capacitor/filesystem';
+import { ImpactStyle } from '@capacitor/haptics';
+import { ModalController, RefresherCustomEvent } from '@ionic/angular';
 import {
   AlertController,
-  IonHeader,
-  IonToolbar,
-  IonButton,
-  IonIcon,
-  IonTitle,
-  IonBadge,
-  IonContent,
-  IonRefresher,
-  IonText,
-  IonButtons,
   IonAccordionGroup,
+  IonBadge,
+  IonButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonRefresher,
   IonRefresherContent,
+  IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
-import { Filesystem } from '@capacitor/filesystem';
 import { addIcons } from 'ionicons';
-import { trashOutline, createOutline, shareOutline, documentTextOutline, filterOutline, medalOutline, swapVertical } from 'ionicons/icons';
-import { NgIf, DatePipe } from '@angular/common';
-import { ImpactStyle } from '@capacitor/haptics';
+import { createOutline, documentTextOutline, filterOutline, medalOutline, shareOutline, swapVertical, trashOutline } from 'ionicons/icons';
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { ExcelService } from 'src/app/core/services/excel/excel.service';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { ModalController, RefresherCustomEvent } from '@ionic/angular';
-import { GamesStore } from 'src/app/core/stores/games.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ExcelService } from 'src/app/core/services/excel/excel.service';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
+import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 
 @Component({
   selector: 'app-history',
@@ -133,7 +133,7 @@ export class HistoryPage {
       await this.gamesStore.loadGameHistory();
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -147,9 +147,9 @@ export class HistoryPage {
       const file = input.files[0];
       const gameData = await this.excelService.readExcelData(file);
       await this.excelService.transformData(gameData);
-      this.toastService.showToast(ToastMessages.excelFileUploadSuccess, 'checkmark-outline');
+      this.toastService.showToast(TOAST_MESSAGES.excelFileUploadSuccess, 'checkmark-outline');
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileUploadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.excelFileUploadError, 'bug', true);
       console.error(error);
     } finally {
       const input = event.target as HTMLInputElement;
@@ -169,13 +169,13 @@ export class HistoryPage {
     try {
       const gotPermission = await this.excelService.exportToExcel();
       if (gotPermission) {
-        this.toastService.showToast(ToastMessages.excelFileDownloadSuccess, 'checkmark-outline');
+        this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
         await this.analyticsService.trackExport('excel');
       } else {
         await this.showPermissionDeniedAlert();
       }
     } catch (error) {
-      this.toastService.showToast(ToastMessages.excelFileDownloadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadError, 'bug', true);
       console.error('Error exporting to Excel:', error);
       await this.analyticsService.trackError('excel_export_error', error instanceof Error ? error.message : String(error));
     }

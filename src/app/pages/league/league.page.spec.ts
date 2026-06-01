@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { LeaguePage } from './league.page';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
+import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { pinStatDefinitions } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { LeaguePage } from './league.page';
 
 const mockGamesStore = {
   games: jasmine.createSpy('games').and.returnValue([]),
@@ -50,7 +50,7 @@ describe('LeaguePage', () => {
   });
 
   it('should expose pin stat definitions used by stats page', () => {
-    expect(component.pinStatDefinitions).toBe(pinStatDefinitions);
+    expect(component.PIN_STAT_DEFINITIONS).toBe(PIN_STAT_DEFINITIONS);
   });
 
   it('should calculate pattern stats per league', () => {

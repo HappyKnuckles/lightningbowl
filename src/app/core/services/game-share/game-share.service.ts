@@ -1,12 +1,12 @@
-import { inject, Injectable, LOCALE_ID, Renderer2, RendererFactory2 } from '@angular/core';
 import { formatDate } from '@angular/common';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { inject, Injectable, LOCALE_ID, Renderer2, RendererFactory2 } from '@angular/core';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { toPng } from 'html-to-image';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from '../loader/loading.service';
 import { ToastService } from '../toast/toast.service';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
 
 @Injectable({ providedIn: 'root' })
 export class GameShareService {
@@ -37,11 +37,11 @@ export class GameShareService {
         await this.shareViaNavigator(dataUrl, game.gameId, message);
       } else {
         await this.shareViaCapacitor(dataUrl, game.gameId, message);
-        this.toastService.showToast(ToastMessages.screenshotShareSuccess, 'share-social-outline');
+        this.toastService.showToast(TOAST_MESSAGES.screenshotShareSuccess, 'share-social-outline');
       }
     } catch (error) {
       console.error('Error taking screenshot and sharing', error);
-      this.toastService.showToast(ToastMessages.screenshotShareError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.screenshotShareError, 'bug', true);
     } finally {
       this.renderer.setStyle(resizableContainer, 'width', originalWidth);
       this.loadingService.setLoading(false);

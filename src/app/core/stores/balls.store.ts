@@ -100,35 +100,40 @@ export class BallsStore {
     }
   }
 
-  async saveBallToArsenal(ball: Ball): Promise<void> {
-    try {
-      const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
-      await this.storageRepository.set(key, ball);
-      this.#arsenal.update((balls) => {
-        const isUnique = !balls.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
-        if (isUnique) {
-          return [...balls, ball];
-        }
-        return balls;
-      });
-      this.analyticsService.trackBallAdded({ brand: ball.brand_name, name: ball.ball_name });
-    } catch (error) {
-      console.error('Error saving ball to arsenal:', error);
-      throw error;
-    }
+  async saveBallToArsenal(ball: Ball): Promise<Ball[]> {
+    return this.saveBallsToArsenal([ball]);
   }
 
-  async saveBallsToArsenal(balls: Ball[]): Promise<void> {
-    try {
-      for (const ball of balls) {
-        const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
-        await this.storageRepository.set(key, ball);
-      }
-      this.#arsenal.update(() => [...balls]);
-    } catch (error) {
-      console.error('Error saving balls to arsenal:', error);
-      throw error;
+  async saveBallsToArsenal(balls: Ball[]): Promise<Ball[]> {
+    const saved: Ball[] = [];
+    const failed: Ball[] = [];
+
+    await Promise.all(
+      balls.map(async (ball) => {
+        try {
+          const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
+          await this.storageRepository.set(key, ball);
+          saved.push(ball);
+        } catch (error) {
+          console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
+          failed.push(ball);
+        }
+      }),
+    );
+
+    if (saved.length) {
+      this.#arsenal.update((existing) => {
+        const merged = [...existing];
+        for (const ball of saved) {
+          const isUnique = !merged.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+          if (isUnique) merged.push(ball);
+        }
+        return merged;
+      });
+      saved.forEach((ball) => this.analyticsService.trackBallAdded({ brand: ball.brand_name, name: ball.ball_name }));
     }
+
+    return failed;
   }
 
   async removeFromArsenal(ball: Ball): Promise<void> {

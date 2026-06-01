@@ -196,22 +196,15 @@ export class ArsenalPage implements OnInit {
     await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
   }
 
-  saveBallToArsenal(ball: Ball[]): void {
-    try {
-      ball.forEach(async (ball) => {
-        try {
-          await this.ballsStore.saveBallToArsenal(ball);
-        } catch (error) {
-          console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
-          this.toastService.showToast(`Failed to add ${ball.ball_name}.`, 'bug', true);
-        }
-      });
+  async saveBallToArsenal(balls: Ball[]): Promise<void> {
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((b) => !failed.includes(b));
 
-      const ball_names = ball.map((ball) => ball.ball_name).join(', ');
-      this.toastService.showToast(`Balls added to arsenal: ${ball_names}`, 'checkmark-outline');
-    } catch (error) {
-      console.error('Error saving balls to arsenal:', error);
-      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    if (saved.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+    if (failed.length) {
+      this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
 

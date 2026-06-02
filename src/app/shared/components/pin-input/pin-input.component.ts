@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeCircleOutline, arrowUndoOutline, checkmarkOutline, barChartOutline } from 'ionicons/icons';
+import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];

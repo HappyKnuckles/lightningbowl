@@ -7,7 +7,7 @@
     </ion-buttons>
     <input type="file" id="upload" class="ion-hide" accept="image/*" />
     <ion-title (click)="presentActionSheet()" style="cursor: pointer">
-      New {{ selectedMode === "Single" ? "Game" : selectedMode }}
+      New {{ selectedMode() === "Single" ? "Game" : selectedMode() }}
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
@@ -17,7 +17,7 @@
     </ion-buttons>
   </ion-toolbar>
 
-  @if (selectedMode !== "Single") {
+  @if (selectedMode() !== "Single") {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
         <ion-segment-button *ngFor="let segment of segments" [value]="segment" [contentId]="segment">
@@ -76,7 +76,7 @@
         [isGameComplete]="isGameComplete(i)"
         [patternModalId]="i.toString()"
         [ballSelectorId]="'modal-ball-selector' + i"
-        [showStatsButton]="selectedMode !== 'Single'"
+        [showStatsButton]="selectedMode() !== 'Single'"
         (throwInput)="handleThrowInput($event, i)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
@@ -88,10 +88,11 @@
         (noteChanged)="onNoteChange($event, i)"
         (ballsChanged)="onBallsChange($event, i)"
         (inputFocused)="onInputFocused($event, i)"
-        (seriesStatsClick)="onSeriesStatsClick()">
+        (seriesStatsClick)="onSeriesStatsClick()"
+        [statsEnabled]="hasLiveStats()">
       </app-game>
 
-      <ion-grid *ngIf="selectedMode !== 'Single'">
+      <ion-grid *ngIf="selectedMode() !== 'Single'">
         <ion-row class="button-row">
           <ion-col>
             <ion-button (click)="clearFrames(i)">Clear Score {{ i + 1 }}</ion-button>
@@ -101,7 +102,7 @@
     </ion-segment-content>
   </ion-segment-view>
 
-  <ion-grid *ngIf="selectedMode === 'Single'">
+  <ion-grid *ngIf="selectedMode() === 'Single'">
     <ion-row class="button-row">
       <ion-col>
         <ion-button (click)="clearFrames()">Clear Score</ion-button>
@@ -112,7 +113,7 @@
     </ion-row>
   </ion-grid>
 
-  <ion-grid *ngIf="selectedMode !== 'Single'">
+  <ion-grid *ngIf="selectedMode() !== 'Single'">
     <ion-row>
       <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
       <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>

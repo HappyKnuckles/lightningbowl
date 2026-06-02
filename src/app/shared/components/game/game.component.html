@@ -86,7 +86,8 @@
     [showStatsButton]="showStatsButton()"
     (throwConfirmed)="onPinThrowConfirmed($event)"
     (undoRequested)="onPinUndoRequested()"
-    (statsClick)="seriesStatsClick.emit()">
+    (statsClick)="seriesStatsClick.emit()"
+    [statsEnabled]="statsEnabled()">
   </app-pin-input>
 } @else {
   <!-- Standard Grid Mode -->

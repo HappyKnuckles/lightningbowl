@@ -28,7 +28,7 @@ import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState, toCompletedFramesGame } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -96,10 +96,15 @@ export class AddGamePage implements OnInit {
   // Live stats
   liveSeries: LiveSeriesStats | null = null;
   isLiveStatsOpen = false;
+  readonly hasLiveStats = computed(() => {
+    const active = new Set(this.getActiveTrackIndexes());
+    const games = this.games().filter((_, i) => active.has(i));
+    return games.map(toCompletedFramesGame).some((g) => g.frames.length > 0);
+  });
   readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
 
   // UI State
-  selectedMode: SeriesMode = SeriesMode.Single;
+  selectedMode = signal<SeriesMode>(SeriesMode.Single);
   sheetOpen = false;
   isAlertOpen = false;
   isModalOpen = false;
@@ -169,8 +174,8 @@ export class AddGamePage implements OnInit {
       const pinModeState = this.pinModeState();
       const totalScores = this.totalScores();
       const maxScores = this.maxScores();
-      console.log(!!this.liveSeries);
-      const selectedMode = untracked(() => this.selectedMode);
+
+      const selectedMode = untracked(() => this.selectedMode());
       const isPinInputMode = untracked(() => this.isPinInputMode);
       const gameIndex = untracked(() => this.selectedSegment);
       const segments = untracked(() => this.segments);
@@ -454,11 +459,11 @@ export class AddGamePage implements OnInit {
     const modes = [SeriesMode.Single, SeriesMode.Series3, SeriesMode.Series4, SeriesMode.Series5, SeriesMode.Series6];
 
     modes.forEach((mode) => {
-      if (mode !== this.selectedMode) {
+      if (mode !== this.selectedMode()) {
         buttons.push({
           text: mode,
           handler: () => {
-            this.selectedMode = mode;
+            this.selectedMode.set(mode);
             this.propagateMetadataToSeries();
             this.recalculateActiveGameScores();
           },
@@ -528,7 +533,7 @@ export class AddGamePage implements OnInit {
   async calculateScore(): Promise<void> {
     const activeIndexes = this.getActiveTrackIndexes();
     const gamesToSave = activeIndexes.map((idx) => this.games()[idx]);
-    const isSeries = this.selectedMode !== SeriesMode.Single;
+    const isSeries = this.selectedMode() !== SeriesMode.Single;
 
     if (isSeries) {
       this.seriesId = this.gameUtilsService.generateUniqueSeriesId();
@@ -637,7 +642,7 @@ export class AddGamePage implements OnInit {
   }
 
   private getActiveTrackIndexes(): number[] {
-    const countMatch = this.selectedMode.match(/\d+/);
+    const countMatch = this.selectedMode().match(/\d+/);
     const count = countMatch ? parseInt(countMatch[0], 10) : 1;
     return Array.from({ length: count }, (_, i) => i);
   }
@@ -772,7 +777,7 @@ export class AddGamePage implements OnInit {
   private restoreDraft(draft: GameDraft): void {
     this.isStorageReady = true;
 
-    this.selectedMode = draft.selectedMode as SeriesMode;
+    this.selectedMode.set(draft.selectedMode as SeriesMode);
     this.isPinInputMode = draft.isPinInputMode;
     this.updateSegments();
 

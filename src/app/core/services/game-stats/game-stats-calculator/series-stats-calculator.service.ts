@@ -33,11 +33,13 @@ export class SeriesStatsCalculatorService {
     averageFirstCount: 0,
     averageScore: 0,
     highGame: 0,
+    lowGame: 0,
     spareRates: [],
     overallSpareRate: 0,
     overallMissedRate: 0,
   };
 
+  // bisschen dumm YAGNI und so, ist vorbereitet, falls man tiefere Series stats haben will
   calculateSeriesStats(gameHistory: Game[]): SeriesStats {
     const seriesScores: number[] = [];
     const series3Scores: number[] = [];
@@ -203,6 +205,7 @@ export class SeriesStatsCalculatorService {
       averageFirstCount: 0,
       averageScore: 0,
       highGame: 0,
+      lowGame: 0,
       spareRates: [],
       overallSpareRate: 0,
       overallMissedRate: 0,
@@ -241,6 +244,7 @@ export class SeriesStatsCalculatorService {
       averageFirstCount: 0,
       averageScore: 0,
       highGame: 0,
+      lowGame: 0,
       spareRates: [],
       overallSpareRate: 0,
       overallMissedRate: 0,

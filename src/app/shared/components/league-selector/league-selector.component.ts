@@ -3,28 +3,28 @@ import { Component, EventEmitter, Input, Output, computed } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AlertController, SelectChangeEventDetail } from '@ionic/angular';
 import {
-  IonSelect,
-  IonInput,
   IonButton,
-  IonSelectOption,
-  IonItem,
-  IonIcon,
-  IonModal,
-  IonToolbar,
   IonButtons,
-  IonHeader,
-  IonTitle,
   IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonModal,
+  IonSelect,
+  IonSelectOption,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { IonSelectCustomEvent } from '@ionic/core';
 import { addIcons } from 'ionicons';
-import { addOutline, medalOutline, createOutline } from 'ionicons/icons';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
+import { addOutline, createOutline, medalOutline } from 'ionicons/icons';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 
 @Component({
   selector: 'app-league-selector',
@@ -102,12 +102,12 @@ export class LeagueSelectorComponent {
       this.selectedLeague = this.newLeague;
       this.leagueChanged.emit(this.selectedLeague);
       this.newLeague = '';
-      this.toastService.showToast(ToastMessages.leagueSaveSuccess, 'add');
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
       this.isModalOpen = false;
       this.analyticsService.trackLeagueCreated({ name: this.selectedLeague });
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueSaveError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
     }
   }
 
@@ -121,11 +121,11 @@ export class LeagueSelectorComponent {
       await this.appFacade.editLeague(this.newLeague, this.leagueToChange);
       this.newLeague = '';
       this.leagueToChange = '';
-      this.toastService.showToast(ToastMessages.leagueEditSuccess, 'checkmark-outline');
+      this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
       this.isModalOpen = false;
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueEditError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
     }
   }
 
@@ -134,11 +134,11 @@ export class LeagueSelectorComponent {
       for (const league of this.leaguesToDelete) {
         await this.leaguesStore.deleteLeague(league);
       }
-      this.toastService.showToast(ToastMessages.leagueDeleteSuccess, 'checkmark-outline');
+      this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'checkmark-outline');
       this.isModalOpen = false;
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.leagueDeleteError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);
     }
   }
 

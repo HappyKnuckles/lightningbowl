@@ -1,4 +1,4 @@
-<ion-accordion-group color="dark" multiple="true" #accordionGroup (ionChange)="hideContent($event)">
+<ion-accordion-group color="dark" multiple="true" #accordionGroup appAccordionDelayedClose #delayedClose="accordionDelayedClose">
   <ion-list>
     <!-- <ion-button (click)="deleteAll()"> Alles löschen</ion-button> -->
     @for (game of showingGames(); track game.gameId) {
@@ -14,16 +14,19 @@
           </ion-item-option>
         </ion-item-options>
 
-        <ion-item-options side="start" *ngIf="!isEditMode[game.gameId]" (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+        <ion-item-options
+          side="start"
+          *ngIf="!editService.isEditMode(game.gameId)"
+          (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
           <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
             <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
           </ion-item-option>
-          <ion-item-option *ngIf="!isEditMode[game.gameId]" (click)="takeScreenshotAndShare(game); slidingItem.closeOpened()">
+          <ion-item-option *ngIf="!editService.isEditMode(game.gameId)" (click)="takeScreenshotAndShare(game); slidingItem.closeOpened()">
             <ion-icon class="title" style="transform: translateY(-2px)" name="share-outline"></ion-icon>
           </ion-item-option>
         </ion-item-options>
 
-        <ion-item-options side="start" *ngIf="isEditMode[game.gameId]" (ionSwipe)="cancelEdit(game); slidingItem.closeOpened()">
+        <ion-item-options side="start" *ngIf="editService.isEditMode(game.gameId)" (ionSwipe)="cancelEdit(game); slidingItem.closeOpened()">
           <ion-item-option expandable (click)="cancelEdit(game); slidingItem.closeOpened()">
             <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
           </ion-item-option>
@@ -41,12 +44,11 @@
                 <h2 class="title">Game {{ gameCount()! - $index }}</h2>
                 <p class="score" *ngIf="game.league && !isLeaguePage()">League/Tournament: {{ game.league }}</p>
                 <p class="score" *ngIf="game.patterns && game.patterns.length > 0">Patterns: {{ game.patterns.join(", ") }}</p>
-                <p class="score">Score: {{ game.totalScore }}</p>
-                <!-- <div class="score">{{game.date | date}}</div> -->
               </ion-label>
+              <ion-badge slot="end" style="margin-right: 8px">Score: {{ game.totalScore }}</ion-badge>
             </ion-item>
-            <div slot="content" *ngIf="delayedCloseMap[game.gameId]">
-              @if (!isEditMode[game.gameId]) {
+            <div slot="content" *ngIf="delayedClose.isVisible(game.gameId)">
+              @if (!editService.isEditMode(game.gameId)) {
                 <!-- @if (game.pattern) {
                   <ion-item class="pattern" [lines]="game.note ? '' : 'none'">
                     <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
@@ -65,7 +67,7 @@
                     <ion-textarea type="text" readonly="true" [value]="game.note" [autoGrow]="true"></ion-textarea>
                   </ion-item>
                 }
-                <div *ngIf="!isEditMode[game.gameId]" class="grid-container" #scoreTemplate>
+                <div *ngIf="!editService.isEditMode(game.gameId)" class="grid-container" #scoreTemplate>
                   <ion-grid fixed="true" *ngFor="let frame of game.frames; let j = index">
                     <ion-row>
                       <ion-col class="middle frame">{{ j + 1 }}</ion-col>
@@ -208,12 +210,12 @@
                   <ion-textarea type="text" [(ngModel)]="game.note" [autoGrow]="true"></ion-textarea>
                 </ion-item>
                 <app-game-grid
-                  [game]="editedGameStates[game.gameId]"
+                  [game]="editService.getEditedGame(game.gameId)!"
                   [patternModalId]="game.gameId"
                   [showMetadata]="false"
                   [isPinInputMode]="game.isPinMode"
-                  [currentFrameIndex]="editedFocus[game.gameId]?.frameIndex ?? 0"
-                  [currentThrowIndex]="editedFocus[game.gameId]?.throwIndex ?? 0"
+                  [currentFrameIndex]="editService.getFocus(game.gameId)?.frameIndex ?? 0"
+                  [currentThrowIndex]="editService.getFocus(game.gameId)?.throwIndex ?? 0"
                   [pinsLeftStanding]="getPinsLeftStandingForEditedGame(game)"
                   [canStrike]="canRecordStrike(game)"
                   [canSpare]="canRecordSpare(game)"

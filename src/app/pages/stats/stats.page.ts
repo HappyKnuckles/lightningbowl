@@ -34,38 +34,39 @@ import {
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
-import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter-configs';
-import { ToastMessages } from 'src/app/core/constants/toast-messages.constants';
-import { SessionStats } from 'src/app/core/models/stats.model';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
+
+import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
 import {
-  overallStatDefinitions,
-  pinStatDefinitions,
-  playFrequencyStatDefinitions,
-  seriesStatDefinitions,
-  sessionStatDefinitions,
-  spareStatDefinitions,
-  specialStatDefinitions,
-  strikeStatDefinitions,
-  throwStatDefinitions,
-} from '../../core/constants/stats.definitions.constants';
+  OVERALL_STAT_DEFINITIONS,
+  PIN_STAT_DEFINITIONS,
+  PLAY_FREQUENCY_STAT_DEFINITIONS,
+  SERIES_STAT_DEFINITIONS,
+  SESSION_STAT_DEFINITIONS,
+  SPARE_STAT_DEFINITIONS,
+  SPECIAL_STAT_DEFINITIONS,
+  STRIKE_STAT_DEFINITIONS,
+  THROW_STAT_DEFINITIONS,
+} from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { Stats } from 'src/app/core/models/stats.model';
 
 @Component({
   selector: 'app-stats',
@@ -131,15 +132,15 @@ import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/
 })
 export class StatsPage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
-  overallStatDefinitions = overallStatDefinitions;
-  seriesStatDefinitions = seriesStatDefinitions;
-  throwStatDefinitions = throwStatDefinitions;
-  sessionStatDefinitions = sessionStatDefinitions;
-  playFrequencyStatDefinitions = playFrequencyStatDefinitions;
-  specialStatDefinitions = specialStatDefinitions;
-  strikeStatDefinitions = strikeStatDefinitions;
-  spareStatDefinitions = spareStatDefinitions;
-  pinStatDefinitions = pinStatDefinitions;
+  OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
+  SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
+  THROW_STAT_DEFINITIONS = THROW_STAT_DEFINITIONS;
+  SESSION_STAT_DEFINITIONS = SESSION_STAT_DEFINITIONS;
+  PLAY_FREQUENCY_STAT_DEFINITIONS = PLAY_FREQUENCY_STAT_DEFINITIONS;
+  SPECIAL_STAT_DEFINITIONS = SPECIAL_STAT_DEFINITIONS;
+  STRIKE_STAT_DEFINITIONS = STRIKE_STAT_DEFINITIONS;
+  SPARE_STAT_DEFINITIONS = SPARE_STAT_DEFINITIONS;
+  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
@@ -162,8 +163,8 @@ export class StatsPage implements OnInit, AfterViewInit {
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
 
-  sessionStats: Signal<SessionStats> = computed(() => {
-    return this.statsService.calculateBowlingStats(this.gamesForSelectedSession()) as SessionStats;
+  sessionStats: Signal<Stats> = computed(() => {
+    return this.statsService.calculateBowlingStats(this.gamesForSelectedSession());
   });
 
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
@@ -256,7 +257,7 @@ export class StatsPage implements OnInit, AfterViewInit {
       this.generateCharts(true);
     } catch (error) {
       console.error(error);
-      this.toastService.showToast(ToastMessages.gameLoadError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
     }
@@ -298,7 +299,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating score chart:', error);
     }
   }
@@ -347,7 +348,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating average score chart:', error);
     }
   }
@@ -365,7 +366,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating score distribution chart:', error);
     }
   }
@@ -383,7 +384,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating spare distribution chart:', error);
     }
   }
@@ -396,7 +397,7 @@ export class StatsPage implements OnInit, AfterViewInit {
 
       this.pinChartInstance = this.chartService.generatePinChart(this.pinChart, this.statsService.currentStats(), this.pinChartInstance!, isReload);
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);
     }
   }
@@ -414,7 +415,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         isReload,
       );
     } catch (error) {
-      this.toastService.showToast(ToastMessages.chartGenerationError, 'bug', true);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating throw chart:', error);
     }
   }

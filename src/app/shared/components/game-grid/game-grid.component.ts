@@ -27,7 +27,7 @@ import { InputCustomEvent } from '@ionic/angular';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
+import { createBallTypeaheadConfig, createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { Pattern } from 'src/app/core/models/pattern.model';
@@ -38,6 +38,8 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { Ball } from 'src/app/core/models/ball.model';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-game-grid',
@@ -121,6 +123,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
   leaveAnimation = alertLeaveAnimation;
   presentingElement?: HTMLElement;
   patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
+  ballTypeaheadConfig!: TypeaheadConfig<Ball>;
 
   showButtonToolbar = false;
   keyboardOffset = 0;
@@ -146,6 +149,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
     public utilsService: UtilsService,
     private platform: Platform,
     private patternService: PatternService,
+    private toastService: ToastService,
   ) {
     this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
@@ -154,6 +158,7 @@ export class GameGridComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
+    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
   }
 
   ngOnDestroy() {
@@ -333,6 +338,13 @@ export class GameGridComponent implements OnInit, OnDestroy {
   };
 
   // --- Passthrough Event Emitters ---
+  onBallAdd(ballIds: string[]) {
+    const allBalls = this.ballsStore.allBalls();
+    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    this.ballsChanged.emit(selected.map((b) => b.ball_name));
+    this.saveBallToArsenal(selected);
+  }
+
   onLeagueChanged(league: string) {
     this.leagueChanged.emit(league);
   }
@@ -370,5 +382,17 @@ export class GameGridComponent implements OnInit, OnDestroy {
 
   trackByFrameIndex(index: number): number {
     return index;
+  }
+
+  private async saveBallToArsenal(balls: Ball[]): Promise<void> {
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((b) => !failed.includes(b));
+
+    if (saved.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+    if (failed.length) {
+      this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
+    }
   }
 }

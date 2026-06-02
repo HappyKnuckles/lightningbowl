@@ -1,7 +1,7 @@
-<ion-list (click)="openModal()" (keydown.enter)="openModal()">
+<ion-list (click)="openModal()" (keydown.enter)="openModal()" role="button">
   <ion-list-header>
     {{ title() }}
-    @if (allLeaves()) {
+    @if (allLeaves()?.length) {
       <ion-icon name="chevron-forward-outline" class="open-icon"></ion-icon>
     }
   </ion-list-header>
@@ -45,7 +45,7 @@
         </ion-item>
       }
     }
-    @if (allLeaves()) {
+    @if (allLeaves()?.length) {
       <ion-ripple-effect></ion-ripple-effect>
     }
   </div>
@@ -56,7 +56,7 @@
     <ng-template>
       <ion-header [translucent]="true">
         <ion-toolbar>
-          <ion-buttons slot="start">
+          <ion-buttons slot="start" style="padding: 4px">
             <ion-button color="medium" (click)="closeModal()">
               <ion-icon name="chevron-back"></ion-icon>
             </ion-button>

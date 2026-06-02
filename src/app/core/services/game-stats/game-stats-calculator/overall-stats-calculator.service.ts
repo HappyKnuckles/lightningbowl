@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
-import { SeriesStats, SessionStats, Stats } from 'src/app/core/models/stats.model';
+import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
 import { GameUtilsService } from '../../game-utils/game-utils.service';
 
 const MAX_FRAMES = 10;
@@ -18,7 +18,7 @@ export class OverallStatsCalculatorService {
     return (converted / (converted + missed)) * 100;
   }
 
-  calculateBowlingStats(gameHistory: Game[], seriesStats: SeriesStats): Stats | SessionStats {
+  calculateBowlingStats(gameHistory: Game[], seriesStats: SeriesStats): Stats {
     let totalStrikes = 0;
     let totalSparesConverted = 0;
     let totalSparesMissed = 0;

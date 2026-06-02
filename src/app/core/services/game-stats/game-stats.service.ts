@@ -125,7 +125,7 @@ export class GameStatsService {
 
   calculateBowlingStats(gameHistory: Game[]): Stats {
     const seriesStats = this.seriesStatsCalculatorService.calculateSeriesStats(gameHistory);
-    return this.overallStatsCalculatorService.calculateBowlingStats(gameHistory, seriesStats) as Stats;
+    return this.overallStatsCalculatorService.calculateBowlingStats(gameHistory, seriesStats);
   }
 
   calculateLeaveAnalytics(gameHistory: Game[]): {

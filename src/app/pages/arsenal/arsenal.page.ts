@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Signal, ViewChild, computed, effect, model, signal } from '@angular/core';
+import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
@@ -48,8 +48,8 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 
 @Component({
   selector: 'app-arsenal',
@@ -98,9 +98,9 @@ export class ArsenalPage implements OnInit {
   @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
   coverstockBalls: Ball[] = [];
   coreBalls: Ball[] = [];
-  presentingElement?: HTMLElement;
+  presentingElement!: HTMLElement | null;
 
-  ballTypeaheadConfig!: TypeaheadConfig<Ball>;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore
       .allBalls()
@@ -121,6 +121,7 @@ export class ArsenalPage implements OnInit {
     public modalCtrl: ModalController,
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
@@ -131,8 +132,7 @@ export class ArsenalPage implements OnInit {
   }
 
   ngOnInit() {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   private generateBallDistributionChart(): void {

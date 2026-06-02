@@ -1,5 +1,4 @@
-import { FilterConfig } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { CoreType, Market } from '../../models/filter.model';
+import { CoreType, FilterConfig, Market } from '../../models/filter.model';
 
 export const BALL_FILTER_CONFIGS: FilterConfig[] = [
   {
@@ -22,7 +21,7 @@ export const BALL_FILTER_CONFIGS: FilterConfig[] = [
     key: 'availability',
     label: 'Availability',
     type: 'boolean',
-    displayValue: (value: unknown) => (value ? 'Available' : 'Discontinued'),
+    displayValue: (value) => (value ? 'Available' : 'Discontinued'),
   },
   {
     key: 'market',
@@ -53,7 +52,7 @@ export const BALL_FILTER_CONFIGS: FilterConfig[] = [
     key: 'coverstockTypes',
     label: 'Coverstock Types',
     type: 'array',
-    displayValue: (value: unknown) => {
+    displayValue: (value) => {
       const types = Array.isArray(value) ? value : [];
       return types.join(', ');
     },

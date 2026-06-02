@@ -1,7 +1,6 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { Component, ViewChild, ViewChildren, QueryList, computed, input, signal, inject, OnInit } from '@angular/core';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
@@ -43,32 +42,30 @@ import {
   shareOutline,
   trashOutline,
 } from 'ionicons/icons';
-
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
-import { Pattern } from 'src/app/core/models/pattern.model';
-import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
-import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
-
+import { Pattern } from 'src/app/core/models/pattern.model';
+import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
+import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameGridComponent } from '../game-grid/game-grid.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { Router } from '@angular/router';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 interface MonthHeader {
   name: string;
@@ -143,9 +140,9 @@ export class GameComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private patternService = inject(PatternService);
   private validationService = inject(BowlingGameValidationService);
   private shareService = inject(GameShareService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
 
   // Computed
   leagues = computed(() => {
@@ -217,10 +214,10 @@ export class GameComponent implements OnInit {
   // Pagination state
   private batchSize = 100;
   public loadedCount = signal(this.batchSize);
-  public presentingElement?: HTMLElement;
+  public presentingElement!: HTMLElement | null;
 
   // Config
-  patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
+  patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -240,9 +237,8 @@ export class GameComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((q) => this.patternService.searchPattern(q));
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   // PAGINATION
@@ -413,7 +409,7 @@ export class GameComponent implements OnInit {
     return this.validationService.isGameValid(game);
   }
 
-  parseIntValue(value: unknown): number {
+  parseIntValue(value: string): number {
     return this.utilsService.parseIntValue(value) as number;
   }
 

@@ -1,4 +1,5 @@
-export interface GameFilter {
+/* eslint-disable @typescript-eslint/consistent-type-definitions */
+export type GameFilter = {
   excludePractice: boolean;
   minScore: number;
   maxScore: number;
@@ -10,9 +11,9 @@ export interface GameFilter {
   timeRange: TimeRange;
   startDate?: string;
   endDate?: string;
-}
+};
 
-export interface BallFilter {
+export type BallFilter = {
   brands: string[];
   coverstocks: string[];
   coverstockTypes: CoverstockType[];
@@ -27,7 +28,7 @@ export interface BallFilter {
   minDiff: number;
   maxDiff: number;
   inArsenal: boolean;
-}
+};
 
 export enum TimeRange {
   TODAY = 0,
@@ -67,6 +68,26 @@ export enum CoreType {
   SYMMETRIC = 'Symmetric',
 }
 
+export type AppFilter = GameFilter | BallFilter;
+
+export type FilterValue = string | number | boolean | string[] | null | undefined;
+export type FilterRecord = Record<string, FilterValue>;
+export type IndexableFilter = AppFilter & FilterRecord;
+
+export interface FilterConfig {
+  key: string;
+  label?: string;
+  type: 'boolean' | 'string' | 'number' | 'array' | 'date' | 'range' | 'enum';
+  displayValue?: (value: FilterValue) => string;
+  isRange?: boolean;
+  rangeKeys?: {
+    min: string;
+    max: string;
+  };
+  suffix?: string;
+  prefix?: string;
+  enumValues?: Record<string, string>;
+}
 // export enum Availability{
 //   ALL = 'all',
 //   AVAILABLE = 'available',

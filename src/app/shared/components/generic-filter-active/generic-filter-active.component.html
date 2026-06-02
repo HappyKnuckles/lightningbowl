@@ -2,10 +2,15 @@
   <h6 *ngIf="title" class="filter-title">{{ title }}</h6>
 
   <ng-container *ngFor="let config of filterConfigs">
-    <!-- Simple filters (boolean, string, number, enum) -->
+    <!-- Simple filters (boolean, string, number, enum, array) -->
     <ion-chip *ngIf="shouldShowFilter(config) && !config.isRange && config.type !== 'date'">
-      {{ getFilterLabel(config) }}
-      <span *ngIf="config.type !== 'boolean'">: {{ getDisplayValue(config) }}</span>
+      <!-- None-state array: show just the display value, no label -->
+      <ng-container *ngIf="isEmptyArrayFilter(config)">{{ getDisplayValue(config) }}</ng-container>
+
+      <!-- Everything else: label, plus value for non-boolean -->
+      <ng-container *ngIf="!isEmptyArrayFilter(config)">
+        {{ getFilterLabel(config) }}<span *ngIf="config.type !== 'boolean'">: {{ getDisplayValue(config) }}</span>
+      </ng-container>
     </ion-chip>
 
     <!-- Date filters (single date) -->

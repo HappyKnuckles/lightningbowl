@@ -21,8 +21,8 @@ import {
 } from '@ionic/angular/standalone';
 import { NgClass, NgIf } from '@angular/common';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
-import { TypeaheadConfig } from './typeahead-config.interface';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 
 @Component({
   selector: 'app-generic-typeahead',
@@ -53,8 +53,8 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   items = input<T[]>([]);
   config = input.required<TypeaheadConfig<T>>();
-  prevSelectedItems = input<any[]>([]);
-  @Output() selectedItemsChange = new EventEmitter<any[]>();
+  prevSelectedItems = input<string[]>([]);
+  @Output() selectedItemsChange = new EventEmitter<string[]>();
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   @ViewChild('infiniteScroll') infiniteScroll!: IonInfiniteScroll;
 
@@ -64,7 +64,7 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   fuse!: Fuse<T>;
   private batchSize = 100;
   public loadedCount = signal(0);
-  private initialSelectedValues: any[] = [];
+  private initialSelectedValues: string[] = [];
 
   constructor(
     private modalCtrl: ModalController,

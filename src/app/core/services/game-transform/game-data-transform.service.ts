@@ -68,7 +68,7 @@ export class GameDataTransformerService {
     return frames.map((frame, frameIndex) => {
       if (Array.isArray(frame) && typeof frame[0] === 'number') {
         // Old format: number[]
-        const numberArray = frame as unknown as number[];
+        const numberArray = frame as number[];
         return {
           frameIndex: frameIndex + 1,
           throws: numberArray.map(

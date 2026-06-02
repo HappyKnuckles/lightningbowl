@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -29,12 +28,10 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import {
-  createBallBrandTypeaheadConfig,
-  createBallCoreTypeaheadConfig,
-  createBallCoverstockTypeaheadConfig,
-} from '../generic-typeahead/typeahead-configs';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-ball-filter',
   templateUrl: './ball-filter.component.html',
@@ -69,10 +66,10 @@ export class BallFilterComponent implements OnInit {
   coreTypes: CoreType[] = [CoreType.ALL, CoreType.ASYMMETRIC, CoreType.SYMMETRIC];
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
   weights: string[] = ['12', '13', '14', '15', '16'];
-  presentingElement?: HTMLElement;
-  brandTypeaheadConfig!: TypeaheadConfig<Brand>;
-  coreTypeaheadConfig!: TypeaheadConfig<Core>;
-  coverstockTypeaheadConfig!: TypeaheadConfig<Coverstock>;
+  presentingElement!: HTMLElement | null;
+  brandTypeaheadConfig: TypeaheadConfig<Brand> = this.typeaheadConfigService.brand;
+  coreTypeaheadConfig: TypeaheadConfig<Core> = this.typeaheadConfigService.core;
+  coverstockTypeaheadConfig: TypeaheadConfig<Coverstock> = this.typeaheadConfigService.coverstock;
 
   constructor(
     public ballFilterService: BallFilterService,
@@ -82,13 +79,13 @@ export class BallFilterComponent implements OnInit {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private analyticsService: AnalyticsService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {}
+
   ngOnInit() {
-    this.presentingElement = document.querySelector('.ion-page')!;
-    this.brandTypeaheadConfig = createBallBrandTypeaheadConfig();
-    this.coreTypeaheadConfig = createBallCoreTypeaheadConfig();
-    this.coverstockTypeaheadConfig = createBallCoverstockTypeaheadConfig();
+    this.presentingElement = document.querySelector('.ion-page');
   }
+
   cancel(): Promise<boolean> {
     this.ballFilterService.filters.update(() =>
       localStorage.getItem('ball-filter') ? JSON.parse(localStorage.getItem('ball-filter')!) : this.ballFilterService.filters,
@@ -100,7 +97,7 @@ export class BallFilterComponent implements OnInit {
     this.ballFilterService.resetFilters();
   }
 
-  async updateFilter<T extends keyof BallFilter>(key: T, value: unknown): Promise<void> {
+  async updateFilter<T extends keyof BallFilter>(key: T, value: BallFilter[T]): Promise<void> {
     if (key === 'weight') {
       await this.changeWeight(value as number);
     }
@@ -108,6 +105,17 @@ export class BallFilterComponent implements OnInit {
       ...filters,
       [key]: value,
     }));
+  }
+
+  updateNumericFilter<T extends keyof BallFilter>(key: T, raw: string | null | undefined): void {
+    const normalized = raw?.replace(',', '.').trim();
+    if (!normalized) {
+      this.updateFilter(key, this.ballFilterService.defaultFilters[key]);
+      return;
+    }
+    const parsed = Number(normalized);
+    if (Number.isNaN(parsed)) return;
+    this.updateFilter(key, parsed as BallFilter[T]);
   }
 
   confirm(): Promise<boolean> {

@@ -13,13 +13,17 @@ import { routes } from './app/app.routes';
 import { CloudSyncService } from './app/core/services/cloud-sync/cloud-sync.service';
 import { AppFacade } from './app/core/stores/app.facade';
 import { environment } from './environments/environment';
-
+declare global {
+  interface Window {
+    __APP_STARTUP_TIME__?: number;
+  }
+}
 if (environment.production) {
   // Track app start time
   const appStartTime = performance.now();
 
   if (typeof window !== 'undefined') {
-    (window as any).__APP_STARTUP_TIME__ = appStartTime;
+    window.__APP_STARTUP_TIME__ = appStartTime;
   }
   injectSpeedInsights();
   injectVercelAnalytics();

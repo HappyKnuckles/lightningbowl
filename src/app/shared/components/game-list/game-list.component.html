@@ -1,0 +1,241 @@
+<ion-accordion-group color="dark" multiple="true" #accordionGroup appAccordionDelayedClose #delayedClose="accordionDelayedClose">
+  <ion-list>
+    <!-- <ion-button (click)="deleteAll()"> Alles löschen</ion-button> -->
+    @for (game of showingGames(); track game.gameId) {
+      <ion-item-divider *ngIf="monthHeaders().get($index) as header" style="padding: 8px; font-size: 1.2rem">
+        <ion-badge slot="end">{{ header.count }}</ion-badge>
+        <ion-label>{{ header.name }} </ion-label>
+      </ion-item-divider>
+
+      <ion-item-sliding class="sliding" #slidingItem>
+        <ion-item-options side="end" (ionSwipe)="deleteGame(game.gameId); slidingItem.closeOpened()">
+          <ion-item-option color="danger" expandable (click)="deleteGame(game.gameId); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+        <ion-item-options
+          side="start"
+          *ngIf="!editService.isEditMode(game.gameId)"
+          (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+          <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
+          </ion-item-option>
+          <ion-item-option *ngIf="!editService.isEditMode(game.gameId)" (click)="takeScreenshotAndShare(game); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="share-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+        <ion-item-options side="start" *ngIf="editService.isEditMode(game.gameId)" (ionSwipe)="cancelEdit(game); slidingItem.closeOpened()">
+          <ion-item-option expandable (click)="cancelEdit(game); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+        <ion-item
+          [lines]="$last ? 'none' : ''"
+          (longPressed)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()"
+          [delay]="1000"
+          appLongPress>
+          <ion-accordion #accordionRef [value]="game.gameId" [id]="game.gameId">
+            <ion-item slot="header" lines="none" class="expansion-header">
+              <ion-label class="game-info">
+                <p>{{ game.date | date: "MM.dd.yyyy" }}</p>
+                <h2 class="title">Game {{ gameCount()! - $index }}</h2>
+                <p class="score" *ngIf="game.league && !isLeaguePage()">League/Tournament: {{ game.league }}</p>
+                <p class="score" *ngIf="game.patterns && game.patterns.length > 0">Patterns: {{ game.patterns.join(", ") }}</p>
+              </ion-label>
+              <ion-badge slot="end" style="margin-right: 8px">Score: {{ game.totalScore }}</ion-badge>
+            </ion-item>
+            <div slot="content" *ngIf="delayedClose.isVisible(game.gameId)">
+              @if (!editService.isEditMode(game.gameId)) {
+                <!-- @if (game.pattern) {
+                  <ion-item class="pattern" [lines]="game.note ? '' : 'none'">
+                    <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
+                    <ion-text>{{ game.pattern }}</ion-text>
+                  </ion-item>
+                } -->
+                @if (game.balls && game.balls.length > 0) {
+                  <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(game.balls)">
+                    <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                    <ion-text>{{ game.balls.join(", ") }}</ion-text>
+                  </ion-item>
+                }
+                @if (game.note) {
+                  <ion-item class="note" lines="none">
+                    <ion-icon name="document-text-outline" slot="start"> </ion-icon>
+                    <ion-textarea type="text" readonly="true" [value]="game.note" [autoGrow]="true"></ion-textarea>
+                  </ion-item>
+                }
+                <div *ngIf="!editService.isEditMode(game.gameId)" class="grid-container" #scoreTemplate>
+                  <ion-grid fixed="true" *ngFor="let frame of game.frames; let j = index">
+                    <ion-row>
+                      <ion-col class="middle frame">{{ j + 1 }}</ion-col>
+                    </ion-row>
+                    <ion-row *ngIf="j !== 9">
+                      <ion-col class="input-col"></ion-col>
+                      <ion-col class="input-col">
+                        <ion-input
+                          readonly="true"
+                          type="text"
+                          inputmode="numeric"
+                          [class.is-split]="frame?.throws?.[0]?.isSplit"
+                          [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
+                        </ion-input>
+                      </ion-col>
+                      <ion-col class="input-col">
+                        <ion-input
+                          readonly="true"
+                          type="text"
+                          inputmode="numeric"
+                          [value]="
+                            frame?.throws?.[0]?.value !== 10 && (frame?.throws?.[0]?.value ?? 0) + (frame?.throws?.[1]?.value ?? 0) === 10
+                              ? '/'
+                              : frame?.throws?.[1]?.value === 0
+                                ? '–'
+                                : frame?.throws?.[1]?.value
+                          ">
+                        </ion-input>
+                      </ion-col>
+                    </ion-row>
+                    <ion-row *ngIf="j === 9">
+                      <ion-col class="input-col">
+                        <ion-input
+                          readonly="true"
+                          type="text"
+                          inputmode="numeric"
+                          [class.is-split]="frame?.throws?.[0]?.isSplit"
+                          [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
+                        </ion-input>
+                      </ion-col>
+                      <ion-col class="input-col">
+                        <ion-input
+                          readonly="true"
+                          type="text"
+                          inputmode="numeric"
+                          [class.is-split]="frame?.throws?.[1]?.isSplit"
+                          [value]="
+                            frame?.throws?.[1]?.value === 10
+                              ? 'X'
+                              : frame?.throws?.[0]?.value !== 10 && (frame?.throws?.[0]?.value ?? 0) + (frame?.throws?.[1]?.value ?? 0) === 10
+                                ? '/'
+                                : frame?.throws?.[1]?.value === 0
+                                  ? '–'
+                                  : frame?.throws?.[1]?.value
+                          ">
+                        </ion-input>
+                      </ion-col>
+                      <ion-col class="input-col" *ngIf="j === 9">
+                        <ion-input
+                          readonly="true"
+                          type="text"
+                          inputmode="numeric"
+                          [class.is-split]="frame?.throws?.[2]?.isSplit"
+                          [value]="
+                            frame?.throws?.[0]?.value === 10 &&
+                            frame?.throws?.[1]?.value !== 10 &&
+                            (frame?.throws?.[1]?.value ?? 0) + (frame?.throws?.[2]?.value ?? 0) === 10
+                              ? '/'
+                              : frame?.throws?.[2]?.value === 10
+                                ? 'X'
+                                : frame?.throws?.[2]?.value === 0
+                                  ? '–'
+                                  : frame?.throws?.[2]?.value
+                          ">
+                        </ion-input>
+                      </ion-col>
+                    </ion-row>
+                    <!-- Pin Deck Frame Row for pin mode games -->
+                    <app-pin-deck-frame-row *ngIf="game.isPinMode" [game]="game" [frameIndex]="j"></app-pin-deck-frame-row>
+                    <ion-row>
+                      <ion-col class="middle count">{{ game.frameScores[j] }}</ion-col>
+                    </ion-row>
+                  </ion-grid>
+                </div>
+              } @else {
+                <ion-item class="league" [disabled]="leagues().length === 0">
+                  <ion-icon name="medal-outline" slot="start"></ion-icon>
+                  <ion-select
+                    name="league"
+                    [(ngModel)]="game.league"
+                    (ngModelChange)="updateSeries(game, game.league)"
+                    label="League/Tournament"
+                    [value]="game.league">
+                    <ion-select-option [value]="''">None</ion-select-option>
+                    <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+                <ion-item class="pattern" button [id]="'selectPatternHistory' + $index">
+                  <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
+                  <ion-label>Patterns</ion-label>
+                  <span class="ion-text-right"> {{ game.patterns.join(", ") || "None" }}</span>
+                </ion-item>
+                <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + $index">
+                  <ng-template>
+                    <app-generic-typeahead
+                      [items]="patternsStore.allPatterns()"
+                      [config]="patternTypeaheadConfig"
+                      [prevSelectedItems]="game.patterns"
+                      (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
+                    </app-generic-typeahead>
+                  </ng-template>
+                </ion-modal>
+                <ion-item
+                  class="arsenal"
+                  id="ball-selector-{{ game.gameId }}"
+                  button
+                  detailIcon="chevron-expand-outline"
+                  [disabled]="ballsStore.arsenal().length === 0">
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                  <!-- <ion-select [(ngModel)]="game.balls" multiple="true" name="balls" label="Balls">
+                    <ion-select-option *ngFor="let ball of ballsStore.arsenal()" [value]="ball.ball_name">
+                      {{ ball.ball_name }}
+                    </ion-select-option>
+                  </ion-select> -->
+                  <ion-label>Balls</ion-label>
+                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
+                </ion-item>
+                <ion-modal
+                  [enterAnimation]="enterAnimation"
+                  [leaveAnimation]="leaveAnimation"
+                  #modal
+                  trigger="ball-selector-{{ game.gameId }}"
+                  class="ball-modal">
+                  <ng-template>
+                    <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls"></app-ball-select>
+                  </ng-template>
+                </ion-modal>
+                <ion-item class="note" lines="none">
+                  <ion-icon name="document-text-outline" slot="start"> </ion-icon>
+                  <ion-textarea type="text" [(ngModel)]="game.note" [autoGrow]="true"></ion-textarea>
+                </ion-item>
+                <app-game
+                  [game]="editService.getEditedGame(game.gameId)!"
+                  [patternModalId]="game.gameId"
+                  [showMetadata]="false"
+                  [isPinInputMode]="game.isPinMode"
+                  [currentFrameIndex]="editService.getFocus(game.gameId)?.frameIndex ?? 0"
+                  [currentThrowIndex]="editService.getFocus(game.gameId)?.throwIndex ?? 0"
+                  [pinsLeftStanding]="getPinsLeftStandingForEditedGame(game)"
+                  [canStrike]="canRecordStrike(game)"
+                  [canSpare]="canRecordSpare(game)"
+                  [canUndo]="canUndoForPinMode(game)"
+                  (throwInput)="onEditThrowInput($event, game)"
+                  (scoreCellClick)="onScoreCellClick(game, $event.frameIndex, $event.throwIndex)"
+                  (pinThrowConfirmed)="onPinThrowConfirmed($event, game)"
+                  (pinUndoRequested)="handlePinUndoRequested(game)"></app-game>
+                <div class="action-row">
+                  <ion-button class="left-button" (click)="cancelEdit(game)">Cancel</ion-button>
+                  <ion-button class="right-button" [disabled]="!isGameValid(game)" (click)="saveEdit(game)">Save</ion-button>
+                </div>
+              }
+            </div>
+          </ion-accordion>
+        </ion-item>
+      </ion-item-sliding>
+    }
+  </ion-list>
+</ion-accordion-group>
+<ion-infinite-scroll threshold="100px" [disabled]="showingGames().length === games().length" (ionInfinite)="loadMoreGames($event)">
+  <ion-infinite-scroll-content loadingText="Loading more games..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
+</ion-infinite-scroll>

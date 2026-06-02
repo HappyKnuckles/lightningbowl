@@ -26,6 +26,7 @@ import {
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import {
   cloneFrames,
@@ -39,11 +40,11 @@ import {
 } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { LeaveStats, Stats } from 'src/app/core/models/stats.model';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
@@ -52,12 +53,11 @@ import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/hi
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
+import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { PinLeaveStatsComponent } from 'src/app/shared/components/pin-leave-stats/pin-leave-stats.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -94,7 +94,7 @@ defineCustomElements(window);
     IonLabel,
     NgIf,
     NgFor,
-    GameGridComponent,
+    GameComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
     PinLeaveStatsComponent,
@@ -149,8 +149,8 @@ export class AddGamePage implements OnInit {
   });
 
   // View Children & DOM References
-  @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
-  @ViewChild('modalGrid', { static: false }) modalGrid!: GameGridComponent;
+  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  @ViewChild('modalGrid', { static: false }) modalGrid!: GameComponent;
   presentingElement!: HTMLElement;
 
   // Internal Logic State
@@ -364,7 +364,7 @@ export class AddGamePage implements OnInit {
 
       if (key === 'league') {
         const isPractice = value === '' || value === 'New';
-        this.gameGrids.forEach((grid, i) => {
+        this.gameComponents.forEach((grid, i) => {
           if (trackIndexes.includes(i)) {
             grid.leagueSelector.selectedLeague = value as string;
             grid.checkbox.checked = isPractice;
@@ -452,7 +452,7 @@ export class AddGamePage implements OnInit {
   }
 
   onToolbarButtonClick(char: string): void {
-    const activeGrid = this.gameGrids.toArray().find((_, i) => i === this.activeGameIndex);
+    const activeGrid = this.gameComponents.toArray().find((_, i) => i === this.activeGameIndex);
     if (activeGrid) {
       activeGrid.selectSpecialScore(char);
     }
@@ -555,7 +555,7 @@ export class AddGamePage implements OnInit {
         setTimeout(() => (this.is300 = false), 4000);
       }
       this.initializeGames();
-      this.gameGrids.forEach((grid) => (grid.checkbox.disabled = false));
+      this.gameComponents.forEach((grid) => (grid.checkbox.disabled = false));
       this.pinModeState.set(
         Array.from({ length: 19 }, () => ({
           currentFrameIndex: 0,
@@ -712,7 +712,7 @@ export class AddGamePage implements OnInit {
     );
 
     setTimeout(() => {
-      this.gameGrids.forEach((grid, i) => {
+      this.gameComponents.forEach((grid, i) => {
         if (activeIndexes.includes(i)) {
           if (grid.leagueSelector) {
             grid.leagueSelector.selectedLeague = sourceGame.league || '';
@@ -759,12 +759,12 @@ export class AddGamePage implements OnInit {
   // PRIVATE HELPERS - VALIDATION
   private handleInvalidInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
     this.hapticService.vibrate(ImpactStyle.Heavy);
-    const grid = isModal ? this.modalGrid : this.gameGrids.toArray()[index];
+    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
     if (grid) grid.handleInvalidInput(frameIndex, throwIndex);
   }
 
   private focusNextInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
-    const grid = isModal ? this.modalGrid : this.gameGrids.toArray()[index];
+    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
     if (grid) grid.focusNextInput(frameIndex, throwIndex);
   }
 

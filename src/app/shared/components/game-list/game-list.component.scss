@@ -1,0 +1,84 @@
+.ball-modal {
+  --width: fit-content;
+  --min-width: 250px;
+  --height: fit-content;
+  --border-radius: 13px;
+  --max-height: auto;
+}
+
+#ball-selector-game::part(detail-icon) {
+  opacity: 1;
+  color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
+  margin-inline-start: 4px;
+  margin-inline-end: 0;
+  font-size: 18px;
+  --ionicon-stroke-width: 48px;
+}
+
+ion-list {
+  margin-bottom: 32px;
+}
+
+.sliding {
+  .note {
+    --inner-border-width: 0;
+  }
+
+  ion-item:not(.note, .league, .arsenal, .pattern) {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+  }
+
+  ion-accordion {
+    background-color: transparent;
+
+    .score {
+      font-size: 0.875rem;
+      color: lightgray;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      width: 90%;
+    }
+
+    .title {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .game-info {
+      display: flex;
+      flex-direction: column;
+      margin-left: 20px;
+    }
+
+    ::ng-deep .ion-accordion-toggle-icon {
+      margin-right: 20px;
+      font-size: 22px;
+    }
+  }
+
+  .action-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 8px;
+
+    ion-button {
+      min-width: 96px;
+      height: 32px;
+
+      // --background: var(--ion-color-dark);
+      // color: #fff;
+    }
+  }
+}
+
+// Pin deck frame row styling for history games
+:host ::ng-deep app-pin-deck-frame-row {
+  display: block;
+
+  .pin-deck-row {
+    height: 22px;
+    min-height: 22px;
+  }
+}

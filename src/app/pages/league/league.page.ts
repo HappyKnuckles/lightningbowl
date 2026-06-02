@@ -55,7 +55,7 @@ import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { GameComponent } from 'src/app/shared/components/game/game.component';
+import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
@@ -83,7 +83,7 @@ import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/
     IonTitle,
     IonToolbar,
     FormsModule,
-    GameComponent,
+    GameListComponent,
     ReactiveFormsModule,
     NgIf,
     DecimalPipe,

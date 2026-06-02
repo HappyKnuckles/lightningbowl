@@ -60,8 +60,8 @@
 <ion-content [fullscreen]="true">
   <ion-segment-view>
     <ion-segment-content *ngFor="let segment of segments; let i = index" [id]="segment">
-      <app-game-grid
-        #gameGrid
+      <app-game
+        #gameRef
         [game]="games()[i]"
         [strikeDisabled]="toolbarDisabledState.strikeDisabled"
         [spareDisabled]="toolbarDisabledState.spareDisabled"
@@ -89,7 +89,7 @@
         (ballsChanged)="onBallsChange($event, i)"
         (inputFocused)="onInputFocused($event, i)"
         (seriesStatsClick)="onSeriesStatsClick()">
-      </app-game-grid>
+      </app-game>
 
       <ion-grid *ngIf="selectedMode !== 'Single'">
         <ion-row class="button-row">
@@ -171,7 +171,7 @@
     </ion-header>
     <ion-content>
       <h2 class="ion-text-center">Edit wrong game data</h2>
-      <app-game-grid
+      <app-game
         #modalGrid
         [ballSelectorId]="gameData.gameId + '-modal-ball-selector'"
         [game]="gameData"
@@ -183,7 +183,7 @@
         (ballsChanged)="onBallsChange($event, 0, true)"
         (patternChanged)="onPatternChange($event, true)"
         [patternModalId]="gameData.gameId">
-      </app-game-grid>
+      </app-game>
     </ion-content>
   </ng-template>
 </ion-modal>

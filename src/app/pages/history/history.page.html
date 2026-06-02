@@ -42,6 +42,6 @@
   <!-- Main content to display when there is game history or when loading is done -->
   <ng-template #content>
     <!-- <ion-button (click)="deleteAll()">Delete</ion-button>-->
-    <app-game [games]="gameFilterService.filteredGames()" [gameCount]="gameFilterService.filteredGames().length"></app-game>
+    <app-game-list [games]="gameFilterService.filteredGames()" [gameCount]="gameFilterService.filteredGames().length"></app-game-list>
   </ng-template>
 </ion-content>

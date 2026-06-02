@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeCircleOutline, arrowUndoOutline, checkmarkOutline } from 'ionicons/icons';
+import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -19,12 +19,15 @@ export class PinInputComponent {
   canUndo = input<boolean>(false);
   isGameComplete = input<boolean>(false);
   selectHitPins = input<boolean>(true);
+  showStatsButton = input<boolean>(false);
+  statsEnabled = input<boolean>();
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
+  statsClick = output<void>();
   selectedPins: number[] = [];
 
   constructor() {
-    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline });
+    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline });
   }
 
   get allPins(): number[] {

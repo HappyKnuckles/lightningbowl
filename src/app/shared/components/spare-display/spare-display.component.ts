@@ -1,7 +1,7 @@
 import { CommonModule, NgIf, NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, Input } from '@angular/core';
 import { IonText, IonCol, IonRow, IonIcon, IonGrid } from '@ionic/angular/standalone';
-import { PrevStats, SessionStats, Stats } from 'src/app/core/models/stats.model';
+import { PrevStats, Stats } from 'src/app/core/models/stats.model';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
@@ -15,7 +15,7 @@ import { UtilsService } from 'src/app/core/services/utils/utils.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpareDisplayComponent {
-  @Input({ required: true }) stats!: Stats | SessionStats;
+  @Input({ required: true }) stats!: Stats;
   @Input() title = '';
   @Input() prevStats?: PrevStats | Stats;
   @Input() id?: string;

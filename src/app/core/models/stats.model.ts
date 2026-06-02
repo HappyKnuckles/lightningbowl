@@ -23,6 +23,7 @@ export interface Stats {
   averageFirstCount: number;
   averageScore: number;
   highGame: number;
+  lowGame: number;
   spareRates: number[];
   overallSpareRate: number;
   overallMissedRate: number;
@@ -77,13 +78,18 @@ export interface Stats {
   makeableSplitPercentage?: number;
   [key: string]: StatValue | undefined;
 }
-export interface SessionStats extends Stats {
-  lowGame: number;
-}
+
 // TODO think of what these need
 export interface SeriesStats extends Stats {
   seriesTotal: number;
   seriesDate: string;
+}
+
+export interface LiveSeriesStats {
+  stats: Stats;
+  leaves: { best: LeaveStats[]; worst: LeaveStats[]; common: LeaveStats[] };
+  allLeaves: LeaveStats[];
+  context: { complete: number; total: number };
 }
 
 export interface OverallSeriesStats {
@@ -95,6 +101,7 @@ export interface OverallSeriesStats {
   highSeries: number;
   lowSeries: number;
 }
+
 export interface PrevStats {
   cleanGamePercentage: number;
   markPercentage: number;
@@ -171,4 +178,4 @@ export interface LeagueLeaveStats {
   worst: LeaveStats[];
 }
 
-export type GameStats = Stats | SessionStats | SeriesStats | PrevStats;
+export type GameStats = Stats | SeriesStats | PrevStats;

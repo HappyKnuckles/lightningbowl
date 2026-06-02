@@ -34,7 +34,7 @@ import { AppFacade } from 'src/app/core/stores/app.facade';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
-import { GameComponent } from 'src/app/shared/components/game/game.component';
+import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 
 @Component({
@@ -58,7 +58,7 @@ import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-
     ReactiveFormsModule,
     ReactiveFormsModule,
     FormsModule,
-    GameComponent,
+    GameListComponent,
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
   ],

@@ -26,12 +26,16 @@ import {
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState, toCompletedFramesGame } from 'src/app/core/models/game.model';
+import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
+import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
@@ -40,9 +44,11 @@ import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/hi
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { GameGridComponent } from 'src/app/shared/components/game-grid/game-grid.component';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
+import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { PinLeaveStatsComponent } from 'src/app/shared/components/pin-leave-stats/pin-leave-stats.component';
+import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 
 const enum SeriesMode {
   Single = 'Single',
@@ -79,14 +85,27 @@ defineCustomElements(window);
     IonLabel,
     NgIf,
     NgFor,
-    GameGridComponent,
+    GameComponent,
     GameScoreToolbarComponent,
+    StatDisplayComponent,
+    PinLeaveStatsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AddGamePage implements OnInit {
+  // Live stats
+  liveSeriesStats: LiveSeriesStats | null = null;
+  allStats = this.gameStatsService.overallStats;
+  isLiveStatsOpen = false;
+  readonly hasLiveStats = computed(() => {
+    const active = new Set(this.getActiveTrackIndexes());
+    const games = this.games().filter((_, i) => active.has(i));
+    return games.map(toCompletedFramesGame).some((g) => g.frames.length > 0);
+  });
+  readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
+
   // UI State
-  selectedMode: SeriesMode = SeriesMode.Single;
+  selectedMode = signal<SeriesMode>(SeriesMode.Single);
   sheetOpen = false;
   isAlertOpen = false;
   isModalOpen = false;
@@ -124,8 +143,8 @@ export class AddGamePage implements OnInit {
   });
 
   // View Children & DOM References
-  @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
-  @ViewChild('modalGrid', { static: false }) modalGrid!: GameGridComponent;
+  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  @ViewChild('modalGrid', { static: false }) modalGrid!: GameComponent;
   presentingElement!: HTMLElement | null;
 
   // Internal Logic State
@@ -148,6 +167,7 @@ export class AddGamePage implements OnInit {
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameImageImport: GameImageImportService,
+    private gameStatsService: GameStatsService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
@@ -156,7 +176,7 @@ export class AddGamePage implements OnInit {
       const totalScores = this.totalScores();
       const maxScores = this.maxScores();
 
-      const selectedMode = untracked(() => this.selectedMode);
+      const selectedMode = untracked(() => this.selectedMode());
       const isPinInputMode = untracked(() => this.isPinInputMode);
       const gameIndex = untracked(() => this.selectedSegment);
       const segments = untracked(() => this.segments);
@@ -339,7 +359,8 @@ export class AddGamePage implements OnInit {
       );
 
       if (key === 'league') {
-        this.gameGrids.forEach((grid, i) => {
+        const isPractice = value === '' || value === 'New';
+        this.gameComponents.forEach((grid, i) => {
           if (trackIndexes.includes(i)) {
             grid.leagueSelector.selectedLeague = league as string;
             grid.checkbox.checked = isPractice;
@@ -427,7 +448,7 @@ export class AddGamePage implements OnInit {
   }
 
   onToolbarButtonClick(char: string): void {
-    const activeGrid = this.gameGrids.toArray().find((_, i) => i === this.activeGameIndex);
+    const activeGrid = this.gameComponents.toArray().find((_, i) => i === this.activeGameIndex);
     if (activeGrid) {
       activeGrid.selectSpecialScore(char);
     }
@@ -441,11 +462,11 @@ export class AddGamePage implements OnInit {
     const modes = [SeriesMode.Single, SeriesMode.Series3, SeriesMode.Series4, SeriesMode.Series5, SeriesMode.Series6];
 
     modes.forEach((mode) => {
-      if (mode !== this.selectedMode) {
+      if (mode !== this.selectedMode()) {
         buttons.push({
           text: mode,
           handler: () => {
-            this.selectedMode = mode;
+            this.selectedMode.set(mode);
             this.propagateMetadataToSeries();
             this.recalculateActiveGameScores();
           },
@@ -515,7 +536,7 @@ export class AddGamePage implements OnInit {
   async calculateScore(): Promise<void> {
     const activeIndexes = this.getActiveTrackIndexes();
     const gamesToSave = activeIndexes.map((idx) => this.games()[idx]);
-    const isSeries = this.selectedMode !== SeriesMode.Single;
+    const isSeries = this.selectedMode() !== SeriesMode.Single;
 
     if (isSeries) {
       this.seriesId = this.gameUtilsService.generateUniqueSeriesId();
@@ -530,7 +551,7 @@ export class AddGamePage implements OnInit {
         setTimeout(() => (this.is300 = false), 4000);
       }
       this.initializeGames();
-      this.gameGrids.forEach((grid) => (grid.checkbox.disabled = false));
+      this.gameComponents.forEach((grid) => (grid.checkbox.disabled = false));
       this.pinModeState.set(
         Array.from({ length: 19 }, () => ({
           currentFrameIndex: 0,
@@ -624,9 +645,18 @@ export class AddGamePage implements OnInit {
   }
 
   private getActiveTrackIndexes(): number[] {
-    const countMatch = this.selectedMode.match(/\d+/);
+    const countMatch = this.selectedMode().match(/\d+/);
     const count = countMatch ? parseInt(countMatch[0], 10) : 1;
     return Array.from({ length: count }, (_, i) => i);
+  }
+
+  onSeriesStatsClick(): void {
+    const active = new Set(this.getActiveTrackIndexes());
+    const games = this.games().filter((_, i) => active.has(i));
+    this.liveSeriesStats = this.gameStatsService.calculateLiveSeriesStats(games);
+    if (this.liveSeriesStats) {
+      this.isLiveStatsOpen = true;
+    }
   }
 
   private propagateMetadataToSeries(): void {
@@ -648,7 +678,7 @@ export class AddGamePage implements OnInit {
     );
 
     setTimeout(() => {
-      this.gameGrids.forEach((grid, i) => {
+      this.gameComponents.forEach((grid, i) => {
         if (activeIndexes.includes(i)) {
           if (grid.leagueSelector) {
             grid.leagueSelector.selectedLeague = sourceGame.league || '';
@@ -695,12 +725,12 @@ export class AddGamePage implements OnInit {
   // PRIVATE HELPERS - VALIDATION
   private handleInvalidInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
     this.hapticService.vibrate(ImpactStyle.Heavy);
-    const grid = isModal ? this.modalGrid : this.gameGrids.toArray()[index];
+    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
     if (grid) grid.handleInvalidInput(frameIndex, throwIndex);
   }
 
   private focusNextInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
-    const grid = isModal ? this.modalGrid : this.gameGrids.toArray()[index];
+    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
     if (grid) grid.focusNextInput(frameIndex, throwIndex);
   }
 
@@ -750,7 +780,7 @@ export class AddGamePage implements OnInit {
   private restoreDraft(draft: GameDraft): void {
     this.isStorageReady = true;
 
-    this.selectedMode = draft.selectedMode as SeriesMode;
+    this.selectedMode.set(draft.selectedMode as SeriesMode);
     this.isPinInputMode = draft.isPinInputMode;
     this.updateSegments();
 

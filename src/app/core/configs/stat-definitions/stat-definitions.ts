@@ -36,6 +36,28 @@ export const SERIES_STAT_DEFINITIONS = buildSection([
   'high6Series',
 ]);
 
+export const LIVE_SERIES_STAT_DEFINTIONS = buildSection(
+  [
+    'totalGames',
+    'averageScore',
+    'highGame',
+    'lowGame',
+    'cleanGameCount',
+    'averageFirstCount',
+    'strikePercentage',
+    'sparePercentage',
+    'openPercentage',
+    'markPercentage',
+    'averageStrikesPerGame',
+    'strikeToStrikePercentage',
+    'longestStrikeStreak',
+    'totalStrikes',
+    'totalSpares',
+    'totalSparesMissed',
+  ],
+  'live',
+);
+
 export const LEAGUE_STAT_DEFINITIONS = buildSection(
   [
     'totalGames',

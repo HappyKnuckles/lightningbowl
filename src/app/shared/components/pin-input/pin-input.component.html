@@ -1,4 +1,9 @@
 <div class="pin-input-container">
+  @if (showStatsButton()) {
+    <ion-button class="stats-btn" disabled="{{ !statsEnabled() }}" fill="clear" size="small" (click)="statsClick.emit()">
+      <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
+    </ion-button>
+  }
   <!-- Pin Deck -->
   <div class="pin-row">
     <ion-button

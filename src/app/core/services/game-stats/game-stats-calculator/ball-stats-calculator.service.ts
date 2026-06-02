@@ -9,6 +9,56 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 export class BallStatsCalculatorService {
   constructor(private ballsStore: BallsStore) {}
 
+  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
+    return Object.values(this._calculateAllBallStats(gameHistory));
+  }
+
+  calculateBestBallStats(gameHistory: Game[]): BestBallStats {
+    const allBallStats = this._calculateAllBallStats(gameHistory);
+    const ballNames = Object.keys(allBallStats);
+    const defaultBall: BestBallStats = {
+      ballName: '',
+      ballImage: '',
+      ballAvg: 0,
+      ballHighestGame: 0,
+      ballLowestGame: 0,
+      gameCount: 0,
+      cleanGameCount: 0,
+      strikeRate: 0,
+    };
+
+    if (ballNames.length === 0) {
+      return defaultBall;
+    }
+
+    return ballNames.reduce((best, currentBallName) => {
+      return allBallStats[currentBallName].ballAvg > best.ballAvg ? allBallStats[currentBallName] : best;
+    }, defaultBall);
+  }
+
+  calculateMostPlayedBall(gameHistory: Game[]): BestBallStats {
+    const allBallStats = this._calculateAllBallStats(gameHistory);
+    const ballNames = Object.keys(allBallStats);
+    const defaultBall: BestBallStats = {
+      ballName: '',
+      ballImage: '',
+      ballAvg: 0,
+      ballHighestGame: 0,
+      ballLowestGame: 0,
+      gameCount: 0,
+      cleanGameCount: 0,
+      strikeRate: 0,
+    };
+
+    if (ballNames.length === 0) {
+      return defaultBall;
+    }
+
+    return ballNames.reduce((mostPlayed, currentBallName) => {
+      return allBallStats[currentBallName].gameCount > mostPlayed.gameCount ? allBallStats[currentBallName] : mostPlayed;
+    }, defaultBall);
+  }
+
   private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
     const gamesWithBalls = gameHistory.filter((game) => game.balls && game.balls.length > 0);
     const tempStats: Record<
@@ -73,55 +123,5 @@ export class BallStatsCalculatorService {
       };
     }
     return finalStats;
-  }
-
-  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
-    return Object.values(this._calculateAllBallStats(gameHistory));
-  }
-
-  calculateBestBallStats(gameHistory: Game[]): BestBallStats {
-    const allBallStats = this._calculateAllBallStats(gameHistory);
-    const ballNames = Object.keys(allBallStats);
-    const defaultBall: BestBallStats = {
-      ballName: '',
-      ballImage: '',
-      ballAvg: 0,
-      ballHighestGame: 0,
-      ballLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (ballNames.length === 0) {
-      return defaultBall;
-    }
-
-    return ballNames.reduce((best, currentBallName) => {
-      return allBallStats[currentBallName].ballAvg > best.ballAvg ? allBallStats[currentBallName] : best;
-    }, defaultBall);
-  }
-
-  calculateMostPlayedBall(gameHistory: Game[]): BestBallStats {
-    const allBallStats = this._calculateAllBallStats(gameHistory);
-    const ballNames = Object.keys(allBallStats);
-    const defaultBall: BestBallStats = {
-      ballName: '',
-      ballImage: '',
-      ballAvg: 0,
-      ballHighestGame: 0,
-      ballLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (ballNames.length === 0) {
-      return defaultBall;
-    }
-
-    return ballNames.reduce((mostPlayed, currentBallName) => {
-      return allBallStats[currentBallName].gameCount > mostPlayed.gameCount ? allBallStats[currentBallName] : mostPlayed;
-    }, defaultBall);
   }
 }

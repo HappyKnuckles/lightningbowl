@@ -7,7 +7,7 @@
     </ion-buttons>
     <input type="file" id="upload" class="ion-hide" accept="image/*" />
     <ion-title (click)="presentActionSheet()" style="cursor: pointer">
-      New {{ selectedMode === "Single" ? "Game" : selectedMode }}
+      New {{ selectedMode() === "Single" ? "Game" : selectedMode() }}
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
@@ -17,7 +17,7 @@
     </ion-buttons>
   </ion-toolbar>
 
-  @if (selectedMode !== "Single") {
+  @if (selectedMode() !== "Single") {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
         <ion-segment-button *ngFor="let segment of segments" [value]="segment" [contentId]="segment">
@@ -60,8 +60,8 @@
 <ion-content [fullscreen]="true">
   <ion-segment-view>
     <ion-segment-content *ngFor="let segment of segments; let i = index" [id]="segment">
-      <app-game-grid
-        #gameGrid
+      <app-game
+        #gameRef
         [game]="games()[i]"
         [strikeDisabled]="toolbarDisabledState.strikeDisabled"
         [spareDisabled]="toolbarDisabledState.spareDisabled"
@@ -76,6 +76,7 @@
         [isGameComplete]="isGameComplete(i)"
         [patternModalId]="i.toString()"
         [ballSelectorId]="'modal-ball-selector' + i"
+        [showStatsButton]="selectedMode() !== 'Single'"
         (throwInput)="handleThrowInput($event, i)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
@@ -86,10 +87,12 @@
         (toolbarStateChanged)="onToolbarStateChange($event)"
         (noteChanged)="onNoteChange($event, i)"
         (ballsChanged)="onBallsChange($event, i)"
-        (inputFocused)="onInputFocused($event, i)">
-      </app-game-grid>
+        (inputFocused)="onInputFocused($event, i)"
+        (seriesStatsClick)="onSeriesStatsClick()"
+        [statsEnabled]="hasLiveStats()">
+      </app-game>
 
-      <ion-grid *ngIf="selectedMode !== 'Single'">
+      <ion-grid *ngIf="selectedMode() !== 'Single'">
         <ion-row class="button-row">
           <ion-col>
             <ion-button (click)="clearFrames(i)">Clear Score {{ i + 1 }}</ion-button>
@@ -99,7 +102,7 @@
     </ion-segment-content>
   </ion-segment-view>
 
-  <ion-grid *ngIf="selectedMode === 'Single'">
+  <ion-grid *ngIf="selectedMode() === 'Single'">
     <ion-row class="button-row">
       <ion-col>
         <ion-button (click)="clearFrames()">Clear Score</ion-button>
@@ -110,7 +113,7 @@
     </ion-row>
   </ion-grid>
 
-  <ion-grid *ngIf="selectedMode !== 'Single'">
+  <ion-grid *ngIf="selectedMode() !== 'Single'">
     <ion-row>
       <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
       <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>
@@ -126,13 +129,48 @@
   </ion-grid>
 </ion-content>
 
+<!-- Modal for Live Series Stats -->
+<ion-modal [isOpen]="isLiveStatsOpen" (didDismiss)="isLiveStatsOpen = false" [breakpoints]="[0, 0.75, 1]" [initialBreakpoint]="0.75">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Series Stats</ion-title>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="isLiveStatsOpen = false">
+            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content [fullscreen]="true">
+      @if (liveSeriesStats; as series) {
+        <p style="text-align: center; color: var(--ion-color-medium); font-size: 0.85rem; margin: 8px 0 0">
+          {{ series.context.complete }} of {{ series.context.total }} games complete
+        </p>
+
+        @if (series.stats; as stats) {
+          <app-stat-display [currentStats]="stats" [prevStats]="allStats()" [statDefinitions]="liveStatDefinitions"></app-stat-display>
+          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-pin-leave-stats>
+          <app-pin-leave-stats
+            [title]="'Most Common Leaves'"
+            [leaveStats]="series.leaves.common"
+            [allLeaves]="series.allLeaves"></app-pin-leave-stats>
+        }
+      }
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
 <!-- Modal for OCR -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false" #modal>
   <ng-template>
     <ion-header>
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-button (click)="modal.dismiss()">Cancel</ion-button>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="modal.dismiss()">
+            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+          </ion-button>
         </ion-buttons>
         <ion-title>Your game</ion-title>
         <ion-buttons slot="end">
@@ -142,7 +180,7 @@
     </ion-header>
     <ion-content>
       <h2 class="ion-text-center">Edit wrong game data</h2>
-      <app-game-grid
+      <app-game
         #modalGrid
         [ballSelectorId]="gameData.gameId + '-modal-ball-selector'"
         [game]="gameData"
@@ -154,7 +192,7 @@
         (ballsChanged)="onBallsChange($event, 0, true)"
         (patternChanged)="onPatternChange($event, true)"
         [patternModalId]="gameData.gameId">
-      </app-game-grid>
+      </app-game>
     </ion-content>
   </ng-template>
 </ion-modal>

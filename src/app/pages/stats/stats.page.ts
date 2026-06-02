@@ -35,7 +35,6 @@ import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { SessionStats } from 'src/app/core/models/stats.model';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -67,6 +66,7 @@ import {
 import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
 import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
 import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { Stats } from 'src/app/core/models/stats.model';
 import { GameFilter } from 'src/app/core/models/filter.model';
 
 @Component({
@@ -164,8 +164,8 @@ export class StatsPage implements OnInit, AfterViewInit {
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
 
-  sessionStats: Signal<SessionStats> = computed(() => {
-    return this.statsService.calculateBowlingStats(this.gamesForSelectedSession()) as SessionStats;
+  sessionStats: Signal<Stats> = computed(() => {
+    return this.statsService.calculateBowlingStats(this.gamesForSelectedSession());
   });
 
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));

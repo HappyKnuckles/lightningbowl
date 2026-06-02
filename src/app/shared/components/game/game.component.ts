@@ -1,9 +1,20 @@
 import { NgFor, NgIf } from '@angular/common';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, computed, input, output } from '@angular/core';
+import {
+  CUSTOM_ELEMENTS_SCHEMA,
+  Component,
+  OnInit,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { Keyboard } from '@capacitor/keyboard';
-import { InputCustomEvent, Platform } from '@ionic/angular';
+import { InputCustomEvent } from '@ionic/angular';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -20,7 +31,6 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
-import { Subscription } from 'rxjs';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
@@ -39,11 +49,13 @@ import { createBallTypeaheadConfig, createPartialPatternTypeaheadConfig } from '
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
+import { KeyboardToolbarService } from 'src/app/core/services/keyboard-toolbar/keyboard-toolbar.service';
 
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.scss'],
+  providers: [KeyboardToolbarService],
   imports: [
     NgFor,
     IonList,
@@ -68,7 +80,7 @@ import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.c
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class GameComponent implements OnInit, OnDestroy {
+export class GameComponent implements OnInit {
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -126,14 +138,10 @@ export class GameComponent implements OnInit, OnDestroy {
   showButtonToolbar = false;
   keyboardOffset = 0;
   isLandScapeMode = false;
-
-  private isFrameInputFocused = false;
-  private focusTimer: ReturnType<typeof setTimeout> | undefined;
+  private keyboardToolbar = inject(KeyboardToolbarService);
+  readonly toolbarState = this.keyboardToolbar.state;
   private localFrameIndex = 0;
   private localThrowIndex = 0;
-  private keyboardShowSubscription: Subscription | undefined;
-  private keyboardHideSubscription: Subscription | undefined;
-  private resizeSubscription: Subscription | undefined;
 
   get currentGame(): Game {
     return this.game() || createEmptyGame();
@@ -145,28 +153,17 @@ export class GameComponent implements OnInit, OnDestroy {
     public ballsStore: BallsStore,
     private hapticService: HapticService,
     public utilsService: UtilsService,
-    private platform: Platform,
     private patternService: PatternService,
     private toastService: ToastService,
   ) {
-    this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
+    effect(() => this.toolbarStateChanged.emit(this.toolbarState()));
   }
 
   async ngOnInit(): Promise<void> {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
     this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
-  }
-
-  ngOnDestroy() {
-    if (this.keyboardShowSubscription) this.keyboardShowSubscription.unsubscribe();
-    if (this.keyboardHideSubscription) this.keyboardHideSubscription.unsubscribe();
-    if (this.resizeSubscription) this.resizeSubscription.unsubscribe();
-    if (this.focusTimer) clearTimeout(this.focusTimer);
-    if ('visualViewport' in window && window.visualViewport) {
-      window.visualViewport.removeEventListener('resize', this.onViewportResize);
-    }
   }
 
   // PIN INPUT MODE - PASS-THROUGH HANDLERS
@@ -185,32 +182,11 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   // STANDARD GRID MODE LOGIC
-  initializeKeyboardListeners() {
-    if (this.platform.is('mobile') && !this.platform.is('mobileweb')) {
-      Keyboard.addListener('keyboardWillShow', (info) => {
-        this.keyboardOffset = Math.max(0, info.keyboardHeight || 0);
-        if (this.isFrameInputFocused) {
-          this.showButtonToolbar = true;
-          this.toolbarStateChanged.emit({ show: true, offset: this.keyboardOffset });
-        }
-      });
-      Keyboard.addListener('keyboardWillHide', () => {
-        this.keyboardOffset = 0;
-        this.showButtonToolbar = false;
-        this.toolbarStateChanged.emit({ show: false, offset: this.keyboardOffset });
-      });
-    } else if ('visualViewport' in window && window.visualViewport) {
-      window.visualViewport.addEventListener('resize', this.onViewportResize);
-    }
-    this.resizeSubscription = this.platform.resize.subscribe(() => {
-      this.isLandScapeMode = this.platform.isLandscape();
-    });
-  }
 
   handleInputFocus(frameIndex: number, throwIndex: number): void {
     this.localFrameIndex = frameIndex;
     this.localThrowIndex = throwIndex;
-    this.isFrameInputFocused = true;
+    this.keyboardToolbar.setFocused(true);
     this.inputFocused.emit({ frameIndex, throwIndex });
   }
 
@@ -315,25 +291,6 @@ export class GameComponent implements OnInit, OnDestroy {
   private getInputPosition(frameIndex: number, throwIndex: number): number {
     return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
-
-  private onViewportResize = () => {
-    if (!window.visualViewport) return;
-    const viewportHeight = window.visualViewport.height;
-    const fullHeight = window.innerHeight;
-    const keyboardActualHeight = fullHeight - viewportHeight;
-
-    if (keyboardActualHeight > 100) {
-      this.keyboardOffset = this.isLandScapeMode ? Math.max(0, keyboardActualHeight - 72) : Math.max(0, keyboardActualHeight - 85);
-      if (this.isFrameInputFocused) {
-        this.showButtonToolbar = true;
-        this.toolbarStateChanged.emit({ show: true, offset: this.keyboardOffset });
-      }
-    } else {
-      this.keyboardOffset = 0;
-      this.showButtonToolbar = false;
-      this.toolbarStateChanged.emit({ show: false, offset: this.keyboardOffset });
-    }
-  };
 
   // --- Passthrough Event Emitters ---
   onBallAdd(ballIds: string[]) {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -85,7 +85,7 @@ interface SavedEntry {
     IonSelectOption,
   ],
 })
-export class BallComparisonPage implements OnDestroy {
+export class BallComparisonPage implements OnDestroy, OnInit {
   protected readonly ballsStore = inject(BallsStore);
   protected readonly url = this.ballsStore.url;
   protected readonly allBalls = this.ballsStore.allBalls;
@@ -102,7 +102,7 @@ export class BallComparisonPage implements OnDestroy {
   readonly selectedSegment = model<'compare' | 'chart'>('compare');
   readonly loadingWeightBallIds = signal<Set<string>>(new Set());
 
-  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  presentingElement!: HTMLElement | null;
 
   readonly maxBalls = 6;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = {
@@ -134,6 +134,10 @@ export class BallComparisonPage implements OnDestroy {
     addIcons({ add, chevronDownOutline, closeOutline, scaleOutline });
     this.initChartEffect();
     this.initRestoreEffect();
+  }
+
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   ngOnDestroy(): void {

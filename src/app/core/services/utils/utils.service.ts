@@ -53,7 +53,7 @@ export class UtilsService {
     return !isNaN(value) && value >= 0 && value <= 10;
   }
 
-  isNumber(value: unknown): value is number {
+  isNumber(value: unknown): boolean {
     return !isNaN(parseFloat(value as string)) && isFinite(value as number);
   }
 

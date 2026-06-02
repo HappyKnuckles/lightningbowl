@@ -3,6 +3,7 @@ import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { UtilsService } from '../utils/utils.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
 
 @Injectable({
   providedIn: 'root',
@@ -18,8 +19,8 @@ export class GameFilterService {
     balls: ['all'],
     patterns: ['all'],
     timeRange: TimeRange.ALL,
-    startDate: '',
-    endDate: '',
+    startDate: new Date(Date.now() - FIFTY_YEARS_MS).toISOString(),
+    endDate: new Date(Date.now() + FIFTY_YEARS_MS).toISOString(),
   };
 
   activeFilterCount: Signal<number> = computed(() => {
@@ -64,8 +65,8 @@ export class GameFilterService {
 
   filterGames(games: Game[], filters: GameFilter): Game[] {
     const formatDate = (date: string) => date.split('T')[0];
-    const startDate = formatDate(filters.startDate!);
-    const endDate = formatDate(filters.endDate!);
+    const startDate = formatDate(filters.startDate ?? new Date(Date.now() - FIFTY_YEARS_MS).toISOString());
+    const endDate = formatDate(filters.endDate ?? new Date(Date.now() + FIFTY_YEARS_MS).toISOString());
 
     const matchesMultiSelect = (selected: string[], gameValues: string[]): boolean => {
       if (selected.includes('all') || selected.length === 0) {

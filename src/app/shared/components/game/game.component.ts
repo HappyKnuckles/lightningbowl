@@ -1,5 +1,5 @@
 import { NgIf, NgFor, DatePipe } from '@angular/common';
-import { Component, ViewChild, ViewChildren, QueryList, computed, input, signal, inject } from '@angular/core';
+import { Component, ViewChild, ViewChildren, QueryList, computed, input, signal, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
@@ -114,7 +114,7 @@ interface MonthHeader {
     PinDeckFrameRowComponent,
   ],
 })
-export class GameComponent {
+export class GameComponent implements OnInit {
   // DOM
   @ViewChild('modal', { static: false }) modal!: IonModal;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
@@ -214,7 +214,7 @@ export class GameComponent {
   // Pagination state
   private batchSize = 100;
   public loadedCount = signal(this.batchSize);
-  public presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  public presentingElement!: HTMLElement | null;
 
   // Config
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
@@ -235,6 +235,10 @@ export class GameComponent {
       filterOutline,
       layersOutline,
     });
+  }
+
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   // PAGINATION

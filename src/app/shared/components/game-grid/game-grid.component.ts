@@ -1,4 +1,4 @@
-import { Component, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed } from '@angular/core';
+import { Component, OnDestroy, QueryList, ViewChildren, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, output, computed, OnInit } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
@@ -68,7 +68,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class GameGridComponent implements OnDestroy {
+export class GameGridComponent implements OnDestroy, OnInit {
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -117,7 +117,7 @@ export class GameGridComponent implements OnDestroy {
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
-  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  presentingElement!: HTMLElement | null;
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
@@ -149,6 +149,10 @@ export class GameGridComponent implements OnDestroy {
   ) {
     this.initializeKeyboardListeners();
     addIcons({ chevronExpandOutline });
+  }
+
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   ngOnDestroy() {

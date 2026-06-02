@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal } from '@angular/core';
+import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
@@ -93,12 +93,12 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
     IonSelectOption,
   ],
 })
-export class ArsenalPage {
+export class ArsenalPage implements OnInit {
   @ViewChild('core', { static: false }) coreModal!: IonModal;
   @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
   coverstockBalls: Ball[] = [];
   coreBalls: Ball[] = [];
-  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  presentingElement!: HTMLElement | null;
 
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
@@ -129,6 +129,10 @@ export class ArsenalPage {
         this.generateBallDistributionChart();
       }
     });
+  }
+
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   private generateBallDistributionChart(): void {

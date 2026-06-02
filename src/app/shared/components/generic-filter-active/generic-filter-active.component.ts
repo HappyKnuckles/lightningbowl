@@ -147,6 +147,6 @@ export class GenericFilterActiveComponent {
     }
     const value = this.filters[config.key];
     const arrayValue = Array.isArray(value) ? value : [];
-    return arrayValue.length === 0 || (arrayValue.length === 1 && arrayValue[0] === '');
+    return arrayValue.length === 1 && arrayValue[0] === '';
   }
 }

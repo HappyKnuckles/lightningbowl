@@ -49,7 +49,7 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     type: 'array',
     displayValue: (value) => {
       const patterns = Array.isArray(value) ? value : [];
-      if (patterns.length === 0 || (patterns.length === 1 && patterns[0] === '')) {
+      if (patterns.length === 1 && patterns[0] === '') {
         return 'No Patterns';
       }
       return `${patterns.join(', ')}`;

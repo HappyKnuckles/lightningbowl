@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   IonButton,
@@ -61,12 +61,12 @@ import { CommonModule } from '@angular/common';
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BallFilterComponent {
+export class BallFilterComponent implements OnInit {
   markets: Market[] = [Market.ALL, Market.US, Market.INT];
   coreTypes: CoreType[] = [CoreType.ALL, CoreType.ASYMMETRIC, CoreType.SYMMETRIC];
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
   weights: string[] = ['12', '13', '14', '15', '16'];
-  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  presentingElement!: HTMLElement | null;
   brandTypeaheadConfig: TypeaheadConfig<Brand> = this.typeaheadConfigService.brand;
   coreTypeaheadConfig: TypeaheadConfig<Core> = this.typeaheadConfigService.core;
   coverstockTypeaheadConfig: TypeaheadConfig<Coverstock> = this.typeaheadConfigService.coverstock;
@@ -81,6 +81,11 @@ export class BallFilterComponent {
     private analyticsService: AnalyticsService,
     private typeaheadConfigService: TypeaheadConfigService,
   ) {}
+
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
+  }
+
   cancel(): Promise<boolean> {
     this.ballFilterService.filters.update(() =>
       localStorage.getItem('ball-filter') ? JSON.parse(localStorage.getItem('ball-filter')!) : this.ballFilterService.filters,
@@ -104,10 +109,12 @@ export class BallFilterComponent {
 
   updateNumericFilter<T extends keyof BallFilter>(key: T, raw: string | null | undefined): void {
     const normalized = raw?.replace(',', '.').trim();
-    const parsed = normalized ? Number(normalized) : NaN;
-    if (Number.isNaN(parsed)) {
+    if (!normalized) {
+      this.updateFilter(key, this.ballFilterService.defaultFilters[key]);
       return;
     }
+    const parsed = Number(normalized);
+    if (Number.isNaN(parsed)) return;
     this.updateFilter(key, parsed as BallFilter[T]);
   }
 

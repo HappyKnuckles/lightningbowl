@@ -126,7 +126,7 @@ export class AddGamePage implements OnInit {
   // View Children & DOM References
   @ViewChildren(GameGridComponent) gameGrids!: QueryList<GameGridComponent>;
   @ViewChild('modalGrid', { static: false }) modalGrid!: GameGridComponent;
-  presentingElement: HTMLElement = document.querySelector('.ion-page')!;
+  presentingElement!: HTMLElement | null;
 
   // Internal Logic State
   private isStorageReady = false;
@@ -179,6 +179,7 @@ export class AddGamePage implements OnInit {
   async ngOnInit(): Promise<void> {
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   // PIN INPUT MODE

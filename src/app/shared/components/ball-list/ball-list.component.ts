@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { IonItem, IonContent, IonAvatar, IonImg, IonList, IonLabel, IonHeader, IonToolbar, IonTitle } from '@ionic/angular/standalone';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -11,12 +11,12 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
   imports: [IonTitle, IonToolbar, IonHeader, IonLabel, IonList, IonImg, IonAvatar, IonItem, IonContent],
 })
 export class BallListComponent {
+  ballsStore = inject(BallsStore);
+
   @Input() balls: Ball[] = [];
   @Input() isCoverstock = false;
   @Input() title?: string;
   @Output() ballSelected = new EventEmitter<Ball>();
-
-  constructor(public ballsStore: BallsStore) {}
 
   onBallClick(ball: Ball): void {
     this.ballSelected.emit(ball);

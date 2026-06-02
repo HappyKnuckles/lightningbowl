@@ -1,4 +1,4 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -103,8 +103,6 @@ interface MonthHeader {
     IonIcon,
     IonSelect,
     IonSelectOption,
-    NgIf,
-    NgFor,
     ReactiveFormsModule,
     FormsModule,
     DatePipe,

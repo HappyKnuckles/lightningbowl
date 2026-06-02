@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
@@ -7,18 +7,16 @@ import { StorageRepository } from 'src/app/core/services/storage/storage.reposit
 
 @Injectable({ providedIn: 'root' })
 export class GamesStore {
+  private storageRepository = inject(StorageRepository);
+  private sortUtilsService = inject(SortUtilsService);
+  private loadingService = inject(LoadingService);
+
   #games = signal<Game[]>([]);
   #firstGameDate: number | null = null;
 
   get games() {
     return this.#games;
   }
-
-  constructor(
-    private storageRepository: StorageRepository,
-    private sortUtilsService: SortUtilsService,
-    private loadingService: LoadingService,
-  ) {}
 
   async loadGameHistory(): Promise<Game[]> {
     this.loadingService.setLoading(true);

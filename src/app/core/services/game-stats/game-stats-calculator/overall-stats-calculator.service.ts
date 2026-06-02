@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
 import { GameUtilsService } from '../../game-utils/game-utils.service';
@@ -9,7 +9,7 @@ const MAX_FRAMES = 10;
   providedIn: 'root',
 })
 export class OverallStatsCalculatorService {
-  constructor(private gameUtilsService: GameUtilsService) {}
+  private gameUtilsService = inject(GameUtilsService);
 
   private getRate(converted: number, missed: number): number {
     if (converted + missed === 0) {

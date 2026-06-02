@@ -1,5 +1,17 @@
-import { DecimalPipe, NgIf } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, QueryList, Signal, signal, ViewChild, ViewChildren } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import {
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  QueryList,
+  Signal,
+  signal,
+  ViewChild,
+  ViewChildren,
+  inject,
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
@@ -85,7 +97,6 @@ import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
-    NgIf,
     DecimalPipe,
     StatDisplayComponent,
     SpareDisplayComponent,
@@ -101,6 +112,20 @@ import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class LeaguePage {
+  gamesStore = inject(GamesStore);
+  ballsStore = inject(BallsStore);
+  leaguesStore = inject(LeaguesStore);
+  private appFacade = inject(AppFacade);
+  private sortUtilsService = inject(SortUtilsService);
+  private hapticService = inject(HapticService);
+  private statService = inject(GameStatsService);
+  loadingService = inject(LoadingService);
+  private alertController = inject(AlertController);
+  private toastService = inject(ToastService);
+  private chartService = inject(ChartGenerationService);
+  private hiddenLeagueSelectionService = inject(HiddenLeagueSelectionService);
+  private analyticsService = inject(AnalyticsService);
+
   @ViewChild('modalContent') content!: IonContent;
   @ViewChildren('modal') modals!: QueryList<IonModal>;
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
@@ -154,21 +179,7 @@ export class LeaguePage {
   private previousLeagueSelectionState: Record<string, boolean> = {};
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
 
-  constructor(
-    public gamesStore: GamesStore,
-    public ballsStore: BallsStore,
-    public leaguesStore: LeaguesStore,
-    private appFacade: AppFacade,
-    private sortUtilsService: SortUtilsService,
-    private hapticService: HapticService,
-    private statService: GameStatsService,
-    public loadingService: LoadingService,
-    private alertController: AlertController,
-    private toastService: ToastService,
-    private chartService: ChartGenerationService,
-    private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
-    private analyticsService: AnalyticsService,
-  ) {
+  constructor() {
     addIcons({
       addOutline,
       checkmarkOutline,

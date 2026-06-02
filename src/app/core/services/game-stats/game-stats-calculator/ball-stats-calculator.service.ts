@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { BestBallStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -7,7 +7,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
   providedIn: 'root',
 })
 export class BallStatsCalculatorService {
-  constructor(private ballsStore: BallsStore) {}
+  private ballsStore = inject(BallsStore);
 
   calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
     return Object.values(this._calculateAllBallStats(gameHistory));

@@ -119,7 +119,9 @@
         (ionChange)="updateFilter('leagues', $event.detail.value)">
         <ion-select-option value="all">All</ion-select-option>
         <ion-select-option value="">None</ion-select-option>
-        <ion-select-option *ngFor="let league of leagues" [value]="league">{{ league }}</ion-select-option>
+        @for (league of leagues; track league) {
+          <ion-select-option [value]="league">{{ league }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item
@@ -149,7 +151,9 @@
         (ionChange)="updateFilter('patterns', $event.detail.value)">
         <ion-select-option value="all">All</ion-select-option>
         <ion-select-option value="">None</ion-select-option>
-        <ion-select-option *ngFor="let pattern of patterns()" [value]="pattern">{{ pattern }}</ion-select-option>
+        @for (pattern of patterns(); track pattern) {
+          <ion-select-option [value]="pattern">{{ pattern }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
   </ion-list>

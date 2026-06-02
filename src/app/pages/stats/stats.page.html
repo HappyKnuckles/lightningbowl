@@ -5,7 +5,9 @@
     <ion-buttons slot="end" class="action-sheet">
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
-        <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
+        @if (gameFilterService.activeFilterCount() !== 0) {
+          <ion-text class="filter-indicator">{{ gameFilterService.activeFilterCount() }}</ion-text>
+        }
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -20,10 +22,12 @@
       </ion-segment>
     </ion-toolbar>
   }
-  <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
-    <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
-    </app-generic-filter-active>
-  </ion-toolbar>
+  @if (gameFilterService.activeFilterCount() !== 0) {
+    <ion-toolbar style="text-align: center">
+      <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
+      </app-generic-filter-active>
+    </ion-toolbar>
+  }
 
   @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
     <ion-toolbar [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'" class="ion-activatable ion-ripple-parent">
@@ -34,9 +38,11 @@
         expandedIcon="calendar-number"
         [value]="selectedDate()"
         (ionChange)="_selectedDate.set($event.detail.value)">
-        <ion-select-option *ngFor="let unixDate of uniqueSortedDates()" [value]="unixDate">
-          {{ unixDate | date: "dd.MM.yyyy" }}
-        </ion-select-option>
+        @for (unixDate of uniqueSortedDates(); track unixDate) {
+          <ion-select-option [value]="unixDate">
+            {{ unixDate | date: "dd.MM.yyyy" }}
+          </ion-select-option>
+        }
       </ion-select>
       <ion-ripple-effect></ion-ripple-effect>
     </ion-toolbar>
@@ -50,124 +56,132 @@
 
   <ion-segment-view>
     <ion-segment-content id="Overall">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Overall Stats'"
-          [statDefinitions]="OVERALL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Play Frequency Stats'"
-          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Special Stats'"
-          [statDefinitions]="SPECIAL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-ball-stats
-          [title]="'Most used ball'"
-          [bestBall]="statsService.mostPlayedBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
-        <app-ball-stats
-          [title]="'Best ball'"
-          [bestBall]="statsService.bestBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
-        <app-pattern-stats
-          [title]="'Most played pattern'"
-          [bestPattern]="statsService.mostPlayedPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
-        <app-pattern-stats
-          [title]="'Best pattern'"
-          [bestPattern]="statsService.bestPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
-        <app-stat-display
-          [title]="'Series Stats'"
-          [statDefinitions]="SERIES_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-        <ion-list-header style="margin-bottom: 4px"> Average Score</ion-list-header>
-        <div class="stat-container">
-          <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-        <ion-list-header style="margin-bottom: 4px"> Score Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-      </section>
+      @if (gameFilterService.filteredGames().length > 0) {
+        <section class="tab">
+          <app-stat-display
+            [title]="'Overall Stats'"
+            [statDefinitions]="OVERALL_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <app-stat-display
+            [title]="'Play Frequency Stats'"
+            [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <app-stat-display
+            [title]="'Special Stats'"
+            [statDefinitions]="SPECIAL_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <app-ball-stats
+            [title]="'Most used ball'"
+            [bestBall]="statsService.mostPlayedBallStats()"
+            [totalGames]="statsService.currentStats().totalGames"
+            [allBalls]="statsService.allBallStats()"></app-ball-stats>
+          <app-ball-stats
+            [title]="'Best ball'"
+            [bestBall]="statsService.bestBallStats()"
+            [totalGames]="statsService.currentStats().totalGames"
+            [allBalls]="statsService.allBallStats()"></app-ball-stats>
+          <app-pattern-stats
+            [title]="'Most played pattern'"
+            [bestPattern]="statsService.mostPlayedPatternStats()"
+            [totalGames]="statsService.currentStats().totalGames"
+            [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
+          <app-pattern-stats
+            [title]="'Best pattern'"
+            [bestPattern]="statsService.bestPatternStats()"
+            [totalGames]="statsService.currentStats().totalGames"
+            [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
+          <app-stat-display
+            [title]="'Series Stats'"
+            [statDefinitions]="SERIES_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
+          <div class="stat-container">
+            <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+          <ion-list-header style="margin-bottom: 4px"> Average Score</ion-list-header>
+          <div class="stat-container">
+            <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+          <ion-list-header style="margin-bottom: 4px"> Score Distribution</ion-list-header>
+          <div class="stat-container">
+            <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+        </section>
+      }
     </ion-segment-content>
 
     <ion-segment-content id="Throws">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Throw Stats'"
-          [statDefinitions]="THROW_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Strike Stats'"
-          [statDefinitions]="STRIKE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Throw Distribution </ion-list-header>
-        <div class="stat-container">
-          <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-      </section>
+      @if (gameFilterService.filteredGames().length > 0) {
+        <section class="tab">
+          <app-stat-display
+            [title]="'Throw Stats'"
+            [statDefinitions]="THROW_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <app-stat-display
+            [title]="'Strike Stats'"
+            [statDefinitions]="STRIKE_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <ion-list-header style="margin-bottom: 4px"> Throw Distribution </ion-list-header>
+          <div class="stat-container">
+            <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+        </section>
+      }
     </ion-segment-content>
 
     <ion-segment-content id="Spares">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-spare-display
-          [title]="'Spare Stats'"
-          [stats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()"
-          id="overalSpareStats"></app-spare-display>
-        <app-stat-display
-          [title]="'Spare Conversion by Pin Count'"
-          [statDefinitions]="SPARE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Converted vs Missed Spares</ion-list-header>
-        <div class="stat-container">
-          <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-        <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-      </section>
+      @if (gameFilterService.filteredGames().length > 0) {
+        <section class="tab">
+          <app-spare-display
+            [title]="'Spare Stats'"
+            [stats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()"
+            id="overalSpareStats"></app-spare-display>
+          <app-stat-display
+            [title]="'Spare Conversion by Pin Count'"
+            [statDefinitions]="SPARE_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <ion-list-header style="margin-bottom: 4px"> Converted vs Missed Spares</ion-list-header>
+          <div class="stat-container">
+            <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+          <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
+          <div class="stat-container">
+            <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          </div>
+        </section>
+      }
     </ion-segment-content>
 
     <ion-segment-content id="Pins">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Pin Stats'"
-          [statDefinitions]="PIN_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="statsService.bestLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="statsService.worstLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
-        </app-pin-leave-stats>
-      </section>
+      @if (gameFilterService.filteredGames().length > 0) {
+        <section class="tab">
+          <app-stat-display
+            [title]="'Pin Stats'"
+            [statDefinitions]="PIN_STAT_DEFINITIONS"
+            [currentStats]="statsService.currentStats()"
+            [prevStats]="statsService.prevStats()">
+          </app-stat-display>
+          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="statsService.bestLeaves()"> </app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="statsService.worstLeaves()"> </app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+          </app-pin-leave-stats>
+        </section>
+      }
     </ion-segment-content>
 
     <ion-segment-content id="Sessions">
@@ -214,14 +228,13 @@
   </ion-segment-view>
 
   <!-- Show this message if there are no game history items and it's not loading -->
-  <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
-    <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
+  @if (gameFilterService.filteredGames().length <= 0) {
+    @if (gamesStore.games().length <= 0 && !loadingService.isLoading()) {
       <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>
-    </ng-container>
-  </ng-container>
-  <ng-template #checkFilteredGames>
-    <ng-container *ngIf="gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()">
-      <ion-text class="no-game-text"> No stats for this filter! </ion-text>
-    </ng-container>
-  </ng-template>
+    } @else {
+      @if (gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) {
+        <ion-text class="no-game-text"> No stats for this filter! </ion-text>
+      }
+    }
+  }
 </ion-content>

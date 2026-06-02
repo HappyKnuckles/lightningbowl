@@ -33,41 +33,43 @@
       @if (ballsStore.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
-              <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
-                <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
-                  <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
-                </ion-item-option>
-              </ion-item-options>
-
-              <ion-item button [id]="ball.ball_id + ball.core_weight">
-                <ion-reorder slot="start">
-                  <ion-thumbnail>
-                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
-                  </ion-thumbnail>
-                </ion-reorder>
-
-                <ion-label>
-                  <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
-                  <h1>{{ ball.ball_name }}</h1>
-                  <div class="ball-info">
-                    <ion-chip (click)="$event.stopPropagation()">
-                      <ion-select
-                        #weightSelect
-                        [value]="ball.core_weight"
-                        style="min-height: 0"
-                        [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
-                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
-                        interface="popover">
-                        <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
-                      </ion-select>
-                    </ion-chip>
-                    <ion-chip>{{ ball.core_type }}</ion-chip>
-                    <ion-chip>{{ ball.coverstock_type }}</ion-chip>
-                  </div>
-                </ion-label>
-              </ion-item>
-            </ion-item-sliding>
+            @for (ball of ballsStore.arsenal(); track ball) {
+              <ion-item-sliding #slidingItem class="sliding">
+                <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
+                  <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
+                    <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+                  </ion-item-option>
+                </ion-item-options>
+                <ion-item button [id]="ball.ball_id + ball.core_weight">
+                  <ion-reorder slot="start">
+                    <ion-thumbnail>
+                      <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                    </ion-thumbnail>
+                  </ion-reorder>
+                  <ion-label>
+                    <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
+                    <h1>{{ ball.ball_name }}</h1>
+                    <div class="ball-info">
+                      <ion-chip (click)="$event.stopPropagation()">
+                        <ion-select
+                          #weightSelect
+                          [value]="ball.core_weight"
+                          style="min-height: 0"
+                          [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
+                          (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
+                          interface="popover">
+                          @for (weight of availableWeights; track weight) {
+                            <ion-select-option [value]="weight">{{ weight }}lbs</ion-select-option>
+                          }
+                        </ion-select>
+                      </ion-chip>
+                      <ion-chip>{{ ball.core_type }}</ion-chip>
+                      <ion-chip>{{ ball.coverstock_type }}</ion-chip>
+                    </div>
+                  </ion-label>
+                </ion-item>
+              </ion-item-sliding>
+            }
           </ion-reorder-group>
         </ion-list>
       }
@@ -82,125 +84,126 @@
     </ion-segment-content>
   </ion-segment-view>
 
-  <ng-container *ngIf="ballsStore.arsenal().length <= 0">
+  @if (ballsStore.arsenal().length <= 0) {
     <ion-text class="no-game-text"> You have no balls in your arsenal. Add a ball to get started! </ion-text>
-  </ng-container>
+  }
   <!-- <ng-template #content>
-    <ion-list>
-      <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-        <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
-          <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
-            <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
-              <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
+  <ion-list>
+    <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
+      <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
+        <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
+          <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
 
-          <ion-item button [id]="ball.ball_id + ball.core_weight">
-            <ion-reorder slot="start">
-              <ion-thumbnail>
-                <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
-              </ion-thumbnail>
-            </ion-reorder>
+        <ion-item button [id]="ball.ball_id + ball.core_weight">
+          <ion-reorder slot="start">
+            <ion-thumbnail>
+              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+            </ion-thumbnail>
+          </ion-reorder>
 
-            <ion-label>
-              <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
-              <h1>{{ ball.ball_name }}</h1>
-              <div class="ball-info">
-                <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
-                <ion-chip>{{ ball.core_type }}</ion-chip>
-                <ion-chip>{{ ball.coverstock_type }}</ion-chip>
-              </div>
-            </ion-label>
-          </ion-item>
-        </ion-item-sliding>
-      </ion-reorder-group>
-    </ion-list>
-  </ng-template> -->
+          <ion-label>
+            <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
+            <h1>{{ ball.ball_name }}</h1>
+            <div class="ball-info">
+              <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
+              <ion-chip>{{ ball.core_type }}</ion-chip>
+              <ion-chip>{{ ball.coverstock_type }}</ion-chip>
+            </div>
+          </ion-label>
+        </ion-item>
+      </ion-item-sliding>
+    </ion-reorder-group>
+  </ion-list>
+</ng-template> -->
 </ion-content>
 
-<ion-modal *ngFor="let ball of ballsStore.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
-  <ng-template>
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start" style="padding: 4px">
-          <ion-button color="medium" (click)="modal.dismiss()">
-            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-        <ion-title>{{ ball.ball_name }}</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content [fullscreen]="true">
-      <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
-      <ion-card
-        class="ion-activatable ion-ripple-parent"
-        button
-        (click)="getSameCoverstockBalls(ball)"
-        (keydown.enter)="getSameCoverstockBalls(ball)"
-        (keydown.space)="getSameCoverstockBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View coverstock balls">
-        <ion-card-content>
-          <div class="coverstock-container">
-            <div class="coverstock-image">
-              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+@for (ball of ballsStore.arsenal(); track ball) {
+  <ion-modal [trigger]="ball.ball_id + ball.core_weight" #modal>
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start" style="padding: 4px">
+            <ion-button color="medium" (click)="modal.dismiss()">
+              <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ ball.ball_name }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content [fullscreen]="true">
+        <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
+        <ion-card
+          class="ion-activatable ion-ripple-parent"
+          button
+          (click)="getSameCoverstockBalls(ball)"
+          (keydown.enter)="getSameCoverstockBalls(ball)"
+          (keydown.space)="getSameCoverstockBalls(ball)"
+          tabindex="0"
+          role="button"
+          aria-label="View coverstock balls">
+          <ion-card-content>
+            <div class="coverstock-container">
+              <div class="coverstock-image">
+                <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+              </div>
+              <div class="info-container">
+                <ion-text
+                  >Type:&nbsp;
+                  <p class="info">{{ ball.coverstock_type }}</p></ion-text
+                >
+                <ion-text
+                  >Factory Finish:&nbsp;
+                  <p class="info">{{ ball.factory_finish }}</p></ion-text
+                >
+              </div>
             </div>
-            <div class="info-container">
-              <ion-text
-                >Type:&nbsp;
-                <p class="info">{{ ball.coverstock_type }}</p></ion-text
-              >
-              <ion-text
-                >Factory Finish:&nbsp;
-                <p class="info">{{ ball.factory_finish }}</p></ion-text
-              >
+          </ion-card-content>
+          <ion-ripple-effect></ion-ripple-effect>
+        </ion-card>
+        <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
+        <ion-card
+          class="ion-activatable ion-ripple-parent"
+          button
+          (click)="getSameCoreBalls(ball)"
+          (keydown.enter)="getSameCoreBalls(ball)"
+          (keydown.space)="getSameCoreBalls(ball)"
+          tabindex="0"
+          role="button"
+          aria-label="View core balls">
+          <ion-card-content>
+            <div class="core-container">
+              <div class="core-image">
+                <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
+              </div>
+              <div class="info-container">
+                <ion-text
+                  >Type:&nbsp;
+                  <p class="info">{{ ball.core_type }}</p></ion-text
+                >
+                <ion-text
+                  >RG:&nbsp;
+                  <p class="info">{{ ball.core_rg }}</p></ion-text
+                >
+                <ion-text
+                  >Diff:&nbsp;
+                  <p class="info">{{ ball.core_diff }}</p></ion-text
+                >
+                <ion-text
+                  >Int. Diff:&nbsp;
+                  <p class="info">{{ ball.core_int_diff }}</p></ion-text
+                >
+              </div>
             </div>
-          </div>
-        </ion-card-content>
-        <ion-ripple-effect></ion-ripple-effect>
-      </ion-card>
-
-      <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
-      <ion-card
-        class="ion-activatable ion-ripple-parent"
-        button
-        (click)="getSameCoreBalls(ball)"
-        (keydown.enter)="getSameCoreBalls(ball)"
-        (keydown.space)="getSameCoreBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View core balls">
-        <ion-card-content>
-          <div class="core-container">
-            <div class="core-image">
-              <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
-            </div>
-            <div class="info-container">
-              <ion-text
-                >Type:&nbsp;
-                <p class="info">{{ ball.core_type }}</p></ion-text
-              >
-              <ion-text
-                >RG:&nbsp;
-                <p class="info">{{ ball.core_rg }}</p></ion-text
-              >
-              <ion-text
-                >Diff:&nbsp;
-                <p class="info">{{ ball.core_diff }}</p></ion-text
-              >
-              <ion-text
-                >Int. Diff:&nbsp;
-                <p class="info">{{ ball.core_int_diff }}</p></ion-text
-              >
-            </div>
-          </div>
-        </ion-card-content>
-        <ion-ripple-effect></ion-ripple-effect>
-      </ion-card>
-    </ion-content>
-  </ng-template>
-</ion-modal>
+          </ion-card-content>
+          <ion-ripple-effect></ion-ripple-effect>
+        </ion-card>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}
 
 <ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #coverstock>
   <ng-template>

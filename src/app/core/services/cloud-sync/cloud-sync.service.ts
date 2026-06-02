@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal, inject } from '@angular/core';
 import { CloudProvider, CloudSyncSettings, CloudSyncStatus, SyncFrequency } from '../../models/cloud-sync.model';
 import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';
@@ -12,6 +12,12 @@ const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
   providedIn: 'root',
 })
 export class CloudSyncService {
+  private storageRepository = inject(StorageRepository);
+  private appFacade = inject(AppFacade);
+  private excelService = inject(ExcelService);
+  private toastService = inject(ToastService);
+  private cloudSyncApiService = inject(CloudSyncApiService);
+
   #settings = signal<CloudSyncSettings>({
     enabled: false,
     provider: CloudProvider.GOOGLE_DRIVE,
@@ -31,14 +37,6 @@ export class CloudSyncService {
     const settings = this.#settings();
     return settings.enabled && settings.connectedProvider !== undefined;
   });
-
-  constructor(
-    private storageRepository: StorageRepository,
-    private appFacade: AppFacade,
-    private excelService: ExcelService,
-    private toastService: ToastService,
-    private cloudSyncApiService: CloudSyncApiService,
-  ) {}
 
   public async init(): Promise<void> {
     await this.appFacade.init();

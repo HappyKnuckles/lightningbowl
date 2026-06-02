@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   IonButton,
@@ -30,7 +30,6 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-ball-filter',
@@ -55,13 +54,21 @@ import { CommonModule } from '@angular/common';
     IonSelect,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
     IonSelectOption,
     GenericTypeaheadComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class BallFilterComponent implements OnInit {
+  ballFilterService = inject(BallFilterService);
+  private modalCtrl = inject(ModalController);
+  ballService = inject(BallService);
+  private ballsStore = inject(BallsStore);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private analyticsService = inject(AnalyticsService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
+
   markets: Market[] = [Market.ALL, Market.US, Market.INT];
   coreTypes: CoreType[] = [CoreType.ALL, CoreType.ASYMMETRIC, CoreType.SYMMETRIC];
   coverstockTypes: CoverstockType[] = Object.values(CoverstockType);
@@ -70,17 +77,6 @@ export class BallFilterComponent implements OnInit {
   brandTypeaheadConfig: TypeaheadConfig<Brand> = this.typeaheadConfigService.brand;
   coreTypeaheadConfig: TypeaheadConfig<Core> = this.typeaheadConfigService.core;
   coverstockTypeaheadConfig: TypeaheadConfig<Coverstock> = this.typeaheadConfigService.coverstock;
-
-  constructor(
-    public ballFilterService: BallFilterService,
-    private modalCtrl: ModalController,
-    public ballService: BallService,
-    private ballsStore: BallsStore,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private analyticsService: AnalyticsService,
-    private typeaheadConfigService: TypeaheadConfigService,
-  ) {}
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page');

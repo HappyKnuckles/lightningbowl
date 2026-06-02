@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AnalyticsService } from '../analytics/analytics.service';
 
@@ -6,10 +6,12 @@ import { AnalyticsService } from '../analytics/analytics.service';
   providedIn: 'root',
 })
 export class PwaInstallService {
+  private analyticsService = inject(AnalyticsService);
+
   private deferredPrompt: any = null;
   private showInstallPromptSubject = new BehaviorSubject<boolean>(false);
 
-  constructor(private analyticsService: AnalyticsService) {
+  constructor() {
     this.initializeInstallPrompt();
   }
 

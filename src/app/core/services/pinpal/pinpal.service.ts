@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game, Throw, createEmptyFrames } from 'src/app/core/models/game.model';
@@ -29,19 +29,17 @@ interface RawFrameRow {
   providedIn: 'root',
 })
 export class PinpalService {
+  private ballsStore = inject(BallsStore);
+  private patternsStore = inject(PatternsStore);
+  private gamesStore = inject(GamesStore);
+  private scoreCalculator = inject(GameScoreCalculatorService);
+  private gameUtilsService = inject(GameUtilsService);
+  private sortUtils = inject(SortUtilsService);
+  private gameFilterService = inject(GameFilterService);
+  private toastService = inject(ToastService);
+
   private static readonly SQLITE_HEADER = 'SQLite format 3';
   private sqlInstance: SqlJsStatic | null = null;
-
-  constructor(
-    private ballsStore: BallsStore,
-    private patternsStore: PatternsStore,
-    private gamesStore: GamesStore,
-    private scoreCalculator: GameScoreCalculatorService,
-    private gameUtilsService: GameUtilsService,
-    private sortUtils: SortUtilsService,
-    private gameFilterService: GameFilterService,
-    private toastService: ToastService,
-  ) {}
 
   async importFromFile(file: File): Promise<number> {
     const buffer = await this.readFileAsArrayBuffer(file);

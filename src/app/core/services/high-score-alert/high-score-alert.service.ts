@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Game } from '../../models/game.model';
 
@@ -28,7 +28,7 @@ export interface HighScoreRecord {
   providedIn: 'root',
 })
 export class HighScoreAlertService {
-  constructor(private alertController: AlertController) {}
+  private alertController = inject(AlertController);
 
   /**
    * Check if a new game achieves any new high scores and display alerts

@@ -1,5 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 
 interface Pin {
@@ -9,7 +9,7 @@ interface Pin {
 
 @Component({
   selector: 'app-pin-deck',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './pin-deck.component.html',
   styleUrl: './pin-deck.component.scss',
 })

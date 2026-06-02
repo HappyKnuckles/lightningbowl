@@ -1,5 +1,5 @@
 import { Component, input, computed } from '@angular/core';
-import { NgIf } from '@angular/common';
+
 import { IonRow, IonCol } from '@ionic/angular/standalone';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { Game } from 'src/app/core/models/game.model';
@@ -8,7 +8,7 @@ import { Game } from 'src/app/core/models/game.model';
   selector: 'app-pin-deck-frame-row',
   templateUrl: './pin-deck-frame-row.component.html',
   styleUrls: ['./pin-deck-frame-row.component.scss'],
-  imports: [IonRow, IonCol, PinDeckComponent, NgIf],
+  imports: [IonRow, IonCol, PinDeckComponent],
 })
 export class PinDeckFrameRowComponent {
   // Inputs

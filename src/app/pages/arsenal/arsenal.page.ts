@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
+import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
@@ -81,7 +80,6 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
     IonHeader,
     IonTitle,
     IonToolbar,
-    CommonModule,
     FormsModule,
     BallListComponent,
     GenericTypeaheadComponent,
@@ -94,6 +92,16 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   ],
 })
 export class ArsenalPage implements OnInit {
+  ballsStore = inject(BallsStore);
+  private hapticService = inject(HapticService);
+  private alertController = inject(AlertController);
+  private loadingService = inject(LoadingService);
+  toastService = inject(ToastService);
+  modalCtrl = inject(ModalController);
+  private ballService = inject(BallService);
+  private chartGenerationService = inject(ChartGenerationService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
+
   @ViewChild('core', { static: false }) coreModal!: IonModal;
   @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
   coverstockBalls: Ball[] = [];
@@ -112,17 +120,7 @@ export class ArsenalPage implements OnInit {
   readonly loadingWeightBallIds = signal<Set<string>>(new Set());
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
-  constructor(
-    public ballsStore: BallsStore,
-    private hapticService: HapticService,
-    private alertController: AlertController,
-    private loadingService: LoadingService,
-    public toastService: ToastService,
-    public modalCtrl: ModalController,
-    private ballService: BallService,
-    private chartGenerationService: ChartGenerationService,
-    private typeaheadConfigService: TypeaheadConfigService,
-  ) {
+  constructor() {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {
       if (this.selectedSegment() === 'compare') {

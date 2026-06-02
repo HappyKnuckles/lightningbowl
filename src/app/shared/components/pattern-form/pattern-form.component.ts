@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonButton,
@@ -25,32 +24,19 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 @Component({
   selector: 'app-pattern-form',
-  imports: [
-    IonFooter,
-    IonContent,
-    IonTitle,
-    IonHeader,
-    IonToolbar,
-    IonButtons,
-    CommonModule,
-    IonInput,
-    IonItem,
-    IonButton,
-    IonIcon,
-    ReactiveFormsModule,
-  ],
+  imports: [IonFooter, IonContent, IonTitle, IonHeader, IonToolbar, IonButtons, IonInput, IonItem, IonButton, IonIcon, ReactiveFormsModule],
   templateUrl: './pattern-form.component.html',
   styleUrl: './pattern-form.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class PatternFormComponent implements OnInit {
-  constructor(
-    private fb: FormBuilder,
-    private patternService: PatternService,
-    private loadingService: LoadingService,
-    private toastService: ToastService,
-    private modalCtrl: ModalController,
-  ) {
+  private fb = inject(FormBuilder);
+  private patternService = inject(PatternService);
+  private loadingService = inject(LoadingService);
+  private toastService = inject(ToastService);
+  private modalCtrl = inject(ModalController);
+
+  constructor() {
     addIcons({ chevronBack, trashOutline, close });
   }
 

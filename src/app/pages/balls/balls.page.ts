@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -88,7 +87,6 @@ import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-
     IonToolbar,
     IonSelect,
     IonSelectOption,
-    CommonModule,
     FormsModule,
     BallListComponent,
     GenericFilterActiveComponent,
@@ -98,6 +96,19 @@ import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BallsPage implements OnInit {
+  private modalCtrl = inject(ModalController);
+  loadingService = inject(LoadingService);
+  ballsStore = inject(BallsStore);
+  private toastService = inject(ToastService);
+  private hapticService = inject(HapticService);
+  private ballService = inject(BallService);
+  ballFilterService = inject(BallFilterService);
+  private route = inject(ActivatedRoute);
+  sortService = inject(BallSortService);
+  private networkService = inject(NetworkService);
+  favoritesService = inject(FavoritesService);
+  private analyticsService = inject(AnalyticsService);
+
   @ViewChild('core', { static: false }) coreModal!: IonModal;
   @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
   @ViewChild('movement', { static: false }) movementModal!: IonModal;
@@ -185,20 +196,7 @@ export class BallsPage implements OnInit {
   private lastLoadTime = 0;
   private debounceMs = 300;
 
-  constructor(
-    private modalCtrl: ModalController,
-    public loadingService: LoadingService,
-    public ballsStore: BallsStore,
-    private toastService: ToastService,
-    private hapticService: HapticService,
-    private ballService: BallService,
-    public ballFilterService: BallFilterService,
-    private route: ActivatedRoute,
-    public sortService: BallSortService,
-    private networkService: NetworkService,
-    public favoritesService: FavoritesService,
-    private analyticsService: AnalyticsService,
-  ) {
+  constructor() {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline });
     this.searchSubject.subscribe((query) => {
       this.searchTerm.set(query);

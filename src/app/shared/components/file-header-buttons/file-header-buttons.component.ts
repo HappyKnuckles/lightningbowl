@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { Filesystem } from '@capacitor/filesystem';
 import { AlertController } from '@ionic/angular';
@@ -15,7 +14,7 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 
 @Component({
   selector: 'app-file-header-buttons',
-  imports: [IonButtons, IonSpinner, IonButton, IonIcon, NgIf],
+  imports: [IonButtons, IonSpinner, IonButton, IonIcon],
   templateUrl: './file-header-buttons.component.html',
   styleUrl: './file-header-buttons.component.css',
 })

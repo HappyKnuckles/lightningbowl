@@ -7,7 +7,9 @@
     fill="clear"
     [disabled]="ballsStore.allBalls().length === 0"
     (click)="openFileInput()">
-    <ion-spinner style="position: absolute" *ngIf="ballsStore.allBalls().length === 0" name="crescent"></ion-spinner>
+    @if (ballsStore.allBalls().length === 0) {
+      <ion-spinner style="position: absolute" name="crescent"></ion-spinner>
+    }
     <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
   </ion-button>
   <ion-button (click)="exportToExcel()" class="action-sheet" fill="clear">

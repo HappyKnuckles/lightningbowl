@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, Renderer2, inject } from '@angular/core';
 import { timer, Subscription } from 'rxjs';
 import { HapticService } from '../../services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -8,6 +8,10 @@ import { ImpactStyle } from '@capacitor/haptics';
   standalone: true,
 })
 export class LongPressDirective implements OnDestroy {
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private renderer = inject(Renderer2);
+  private hapticService = inject(HapticService);
+
   private timerSub?: Subscription;
 
   /** how long (ms) until `longPressed` fires */
@@ -21,11 +25,6 @@ export class LongPressDirective implements OnDestroy {
 
   @Output() longPressed = new EventEmitter<PointerEvent>();
   private scaleTimeout: ReturnType<typeof setTimeout> | null = null;
-  constructor(
-    private elementRef: ElementRef<HTMLElement>,
-    private renderer: Renderer2,
-    private hapticService: HapticService,
-  ) {}
 
   @HostListener('pointerdown', ['$event'])
   onPointerDown(ev: PointerEvent) {

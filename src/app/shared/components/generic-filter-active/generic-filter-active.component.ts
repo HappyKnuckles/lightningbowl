@@ -1,22 +1,22 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, Input, inject } from '@angular/core';
 import { IonChip } from '@ionic/angular/standalone';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { FilterConfig, IndexableFilter } from 'src/app/core/models/filter.model';
 
 @Component({
   selector: 'app-generic-filter-active',
-  imports: [IonChip, NgIf, NgFor, DatePipe],
+  imports: [IonChip, DatePipe],
   templateUrl: './generic-filter-active.component.html',
   styleUrl: './generic-filter-active.component.scss',
 })
 export class GenericFilterActiveComponent {
+  private utilsService = inject(UtilsService);
+
   @Input({ required: true }) filters!: IndexableFilter;
   @Input({ required: true }) defaultFilters!: IndexableFilter;
   @Input() filterConfigs: FilterConfig[] = [];
   @Input() title?: string;
-
-  constructor(private utilsService: UtilsService) {}
 
   isFilterActive(config: FilterConfig): boolean {
     const filterValue = this.filters[config.key];

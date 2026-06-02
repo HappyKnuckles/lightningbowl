@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -12,6 +12,7 @@ import {
   Signal,
   signal,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -117,8 +118,6 @@ import { GameFilter } from 'src/app/core/models/filter.model';
     IonSelectOption,
     IonSelect,
     IonText,
-    NgIf,
-    NgFor,
     FormsModule,
     DatePipe,
     StatDisplayComponent,
@@ -132,6 +131,18 @@ import { GameFilter } from 'src/app/core/models/filter.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatsPage implements OnInit, AfterViewInit {
+  loadingService = inject(LoadingService);
+  statsService = inject(GameStatsService);
+  gamesStore = inject(GamesStore);
+  ballsStore = inject(BallsStore);
+  gameFilterService = inject(GameFilterService);
+  private hapticService = inject(HapticService);
+  private modalCtrl = inject(ModalController);
+  private sortUtilsService = inject(SortUtilsService);
+  private utilsService = inject(UtilsService);
+  private chartService = inject(ChartGenerationService);
+  private toastService = inject(ToastService);
+
   @ViewChild(IonContent) content!: IonContent;
   OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
   SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
@@ -207,19 +218,7 @@ export class StatsPage implements OnInit, AfterViewInit {
     return this.gameFilterService.defaultFilters;
   }
 
-  constructor(
-    public loadingService: LoadingService,
-    public statsService: GameStatsService,
-    public gamesStore: GamesStore,
-    public ballsStore: BallsStore,
-    public gameFilterService: GameFilterService,
-    private hapticService: HapticService,
-    private modalCtrl: ModalController,
-    private sortUtilsService: SortUtilsService,
-    private utilsService: UtilsService,
-    private chartService: ChartGenerationService,
-    private toastService: ToastService,
-  ) {
+  constructor() {
     addIcons({ filterOutline, calendarNumberOutline, calendarNumber });
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {

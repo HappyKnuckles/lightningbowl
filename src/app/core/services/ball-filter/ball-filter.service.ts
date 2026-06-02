@@ -1,4 +1,4 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { computed, Injectable, Signal, signal, inject } from '@angular/core';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import { UtilsService } from '../utils/utils.service';
 import { Ball } from 'src/app/core/models/ball.model';
@@ -8,6 +8,9 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
   providedIn: 'root',
 })
 export class BallFilterService {
+  private utilsService = inject(UtilsService);
+  private ballsStore = inject(BallsStore);
+
   defaultFilters: BallFilter = {
     brands: [],
     coverstocks: [],
@@ -56,11 +59,6 @@ export class BallFilterService {
   get filteredBalls() {
     return this.#filteredBalls;
   }
-
-  constructor(
-    private utilsService: UtilsService,
-    private ballsStore: BallsStore,
-  ) {}
 
   saveFilters(): void {
     localStorage.setItem('ball-filter', JSON.stringify(this.filters()));

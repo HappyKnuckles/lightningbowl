@@ -1,4 +1,4 @@
-import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import Fuse from 'fuse.js';
 import {
@@ -19,7 +19,7 @@ import {
   IonImg,
   IonText,
 } from '@ionic/angular/standalone';
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
@@ -45,12 +45,14 @@ import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
     IonText,
     SearchBlurDirective,
     NgClass,
-    NgIf,
   ],
   templateUrl: './generic-typeahead.component.html',
   styleUrl: './generic-typeahead.component.scss',
 })
 export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
+  private modalCtrl = inject(ModalController);
+  private loadingService = inject(LoadingService);
+
   items = input<T[]>([]);
   config = input.required<TypeaheadConfig<T>>();
   prevSelectedItems = input<string[]>([]);
@@ -65,11 +67,6 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   private batchSize = 100;
   public loadedCount = signal(0);
   private initialSelectedValues: string[] = [];
-
-  constructor(
-    private modalCtrl: ModalController,
-    private loadingService: LoadingService,
-  ) {}
 
   ngOnInit() {
     this.filteredItems.set([...this.items()]);

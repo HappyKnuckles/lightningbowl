@@ -1,5 +1,16 @@
-import { NgFor, NgIf } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChild, ViewChildren } from '@angular/core';
+import {
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  OnInit,
+  QueryList,
+  signal,
+  untracked,
+  ViewChild,
+  ViewChildren,
+  inject,
+} from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
 import {
@@ -83,8 +94,6 @@ defineCustomElements(window);
     IonSegmentContent,
     IonSegmentView,
     IonLabel,
-    NgIf,
-    NgFor,
     GameComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
@@ -93,6 +102,22 @@ defineCustomElements(window);
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AddGamePage implements OnInit {
+  private actionSheetCtrl = inject(ActionSheetController);
+  private alertController = inject(AlertController);
+  private toastService = inject(ToastService);
+  private gameScoreCalculatorService = inject(GameScoreCalculatorService);
+  private transformGameService = inject(GameDataTransformerService);
+  private hapticService = inject(HapticService);
+  private gameUtilsService = inject(GameUtilsService);
+  private utilsService = inject(UtilsService);
+  private validationService = inject(BowlingGameValidationService);
+  private highScroreAlertService = inject(HighScoreAlertService);
+  private gamesStore = inject(GamesStore);
+  private analyticsService = inject(AnalyticsService);
+  private gameDraftService = inject(GameDraftService);
+  private gameImageImport = inject(GameImageImportService);
+  private gameStatsService = inject(GameStatsService);
+
   // Live stats
   liveSeriesStats: LiveSeriesStats | null = null;
   allStats = this.gameStatsService.overallStats;
@@ -152,23 +177,7 @@ export class AddGamePage implements OnInit {
   private seriesId = '';
   private activeGameIndex = 0;
 
-  constructor(
-    private actionSheetCtrl: ActionSheetController,
-    private alertController: AlertController,
-    private toastService: ToastService,
-    private gameScoreCalculatorService: GameScoreCalculatorService,
-    private transformGameService: GameDataTransformerService,
-    private hapticService: HapticService,
-    private gameUtilsService: GameUtilsService,
-    private utilsService: UtilsService,
-    private validationService: BowlingGameValidationService,
-    private highScroreAlertService: HighScoreAlertService,
-    private gamesStore: GamesStore,
-    private analyticsService: AnalyticsService,
-    private gameDraftService: GameDraftService,
-    private gameImageImport: GameImageImportService,
-    private gameStatsService: GameStatsService,
-  ) {
+  constructor() {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
     effect(() => {
       const games = this.games();

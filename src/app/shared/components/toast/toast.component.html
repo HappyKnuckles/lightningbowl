@@ -1,4 +1,4 @@
-<ng-container *ngFor="let toast of activeToasts; let i = index">
+@for (toast of activeToasts; track toast; let i = $index) {
   <ion-toast
     #toastRef
     class="custom-toast"
@@ -15,4 +15,4 @@
       transform: 'translateY(-' + i * getMarginAccordingToTextLength(toast.message) + 'px)',
     }">
   </ion-toast>
-</ng-container>
+}

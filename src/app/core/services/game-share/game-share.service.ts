@@ -10,14 +10,15 @@ import { ToastService } from '../toast/toast.service';
 
 @Injectable({ providedIn: 'root' })
 export class GameShareService {
+  private loadingService = inject(LoadingService);
+  private toastService = inject(ToastService);
+
   private renderer: Renderer2;
   private locale = inject(LOCALE_ID);
 
-  constructor(
-    rendererFactory: RendererFactory2,
-    private loadingService: LoadingService,
-    private toastService: ToastService,
-  ) {
+  constructor() {
+    const rendererFactory = inject(RendererFactory2);
+
     this.renderer = rendererFactory.createRenderer(null, null);
   }
 

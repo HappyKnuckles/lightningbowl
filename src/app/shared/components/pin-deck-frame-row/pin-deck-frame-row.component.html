@@ -1,21 +1,36 @@
 <ion-row class="pin-deck-row">
   <!-- Empty spacer column for frames 1-9 (matches input row structure) -->
-  <ion-col class="input-col" *ngIf="!isTenthFrame()"></ion-col>
+  @if (!isTenthFrame()) {
+    <ion-col class="input-col"></ion-col>
+  }
 
   <ion-col class="input-col">
-    <app-pin-deck *ngIf="getThrowValue(0) !== undefined" [scale]="scale()" [activePins]="getPinsStanding(0)"> </app-pin-deck>
+    @if (getThrowValue(0) !== undefined) {
+      <app-pin-deck [scale]="scale()" [activePins]="getPinsStanding(0)"> </app-pin-deck>
+    }
   </ion-col>
 
-  <ion-col class="input-col" *ngIf="!isTenthFrame()">
-    <app-pin-deck *ngIf="getThrowValue(1) !== undefined && getThrowValue(0) !== 10" [scale]="scale()" [activePins]="getPinsStanding(1)">
-    </app-pin-deck>
-  </ion-col>
+  @if (!isTenthFrame()) {
+    <ion-col class="input-col">
+      @if (getThrowValue(1) !== undefined && getThrowValue(0) !== 10) {
+        <app-pin-deck [scale]="scale()" [activePins]="getPinsStanding(1)"> </app-pin-deck>
+      }
+    </ion-col>
+  }
 
-  <ion-col class="input-col" *ngIf="isTenthFrame()">
-    <app-pin-deck *ngIf="getThrowValue(1) !== undefined" [scale]="scale()" [activePins]="getPinsStanding(1)"> </app-pin-deck>
-  </ion-col>
+  @if (isTenthFrame()) {
+    <ion-col class="input-col">
+      @if (getThrowValue(1) !== undefined) {
+        <app-pin-deck [scale]="scale()" [activePins]="getPinsStanding(1)"> </app-pin-deck>
+      }
+    </ion-col>
+  }
 
-  <ion-col class="input-col" *ngIf="isTenthFrame()">
-    <app-pin-deck *ngIf="getThrowValue(2) !== undefined" [scale]="scale()" [activePins]="getPinsStanding(2)"> </app-pin-deck>
-  </ion-col>
+  @if (isTenthFrame()) {
+    <ion-col class="input-col">
+      @if (getThrowValue(2) !== undefined) {
+        <app-pin-deck [scale]="scale()" [activePins]="getPinsStanding(2)"> </app-pin-deck>
+      }
+    </ion-col>
+  }
 </ion-row>

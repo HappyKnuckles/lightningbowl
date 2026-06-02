@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -11,19 +11,17 @@ import { SettingsStore } from './settings.store';
 
 @Injectable({ providedIn: 'root' })
 export class AppFacade {
-  #initPromise: Promise<void> | null = null;
+  private storageRepository = inject(StorageRepository);
+  private gamesStore = inject(GamesStore);
+  private ballsStore = inject(BallsStore);
+  private patternsStore = inject(PatternsStore);
+  private leaguesStore = inject(LeaguesStore);
+  private settingsStore = inject(SettingsStore);
+  private ballService = inject(BallService);
+  private analyticsService = inject(AnalyticsService);
+  private ballFilterService = inject(BallFilterService);
 
-  constructor(
-    private storageRepository: StorageRepository,
-    private gamesStore: GamesStore,
-    private ballsStore: BallsStore,
-    private patternsStore: PatternsStore,
-    private leaguesStore: LeaguesStore,
-    private settingsStore: SettingsStore,
-    private ballService: BallService,
-    private analyticsService: AnalyticsService,
-    private ballFilterService: BallFilterService,
-  ) {}
+  #initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
     if (this.#initPromise) {

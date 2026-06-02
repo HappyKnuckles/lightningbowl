@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -99,6 +99,18 @@ import { PatternFormComponent } from '../../shared/components/pattern-form/patte
   ],
 })
 export class PatternPage implements OnInit {
+  private patternService = inject(PatternService);
+  private hapticService = inject(HapticService);
+  loadingService = inject(LoadingService);
+  private toastService = inject(ToastService);
+  private chartService = inject(ChartGenerationService);
+  private sanitizer = inject(DomSanitizer);
+  private modalCtrl = inject(ModalController);
+  sortService = inject(PatternSortService);
+  private networkService = inject(NetworkService);
+  favoritesService = inject(FavoritesService);
+  private analyticsService = inject(AnalyticsService);
+
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   patterns: Pattern[] = [];
   currentPage = 1;
@@ -129,19 +141,7 @@ export class PatternPage implements OnInit {
 
   private lastLoadTime = 0;
   private debounceMs = 300;
-  constructor(
-    private patternService: PatternService,
-    private hapticService: HapticService,
-    public loadingService: LoadingService,
-    private toastService: ToastService,
-    private chartService: ChartGenerationService,
-    private sanitizer: DomSanitizer,
-    private modalCtrl: ModalController,
-    public sortService: PatternSortService,
-    private networkService: NetworkService,
-    public favoritesService: FavoritesService,
-    private analyticsService: AnalyticsService,
-  ) {
+  constructor() {
     addIcons({
       addOutline,
       documentOutline,

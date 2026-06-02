@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   IonModal,
   IonHeader,
@@ -26,7 +26,6 @@ import { close, flash, wifiOutline, notifications, phonePortrait, download, shar
     IonLabel,
     IonSegmentButton,
     IonSegment,
-    CommonModule,
     IonModal,
     IonSegmentContent,
     IonSegmentView,

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { fromEvent, merge } from 'rxjs';
 import { map, pairwise, startWith } from 'rxjs/operators';
 import { ToastService } from '../toast/toast.service';
@@ -7,6 +7,8 @@ import { ToastService } from '../toast/toast.service';
   providedIn: 'root',
 })
 export class NetworkService {
+  private toastService = inject(ToastService);
+
   private _isOnline = signal<boolean>(navigator.onLine);
 
   get isOnline() {
@@ -17,7 +19,7 @@ export class NetworkService {
     return !this._isOnline();
   }
 
-  constructor(private toastService: ToastService) {
+  constructor() {
     // Listen for online/offline events
     merge(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false)))
       .pipe(startWith(navigator.onLine), pairwise())

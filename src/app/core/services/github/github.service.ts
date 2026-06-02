@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { GitHubIssue } from '../../models/github-issue.model';
@@ -7,11 +7,11 @@ import { GitHubIssue } from '../../models/github-issue.model';
   providedIn: 'root',
 })
 export class GitHubService {
+  private http = inject(HttpClient);
+
   private readonly baseUrl = 'https://api.github.com';
   private readonly repoOwner = 'HappyKnuckles';
   private readonly repoName = 'Lightning-Bowl';
-
-  constructor(private http: HttpClient) {}
 
   async getIssues(labels: string[] = [], state: 'open' | 'closed' | 'all' = 'open', page = 1, perPage = 30): Promise<GitHubIssue[]> {
     try {

@@ -1,7 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { AlertController, IonApp, IonBackdrop, IonSpinner, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Subscription } from 'rxjs';
-import { NgIf } from '@angular/common';
+
 import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -21,28 +21,28 @@ import { AnalyticsService } from './core/services/analytics/analytics.service';
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
-  imports: [IonApp, NgIf, IonBackdrop, IonSpinner, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent],
+  imports: [IonApp, IonBackdrop, IonSpinner, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
+  private alertController = inject(AlertController);
+  private toastService = inject(ToastService);
+  loadingService = inject(LoadingService);
+  private userService = inject(UserService);
+  private swUpdate = inject(SwUpdate);
+  private themeService = inject(ThemeChangerService);
+  private http = inject(HttpClient);
+  private sanitizer = inject(DomSanitizer);
+  private pwaInstallService = inject(PwaInstallService);
+  private analyticsService = inject(AnalyticsService);
+  private router = inject(Router);
+
   private readonly GREETING_THROTTLE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
   private pwaInstallSubscription: Subscription;
   private updateInterval: any;
   showPwaInstallPrompt = false;
   canInstallPwa = false;
 
-  constructor(
-    private alertController: AlertController,
-    private toastService: ToastService,
-    public loadingService: LoadingService,
-    private userService: UserService,
-    private swUpdate: SwUpdate,
-    private themeService: ThemeChangerService,
-    private http: HttpClient,
-    private sanitizer: DomSanitizer,
-    private pwaInstallService: PwaInstallService,
-    private analyticsService: AnalyticsService,
-    private router: Router,
-  ) {
+  constructor() {
     // Initialize service worker updates for all platforms
     this.initializeApp();
     const currentTheme = this.themeService.getCurrentTheme();

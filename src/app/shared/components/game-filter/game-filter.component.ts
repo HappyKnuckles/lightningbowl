@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, Input, OnInit } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, Input, OnInit, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -57,13 +56,20 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
     IonSelect,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
     IonSelectOption,
     BallSelectComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class GameFilterComponent implements OnInit {
+  private modalCtrl = inject(ModalController);
+  gameFilterService = inject(GameFilterService);
+  private sortUtilsService = inject(SortUtilsService);
+  gamesStore = inject(GamesStore);
+  ballsStore = inject(BallsStore);
+  private utilsService = inject(UtilsService);
+  private analyticsService = inject(AnalyticsService);
+
   @Input() filteredGames!: Game[];
   defaultFilters = this.gameFilterService.defaultFilters;
   highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
@@ -78,15 +84,7 @@ export class GameFilterComponent implements OnInit {
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
-  constructor(
-    private modalCtrl: ModalController,
-    public gameFilterService: GameFilterService,
-    private sortUtilsService: SortUtilsService,
-    public gamesStore: GamesStore,
-    public ballsStore: BallsStore,
-    private utilsService: UtilsService,
-    private analyticsService: AnalyticsService,
-  ) {
+  constructor() {
     addIcons({ chevronExpandOutline });
   }
 

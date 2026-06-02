@@ -23,78 +23,84 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <!-- Show this message if there are no game history items and it's not loading -->
-  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
+  @if (gamesStore.games().length <= 0 && !loadingService.isLoading()) {
     <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
-  </ng-container>
-
-  <ng-template #noLeagues>
-    <ng-container *ngIf="leagueKeys().length <= 0 && !loadingService.isLoading(); else content">
+  } @else {
+    @if (leagueKeys().length <= 0 && !loadingService.isLoading()) {
       <ion-text class="no-game-text"> No leagues saved! </ion-text>
-    </ng-container>
-  </ng-template>
-
-  <ng-template #content>
-    @if (noLeaguesShown && !isVisibilityEdit()) {
-      <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
     } @else {
-      @for (league of leagueKeys(); track league) {
-        @if (isVisibilityEdit()) {
-          @if (leagueSelectionState; as selectionState) {
-            <div class="sliding">
-              <ion-item button #leagues (longPressed)="editVisibility()" [delay]="1000" appLongPress detail="false">
-                <ion-checkbox [checked]="selectionState[league]" (ionChange)="updateLeagueSelection(league, $event.detail.checked)">
-                  <ion-label class="game-info">
-                    <h2 class="title">{{ league }}</h2>
-                    <p class="score">Games: {{ gamesByLeague()[league].length || 0 }}</p>
-                    <p class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</p>
-                    <p class="score">High: {{ statsByLeague()[league].highGame }}</p>
-                  </ion-label>
-                </ion-checkbox>
-              </ion-item>
-            </div>
-          }
-        } @else {
-          @if (leagueSelectionState[league]) {
-            @if (league === "Practice") {
+      @if (noLeaguesShown && !isVisibilityEdit()) {
+        <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
+      } @else {
+        @for (league of leagueKeys(); track league) {
+          @if (isVisibilityEdit()) {
+            @if (leagueSelectionState; as selectionState) {
               <div class="sliding">
-                <ion-item (click)="loadingService.setLoading(true)" button [id]="league" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
-                  <ion-label class="game-info">
-                    <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
-                  </ion-label>
+                <ion-item button #leagues (longPressed)="editVisibility()" [delay]="1000" appLongPress detail="false">
+                  <ion-checkbox [checked]="selectionState[league]" (ionChange)="updateLeagueSelection(league, $event.detail.checked)">
+                    <ion-label class="game-info">
+                      <h2 class="title">{{ league }}</h2>
+                      <p class="score">Games: {{ gamesByLeague()[league].length || 0 }}</p>
+                      <p class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</p>
+                      <p class="score">High: {{ statsByLeague()[league].highGame }}</p>
+                    </ion-label>
+                  </ion-checkbox>
                 </ion-item>
               </div>
-            } @else {
-              <ion-item-sliding class="sliding" #slidingItem>
-                <ion-item-options side="end" (ionSwipe)="deleteLeague(league); slidingItem.closeOpened()">
-                  <ion-item-option color="danger" expandable (click)="deleteLeague(league); slidingItem.closeOpened()">
-                    <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
-                  </ion-item-option>
-                </ion-item-options>
-
-                <ion-item-options side="start" (ionSwipe)="editLeague(league); slidingItem.closeOpened()">
-                  <ion-item-option expandable (click)="editLeague(league); slidingItem.closeOpened()">
-                    <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
-                  </ion-item-option>
-                </ion-item-options>
-
-                <ion-item (click)="loadingService.setLoading(true)" button [id]="league" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
-                  <ion-label class="game-info">
-                    <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
-                  </ion-label>
-                </ion-item>
-              </ion-item-sliding>
+            }
+          } @else {
+            @if (leagueSelectionState[league]) {
+              @if (league === "Practice") {
+                <div class="sliding">
+                  <ion-item
+                    (click)="loadingService.setLoading(true)"
+                    button
+                    [id]="league"
+                    (longPressed)="editVisibility()"
+                    [delay]="1000"
+                    appLongPress>
+                    <ion-label class="game-info">
+                      <div class="title">{{ league }}</div>
+                      <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
+                      <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
+                      <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
+                    </ion-label>
+                  </ion-item>
+                </div>
+              } @else {
+                <ion-item-sliding class="sliding" #slidingItem>
+                  <ion-item-options side="end" (ionSwipe)="deleteLeague(league); slidingItem.closeOpened()">
+                    <ion-item-option color="danger" expandable (click)="deleteLeague(league); slidingItem.closeOpened()">
+                      <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+                    </ion-item-option>
+                  </ion-item-options>
+                  <ion-item-options side="start" (ionSwipe)="editLeague(league); slidingItem.closeOpened()">
+                    <ion-item-option expandable (click)="editLeague(league); slidingItem.closeOpened()">
+                      <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
+                    </ion-item-option>
+                  </ion-item-options>
+                  <ion-item
+                    (click)="loadingService.setLoading(true)"
+                    button
+                    [id]="league"
+                    (longPressed)="editVisibility()"
+                    [delay]="1000"
+                    appLongPress>
+                    <ion-label class="game-info">
+                      <div class="title">{{ league }}</div>
+                      <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
+                      <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
+                      <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
+                    </ion-label>
+                  </ion-item>
+                </ion-item-sliding>
+              }
             }
           }
         }
       }
     }
-  </ng-template>
+  }
 </ion-content>
 
 @for (league of leagueKeys(); track $index) {

@@ -1,4 +1,4 @@
-import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { AfterViewInit, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
@@ -83,8 +83,6 @@ import { environment } from 'src/environments/environment';
     IonSelectOption,
     IonNote,
     NgClass,
-    NgFor,
-    NgIf,
     DatePipe,
     FormsModule,
     ReactiveFormsModule,
@@ -93,6 +91,17 @@ import { environment } from 'src/environments/environment';
   ],
 })
 export class SettingsPage implements OnInit, AfterViewInit {
+  userService = inject(UserService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private themeService = inject(ThemeChangerService);
+  private statsService = inject(GameStatsService);
+  private alertCtrl = inject(AlertController);
+  private analyticsService = inject(AnalyticsService);
+  settingsStore = inject(SettingsStore);
+  cloudSyncService = inject(CloudSyncService);
+  private route = inject(ActivatedRoute);
+
   private destroyRef = inject(DestroyRef);
   private modalCtrl = inject(ModalController);
   private router = inject(Router);
@@ -110,18 +119,7 @@ export class SettingsPage implements OnInit, AfterViewInit {
   userEmail = '';
   feedbackMessage = '';
   updateAvailable = false;
-  constructor(
-    public userService: UserService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private themeService: ThemeChangerService,
-    private statsService: GameStatsService,
-    private alertCtrl: AlertController,
-    private analyticsService: AnalyticsService,
-    public settingsStore: SettingsStore,
-    public cloudSyncService: CloudSyncService,
-    private route: ActivatedRoute,
-  ) {
+  constructor() {
     addIcons({
       personCircleOutline,
       colorPaletteOutline,

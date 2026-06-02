@@ -1,5 +1,4 @@
-import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { IonText, IonIcon } from '@ionic/angular/standalone';
 import { ConditionalNumberPipe } from '../../pipes/number-pipe/conditional-number.pipe';
 import { addIcons } from 'ionicons';
@@ -11,10 +10,12 @@ import { UtilsService } from 'src/app/core/services/utils/utils.service';
   templateUrl: './stat-row.component.html',
   styleUrls: ['./stat-row.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  imports: [NgIf, IonText, IonIcon, ConditionalNumberPipe],
+  imports: [IonText, IonIcon, ConditionalNumberPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatRowComponent implements OnChanges {
+  private utilsService = inject(UtilsService);
+
   @Input({ required: true }) label!: string;
   @Input({ required: true }) currentStat!: number;
   @Input() toolTip?: string;
@@ -25,7 +26,7 @@ export class StatRowComponent implements OnChanges {
 
   statDifference = '0';
 
-  constructor(private utilsService: UtilsService) {
+  constructor() {
     addIcons({ informationCircleOutline, arrowUp, arrowDown });
   }
 

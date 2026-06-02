@@ -1,4 +1,3 @@
-import { NgFor, NgIf } from '@angular/common';
 import {
   CUSTOM_ELEMENTS_SCHEMA,
   Component,
@@ -58,7 +57,6 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   styleUrls: ['./game.component.scss'],
   providers: [KeyboardToolbarService],
   imports: [
-    NgFor,
     IonList,
     IonCheckbox,
     IonItem,
@@ -68,7 +66,6 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
     IonCol,
     IonInput,
     FormsModule,
-    NgIf,
     LeagueSelectorComponent,
     IonModal,
     GenericTypeaheadComponent,
@@ -82,6 +79,15 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class GameComponent implements OnInit {
+  settingsStore = inject(SettingsStore);
+  patternsStore = inject(PatternsStore);
+  ballsStore = inject(BallsStore);
+  private hapticService = inject(HapticService);
+  utilsService = inject(UtilsService);
+  private patternService = inject(PatternService);
+  private toastService = inject(ToastService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
+
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -148,16 +154,7 @@ export class GameComponent implements OnInit {
     return this.game() || createEmptyGame();
   }
 
-  constructor(
-    public settingsStore: SettingsStore,
-    public patternsStore: PatternsStore,
-    public ballsStore: BallsStore,
-    private hapticService: HapticService,
-    public utilsService: UtilsService,
-    private patternService: PatternService,
-    private toastService: ToastService,
-    private typeaheadConfigService: TypeaheadConfigService,
-  ) {
+  constructor() {
     addIcons({ chevronExpandOutline });
     effect(() => this.toolbarStateChanged.emit(this.toolbarState()));
   }

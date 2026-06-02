@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Game, Frame, Throw } from 'src/app/core/models/game.model';
 import { GameUtilsService } from '../game-utils/game-utils.service';
 
@@ -14,7 +14,7 @@ export interface SeriesConfig {
   providedIn: 'root',
 })
 export class GameDataTransformerService {
-  constructor(private gameUtilsService: GameUtilsService) {}
+  private gameUtilsService = inject(GameUtilsService);
 
   /**
    * Transforms and normalizes a Game object for persistence.

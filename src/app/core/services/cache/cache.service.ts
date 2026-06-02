@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { CacheEntry, CacheMetadata, DEFAULT_CACHE_CONFIG } from '../../models/cache.model';
 
@@ -6,7 +6,7 @@ import { CacheEntry, CacheMetadata, DEFAULT_CACHE_CONFIG } from '../../models/ca
   providedIn: 'root',
 })
 export class CacheService {
-  constructor(private storage: Storage) {}
+  private storage = inject(Storage);
 
   /**
    * Store data in cache with metadata

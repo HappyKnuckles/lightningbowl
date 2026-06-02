@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostListener } from '@angular/core';
+import { Directive, ElementRef, HostListener, inject } from '@angular/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { IonSearchbar } from '@ionic/angular';
 
@@ -7,7 +7,7 @@ import { IonSearchbar } from '@ionic/angular';
   standalone: true,
 })
 export class SearchBlurDirective {
-  constructor(private el: ElementRef<any>) {}
+  private el = inject<ElementRef<any>>(ElementRef);
 
   @HostListener('keydown.enter', ['$event'])
   onEnterKeyDown(event: Event): void {

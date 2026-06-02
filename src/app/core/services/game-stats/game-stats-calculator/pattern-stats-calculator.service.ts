@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { BestPatternStats } from 'src/app/core/models/stats.model';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
@@ -7,7 +7,7 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
   providedIn: 'root',
 })
 export class PatternStatsCalculatorService {
-  constructor(private patternsStore: PatternsStore) {}
+  private patternsStore = inject(PatternsStore);
 
   private _calculateAllPatternStats(gameHistory: Game[]): Record<string, BestPatternStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);

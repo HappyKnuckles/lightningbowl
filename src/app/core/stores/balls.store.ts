@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -10,6 +10,12 @@ import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class BallsStore {
+  private storageRepository = inject(StorageRepository);
+  private ballService = inject(BallService);
+  private cacheService = inject(CacheService);
+  private networkService = inject(NetworkService);
+  private analyticsService = inject(AnalyticsService);
+
   readonly url = BOWWWL_URL;
 
   #arsenal = signal<Ball[]>([]);
@@ -27,14 +33,6 @@ export class BallsStore {
   get isUsingCache() {
     return this.#isUsingCache;
   }
-
-  constructor(
-    private storageRepository: StorageRepository,
-    private ballService: BallService,
-    private cacheService: CacheService,
-    private networkService: NetworkService,
-    private analyticsService: AnalyticsService,
-  ) {}
 
   async loadArsenal(): Promise<void> {
     try {

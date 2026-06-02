@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { IonButton } from '@ionic/angular/standalone';
 
@@ -16,7 +15,7 @@ enum SpareNames {
 
 @Component({
   selector: 'app-spare-names',
-  imports: [IonButton, NgIf],
+  imports: [IonButton],
   templateUrl: './spare-names.component.html',
   styleUrl: './spare-names.component.scss',
 })

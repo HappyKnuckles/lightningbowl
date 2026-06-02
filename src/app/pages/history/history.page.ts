@@ -1,5 +1,5 @@
-import { DatePipe, NgIf } from '@angular/common';
-import { Component, ViewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, ViewChild, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -53,7 +53,6 @@ import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-
     IonBadge,
     IonContent,
     IonRefresher,
-    NgIf,
     IonText,
     ReactiveFormsModule,
     ReactiveFormsModule,
@@ -64,6 +63,17 @@ import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-
   ],
 })
 export class HistoryPage {
+  private alertController = inject(AlertController);
+  private toastService = inject(ToastService);
+  gamesStore = inject(GamesStore);
+  private appFacade = inject(AppFacade);
+  loadingService = inject(LoadingService);
+  private hapticService = inject(HapticService);
+  private modalCtrl = inject(ModalController);
+  gameFilterService = inject(GameFilterService);
+  private excelService = inject(ExcelService);
+  private analyticsService = inject(AnalyticsService);
+
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
   @ViewChild(IonContent, { static: false }) content!: IonContent;
 
@@ -87,19 +97,7 @@ export class HistoryPage {
   //   return this.sortService.sortGames(this.gameFilterService.filteredGames(), this.currentSortOption);
   // }
 
-  constructor(
-    private alertController: AlertController,
-    private toastService: ToastService,
-    public gamesStore: GamesStore,
-    private appFacade: AppFacade,
-    public loadingService: LoadingService,
-    private hapticService: HapticService,
-    private modalCtrl: ModalController,
-    public gameFilterService: GameFilterService,
-    private excelService: ExcelService,
-    private analyticsService: AnalyticsService,
-    // public sortService: SortService,
-  ) {
+  constructor() {
     addIcons({
       filterOutline,
       trashOutline,

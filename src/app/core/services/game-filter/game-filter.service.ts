@@ -1,4 +1,4 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { computed, Injectable, Signal, signal, inject } from '@angular/core';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { UtilsService } from '../utils/utils.service';
@@ -9,6 +9,9 @@ const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
   providedIn: 'root',
 })
 export class GameFilterService {
+  private utilsService = inject(UtilsService);
+  private gamesStore = inject(GamesStore);
+
   defaultFilters: GameFilter = {
     excludePractice: false,
     minScore: 0,
@@ -56,10 +59,7 @@ export class GameFilterService {
     return this.#filters;
   }
 
-  constructor(
-    private utilsService: UtilsService,
-    private gamesStore: GamesStore,
-  ) {
+  constructor() {
     this.setDefaultFilters();
   }
 

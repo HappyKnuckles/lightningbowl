@@ -7,22 +7,26 @@
     </ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <!-- <app-sort-header
-        [id]="'game-sort-header'"
-        [sortOptions]="sortService.GAME_SORT_OPTIONS"
-        [selectedSort]="currentSortOption"
-        storageKey="games-sort-option"
-        (sortChanged)="onSortChanged($event)">
-      </app-sort-header> -->
+      [id]="'game-sort-header'"
+      [sortOptions]="sortService.GAME_SORT_OPTIONS"
+      [selectedSort]="currentSortOption"
+      storageKey="games-sort-option"
+      (sortChanged)="onSortChanged($event)">
+    </app-sort-header> -->
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
-        <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
+        @if (gameFilterService.activeFilterCount() !== 0) {
+          <ion-text class="filter-indicator">{{ gameFilterService.activeFilterCount() }}</ion-text>
+        }
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
-    <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
-    </app-generic-filter-active>
-  </ion-toolbar>
+  @if (gameFilterService.activeFilterCount() !== 0) {
+    <ion-toolbar style="text-align: center">
+      <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
+      </app-generic-filter-active>
+    </ion-toolbar>
+  }
 </ion-header>
 
 <ion-content [fullscreen]="true">
@@ -31,17 +35,15 @@
   </ion-refresher>
 
   <!-- Show this message if there are no game history items and it's not loading -->
-  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
+  @if (gamesStore.games().length <= 0 && !loadingService.isLoading()) {
     <ion-text class="no-game-text"> Start playing a few games to see your history here! </ion-text>
-  </ng-container>
-  <ng-template #checkFilteredGames>
-    <ng-container *ngIf="gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading(); else content">
+  } @else {
+    @if (gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) {
       <ion-text class="no-game-text"> No games for this filter! </ion-text>
-    </ng-container>
-  </ng-template>
+    } @else {
+      <!-- <ion-button (click)="deleteAll()">Delete</ion-button>-->
+      <app-game-list [games]="gameFilterService.filteredGames()" [gameCount]="gameFilterService.filteredGames().length"></app-game-list>
+    }
+  }
   <!-- Main content to display when there is game history or when loading is done -->
-  <ng-template #content>
-    <!-- <ion-button (click)="deleteAll()">Delete</ion-button>-->
-    <app-game-list [games]="gameFilterService.filteredGames()" [gameCount]="gameFilterService.filteredGames().length"></app-game-list>
-  </ng-template>
 </ion-content>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { addIcons } from 'ionicons';
 import {
   add,
@@ -31,6 +31,8 @@ interface MoreTab {
   imports: [IonModal, RouterModule, AsyncPipe, IonItem, IonList, IonContent, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel],
 })
 export class TabsPage {
+  private router = inject(Router);
+
   activeMoreTab$ = new BehaviorSubject<boolean>(false);
   readonly moreTabs: MoreTab[] = [
     {
@@ -71,7 +73,7 @@ export class TabsPage {
   ];
 
   private tabPaths = this.moreTabs.map((t) => t.path);
-  constructor(private router: Router) {
+  constructor() {
     addIcons({
       add,
       statsChartOutline,

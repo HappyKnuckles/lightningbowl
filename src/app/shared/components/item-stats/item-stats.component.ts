@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, signal, inject } from '@angular/core';
 import {
   IonButton,
   IonButtons,
@@ -15,32 +15,20 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
-import { NgIf } from '@angular/common';
+
 import { GenericItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Component({
   selector: 'app-item-stats',
   standalone: true,
-  imports: [
-    IonList,
-    IonListHeader,
-    IonImg,
-    IonRippleEffect,
-    IonIcon,
-    IonModal,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonButton,
-    IonContent,
-    NgIf,
-  ],
+  imports: [IonList, IonListHeader, IonImg, IonRippleEffect, IonIcon, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent],
   templateUrl: './item-stats.component.html',
   styleUrl: './item-stats.component.scss',
 })
 export class ItemStatsComponent {
+  ballsStore = inject(BallsStore);
+
   item = input.required<GenericItemStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
@@ -51,7 +39,7 @@ export class ItemStatsComponent {
 
   isModalOpen = signal(false);
 
-  constructor(public ballsStore: BallsStore) {
+  constructor() {
     addIcons({ chevronForwardOutline, chevronBack });
   }
 

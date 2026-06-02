@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
@@ -6,6 +6,10 @@ import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 
 @Injectable({ providedIn: 'root' })
 export class PatternsStore {
+  private patternService = inject(PatternService);
+  private cacheService = inject(CacheService);
+  private networkService = inject(NetworkService);
+
   #allPatterns = signal<Partial<Pattern>[]>([]);
   #patternImageMap = signal<Record<string, string>>({});
   #isUsingCache = signal<boolean>(false);
@@ -21,12 +25,6 @@ export class PatternsStore {
   get patternImageMap() {
     return this.#patternImageMap;
   }
-
-  constructor(
-    private patternService: PatternService,
-    private cacheService: CacheService,
-    private networkService: NetworkService,
-  ) {}
 
   async loadAllPatterns(forceRefresh = false): Promise<void> {
     const cacheKey = 'all_patterns';

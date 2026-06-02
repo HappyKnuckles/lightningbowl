@@ -94,7 +94,8 @@ defineCustomElements(window);
 })
 export class AddGamePage implements OnInit {
   // Live stats
-  liveSeries: LiveSeriesStats | null = null;
+  liveSeriesStats: LiveSeriesStats | null = null;
+  allStats = this.gameStatsService.overallStats;
   isLiveStatsOpen = false;
   readonly hasLiveStats = computed(() => {
     const active = new Set(this.getActiveTrackIndexes());
@@ -650,8 +651,8 @@ export class AddGamePage implements OnInit {
   onSeriesStatsClick(): void {
     const active = new Set(this.getActiveTrackIndexes());
     const games = this.games().filter((_, i) => active.has(i));
-    this.liveSeries = this.gameStatsService.calculateLiveSeriesStats(games);
-    if (this.liveSeries) {
+    this.liveSeriesStats = this.gameStatsService.calculateLiveSeriesStats(games);
+    if (this.liveSeriesStats) {
       this.isLiveStatsOpen = true;
     }
   }

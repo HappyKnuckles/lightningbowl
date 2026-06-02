@@ -23,6 +23,7 @@ import { addIcons } from 'ionicons';
 import { createOutline, documentTextOutline, filterOutline, medalOutline, shareOutline, swapVertical, trashOutline } from 'ionicons/icons';
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { GameFilter } from 'src/app/core/models/filter.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
@@ -68,12 +69,12 @@ export class HistoryPage {
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
 
-  get currentFilters(): Record<string, unknown> {
-    return this.gameFilterService.filters() as unknown as Record<string, unknown>;
+  get currentFilters(): GameFilter {
+    return this.gameFilterService.filters();
   }
 
-  get defaultFilters(): Record<string, unknown> {
-    return this.gameFilterService.defaultFilters as unknown as Record<string, unknown>;
+  get defaultFilters(): GameFilter {
+    return this.gameFilterService.defaultFilters;
   }
 
   // currentSortOption: GameSortOption = {

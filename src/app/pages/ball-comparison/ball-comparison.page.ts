@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -34,14 +34,14 @@ import { addIcons } from 'ionicons';
 import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-config.interface';
-import { createBallTypeaheadConfig } from 'src/app/shared/components/generic-typeahead/typeahead-configs';
 
 interface SavedEntry {
   id: string;
@@ -85,13 +85,14 @@ interface SavedEntry {
     IonSelectOption,
   ],
 })
-export class BallComparisonPage implements OnInit, OnDestroy {
+export class BallComparisonPage implements OnDestroy, OnInit {
   protected readonly ballsStore = inject(BallsStore);
   protected readonly url = this.ballsStore.url;
   protected readonly allBalls = this.ballsStore.allBalls;
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
+  private readonly typeaheadConfigService = inject(TypeaheadConfigService);
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
@@ -101,10 +102,14 @@ export class BallComparisonPage implements OnInit, OnDestroy {
   readonly selectedSegment = model<'compare' | 'chart'>('compare');
   readonly loadingWeightBallIds = signal<Set<string>>(new Set());
 
-  presentingElement?: HTMLElement;
-  ballTypeaheadConfig!: TypeaheadConfig<Ball>;
+  presentingElement!: HTMLElement | null;
 
   readonly maxBalls = 6;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = {
+    ...this.typeaheadConfigService.ball,
+    title: 'Select Balls to Compare',
+    maxSelections: this.maxBalls,
+  };
   readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
@@ -131,13 +136,8 @@ export class BallComparisonPage implements OnInit, OnDestroy {
     this.initRestoreEffect();
   }
 
-  ngOnInit(): void {
-    this.presentingElement = document.querySelector('.ion-page') ?? undefined;
-    this.ballTypeaheadConfig = {
-      ...createBallTypeaheadConfig(this.ballsStore),
-      title: 'Select Balls to Compare',
-      maxSelections: this.maxBalls,
-    };
+  ngOnInit() {
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   ngOnDestroy(): void {

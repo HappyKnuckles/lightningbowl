@@ -140,12 +140,6 @@ export class GameFilterComponent implements OnInit {
     this.gameFilterService.filters.update((filters) => ({ ...filters, startDate: newStartDate, timeRange: event.detail.value }));
   }
 
-  handleSelect(event: CustomEvent): void {
-    if (event.detail.value.includes('all')) {
-      this.gameFilterService.filters.update((filters) => ({ ...filters, leagues: ['all'] }));
-    }
-  }
-
   cancel(): Promise<boolean> {
     this.gameFilterService.filters.update(() =>
       localStorage.getItem('game-filter') ? JSON.parse(localStorage.getItem('game-filter')!) : this.gameFilterService.filters(),
@@ -153,15 +147,24 @@ export class GameFilterComponent implements OnInit {
     return this.modalCtrl.dismiss(null, 'cancel');
   }
 
-  handleBallSelect(balls: string[], modal: IonModal) {
-    modal.dismiss();
-    const filteredBalls = balls.filter((ball) => ball !== 'all');
-    this.gameFilterService.filters().balls = filteredBalls;
-    this.updateFilter('balls', filteredBalls);
+  updateFilter<T extends keyof GameFilter>(key: T, value: GameFilter[T]): void {
+    const normalized = Array.isArray(value) && value.length === 0 ? (['all'] as GameFilter[T]) : value;
+    this.gameFilterService.filters.update((filters) => ({ ...filters, [key]: normalized }));
   }
 
-  updateFilter<T extends keyof GameFilter>(key: T, value: unknown): void {
-    this.gameFilterService.filters.update((filters) => ({ ...filters, [key]: value }));
+  updateNumericFilter<T extends keyof GameFilter>(key: T, raw: string | undefined | null): void {
+    if (!raw?.trim()) {
+      this.updateFilter(key, this.defaultFilters[key]);
+      return;
+    }
+    const parsed = Number(raw);
+    if (Number.isNaN(parsed)) return;
+    this.updateFilter(key, parsed as GameFilter[T]);
+  }
+
+  updateDateFilter(key: 'startDate' | 'endDate', value: string | string[] | null | undefined): void {
+    const date = Array.isArray(value) ? value[0] : value;
+    this.updateFilter(key, date ?? undefined);
   }
 
   reset(): void {

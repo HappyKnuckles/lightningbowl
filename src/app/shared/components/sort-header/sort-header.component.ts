@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { swapVertical } from 'ionicons/icons';
-import { SortOption, BallSortField, PatternSortField, GameSortField } from 'src/app/core/models/sort.model';
+import { SortOption, SortField } from 'src/app/core/models/sort.model';
 
 @Component({
   selector: 'app-sort-header',
@@ -12,14 +12,14 @@ import { SortOption, BallSortField, PatternSortField, GameSortField } from 'src/
   styleUrls: ['./sort-header.component.scss'],
   imports: [CommonModule, FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
 })
-export class SortHeaderComponent implements OnInit {
-  sortOptions = model.required<SortOption<BallSortField | PatternSortField | GameSortField>[]>();
-  selectedSort = model.required<SortOption<BallSortField | PatternSortField | GameSortField>>();
+export class SortHeaderComponent<F extends SortField = SortField> implements OnInit {
+  sortOptions = model.required<SortOption<F>[]>();
+  selectedSort = model.required<SortOption<F>>();
   id = model.required<string>();
   @Input() storageKey = '';
   @Input() favoritesFirst = false;
   @Input() favoritesFirstStorageKey = '';
-  @Output() sortChanged = new EventEmitter<SortOption<BallSortField | PatternSortField | GameSortField>>();
+  @Output() sortChanged = new EventEmitter<SortOption<F>>();
   @Output() favoritesFirstChanged = new EventEmitter<boolean>();
   @ViewChild('sortList', { read: ElementRef }) sortList!: ElementRef;
 
@@ -58,7 +58,7 @@ export class SortHeaderComponent implements OnInit {
     }
   }
 
-  private saveSortToStorage(sortOption: SortOption<BallSortField | PatternSortField | GameSortField>) {
+  private saveSortToStorage(sortOption: SortOption<F>) {
     if (this.storageKey && typeof localStorage !== 'undefined') {
       localStorage.setItem(this.storageKey, JSON.stringify(sortOption));
     }
@@ -70,7 +70,7 @@ export class SortHeaderComponent implements OnInit {
     }
   }
 
-  selectOption(option: SortOption<BallSortField | PatternSortField | GameSortField>) {
+  selectOption(option: SortOption<F>) {
     this.selectedSort.set(option);
     this.selectedSortKey = `${option.field}_${option.direction}`;
     this.saveSortToStorage(option);
@@ -88,7 +88,7 @@ export class SortHeaderComponent implements OnInit {
     }
   }
 
-  getSortKey(option: SortOption<BallSortField | PatternSortField | GameSortField>): string {
+  getSortKey(option: SortOption<F>): string {
     return `${option.field}_${option.direction}`;
   }
 
@@ -113,7 +113,7 @@ export class SortHeaderComponent implements OnInit {
     }
   }
 
-  onFavoritesFirstChange(event: any) {
+  onFavoritesFirstChange(event: CustomEvent<{ checked: boolean }>) {
     const checked = event.detail.checked;
     this.favoritesFirst = checked;
     this.saveFavoritesFirstToStorage(checked);

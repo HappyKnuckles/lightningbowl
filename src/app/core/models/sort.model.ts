@@ -35,7 +35,9 @@ export enum GameSortField {
   IS_PERFECT = 'isPerfect',
 }
 
-export interface SortOption<T> {
+export type SortField = BallSortField | PatternSortField | GameSortField;
+
+export interface SortOption<T extends SortField = SortField> {
   field: T;
   direction: SortDirection;
   label: string;

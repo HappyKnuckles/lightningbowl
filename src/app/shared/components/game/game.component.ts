@@ -35,7 +35,6 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -44,12 +43,14 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { createBallTypeaheadConfig, createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { KeyboardToolbarService } from 'src/app/core/services/keyboard-toolbar/keyboard-toolbar.service';
+import { createPartialPatternTypeaheadConfig } from 'src/app/core/configs/typeahead/pattern.config';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 
 @Component({
   selector: 'app-game',
@@ -131,9 +132,9 @@ export class GameComponent implements OnInit {
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
-  presentingElement?: HTMLElement;
-  patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
-  ballTypeaheadConfig!: TypeaheadConfig<Ball>;
+  presentingElement!: HTMLElement | null;
+  patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
   showButtonToolbar = false;
   keyboardOffset = 0;
@@ -155,6 +156,7 @@ export class GameComponent implements OnInit {
     public utilsService: UtilsService,
     private patternService: PatternService,
     private toastService: ToastService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {
     addIcons({ chevronExpandOutline });
     effect(() => this.toolbarStateChanged.emit(this.toolbarState()));
@@ -163,7 +165,6 @@ export class GameComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.presentingElement = document.querySelector('.ion-page')!;
     this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
-    this.ballTypeaheadConfig = createBallTypeaheadConfig(this.ballsStore);
   }
 
   // PIN INPUT MODE - PASS-THROUGH HANDLERS

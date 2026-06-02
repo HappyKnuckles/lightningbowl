@@ -1,4 +1,4 @@
-import { FilterConfig } from '../../../shared/components/generic-filter-active/generic-filter-active.component';
+import { FilterConfig } from '../../models/filter.model';
 
 export const GAME_FILTER_CONFIGS: FilterConfig[] = [
   {
@@ -30,7 +30,7 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     key: 'leagues',
     label: 'Leagues',
     type: 'array',
-    displayValue: (value: unknown) => {
+    displayValue: (value) => {
       const leagues = Array.isArray(value) ? value : [];
       if (leagues.length === 0 || (leagues.length === 1 && leagues[0] === '')) {
         return 'No Leagues';
@@ -47,6 +47,13 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     key: 'patterns',
     label: 'Patterns',
     type: 'array',
+    displayValue: (value) => {
+      const patterns = Array.isArray(value) ? value : [];
+      if (patterns.length === 1 && patterns[0] === '') {
+        return 'No Patterns';
+      }
+      return `${patterns.join(', ')}`;
+    },
   },
   {
     key: 'dateRange',

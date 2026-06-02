@@ -51,7 +51,6 @@ import { GameEditService } from 'src/app/core/services/game-edit/game-edit.servi
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -66,9 +65,9 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from '../generic-typeahead/typeahead-config.interface';
-import { createPartialPatternTypeaheadConfig } from '../generic-typeahead/typeahead-configs';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 
 interface MonthHeader {
   name: string;
@@ -143,9 +142,9 @@ export class GameListComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private patternService = inject(PatternService);
   private validationService = inject(BowlingGameValidationService);
   private shareService = inject(GameShareService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
 
   // Computed
   leagues = computed(() => {
@@ -220,7 +219,7 @@ export class GameListComponent implements OnInit {
   public presentingElement?: HTMLElement;
 
   // Config
-  patternTypeaheadConfig!: TypeaheadConfig<Partial<Pattern>>;
+  patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -242,7 +241,6 @@ export class GameListComponent implements OnInit {
 
   ngOnInit(): void {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((q) => this.patternService.searchPattern(q));
   }
 
   // PAGINATION
@@ -413,7 +411,7 @@ export class GameListComponent implements OnInit {
     return this.validationService.isGameValid(game);
   }
 
-  parseIntValue(value: unknown): number {
+  parseIntValue(value: string): number {
     return this.utilsService.parseIntValue(value) as number;
   }
 

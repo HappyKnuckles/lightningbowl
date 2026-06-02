@@ -273,7 +273,7 @@ export class PatternPage implements OnInit {
   //   });
   // }
 
-  onSortChanged(sortOption: unknown): void {
+  onSortChanged(sortOption: PatternSortOption): void {
     this.currentSortOption = sortOption as PatternSortOption;
     if (this.content) {
       setTimeout(() => {

@@ -145,7 +145,7 @@ export class AddGamePage implements OnInit {
   // View Children & DOM References
   @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
   @ViewChild('modalGrid', { static: false }) modalGrid!: GameComponent;
-  presentingElement!: HTMLElement;
+  presentingElement!: HTMLElement | null;
 
   // Internal Logic State
   private isStorageReady = false;
@@ -197,9 +197,9 @@ export class AddGamePage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.presentingElement = document.querySelector('.ion-page')!;
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   // PIN INPUT MODE
@@ -316,7 +316,7 @@ export class AddGamePage implements OnInit {
     }
   }
 
-  updateSingleGameProperty(key: keyof Game, value: unknown, index: number, isModal: boolean): void {
+  updateSingleGameProperty<K extends keyof Game>(key: K, value: Game[K], index: number, isModal: boolean): void {
     if (isModal) {
       this.gameData = { ...this.gameData, [key]: value };
     } else {
@@ -324,12 +324,14 @@ export class AddGamePage implements OnInit {
     }
   }
 
-  updateSeriesProperty(key: keyof Game, value: unknown, isModal: boolean): void {
+  updateSeriesProperty<K extends keyof Game>(key: K, value: Game[K], isModal: boolean): void {
+    const league = key === 'league' ? (value as Game['league']) : undefined;
+    const isPractice = league === '' || league === 'New';
+
     if (isModal) {
       this.gameData = { ...this.gameData, [key]: value };
 
       if (key === 'league') {
-        const isPractice = value === '' || value === 'New';
         this.gameData.isPractice = isPractice;
         if (this.modalGrid?.checkbox) {
           this.modalGrid.checkbox.checked = isPractice;
@@ -345,10 +347,10 @@ export class AddGamePage implements OnInit {
             const updates: Partial<Game> = { [key]: value };
 
             if (key === 'league') {
-              updates.isPractice = value === '' || value === 'New';
+              updates.isPractice = isPractice;
             }
             if (key === 'patterns' && Array.isArray(value) && value.length > 2) {
-              updates.patterns = value.slice(-2);
+              updates.patterns = value.slice(-2) as Game['patterns'];
             }
             return { ...g, ...updates };
           }
@@ -360,7 +362,7 @@ export class AddGamePage implements OnInit {
         const isPractice = value === '' || value === 'New';
         this.gameComponents.forEach((grid, i) => {
           if (trackIndexes.includes(i)) {
-            grid.leagueSelector.selectedLeague = value as string;
+            grid.leagueSelector.selectedLeague = league as string;
             grid.checkbox.checked = isPractice;
             grid.checkbox.disabled = !isPractice;
           }

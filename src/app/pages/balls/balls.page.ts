@@ -39,6 +39,7 @@ import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.con
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Ball } from 'src/app/core/models/ball.model';
+import { BallFilter } from 'src/app/core/models/filter.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
@@ -104,12 +105,12 @@ export class BallsPage implements OnInit {
 
   ballFilterConfigs = BALL_FILTER_CONFIGS;
 
-  get currentFilters(): Record<string, unknown> {
-    return this.ballFilterService.filters() as unknown as Record<string, unknown>;
+  get currentFilters(): BallFilter {
+    return this.ballFilterService.filters();
   }
 
-  get defaultFilters(): Record<string, unknown> {
-    return this.ballFilterService.defaultFilters as unknown as Record<string, unknown>;
+  get defaultFilters(): BallFilter {
+    return this.ballFilterService.defaultFilters;
   }
 
   balls = signal<Ball[]>([]);
@@ -436,8 +437,8 @@ export class BallsPage implements OnInit {
     return this.ballFilterService.activeFilterCount() > 0;
   }
 
-  onSortChanged(sortOption: unknown): void {
-    this.currentSortOption = sortOption as BallSortOption;
+  onSortChanged(sortOption: BallSortOption): void {
+    this.currentSortOption = sortOption;
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);

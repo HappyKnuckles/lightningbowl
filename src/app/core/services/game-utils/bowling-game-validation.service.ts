@@ -143,7 +143,7 @@ export class BowlingGameValidationService {
         return false;
       }
 
-      const throws = frame.throws.map((t) => (typeof t.value === 'string' ? parseInt(t.value as unknown as string, 10) : t.value));
+      const throws = frame.throws.map((t) => (typeof t.value === 'string' ? parseInt(t.value as string, 10) : t.value));
 
       if (index < 9) {
         // For frames 1 to 9

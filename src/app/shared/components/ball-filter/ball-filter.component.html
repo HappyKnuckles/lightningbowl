@@ -79,7 +79,7 @@
         clearOnEdit="true"
         inputmode="decimal"
         label="RG range"
-        (ionChange)="updateFilter('minRg', $event.detail.value?.replace(',', '.'))"></ion-input>
+        (ionChange)="updateNumericFilter('minRg', $event.detail.value)"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
         label="-"
@@ -89,7 +89,7 @@
         name="maxRg"
         clearOnEdit="true"
         inputmode="decimal"
-        (ionChange)="updateFilter('maxRg', $event.detail.value?.replace(',', '.'))"></ion-input>
+        (ionChange)="updateNumericFilter('maxRg', $event.detail.value)"></ion-input>
     </ion-item>
     <ion-item>
       <ion-input
@@ -99,7 +99,7 @@
         clearOnEdit="true"
         inputmode="decimal"
         label="Diff range"
-        (ionChange)="updateFilter('minDiff', $event.detail.value?.replace(',', '.'))"></ion-input>
+        (ionChange)="updateNumericFilter('minDiff', $event.detail.value)"></ion-input>
       <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
       <ion-input
         label="-"
@@ -109,7 +109,7 @@
         name="maxDiff"
         clearOnEdit="true"
         inputmode="decimal"
-        (ionChange)="updateFilter('maxDiff', $event.detail.value?.replace(',', '.'))"></ion-input>
+        (ionChange)="updateNumericFilter('maxDiff', $event.detail.value)"></ion-input>
     </ion-item>
     <ion-item>
       <ion-toggle [ngModel]="ballFilterService.filters().inArsenal" (ionChange)="updateFilter('inArsenal', $event.detail.checked)"

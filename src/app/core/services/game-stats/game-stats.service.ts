@@ -1,6 +1,6 @@
 import { computed, Injectable, Signal } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, BestPatternStats, LeaveStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
+import { Game, isAllFramesComplete, toCompletedFramesGame } from 'src/app/core/models/game.model';
+import { BestBallStats, BestPatternStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -154,6 +154,26 @@ export class GameStatsService {
 
   calculateSeriesStats(gameHistory: Game[]): SeriesStats {
     return this.seriesStatsCalculatorService.calculateSeriesStats(gameHistory);
+  }
+
+  calculateLiveSeriesStats(games: Game[]): LiveSeriesStats | null {
+    const completeGames = games.filter(isAllFramesComplete);
+    const frameGames = games.map(toCompletedFramesGame).filter((g) => g.frames.length > 0);
+    const context = { complete: completeGames.length, total: games.length };
+
+    if (frameGames.length === 0) {
+      return null;
+    }
+
+    const pinModeGames = frameGames.map((g) => ({ ...g, isPinMode: true }));
+    const gameStats = completeGames.length ? this.calculateBowlingStats(completeGames) : {};
+
+    return {
+      stats: this.seriesStatsCalculatorService.mergeSeriesLiveStats(this.calculateBowlingStats(frameGames), gameStats, completeGames.length),
+      leaves: this.calculateLeaveAnalytics(pinModeGames),
+      allLeaves: this.calculateAllLeaves(pinModeGames),
+      context,
+    };
   }
 
   calculateMostPlayedBallStats(gameHistory: Game[]): BestBallStats {

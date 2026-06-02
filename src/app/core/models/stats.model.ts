@@ -85,6 +85,13 @@ export interface SeriesStats extends Stats {
   seriesDate: string;
 }
 
+export interface LiveSeriesStats {
+  stats: Stats;
+  leaves: { best: LeaveStats[]; worst: LeaveStats[]; common: LeaveStats[] };
+  allLeaves: LeaveStats[];
+  context: { complete: number; total: number };
+}
+
 export interface OverallSeriesStats {
   seriesCount: number;
   averageSeriesScore: number;

@@ -2,7 +2,7 @@
 
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
-import { SeriesStats } from '../../../models/stats.model';
+import { SeriesStats, Stats } from '../../../models/stats.model';
 
 @Injectable({
   providedIn: 'root',
@@ -248,6 +248,20 @@ export class SeriesStatsCalculatorService {
       spareRates: [],
       overallSpareRate: 0,
       overallMissedRate: 0,
+    };
+  }
+
+  mergeSeriesLiveStats(frameStats: Stats, gameStats: Partial<Stats>, totalGames: number): Stats {
+    const { averageScore = 0, highGame = 0, lowGame = 0, cleanGameCount = 0, cleanGamePercentage = 0, perfectGameCount = 0 } = gameStats;
+    return {
+      ...frameStats,
+      totalGames,
+      averageScore,
+      highGame,
+      lowGame,
+      cleanGameCount,
+      cleanGamePercentage,
+      perfectGameCount,
     };
   }
 }

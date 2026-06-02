@@ -28,18 +28,9 @@ import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import {
-  cloneFrames,
-  createEmptyGame,
-  Frame,
-  Game,
-  GameDraft,
-  isAllFramesComplete,
-  PinModeState,
-  toCompletedFramesGame,
-} from 'src/app/core/models/game.model';
+import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
-import { LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
@@ -103,11 +94,8 @@ defineCustomElements(window);
 })
 export class AddGamePage implements OnInit {
   // Live stats
-  liveStats: Stats | null = null;
-  liveLeaves: { best: LeaveStats[]; worst: LeaveStats[]; common: LeaveStats[] } = { best: [], worst: [], common: [] };
-  liveAllLeaves: LeaveStats[] = [];
+  liveSeries: LiveSeriesStats | null = null;
   isLiveStatsOpen = false;
-  liveStatsContext = { complete: 0, total: 0 };
   readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
 
   // UI State
@@ -181,7 +169,7 @@ export class AddGamePage implements OnInit {
       const pinModeState = this.pinModeState();
       const totalScores = this.totalScores();
       const maxScores = this.maxScores();
-
+      console.log(!!this.liveSeries);
       const selectedMode = untracked(() => this.selectedMode);
       const isPinInputMode = untracked(() => this.isPinInputMode);
       const gameIndex = untracked(() => this.selectedSegment);
@@ -655,42 +643,12 @@ export class AddGamePage implements OnInit {
   }
 
   onSeriesStatsClick(): void {
-    const activeIndexes = this.getActiveTrackIndexes();
-    const relevantGames = this.games().filter((_, i) => activeIndexes.includes(i));
-
-    const completeGames = relevantGames.filter((g) => isAllFramesComplete(g));
-    const allCompletedFrameGames = relevantGames.map((g) => toCompletedFramesGame(g)).filter((g) => g.frames.length > 0);
-
-    this.liveStatsContext = { complete: completeGames.length, total: activeIndexes.length };
-
-    if (allCompletedFrameGames.length === 0) {
-      this.liveStats = null;
-      this.liveLeaves = { best: [], worst: [], common: [] };
-      this.liveAllLeaves = [];
+    const active = new Set(this.getActiveTrackIndexes());
+    const games = this.games().filter((_, i) => active.has(i));
+    this.liveSeries = this.gameStatsService.calculateLiveSeriesStats(games);
+    if (this.liveSeries) {
       this.isLiveStatsOpen = true;
-      return;
     }
-
-    const frameStats = this.gameStatsService.calculateBowlingStats(allCompletedFrameGames);
-    const gameStats = completeGames.length > 0 ? this.gameStatsService.calculateBowlingStats(completeGames) : null;
-
-    this.liveStats = {
-      ...frameStats,
-      totalGames: completeGames.length,
-      averageScore: gameStats?.averageScore ?? 0,
-      highGame: gameStats?.highGame ?? 0,
-      lowGame: gameStats?.lowGame ?? 0,
-      cleanGameCount: gameStats?.cleanGameCount ?? 0,
-      cleanGamePercentage: gameStats?.cleanGamePercentage ?? 0,
-      perfectGameCount: gameStats?.perfectGameCount ?? 0,
-    };
-
-    // Pin leave stats: set isPinMode so the calculator picks up pinsLeftStanding data
-    const pinModeGames = allCompletedFrameGames.map((g) => ({ ...g, isPinMode: true }));
-    this.liveLeaves = this.gameStatsService.calculateLeaveAnalytics(pinModeGames);
-    this.liveAllLeaves = this.gameStatsService.calculateAllLeaves(pinModeGames);
-
-    this.isLiveStatsOpen = true;
   }
 
   private propagateMetadataToSeries(): void {

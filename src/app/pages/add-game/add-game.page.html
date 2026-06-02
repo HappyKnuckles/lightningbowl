@@ -134,22 +134,28 @@
     <ion-header>
       <ion-toolbar>
         <ion-title>Series Stats</ion-title>
-        <ion-buttons slot="start">
-          <ion-button (click)="isLiveStatsOpen = false">Close</ion-button>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="isLiveStatsOpen = false">
+            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
-      <p style="text-align: center; color: var(--ion-color-medium); font-size: 0.85rem; margin: 8px 0 0">
-        {{ liveStatsContext.complete }} of {{ liveStatsContext.total }} games complete
-      </p>
-      @if (liveStats) {
-        <app-stat-display [currentStats]="liveStats" [statDefinitions]="liveStatDefinitions"></app-stat-display>
-        <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="liveLeaves.best"></app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="liveLeaves.worst"></app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="liveLeaves.common" [allLeaves]="liveAllLeaves"></app-pin-leave-stats>
-      } @else {
-        <p style="text-align: center; padding: 32px; color: var(--ion-color-medium)">No frames bowled yet.</p>
+      @if (liveSeries; as series) {
+        <p style="text-align: center; color: var(--ion-color-medium); font-size: 0.85rem; margin: 8px 0 0">
+          {{ series.context.complete }} of {{ series.context.total }} games complete
+        </p>
+
+        @if (series.stats; as stats) {
+          <app-stat-display [currentStats]="stats" [statDefinitions]="liveStatDefinitions"></app-stat-display>
+          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-pin-leave-stats>
+          <app-pin-leave-stats
+            [title]="'Most Common Leaves'"
+            [leaveStats]="series.leaves.common"
+            [allLeaves]="series.allLeaves"></app-pin-leave-stats>
+        }
       }
     </ion-content>
   </ng-template>
@@ -160,8 +166,10 @@
   <ng-template>
     <ion-header>
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-button (click)="modal.dismiss()">Cancel</ion-button>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="modal.dismiss()">
+            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+          </ion-button>
         </ion-buttons>
         <ion-title>Your game</ion-title>
         <ion-buttons slot="end">

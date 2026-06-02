@@ -103,9 +103,7 @@ export class GameComponent implements OnInit, OnDestroy {
   pinThrowConfirmed = output<ThrowConfirmedEvent>();
   pinUndoRequested = output<void>();
   seriesStatsClick = output<void>();
-
   showStatsButton = input<boolean>(false);
-
   // Pin mode edit - score cell clicked
   scoreCellClick = output<{ frameIndex: number; throwIndex: number }>();
 

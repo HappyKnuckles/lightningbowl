@@ -20,6 +20,7 @@ export class PinInputComponent {
   isGameComplete = input<boolean>(false);
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
+  statsEnabled = input<boolean>();
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
   statsClick = output<void>();

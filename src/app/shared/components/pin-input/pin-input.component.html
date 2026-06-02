@@ -1,6 +1,6 @@
 <div class="pin-input-container">
   @if (showStatsButton()) {
-    <ion-button class="stats-btn" fill="clear" size="small" (click)="statsClick.emit()">
+    <ion-button class="stats-btn" disabled="{{ !statsEnabled() }}" fill="clear" size="small" (click)="statsClick.emit()">
       <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
     </ion-button>
   }

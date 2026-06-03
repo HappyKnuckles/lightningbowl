@@ -28,7 +28,7 @@ ion-header {
     color: black;
     background: var(--ion-color-primary);
     padding: 1px;
-    border-radius: 7px;
+    border-radius: var(--default-border-radius);
     z-index: 15555;
     font-size: 14px;
   }
@@ -45,7 +45,7 @@ ion-card {
 
     .weight-change {
       border: 1px solid var(--ion-thin-border-color, #ffffff12);
-      border-radius: 7px;
+      border-radius: var(--default-border-radius);
       --padding-end: 4px;
       --padding-start: 4px;
       min-height: 25px;
@@ -100,7 +100,7 @@ ion-card {
         flex-direction: column;
         gap: 2px;
         padding: 10px 12px;
-        border-radius: 7px;
+        border-radius: var(--card-border-radius);
         border: 1px solid var(--ion-thin-border-color, #ffffff12);
 
         .stat-label {
@@ -130,7 +130,7 @@ ion-card {
         position: relative;
         overflow: hidden;
         padding: 14px;
-        border-radius: 7px;
+        border-radius: var(--card-border-radius);
         border: 1px solid var(--ion-thin-border-color, #ffffff12);
         cursor: pointer;
 
@@ -191,7 +191,7 @@ ion-card {
         margin-top: 4px;
 
         .arsenal-btn {
-          --border-radius: 7px;
+          --border-radius: var(--card-border-radius);
           height: 44px;
           font-size: 0.9rem;
           font-weight: 600;

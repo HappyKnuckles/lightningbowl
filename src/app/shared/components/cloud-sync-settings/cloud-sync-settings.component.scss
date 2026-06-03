@@ -23,7 +23,7 @@
     background: #141414;
     padding: 12px;
     border: 1px solid var(--ion-border-color, #2b2828);
-    border-radius: 7px;
+    border-radius: var(--card-border-radius);
     display: flex;
     flex-direction: column;
     flex: 1;

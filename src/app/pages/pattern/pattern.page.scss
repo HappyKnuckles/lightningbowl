@@ -37,7 +37,7 @@
     flex-direction: column;
     gap: 2px;
     padding: 10px 12px;
-    border-radius: 7px;
+    border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
 
     .stat-label {
@@ -65,7 +65,7 @@
 
   .detail-card {
     padding: 4px 14px;
-    border-radius: 7px;
+    border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
   }
 

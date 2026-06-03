@@ -19,7 +19,61 @@ ion-list {
   margin-bottom: 32px;
 }
 
+ion-item-divider {
+  background: none;
+  padding: 4px 12px;
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--ion-thin-border-color, #2b2828);
+    margin-inline-start: 12px;
+  }
+
+  ion-badge {
+    background: var(--ion-card-background);
+    margin-left: 12px;
+    border: 1px solid var(--ion-thin-border-color, #2b2828);
+    color: white;
+  }
+}
+
 .sliding {
+  margin: 8px 12px;
+  border-radius: var(--card-border-radius, 14px);
+  width: auto;
+  border: 1px solid var(--ion-border-color, #2b2828);
+
+  .score-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 80px;
+    margin-right: 12px;
+  }
+
+  .score-text {
+    text-align: right;
+    margin-bottom: 4px;
+    font-size: 1.15rem;
+    font-weight: bold;
+  }
+
+  .score-bar {
+    height: 3px;
+    width: 80%;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 80%;
+    background: white;
+    transition: width 0.3s ease;
+  }
+
   .note {
     --inner-border-width: 0;
   }
@@ -30,7 +84,11 @@ ion-list {
   }
 
   ion-accordion {
-    background-color: transparent;
+    background-color: var(--ion-card-background);
+
+    ion-item {
+      --background: var(--ion-card-background);
+    }
 
     .score {
       font-size: 0.875rem;

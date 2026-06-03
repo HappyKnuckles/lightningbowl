@@ -1,96 +1,118 @@
+.ball-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #1a1a1d;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 0 16px 10px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+
+  &.ion-activatable {
+    cursor: pointer;
+  }
+
+  &.modal-item {
+    margin: 0 0 10px;
+  }
+}
+
 ion-img {
-  margin-bottom: 4px;
+  flex: none;
 
   &.round {
-    width: 100px;
-    height: 100px;
-    margin-left: 55px;
+    width: 66px;
+    height: 66px;
+    margin: 0;
 
     &::part(image) {
       border-radius: 50%;
       object-fit: cover;
+      width: 66px;
+      height: 66px;
     }
   }
 
   &.pattern-img {
-    flex: 1;
-    min-width: 0;
-    margin-left: 16px;
+    width: 66px;
+    height: 66px;
+    margin: 0;
 
     &::part(image) {
       border-radius: 8px;
       object-fit: contain;
-      width: 100%;
-      height: auto;
+      width: 66px;
+      height: 66px;
     }
   }
 }
 
-.header-container {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  align-items: start;
-  text-align: center;
-
-  .item-name {
-    grid-column: 2;
-    align-items: flex-start;
-    display: grid;
-    justify-content: center;
-    padding-left: 0;
-    min-height: 0;
-    height: auto;
-    overflow-wrap: anywhere;
-  }
-
-  .game-count-ratio {
-    grid-column: 3;
-    color: var(--ion-color-step-400, var(--ion-text-color-step-600, #999999));
-    font-size: 0.875rem;
-  }
+.ball-meta {
+  flex: 1;
+  min-width: 0;
 }
 
-.item-stats span {
-  line-height: 1.5;
-}
-
-.stat-container.ripple-parent {
-  position: relative;
-  overflow: hidden;
-}
-
-.inner-stat-container {
+.ball-top {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-around;
-  gap: 32px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.stat-line {
-  display: contents;
-}
-
-.item-stats {
-  display: grid;
-  grid-template-columns: max-content auto;
-  column-gap: 12px;
-  row-gap: 4px;
-  margin-right: 25px;
-  margin-left: auto;
-  align-items: center;
-  justify-items: start;
-}
-
-.stat-label {
-  color: var(--ion-color-step-400, var(--ion-text-color-step-600, #999999));
-  font-size: 0.925rem;
+.ball-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f3f1ec;
+  letter-spacing: -0.01em;
   white-space: nowrap;
-  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 600;
-  justify-self: center;
+.ball-use {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c7c7a;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.ball-stats {
+  display: flex;
+  gap: 18px;
+  margin-top: 11px;
+}
+
+.bs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .bk {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7c7c7a;
+  }
+
+  .bv {
+    font-size: 18px;
+    font-weight: 800;
+    color: #ece4d4;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+}
+
+.empty-msg {
+  color: #7c7c7a;
+  font-style: italic;
+  padding: 8px 0;
+  width: 100%;
+  text-align: center;
+  margin: 0;
 }

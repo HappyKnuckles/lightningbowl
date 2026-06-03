@@ -121,6 +121,7 @@ import { GameFilter } from 'src/app/core/models/filter.model';
     NgFor,
     FormsModule,
     DatePipe,
+    DecimalPipe,
     StatDisplayComponent,
     SpareDisplayComponent,
     GenericFilterActiveComponent,
@@ -178,6 +179,13 @@ export class StatsPage implements OnInit, AfterViewInit {
   sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
+
+  scoreTrend = computed<'up' | 'down' | null>(() => {
+    const curr = this.statsService.currentStats().averageScore;
+    const prev = this.statsService.prevStats()?.averageScore;
+    if (!prev || prev === 0 || curr === prev) return null;
+    return curr > prev ? 'up' : 'down';
+  });
 
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';

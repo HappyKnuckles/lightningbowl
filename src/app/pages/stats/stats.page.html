@@ -49,171 +49,340 @@
   </ion-refresher>
 
   <ion-segment-view>
+    <!-- ═══════════════════════ OVERALL ═══════════════════════ -->
     <ion-segment-content id="Overall">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Overall Stats'"
-          [statDefinitions]="OVERALL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Play Frequency Stats'"
-          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Special Stats'"
-          [statDefinitions]="SPECIAL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
+        <!-- SCORING -->
+        <div class="sec-heading"><span>Scoring</span><span class="sec-line"></span></div>
+
+        <div class="feature-card">
+          <div class="f-label">Average</div>
+          <div class="f-row">
+            <div class="f-val">{{ statsService.currentStats().averageScore | number: "1.2-2" }}</div>
+            @if (scoreTrend()) {
+              <span class="f-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
+                <ion-icon [name]="scoreTrend() === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
+                {{ scoreTrend() === "up" ? "Trending up" : "Trending down" }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="stat-grid-3">
+          <div class="stat-chip">
+            <div class="chip-key">Games</div>
+            <div class="chip-val">{{ statsService.currentStats().totalGames }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">High game</div>
+            <div class="chip-val">{{ statsService.currentStats().highGame }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Total pins</div>
+            <div class="chip-val">{{ statsService.currentStats().totalPins | number }}</div>
+          </div>
+        </div>
+
+        <!-- SCORE ANALYSIS -->
+        <div class="sec-heading"><span>Score analysis</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </div>
+
+        <!-- ACCURACY -->
+        <div class="sec-heading"><span>Accuracy</span><span class="sec-line"></span></div>
+        <div class="acc-card">
+          <div class="acc-item">
+            <div class="acc-row">
+              <span class="acc-label">Strike %</span>
+              <span class="acc-val">{{ statsService.currentStats().strikePercentage | number: "1.2-2" }}%</span>
+            </div>
+            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().strikePercentage"></div></div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-row">
+              <span class="acc-label">Spare %</span>
+              <span class="acc-val">{{ statsService.currentStats().overallSpareRate | number: "1.2-2" }}%</span>
+            </div>
+            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().overallSpareRate"></div></div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-row">
+              <span class="acc-label">Mark %</span>
+              <span class="acc-val">{{ statsService.currentStats().markPercentage | number: "1.2-2" }}%</span>
+            </div>
+            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().markPercentage"></div></div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-row">
+              <span class="acc-label">Open %</span>
+              <span class="acc-val">{{ statsService.currentStats().overallMissedRate | number: "1.2-2" }}%</span>
+            </div>
+            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().overallMissedRate"></div></div>
+          </div>
+          <div class="acc-item last">
+            <div class="acc-row">
+              <span class="acc-label">First ball avg</span>
+              <span class="acc-val">{{ statsService.currentStats().averageFirstCount | number: "1.2-2" }}/10</span>
+            </div>
+            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().averageFirstCount * 10"></div></div>
+          </div>
+        </div>
+
+        <!-- GAME QUALITY -->
+        <div class="sec-heading"><span>Game quality</span><span class="sec-line"></span></div>
+        <div class="stat-grid-2">
+          <div class="stat-chip">
+            <div class="chip-key">Perfect games</div>
+            <div class="chip-val">{{ statsService.currentStats().perfectGameCount }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Clean games</div>
+            <div class="chip-val">{{ statsService.currentStats().cleanGameCount }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Clean game %</div>
+            <div class="chip-val">{{ statsService.currentStats().cleanGamePercentage | number: "1.1-1" }}%</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Full spare games</div>
+            <div class="chip-val">{{ statsService.currentStats().allSparesGameCount ?? 0 }}</div>
+          </div>
+        </div>
+
+        <!-- MOST USED BALL -->
+        <div class="sec-heading"><span>Most used ball</span><span class="sec-line"></span></div>
         <app-ball-stats
-          [title]="'Most used ball'"
+          [title]="''"
           [bestBall]="statsService.mostPlayedBallStats()"
           [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
+          [allBalls]="statsService.allBallStats()">
+        </app-ball-stats>
+
+        <!-- BEST BALL -->
+        <div class="sec-heading"><span>Best ball</span><span class="sec-line"></span></div>
         <app-ball-stats
-          [title]="'Best ball'"
+          [title]="''"
           [bestBall]="statsService.bestBallStats()"
           [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
+          [allBalls]="statsService.allBallStats()">
+        </app-ball-stats>
+
+        <!-- MOST PLAYED PATTERN -->
+        <div class="sec-heading"><span>Most played pattern</span><span class="sec-line"></span></div>
         <app-pattern-stats
-          [title]="'Most played pattern'"
+          [title]="''"
           [bestPattern]="statsService.mostPlayedPatternStats()"
           [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
+          [allPatterns]="statsService.allPatternStats()">
+        </app-pattern-stats>
+
+        <!-- BEST PATTERN -->
+        <div class="sec-heading"><span>Best pattern</span><span class="sec-line"></span></div>
         <app-pattern-stats
-          [title]="'Best pattern'"
+          [title]="''"
           [bestPattern]="statsService.bestPatternStats()"
           [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
-        <app-stat-display
-          [title]="'Series Stats'"
-          [statDefinitions]="SERIES_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+          [allPatterns]="statsService.allPatternStats()">
+        </app-pattern-stats>
+
+        <!-- SERIES STATS -->
+        <div class="sec-heading"><span>Series stats</span><span class="sec-line"></span></div>
+        <div class="series-table-card">
+          <div class="st-header">
+            <span>Series</span>
+            <span>Avg</span>
+            <span>High</span>
+          </div>
+          <div class="st-row" [class.empty]="!statsService.currentStats().average3SeriesScore">
+            <span class="sr-label">3-series</span>
+            <span class="sr-val">{{
+              statsService.currentStats().average3SeriesScore ? (statsService.currentStats().average3SeriesScore | number: "1.2-2") : "—"
+            }}</span>
+            <span class="sr-val">{{ statsService.currentStats().high3Series || "—" }}</span>
+          </div>
+          <div class="st-row" [class.empty]="!statsService.currentStats().average4SeriesScore">
+            <span class="sr-label">4-series</span>
+            <span class="sr-val">{{
+              statsService.currentStats().average4SeriesScore ? (statsService.currentStats().average4SeriesScore | number: "1.2-2") : "—"
+            }}</span>
+            <span class="sr-val">{{ statsService.currentStats().high4Series || "—" }}</span>
+          </div>
+          <div class="st-row" [class.empty]="!statsService.currentStats().average5SeriesScore">
+            <span class="sr-label">5-series</span>
+            <span class="sr-val">{{
+              statsService.currentStats().average5SeriesScore ? (statsService.currentStats().average5SeriesScore | number: "1.2-2") : "—"
+            }}</span>
+            <span class="sr-val">{{ statsService.currentStats().high5Series || "—" }}</span>
+          </div>
+          <div class="st-row last" [class.empty]="!statsService.currentStats().average6SeriesScore">
+            <span class="sr-label">6-series</span>
+            <span class="sr-val">{{
+              statsService.currentStats().average6SeriesScore ? (statsService.currentStats().average6SeriesScore | number: "1.2-2") : "—"
+            }}</span>
+            <span class="sr-val">{{ statsService.currentStats().high6Series || "—" }}</span>
+          </div>
         </div>
-        <ion-list-header style="margin-bottom: 4px"> Average Score</ion-list-header>
-        <div class="stat-container">
-          <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+
+        <!-- PLAY FREQUENCY -->
+        <div class="sec-heading"><span>Play frequency</span><span class="sec-line"></span></div>
+        <div class="stat-grid-3">
+          <div class="stat-chip">
+            <div class="chip-key">Games / week</div>
+            <div class="chip-val">{{ statsService.currentStats().averageGamesPerWeek | number: "1.2-2" }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Games / month</div>
+            <div class="chip-val">{{ statsService.currentStats().averageGamesPerMonth | number: "1.2-2" }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Sessions / wk</div>
+            <div class="chip-val">{{ statsService.currentStats().averageSessionsPerWeek | number: "1.2-2" }}</div>
+          </div>
         </div>
-        <ion-list-header style="margin-bottom: 4px"> Score Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
+
+        <!-- SPECIAL STATS -->
+        <div class="sec-heading"><span>Special stats</span><span class="sec-line"></span></div>
+        <div class="stat-grid-3">
+          <div class="stat-chip">
+            <div class="chip-key">Dutch 200s</div>
+            <div class="chip-val">{{ statsService.currentStats().dutch200Count ?? 0 }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Varipapa 300s</div>
+            <div class="chip-val">{{ statsService.currentStats().varipapa300Count ?? 0 }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">All spare games</div>
+            <div class="chip-val">{{ statsService.currentStats().allSparesGameCount ?? 0 }}</div>
+          </div>
+        </div>
+
+        <!-- AVERAGE SCORE CHART -->
+        <div class="sec-heading"><span>Average score</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </div>
+
+        <!-- SCORE DISTRIBUTION -->
+        <div class="sec-heading"><span>Score distribution</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
       </section>
     </ion-segment-content>
 
+    <!-- ═══════════════════════ THROWS ═══════════════════════ -->
     <ion-segment-content id="Throws">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <app-stat-display
-          [title]="'Throw Stats'"
+          [title]="'Throw stats'"
           [statDefinitions]="THROW_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
         <app-stat-display
-          [title]="'Strike Stats'"
+          [title]="'Strike stats'"
           [statDefinitions]="STRIKE_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Throw Distribution </ion-list-header>
-        <div class="stat-container">
-          <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+        <div class="sec-heading"><span>Throw distribution</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
       </section>
     </ion-segment-content>
 
+    <!-- ═══════════════════════ SPARES ═══════════════════════ -->
     <ion-segment-content id="Spares">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-spare-display
-          [title]="'Spare Stats'"
-          [stats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()"
-          id="overalSpareStats"></app-spare-display>
+        <app-spare-display [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="statsService.prevStats()" id="overalSpareStats">
+        </app-spare-display>
         <app-stat-display
-          [title]="'Spare Conversion by Pin Count'"
+          [title]="'Spare conversion by pin count'"
           [statDefinitions]="SPARE_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Converted vs Missed Spares</ion-list-header>
-        <div class="stat-container">
-          <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+        <div class="sec-heading"><span>Converted vs missed spares</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
-        <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
+        <div class="sec-heading"><span>Spare distribution</span><span class="sec-line"></span></div>
+        <div class="chart-card">
+          <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
       </section>
     </ion-segment-content>
 
+    <!-- ═══════════════════════ PINS ═══════════════════════ -->
     <ion-segment-content id="Pins">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <app-stat-display
-          [title]="'Pin Stats'"
+          [title]="'Pin stats'"
           [statDefinitions]="PIN_STAT_DEFINITIONS"
           [currentStats]="statsService.currentStats()"
           [prevStats]="statsService.prevStats()">
         </app-stat-display>
-        <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="statsService.bestLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="statsService.worstLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+        <app-pin-leave-stats [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-pin-leave-stats>
+        <app-pin-leave-stats [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-pin-leave-stats>
+        <app-pin-leave-stats [title]="'Most common leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
         </app-pin-leave-stats>
       </section>
     </ion-segment-content>
 
+    <!-- ═══════════════════════ SESSIONS ═══════════════════════ -->
     <ion-segment-content id="Sessions">
       @if (gameFilterService.filteredGames().length > 0) {
         <section class="tab">
           <app-stat-display
-            [title]="'Overall Stats'"
+            [title]="'Overall stats'"
             [statDefinitions]="SESSION_STAT_DEFINITIONS"
             [currentStats]="sessionStats()"
             [prevStats]="statsService.currentStats()">
           </app-stat-display>
+          <div class="sec-heading"><span>Most used ball</span><span class="sec-line"></span></div>
           <app-ball-stats
-            [title]="'Most used ball'"
+            [title]="''"
             [bestBall]="sessionMostPlayedBallStats()"
             [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+            [allBalls]="sessionAllBallStats()">
+          </app-ball-stats>
+          <div class="sec-heading"><span>Best ball</span><span class="sec-line"></span></div>
           <app-ball-stats
-            [title]="'Best ball'"
+            [title]="''"
             [bestBall]="sessionBestBallStats()"
             [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()"></app-ball-stats>
+            [allBalls]="sessionAllBallStats()">
+          </app-ball-stats>
+          <div class="sec-heading"><span>Most played pattern</span><span class="sec-line"></span></div>
           <app-pattern-stats
-            [title]="'Most played pattern'"
+            [title]="''"
             [bestPattern]="sessionMostPlayedPatternStats()"
             [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
+            [allPatterns]="sessionAllPatternStats()">
+          </app-pattern-stats>
+          <div class="sec-heading"><span>Best pattern</span><span class="sec-line"></span></div>
           <app-pattern-stats
-            [title]="'Best pattern'"
+            [title]="''"
             [bestPattern]="sessionBestPatternStats()"
             [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
-          <app-stat-display [title]="'Pin Stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"> </app-stat-display>
-          <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
+            [allPatterns]="sessionAllPatternStats()">
+          </app-pattern-stats>
+          <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
+          <app-spare-display [title]="'Spare stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
           </app-spare-display>
-          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
-          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
-          <app-pin-leave-stats
-            [title]="'Most Common Leaves'"
-            [leaveStats]="sessionLeaves().common"
-            [allLeaves]="sessionAllLeaves()"></app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
+          <app-pin-leave-stats [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
+          </app-pin-leave-stats>
         </section>
       }
     </ion-segment-content>
   </ion-segment-view>
 
-  <!-- Show this message if there are no game history items and it's not loading -->
+  <!-- No data states -->
   <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
     <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
       <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>

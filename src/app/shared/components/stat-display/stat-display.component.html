@@ -1,8 +1,8 @@
-<ion-list style="background: none">
-  <ion-list-header *ngIf="title" style="margin-bottom: 4px">{{ title }}</ion-list-header>
-  <div class="stat-container">
+<div class="sd-wrapper">
+  <div class="sd-title" *ngIf="title">{{ title }}</div>
+  <div class="sd-card">
     @for (stat of statDefinitions; track stat.key) {
-      <div class="stats">
+      <div class="sd-row">
         <app-stat-row
           [label]="stat.label"
           [currentStat]="getNumericStat(currentStats, stat.key)!"
@@ -15,4 +15,4 @@
       </div>
     }
   </div>
-</ion-list>
+</div>

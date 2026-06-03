@@ -10,69 +10,59 @@ ion-header {
       text-align: center;
     }
   }
-}
 
-.ball-info {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin-top: 8px;
+  .action-sheet {
+    margin-right: 8px;
 
-  .list {
-    background: none;
-    border-radius: 7px;
-
-    &:first-child {
-      padding-left: 20px;
-    }
-
-    &:last-child {
-      padding-right: 20px;
-      text-align: right;
-    }
-
-    .core,
-    .coverstock {
-      display: flex;
-      gap: 3px;
+    ion-button {
+      background: none;
+      --background-activated: none;
       position: relative;
     }
+  }
 
-    .coverstock {
-      justify-content: flex-end;
-
-      ion-icon {
-        position: absolute;
-        right: -18px;
-      }
-    }
-
-    ion-text {
-      display: flex;
-      color: white;
-    }
-
-    .coverstock-info-container {
-      ion-text {
-        justify-content: end;
-
-      }
-    }
-
-    .info {
-      font-size: 1rem;
-      color: lightgray;
-    }
-
-    .title {
-      color: white;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
+  .filter-indicator {
+    position: absolute;
+    bottom: 12px;
+    left: 20px;
+    color: black;
+    background: var(--ion-color-primary);
+    padding: 1px;
+    border-radius: 7px;
+    z-index: 15555;
+    font-size: 14px;
   }
 }
 
 ion-card {
   margin-top: 12px;
+
+  .action-header {
+    padding: 12px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .weight-change {
+      border: 1px solid var(--ion-thin-border-color, #ffffff12);
+      border-radius: 7px;
+      --padding-end: 4px;
+      --padding-start: 4px;
+      min-height: 25px;
+      margin: 0;
+      width: fit-content;
+      color: rgb(241, 239, 239);
+      font-size: 13px;
+
+      &:hover {
+        opacity: 0.6;
+      }
+
+      &::part(icon) {
+        height: 16px;
+      }
+    }
+  }
 
   ion-card-header {
     padding-top: 12px;
@@ -84,56 +74,142 @@ ion-card {
 
   ion-card-content {
     padding: 12px 0;
-  }
-}
 
-.action-sheet {
-  margin-right: 8px;
-
-  ion-button {
-    background: none;
-
-    --background-activated: none;
-
-    position: relative;
-  }
-}
-
-.filter-indicator {
-  position: absolute;
-  bottom: 12px;
-  left: 20px;
-  color: black;
-  background: var(--ion-color-primary);
-  padding: 1px;
-  border-radius: 7px;
-  z-index: 15555;
-  font-size: 14px;
-}
-
-.action-header {
-  padding: 12px 20px 0;  
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-.weight-change {
-    border: 1px solid var(--ion-border-color, #2b2828);
-    border-radius: 7px;
-    --padding-end: 4px;
-    --padding-start: 4px;
-    min-height: 25px;
-    margin: 0;
-    width: fit-content;
-    color: rgb(241, 239, 239);
-    font-size: 13px;
-
-    &:hover{
-      opacity: 0.6;
+    ion-img {
+      display: block;
+      margin: 0 auto;
+      height: 15vmax;
     }
 
-    &::part(icon) {
-      height: 16px;
+    .ball-info {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 0 16px;
+
+      // Stat chips
+      .stats {
+        display: flex;
+        gap: 8px;
+      }
+
+      .stat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px 12px;
+        border-radius: 7px;
+        border: 1px solid var(--ion-thin-border-color, #ffffff12);
+
+        .stat-label {
+          font-size: 0.62rem;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--ion-color-medium, #8a8a90);
+        }
+
+        .stat-value {
+          font-size: 1.15rem;
+          font-weight: 700;
+          line-height: 1.1;
+          color: #fff;
+        }
+
+        .stat-desc {
+          font-size: 0.65rem;
+          font-weight: 500;
+          color: var(--ion-color-primary);
+        }
+      }
+
+      // Core / Coverstock cards
+      .spec-card {
+        position: relative;
+        overflow: hidden;
+        padding: 14px;
+        border-radius: 7px;
+        border: 1px solid var(--ion-thin-border-color, #ffffff12);
+        cursor: pointer;
+
+        .spec-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .spec-eyebrow {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ion-color-medium, #8a8a90);
+          }
+
+          ion-icon {
+            font-size: 1rem;
+            color: var(--ion-color-medium, #9b9ba1);
+          }
+        }
+
+        .spec-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          line-height: 1.1;
+          color: #fff;
+        }
+
+        .spec-rows {
+          margin-top: 10px;
+          border-top: 1px solid var(--ion-thin-border-color, #ffffff12);
+        }
+
+        .spec-row {
+          display: grid;
+          grid-template-columns: min-content 1fr;
+          gap: 12px;
+          padding: 8px 0;
+          align-items: start;
+
+          .spec-key {
+            font-size: 0.85rem;
+            color: var(--ion-color-medium, #9b9ba1);
+          }
+
+          .spec-val {
+            font-size: 0.85rem;
+            text-align: right;
+            font-weight: 600;
+            color: #fff;
+          }
+        }
+      }
+
+      // Arsenal buttons
+      .arsenal-actions {
+        margin-top: 4px;
+
+        .arsenal-btn {
+          --border-radius: 7px;
+          height: 44px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-transform: none;
+          letter-spacing: 0;
+
+          &.add {
+            --background: var(--ion-color-primary);
+            --background-activated: var(--ion-color-primary-shade);
+            --color: #000;
+          }
+
+          &.remove {
+            --border-color: rgba(255, 255, 255, 0.18);
+            --color: #f1efef;
+          }
+        }
+      }
     }
   }
 }

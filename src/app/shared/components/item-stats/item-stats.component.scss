@@ -29,7 +29,7 @@ ion-img {
 .header-container {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
-  align-items: baseline;
+  align-items: start;
   text-align: center;
 
   .item-name {
@@ -38,6 +38,9 @@ ion-img {
     display: grid;
     justify-content: center;
     padding-left: 0;
+    min-height: 0;
+    height: auto;
+    overflow-wrap: anywhere;
   }
 
   .game-count-ratio {

@@ -1,6 +1,7 @@
 .mode-chevron {
   vertical-align: middle;
-  transition: 300ms transform cubic-bezier(0.25, 0.8, 0.5, 1);;
+  transition: 300ms transform cubic-bezier(0.25, 0.8, 0.5, 1);
+  ;
 
   &.open {
     transform: rotate(180deg);
@@ -22,7 +23,7 @@ ion-buttons {
 ion-grid {
   background-color: var(--ion-color-quartiary);
   --ion-grid-padding: 0;
-  border-radius: 7px;
+  border-radius: var(--card-border-radius);
   margin: 5px;
 }
 

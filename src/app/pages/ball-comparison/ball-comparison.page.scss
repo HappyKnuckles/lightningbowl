@@ -46,7 +46,7 @@ ion-card-content {
 .arsenal-chart-container {
   border: 1px solid var(--ion-border-color, #2b2828);
   margin: 12px 16px 12px;
-  border-radius: 7px;
+  border-radius: var(--card-border-radius);
   background-color: var(--ion-background-color-step-100, #141414);
   padding: 0 0 12px 12px;
 }
@@ -74,8 +74,8 @@ ion-card-content {
     color: var(--ion-color-medium);
 
     .weight-change {
-      border: 1px solid var(--ion-border-color, #2b2828);
-      border-radius: 7px;
+      border: 1px solid var(--ion-thin-border-color, #2b2828);
+      border-radius: var(--default-border-radius);
       --padding-end: 4px;
       --padding-start: 4px;
       min-height: 25px;
@@ -136,6 +136,9 @@ ion-card-content {
   overflow-x: auto;
 
   .small-chip {
+    background: none;
+    border: 1px solid (var(--ion-thin-border-color, #ffffff12));
+    color: #fff;
     font-size: 0.65rem;
     padding: 2px 6px;
     height: 22px;
@@ -224,11 +227,12 @@ ion-row.metric {
     --padding-start: 8px;
     --padding-end: 8px;
     margin: 0;
+    border: 1px solid (var(--ion-thin-border-color, #ffffff12));
   }
 }
 
 .coverstock-detail {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ion-thin-border-color, #ffffff12);
   padding-top: 8px;
   margin-top: 4px;
 }

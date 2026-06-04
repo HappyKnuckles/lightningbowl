@@ -8,8 +8,8 @@
 
 .date-picker {
   font-size: 1.1rem;
-    padding: 0 18px 0;
-    border-radius: 0 0 3px 3px;
+  padding: 0 18px 0;
+  border-radius: 0 0 3px 3px;
 
   ion-select::part(text) {
     font-weight: 500;
@@ -34,7 +34,7 @@
   color: black;
   background: var(--ion-color-primary);
   padding: 1px;
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
   z-index: 15555;
   font-size: 14px;
 }

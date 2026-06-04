@@ -42,21 +42,37 @@
           </ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px">
-            <div style="display: inline-flex">
-              <ion-skeleton-text [animated]="true" style="width: 90px; height: 24px; border-radius: 10px"></ion-skeleton-text>
+          <div class="pattern-info">
+            <!-- Stat chips -->
+            <div class="stats">
+              <div class="stat">
+                <ion-skeleton-text [animated]="true" style="width: 60%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 80%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+              </div>
+              <div class="stat">
+                <ion-skeleton-text [animated]="true" style="width: 50%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 65%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+              </div>
+              <div class="stat">
+                <ion-skeleton-text [animated]="true" style="width: 65%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 75%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+              </div>
             </div>
-            <div style="display: inline-flex">
-              <ion-skeleton-text [animated]="true" style="width: 70px; height: 24px; border-radius: 10px"></ion-skeleton-text>
-            </div>
-            <div style="display: inline-flex">
-              <ion-skeleton-text [animated]="true" style="width: 85px; height: 24px; border-radius: 10px"></ion-skeleton-text>
-            </div>
-            <div style="display: inline-flex">
-              <ion-skeleton-text [animated]="true" style="width: 100px; height: 24px; border-radius: 10px"></ion-skeleton-text>
-            </div>
-            <div style="display: inline-flex">
-              <ion-skeleton-text [animated]="true" style="width: 250px; height: 24px; border-radius: 10px"></ion-skeleton-text>
+
+            <!-- Detail rows -->
+            <div class="detail-card">
+              <div class="spec-row">
+                <ion-skeleton-text [animated]="true" style="width: 60px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 45px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+              </div>
+              <div class="spec-row">
+                <ion-skeleton-text [animated]="true" style="width: 50px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 30px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+              </div>
+              <div class="spec-row">
+                <ion-skeleton-text [animated]="true" style="width: 70px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 110px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+              </div>
             </div>
           </div>
         </ion-card-content>
@@ -97,32 +113,42 @@
             <ion-card-subtitle>{{ pattern.category }}</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-chip class="info" *ngIf="pattern.distance">Distance: {{ pattern.distance }}ft</ion-chip>
-            <ion-chip class="info" *ngIf="pattern.ratio">Ratio: {{ pattern.ratio }}</ion-chip>
-            <ion-chip class="info" *ngIf="pattern.pump">Pump: {{ pattern.pump }}µL</ion-chip>
-            <ion-chip class="info" *ngIf="pattern.tanks">Tanks: {{ pattern.tanks }}</ion-chip>
-            <ion-chip class="info" *ngIf="pattern.volume">
-              Volume: {{ pattern.volume }}mL
-              <ng-container *ngIf="pattern.forward || pattern.reverse">
-                (<!--
-                            -->
-                <p style="margin: 0; display: inline">
-                  <ng-container *ngIf="pattern.forward">
-                    <ion-icon name="arrow-up-outline" style="vertical-align: text-top; margin-right: -2px"></ion-icon>
-                    {{ pattern.forward }}mL
-                  </ng-container>
-                  <ng-container *ngIf="pattern.forward && pattern.reverse"> , </ng-container>
-                  <ng-container *ngIf="pattern.reverse">
-                    <ion-icon name="arrow-down-outline" style="vertical-align: text-top; margin-right: -2px"></ion-icon>
-                    {{ pattern.reverse }}mL
-                  </ng-container>
-                </p>
-                <!--
-                            -->)
-              </ng-container>
-            </ion-chip>
-            <!-- <ion-chip class="info">Oil Forward: {{pattern.forward}}mL</ion-chip>
-        <ion-chip class="info">Oil Reverse: {{pattern.reverse}}mL</ion-chip> -->
+            <div class="pattern-info">
+              <!-- Stat chips -->
+              <div class="stats">
+                <div class="stat" *ngIf="pattern.distance">
+                  <span class="stat-label">Distance</span>
+                  <span class="stat-value">{{ pattern.distance }}<span class="stat-unit">ft</span></span>
+                </div>
+                <div class="stat" *ngIf="pattern.ratio">
+                  <span class="stat-label">Ratio</span>
+                  <span class="stat-value">{{ pattern.ratio }}</span>
+                </div>
+                <div class="stat" *ngIf="pattern.volume">
+                  <span class="stat-label">Volume</span>
+                  <span class="stat-value">{{ pattern.volume }}<span class="stat-unit">mL</span></span>
+                </div>
+              </div>
+
+              <!-- Detail rows -->
+              <div class="detail-card" *ngIf="pattern.pump || pattern.tanks || pattern.forward || pattern.reverse">
+                <div class="spec-row" *ngIf="pattern.pump">
+                  <span class="spec-key">Pump</span>
+                  <span class="spec-val">{{ pattern.pump }}µL</span>
+                </div>
+                <div class="spec-row" *ngIf="pattern.tanks">
+                  <span class="spec-key">Tanks</span>
+                  <span class="spec-val">{{ pattern.tanks }}</span>
+                </div>
+                <div class="spec-row" *ngIf="pattern.forward || pattern.reverse">
+                  <span class="spec-key">Oil load</span>
+                  <span class="spec-val oil-load">
+                    <span class="dir" *ngIf="pattern.forward"> <ion-icon name="arrow-up-outline"></ion-icon>{{ pattern.forward }}mL </span>
+                    <span class="dir" *ngIf="pattern.reverse"> <ion-icon name="arrow-down-outline"></ion-icon>{{ pattern.reverse }}mL </span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </ion-card-content>
         </ion-card>
       }

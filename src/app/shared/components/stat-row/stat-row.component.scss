@@ -16,7 +16,7 @@
 
   .value {
     border: 1px solid var(--ion-color-dark);
-    border-radius: 7px;
+    border-radius: var(--card-border-radius);
     background-color: var(--ion-color-secondary);
     color: var(--ion-input-color);
     text-align: center;

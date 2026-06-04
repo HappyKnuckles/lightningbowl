@@ -1,3 +1,19 @@
+@if (title()) {
+  <div
+    class="item-heading"
+    (click)="openModal()"
+    (keydown.enter)="openModal()"
+    [attr.tabindex]="allItems()?.length ? '0' : null"
+    [attr.role]="allItems()?.length ? 'button' : null"
+    [style.cursor]="allItems()?.length ? 'pointer' : 'default'">
+    <span>{{ title() }}</span>
+    <span class="item-heading-line"></span>
+    @if (allItems()?.length) {
+      <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
+    }
+  </div>
+}
+
 <div
   class="ball-card"
   [class.ion-activatable]="allItems()?.length"
@@ -9,12 +25,9 @@
   @if (item().gameCount === 0) {
     <p class="empty-msg">{{ emptyMessage() }}</p>
   } @else {
-    <ion-img
-      *ngIf="item().image"
-      [class.round]="roundImage()"
-      [class.pattern-img]="!roundImage()"
-      [src]="(imageUrlBase() ?? ballsStore.url) + item().image">
-    </ion-img>
+    @if (item().image) {
+      <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
+    }
 
     <div class="ball-meta">
       <div class="ball-top">
@@ -57,7 +70,7 @@
         </ion-toolbar>
       </ion-header>
       <ion-content>
-        <ion-list style="background: none; padding: 16px 0">
+        <ion-list style="background: none; margin: 0 16px 12px">
           @for (listItem of allItems(); track listItem.name) {
             <div class="ball-card modal-item">
               <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">

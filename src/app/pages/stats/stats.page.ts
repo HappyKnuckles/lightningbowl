@@ -187,6 +187,15 @@ export class StatsPage implements OnInit, AfterViewInit {
     return curr > prev ? 'up' : 'down';
   });
 
+  readonly seriesRows = computed(() => {
+    const st = this.statsService.currentStats();
+    return [3, 4, 5, 6].map((n) => ({
+      label: `${n}-series`,
+      avg: st[`average${n}SeriesScore`] as number,
+      high: st[`high${n}Series`] as number,
+    }));
+  });
+
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';

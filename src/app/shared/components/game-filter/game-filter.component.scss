@@ -4,7 +4,7 @@ ion-modal {
   --box-shadow: 0 28px 48px rgb(0 0 0 / 40%) !important;
 
   ion-datetime {
-    border-radius: 16px;
+    border-radius: var(--card-border-radius, 14px);
     box-shadow: rgba(var(--ion-color-primary), 0.3) 0 10px 15px -3px;
   }
 }
@@ -25,6 +25,7 @@ ion-modal {
   font-size: 18px;
   --ionicon-stroke-width: 48px;
 }
+
 // ion-datetime-button::part(native) {
 //   font-size: 17px;
 // }

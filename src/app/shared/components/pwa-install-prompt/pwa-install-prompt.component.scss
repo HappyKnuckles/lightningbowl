@@ -271,7 +271,7 @@
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 8px 12px;
-    border-radius: 16px;
+    border-radius: var(--card-border-radius, 14px);
     font-size: 14px;
     font-weight: 500;
     z-index: 1000;

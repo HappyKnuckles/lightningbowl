@@ -1,38 +1,67 @@
-.stat-grid {
-  text-align: center;
-  // padding: 5px 10px 0 5px;
+.sd-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 16px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium, #7c7c7a);
 
-  .stat-header {
-    font-weight: bold;
-
-    ion-text {
-      position: relative;
-    }
-
-    ion-icon {
-      position: absolute;
-      right: -20px;
-    }
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   }
+}
 
-  .stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1.2fr;
+.stat-container {
+  margin-bottom: 22px;
 
-    .spare-rates-content {
-      text-align: center;
+  .stat-grid {
+    text-align: center;
+    // padding: 5px 10px 0 5px;
 
-      .stat-text {
+    .stat-header {
+      font-weight: bold;
+
+      ion-text {
         position: relative;
-        margin: 0 auto;
-        width: 80px;
-        display: block;
       }
 
-      .arrow-icon {
+      ion-icon {
         position: absolute;
-        right: -15px;
-        top: 1px;
+        right: -20px;
+      }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1.2fr;
+
+      .spare-rates-content {
+        text-align: center;
+
+        .rate-wrap {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .stat-text {
+          display: block;
+        }
+
+        .arrow-icon {
+          position: absolute;
+          left: 100%;
+          margin-left: 5px;
+          font-size: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
       }
     }
   }

@@ -48,6 +48,7 @@ export interface Stats {
   allSparesGameCount?: number;
   averageGamesPerMonth?: number;
   averageGamesPerWeek?: number;
+  averageGamesPerYear?: number;
   average3SeriesScore?: number;
   high3Series?: number;
   average4SeriesScore?: number;

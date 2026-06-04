@@ -131,7 +131,7 @@
 
         <!-- GAME QUALITY -->
         <div class="sec-heading"><span>Game quality</span><span class="sec-line"></span></div>
-        <div class="stat-grid-2">
+        <div class="stat-grid-3">
           <div class="stat-chip">
             <div class="chip-key">Perfect games</div>
             <div class="chip-val">{{ statsService.currentStats().perfectGameCount }}</div>
@@ -144,43 +144,35 @@
             <div class="chip-key">Clean game %</div>
             <div class="chip-val">{{ statsService.currentStats().cleanGamePercentage | number: "1.1-1" }}%</div>
           </div>
-          <div class="stat-chip">
-            <div class="chip-key">Full spare games</div>
-            <div class="chip-val">{{ statsService.currentStats().allSparesGameCount ?? 0 }}</div>
-          </div>
         </div>
 
         <!-- MOST USED BALL -->
-        <div class="sec-heading"><span>Most used ball</span><span class="sec-line"></span></div>
         <app-ball-stats
-          [title]="''"
+          [title]="'Most used ball'"
           [bestBall]="statsService.mostPlayedBallStats()"
           [totalGames]="statsService.currentStats().totalGames"
           [allBalls]="statsService.allBallStats()">
         </app-ball-stats>
 
         <!-- BEST BALL -->
-        <div class="sec-heading"><span>Best ball</span><span class="sec-line"></span></div>
         <app-ball-stats
-          [title]="''"
+          [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
           [totalGames]="statsService.currentStats().totalGames"
           [allBalls]="statsService.allBallStats()">
         </app-ball-stats>
 
         <!-- MOST PLAYED PATTERN -->
-        <div class="sec-heading"><span>Most played pattern</span><span class="sec-line"></span></div>
         <app-pattern-stats
-          [title]="''"
+          [title]="'Most played pattern'"
           [bestPattern]="statsService.mostPlayedPatternStats()"
           [totalGames]="statsService.currentStats().totalGames"
           [allPatterns]="statsService.allPatternStats()">
         </app-pattern-stats>
 
         <!-- BEST PATTERN -->
-        <div class="sec-heading"><span>Best pattern</span><span class="sec-line"></span></div>
         <app-pattern-stats
-          [title]="''"
+          [title]="'Best pattern'"
           [bestPattern]="statsService.bestPatternStats()"
           [totalGames]="statsService.currentStats().totalGames"
           [allPatterns]="statsService.allPatternStats()">
@@ -189,39 +181,14 @@
         <!-- SERIES STATS -->
         <div class="sec-heading"><span>Series stats</span><span class="sec-line"></span></div>
         <div class="series-table-card">
-          <div class="st-header">
-            <span>Series</span>
-            <span>Avg</span>
-            <span>High</span>
-          </div>
-          <div class="st-row" [class.empty]="!statsService.currentStats().average3SeriesScore">
-            <span class="sr-label">3-series</span>
-            <span class="sr-val">{{
-              statsService.currentStats().average3SeriesScore ? (statsService.currentStats().average3SeriesScore | number: "1.2-2") : "—"
-            }}</span>
-            <span class="sr-val">{{ statsService.currentStats().high3Series || "—" }}</span>
-          </div>
-          <div class="st-row" [class.empty]="!statsService.currentStats().average4SeriesScore">
-            <span class="sr-label">4-series</span>
-            <span class="sr-val">{{
-              statsService.currentStats().average4SeriesScore ? (statsService.currentStats().average4SeriesScore | number: "1.2-2") : "—"
-            }}</span>
-            <span class="sr-val">{{ statsService.currentStats().high4Series || "—" }}</span>
-          </div>
-          <div class="st-row" [class.empty]="!statsService.currentStats().average5SeriesScore">
-            <span class="sr-label">5-series</span>
-            <span class="sr-val">{{
-              statsService.currentStats().average5SeriesScore ? (statsService.currentStats().average5SeriesScore | number: "1.2-2") : "—"
-            }}</span>
-            <span class="sr-val">{{ statsService.currentStats().high5Series || "—" }}</span>
-          </div>
-          <div class="st-row last" [class.empty]="!statsService.currentStats().average6SeriesScore">
-            <span class="sr-label">6-series</span>
-            <span class="sr-val">{{
-              statsService.currentStats().average6SeriesScore ? (statsService.currentStats().average6SeriesScore | number: "1.2-2") : "—"
-            }}</span>
-            <span class="sr-val">{{ statsService.currentStats().high6Series || "—" }}</span>
-          </div>
+          <div class="st-header"><span>Series</span><span>Avg</span><span>High</span></div>
+          @for (row of seriesRows(); track row.label; let last = $last) {
+            <div class="st-row" [class.last]="last" [class.empty]="!row.avg">
+              <span class="sr-label">{{ row.label }}</span>
+              <span class="sr-val">{{ row.avg ? (row.avg | number: "1.2-2") : "—" }}</span>
+              <span class="sr-val">{{ row.high || "—" }}</span>
+            </div>
+          }
         </div>
 
         <!-- PLAY FREQUENCY -->
@@ -236,8 +203,20 @@
             <div class="chip-val">{{ statsService.currentStats().averageGamesPerMonth | number: "1.2-2" }}</div>
           </div>
           <div class="stat-chip">
+            <div class="chip-key">Games / year</div>
+            <div class="chip-val">{{ statsService.currentStats().averageGamesPerYear | number: "1.2-2" }}</div>
+          </div>
+          <div class="stat-chip">
             <div class="chip-key">Sessions / wk</div>
             <div class="chip-val">{{ statsService.currentStats().averageSessionsPerWeek | number: "1.2-2" }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Sessions / month</div>
+            <div class="chip-val">{{ statsService.currentStats().averageSessionsPerMonth | number: "1.2-2" }}</div>
+          </div>
+          <div class="stat-chip">
+            <div class="chip-key">Games / session</div>
+            <div class="chip-val">{{ statsService.currentStats().averageGamesPerSession | number: "1.2-2" }}</div>
           </div>
         </div>
 

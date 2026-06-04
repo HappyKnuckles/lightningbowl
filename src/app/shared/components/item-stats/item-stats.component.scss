@@ -1,11 +1,35 @@
+.item-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 22px 16px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium, #7c7c7a);
+
+  .item-heading-line {
+    flex: 1;
+    height: 1px;
+    background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  }
+
+  .item-heading-chevron {
+    font-size: 14px;
+    color: var(--ion-color-medium, #7c7c7a);
+    flex: none;
+  }
+}
+
 .ball-card {
   display: flex;
   align-items: center;
-  gap: 15px;
-  background: #1a1a1d;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  padding: 14px 16px;
+  gap: 14px;
+  background: var(--ion-card-background, #141414);
+  border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  border-radius: var(--card-border-radius, 14px);
+  padding: 14px 14px 14px 16px;
   margin: 0 16px 10px;
   position: relative;
   overflow: hidden;
@@ -37,15 +61,12 @@ ion-img {
   }
 
   &.pattern-img {
-    width: 66px;
-    height: 66px;
+    width: 30px;
     margin: 0;
+    flex: none;
 
     &::part(image) {
-      border-radius: 8px;
-      object-fit: contain;
-      width: 66px;
-      height: 66px;
+      border-radius: var(--border-radius, 4px);
     }
   }
 }
@@ -65,25 +86,21 @@ ion-img {
 .ball-name {
   font-size: 16px;
   font-weight: 700;
-  color: #f3f1ec;
+  color: var(--ion-text-color, #f3f1ec);
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .ball-use {
   font-size: 11px;
   font-weight: 700;
-  color: #7c7c7a;
+  color: var(--ion-color-medium, #7c7c7a);
   flex: none;
-  font-variant-numeric: tabular-nums;
 }
 
 .ball-stats {
   display: flex;
-  gap: 18px;
-  margin-top: 11px;
+  gap: 16px;
+  margin-top: 10px;
 }
 
 .bs {
@@ -96,20 +113,26 @@ ion-img {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #7c7c7a;
+    color: var(--ion-color-medium, #7c7c7a);
   }
 
   .bv {
     font-size: 18px;
     font-weight: 800;
-    color: #ece4d4;
-    font-variant-numeric: tabular-nums;
+    color: var(--ion-text-color #ece4d4);
     letter-spacing: -0.01em;
   }
 }
 
+.card-chevron {
+  flex: none;
+  font-size: 18px;
+  color: var(--ion-color-medium, #7c7c7a);
+  margin-left: 4px;
+}
+
 .empty-msg {
-  color: #7c7c7a;
+  color: var(--ion-color-medium, #7c7c7a);
   font-style: italic;
   padding: 8px 0;
   width: 100%;

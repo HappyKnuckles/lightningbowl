@@ -7,7 +7,7 @@
   ion-text {
     font-size: 13.5px;
     font-weight: 600;
-    color: rgba(243, 241, 236, 0.85);
+    color: var(--ion-text-color, #f3f1ec);
     padding: 0;
 
     ion-icon {
@@ -18,26 +18,25 @@
     }
   }
 
+  .value-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .diff-icon {
+    position: absolute;
+    left: 100%;
+    margin-left: 5px;
+    font-size: 14px;
+  }
+
   .value {
     font-size: 15px;
     font-weight: 800;
-    color: #ece4d4;
-    font-variant-numeric: tabular-nums;
+    color: var(--ion-text-color, #ece4d4);
     letter-spacing: -0.01em;
-    border: none;
-    background: none;
-    border-radius: 0;
-    width: auto;
-    min-width: auto;
     text-align: right;
     padding: 0;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-
-    ion-icon {
-      position: static;
-      font-size: 14px;
-    }
   }
 }

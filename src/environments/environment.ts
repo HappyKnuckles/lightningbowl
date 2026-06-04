@@ -5,7 +5,7 @@ export const environment = {
   emailTemplateID: 'template_qwl4l46',
   emailServiceID: 'service_4zwqeji',
   emailUserID: 'mkI2Kqg6m34U7GL8m',
-  patternEndpoint: 'http://localhost:5000/api/',
+  patternEndpoint: 'https://pattern.lightningbowl.de/api/',
   analyticsEndpoint: 'https://analytics.nicolas-hoffmann.dev/api/',
   imagesUrl: 'https://images.lightningbowl.de/',
   branch: 'development',

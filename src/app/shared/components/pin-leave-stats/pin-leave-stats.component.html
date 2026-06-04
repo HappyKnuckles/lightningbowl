@@ -1,10 +1,11 @@
 <ion-list (click)="openModal()" (keydown.enter)="openModal()" role="button">
-  <ion-list-header>
-    {{ title() }}
+  <div class="pls-heading">
+    <span>{{ title() }}</span>
+    <span class="pls-line"></span>
     @if (allLeaves()?.length) {
-      <ion-icon name="chevron-forward-outline" class="open-icon"></ion-icon>
+      <ion-icon name="chevron-forward-outline" class="pls-chevron"></ion-icon>
     }
-  </ion-list-header>
+  </div>
 
   <div
     class="stat-container"
@@ -13,13 +14,7 @@
     [attr.tabindex]="allLeaves() ? '0' : null"
     [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null">
     @if (leaveStats().length === 0) {
-      <div class="inner-stat-container">
-        <div class="leave-container">
-          <div class="leave-stats">
-            <p>No stats available.</p>
-          </div>
-        </div>
-      </div>
+      <p class="leave-empty">No Games with pin-data saved.</p>
     } @else {
       @for (leave of leaveStats(); track $index) {
         <ion-item lines="none" class="leave-item">

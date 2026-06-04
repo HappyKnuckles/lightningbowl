@@ -3,17 +3,21 @@
   <ion-popover *ngIf="toolTip" [trigger]="id + '-tooltip'" size="cover" class="tooltip-popover">
     <ion-text class="tooltip">{{ toolTip }}</ion-text>
   </ion-popover>
-  <ion-text class="value" [id]="id">
-    @if (secondaryStat !== undefined) {
-      {{ currentStat | conditionalNumber }} / {{ secondaryStat | conditionalNumber }}
-    } @else {
-      {{ currentStat | conditionalNumber }}<span *ngIf="isPercentage">%</span>
-    }
-
+  <div class="value-wrap">
     @if (statDifference !== "0") {
-      <ion-icon [name]="getArrowIcon(currentStat, prevStat)" [color]="getDiffColor(currentStat, prevStat)"> </ion-icon>
+      <ion-icon class="diff-icon" [name]="getArrowIcon(currentStat, prevStat)" [color]="getDiffColor(currentStat, prevStat)"></ion-icon>
     }
-  </ion-text>
+    <ion-text class="value" [id]="id">
+      @if (secondaryStat !== undefined) {
+        {{ currentStat | conditionalNumber }} / {{ secondaryStat | conditionalNumber }}
+      } @else {
+        {{ currentStat | conditionalNumber }}
+        @if (isPercentage) {
+          %
+        }
+      }
+    </ion-text>
+  </div>
 
   @if (statDifference !== "0") {
     <ion-popover class="diff-popover" [trigger]="id">

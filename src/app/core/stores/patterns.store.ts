@@ -91,8 +91,8 @@ export class PatternsStore {
       const patterns = response.patterns;
       const imageMap: Record<string, string> = {};
       for (const pattern of patterns) {
-        if (pattern.title && pattern.chart_horizontal) {
-          imageMap[pattern.title] = pattern.chart_horizontal;
+        if (pattern.title && pattern.chart_standard) {
+          imageMap[pattern.title] = pattern.chart_standard;
         }
       }
       this.#patternImageMap.set(imageMap);

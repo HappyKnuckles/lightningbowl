@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="score-bar">
-                  <div class="score-fill" [style.width.%]="(game.totalScore / 300) * 100"></div>
+                  <div class="score-fill" [style.--fill]="(game.totalScore / 300) * 100" [style.width.%]="(game.totalScore / 300) * 100"></div>
                 </div>
               </div>
             </ion-item>

@@ -21,7 +21,12 @@ ion-list {
 
 ion-item-divider {
   background: none;
-  padding: 4px 12px;
+  padding: 0 16px 12px;
+  margin-top: 20px;
+
+  &:first-child {
+    margin-top: 12px;
+  }
 
   .divider-line {
     flex: 1;
@@ -39,7 +44,7 @@ ion-item-divider {
 }
 
 .sliding {
-  margin: 8px 12px;
+  margin: 0 16px 12px;
   border-radius: var(--card-border-radius, 14px);
   width: auto;
   border: 1px solid var(--ion-border-color, #2b2828);
@@ -58,6 +63,7 @@ ion-item-divider {
     font-size: 1.15rem;
     font-weight: 800;
   }
+
   // maybe
   // .score-text {
   //   text-align: right;
@@ -79,7 +85,7 @@ ion-item-divider {
 
   .score-bar {
     height: 3px;
-    width: 80%;
+    width: 60%;
     margin-left: auto;
     background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
     border-radius: var(--card-border-radius, 14px);
@@ -87,8 +93,10 @@ ion-item-divider {
   }
 
   .score-fill {
-    height: 80%;
+    height: 100%;
     background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-secondary));
+    background-size: calc(10000% / var(--fill, 100)) 100%;
+    background-position: left;
     transition: width 0.9s cubic-bezier(0.4, 0, 0.1, 1);
   }
 

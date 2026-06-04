@@ -84,7 +84,6 @@
   .f-val {
     font-size: 52px;
     font-weight: 800;
-    color: var(--ion-text-color);
     line-height: 0.9;
     letter-spacing: -0.03em;
   }
@@ -221,6 +220,8 @@
         height: 100%;
         border-radius: 7px;
         background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-secondary));
+        background-size: calc(10000% / var(--fill, 100)) 100%;
+        background-position: left;
         transition: width 0.9s cubic-bezier(0.4, 0, 0.1, 1);
       }
     }

@@ -101,7 +101,7 @@
                 <span class="acc-val">{{ row.value | number: "1.2-2" }}{{ row.suffix }}</span>
               </div>
               <div class="acc-track">
-                <div class="acc-fill" [style.width.%]="row.fill"></div>
+                <div class="acc-fill" [style.width.%]="row.fill" [style.--fill]="row.fill || 1"></div>
               </div>
             </div>
           }

@@ -70,9 +70,9 @@
         </ion-toolbar>
       </ion-header>
       <ion-content>
-        <ion-list style="background: none; margin: 0 16px 12px">
+        <ion-list style="background: none; margin: 12px 16px 12px">
           @for (listItem of allItems(); track listItem.name) {
-            <div class="ball-card modal-item">
+            <div class="ball-card">
               <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
               </ion-img>
               <div class="ball-meta">

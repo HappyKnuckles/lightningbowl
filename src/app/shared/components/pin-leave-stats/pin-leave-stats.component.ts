@@ -8,7 +8,6 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
   IonModal,
   IonRippleEffect,
   IonTitle,
@@ -23,7 +22,6 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
   selector: 'app-pin-leave-stats',
   imports: [
     IonList,
-    IonListHeader,
     IonItem,
     IonLabel,
     PinDeckComponent,

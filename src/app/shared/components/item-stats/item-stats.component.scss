@@ -38,10 +38,6 @@
   &.ion-activatable {
     cursor: pointer;
   }
-
-  &.modal-item {
-    margin: 0 0 10px;
-  }
 }
 
 ion-img {
@@ -66,7 +62,7 @@ ion-img {
     flex: none;
 
     &::part(image) {
-      border-radius: var(--border-radius, 4px);
+      border-radius: var(--small-border-radius, 4px);
     }
   }
 }

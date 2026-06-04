@@ -36,7 +36,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
 
@@ -64,7 +64,7 @@
   }
 
   .detail-card {
-    padding: 4px 14px;
+    padding: 4px 12px;
     border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
   }

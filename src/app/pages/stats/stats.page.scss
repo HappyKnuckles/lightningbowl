@@ -65,7 +65,7 @@
   padding: 18px 20px 17px;
   margin: 0 16px 12px;
 
-  .f-label {
+  .feature-label {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -73,7 +73,7 @@
     color: var(--ion-color-medium, #7c7c7a);
   }
 
-  .f-row {
+  .feature-row {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -81,14 +81,14 @@
     margin-top: 8px;
   }
 
-  .f-val {
+  .feature-val {
     font-size: 52px;
     font-weight: 800;
     line-height: 0.9;
     letter-spacing: -0.03em;
   }
 
-  .f-trend {
+  .feature-trend {
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
@@ -229,13 +229,13 @@
 }
 
 // ── Series table ───────────────────────────────────────────────
-.series-table-card {
+.series-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
   margin: 0 16px 12px;
 
-  .st-header {
+  .series-header {
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
@@ -256,7 +256,7 @@
     }
   }
 
-  .st-row {
+  .series-row {
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
@@ -275,19 +275,19 @@
 
     &.empty {
 
-      .sr-label,
-      .sr-val {
+      .series-label,
+      .series-val {
         color: var(--ion-color-step-350, #595959);
       }
     }
 
-    .sr-label {
+    .series-label {
       font-size: 14px;
       font-weight: 600;
       color: var(--ion-text-color, #f3f1ec);
     }
 
-    .sr-val {
+    .series-val {
       font-size: 15px;
       font-weight: 800;
       color: var(--ion-text-color);

@@ -1,5 +1,5 @@
 @if (title()) {
-  <div
+  <h2
     class="item-heading"
     (click)="openModal()"
     (keydown.enter)="openModal()"
@@ -11,11 +11,11 @@
     @if (allItems()?.length) {
       <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
     }
-  </div>
+  </h2>
 }
 
 <div
-  class="ball-card"
+  class="item-card"
   [class.ion-activatable]="allItems()?.length"
   [class.ripple-parent]="allItems()?.length"
   (click)="openModal()"
@@ -29,23 +29,23 @@
       <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
     }
 
-    <div class="ball-meta">
-      <div class="ball-top">
-        <span class="ball-name">{{ item().name }}</span>
-        <span class="ball-use">{{ item().gameCount }} / {{ totalGames() }}</span>
+    <div class="item-meta">
+      <div class="item-top">
+        <span class="item-name">{{ item().name }}</span>
+        <span class="item-use">{{ item().gameCount }} / {{ totalGames() }}</span>
       </div>
-      <div class="ball-stats">
-        <div class="bs">
-          <span class="bk">Avg</span>
-          <span class="bv">{{ item().avg }}</span>
+      <div class="item-stats">
+        <div class="item-line">
+          <span class="item-label">Avg</span>
+          <span class="item-value">{{ item().avg }}</span>
         </div>
-        <div class="bs">
-          <span class="bk">High</span>
-          <span class="bv">{{ item().highestGame }}</span>
+        <div class="item-line">
+          <span class="item-label">High</span>
+          <span class="item-value">{{ item().highestGame }}</span>
         </div>
-        <div class="bs">
-          <span class="bk">Low</span>
-          <span class="bv">{{ item().lowestGame }}</span>
+        <div class="item-line">
+          <span class="item-label">Low</span>
+          <span class="item-value">{{ item().lowestGame }}</span>
         </div>
       </div>
     </div>
@@ -70,28 +70,28 @@
         </ion-toolbar>
       </ion-header>
       <ion-content>
-        <ion-list style="background: none; margin: 12px 16px 12px">
+        <ion-list style="background: none">
           @for (listItem of allItems(); track listItem.name) {
-            <div class="ball-card">
+            <div class="item-card modal-card">
               <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
               </ion-img>
-              <div class="ball-meta">
-                <div class="ball-top">
-                  <span class="ball-name">{{ listItem.name }}</span>
-                  <span class="ball-use">{{ listItem.gameCount }} / {{ totalGames() }}</span>
+              <div class="item-meta">
+                <div class="item-top">
+                  <span class="item-name">{{ listItem.name }}</span>
+                  <span class="item-use">{{ listItem.gameCount }} / {{ totalGames() }}</span>
                 </div>
-                <div class="ball-stats">
-                  <div class="bs">
-                    <span class="bk">Avg</span>
-                    <span class="bv">{{ listItem.avg }}</span>
+                <div class="item-stats">
+                  <div class="item-line">
+                    <span class="item-label">Avg</span>
+                    <span class="item-value">{{ listItem.avg }}</span>
                   </div>
-                  <div class="bs">
-                    <span class="bk">High</span>
-                    <span class="bv">{{ listItem.highestGame }}</span>
+                  <div class="item-line">
+                    <span class="item-label">High</span>
+                    <span class="item-value">{{ listItem.highestGame }}</span>
                   </div>
-                  <div class="bs">
-                    <span class="bk">Low</span>
-                    <span class="bv">{{ listItem.lowestGame }}</span>
+                  <div class="item-line">
+                    <span class="item-label">Low</span>
+                    <span class="item-value">{{ listItem.lowestGame }}</span>
                   </div>
                 </div>
               </div>

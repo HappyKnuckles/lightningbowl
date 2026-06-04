@@ -1,8 +1,8 @@
-<div class="sd-wrapper">
-  <div class="sd-title" *ngIf="title">{{ title }}</div>
-  <div class="sd-card">
+<div class="stat-wrapper">
+  <div class="stat-title" *ngIf="title">{{ title }}</div>
+  <div class="stat-card">
     @for (stat of statDefinitions; track stat.key) {
-      <div class="sd-row">
+      <div class="stat-row">
         <app-stat-row
           [label]="stat.label"
           [currentStat]="getNumericStat(currentStats, stat.key)!"

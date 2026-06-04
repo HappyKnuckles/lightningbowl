@@ -56,13 +56,12 @@
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <!-- SCORING -->
         <h2 class="sec-heading"><span>Scoring</span><span class="sec-line"></span></h2>
-
         <div class="feature-card">
-          <div class="f-label">Average</div>
-          <div class="f-row">
-            <div class="f-val">{{ stats.averageScore | number: "1.2-2" }}</div>
+          <div class="feature-label">Average</div>
+          <div class="feature-row">
+            <div class="feature-val">{{ stats.averageScore | number: "1.2-2" }}</div>
             @if (scoreTrend()) {
-              <span class="f-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
+              <span class="feature-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
                 <ion-icon [name]="scoreTrend() === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
                 {{ scoreTrend() === "up" ? "Trending up" : "Trending down" }}
               </span>
@@ -158,13 +157,13 @@
 
         <!-- SERIES STATS -->
         <h2 class="sec-heading"><span>Series stats</span><span class="sec-line"></span></h2>
-        <div class="series-table-card">
-          <div class="st-header"><span>Series</span><span>Avg</span><span>High</span></div>
+        <div class="series-card">
+          <div class="series-header"><span>Series</span><span>Avg</span><span>High</span></div>
           @for (row of seriesRows(); track row.label; let last = $last) {
-            <div class="st-row" [class.last]="last" [class.empty]="!row.avg">
-              <span class="sr-label">{{ row.label }}</span>
-              <span class="sr-val">{{ row.avg ? (row.avg | number: "1.2-2") : "—" }}</span>
-              <span class="sr-val">{{ row.high || "—" }}</span>
+            <div class="series-row" [class.last]="last" [class.empty]="!row.avg">
+              <span class="series-label">{{ row.label }}</span>
+              <span class="series-val">{{ row.avg ? (row.avg | number: "1.2-2") : "—" }}</span>
+              <span class="series-val">{{ row.high || "—" }}</span>
             </div>
           }
         </div>

@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 22px 16px 12px;
+  margin: 20px 16px 12px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -117,14 +117,18 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 0 16px 12px;
+  margin: 0 16px 20px;
+
+  &:last-child {
+    margin-bottom: 20px;
+  }
 }
 
 .stat-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  margin: 0 16px 12px;
+  margin: 0 16px 20px;
 }
 
 .stat-chip {

@@ -9,7 +9,7 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
+  @if (hasGames()) {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)" scrollable="true">
         @for (segment of segments; track segment) {
@@ -25,7 +25,7 @@
     </app-generic-filter-active>
   </ion-toolbar>
 
-  @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
+  @if (hasGames()) {
     <ion-toolbar [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'" class="ion-activatable ion-ripple-parent">
       <ion-select
         class="date-picker"
@@ -49,16 +49,18 @@
   </ion-refresher>
 
   <ion-segment-view>
-    <!-- ═══════════════════════ OVERALL ═══════════════════════ -->
+    @let stats = statsService.currentStats();
+    @let prevStats = statsService.prevStats();
+
     <ion-segment-content id="Overall">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <!-- SCORING -->
-        <div class="sec-heading"><span>Scoring</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Scoring</span><span class="sec-line"></span></h2>
 
         <div class="feature-card">
           <div class="f-label">Average</div>
           <div class="f-row">
-            <div class="f-val">{{ statsService.currentStats().averageScore | number: "1.2-2" }}</div>
+            <div class="f-val">{{ stats.averageScore | number: "1.2-2" }}</div>
             @if (scoreTrend()) {
               <span class="f-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
                 <ion-icon [name]="scoreTrend() === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
@@ -71,78 +73,54 @@
         <div class="stat-grid-3">
           <div class="stat-chip">
             <div class="chip-key">Games</div>
-            <div class="chip-val">{{ statsService.currentStats().totalGames }}</div>
+            <div class="chip-val">{{ stats.totalGames }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">High game</div>
-            <div class="chip-val">{{ statsService.currentStats().highGame }}</div>
+            <div class="chip-val">{{ stats.highGame }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">Total pins</div>
-            <div class="chip-val">{{ statsService.currentStats().totalPins | number }}</div>
+            <div class="chip-val">{{ stats.totalPins | number }}</div>
           </div>
         </div>
 
         <!-- SCORE ANALYSIS -->
-        <div class="sec-heading"><span>Score analysis</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Score analysis</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
 
         <!-- ACCURACY -->
-        <div class="sec-heading"><span>Accuracy</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Accuracy</span><span class="sec-line"></span></h2>
         <div class="acc-card">
-          <div class="acc-item">
-            <div class="acc-row">
-              <span class="acc-label">Strike %</span>
-              <span class="acc-val">{{ statsService.currentStats().strikePercentage | number: "1.2-2" }}%</span>
+          @for (row of accuracyRows(); track row.label; let last = $last) {
+            <div class="acc-item" [class.last]="last">
+              <div class="acc-row">
+                <span class="acc-label">{{ row.label }}</span>
+                <span class="acc-val">{{ row.value | number: "1.2-2" }}{{ row.suffix }}</span>
+              </div>
+              <div class="acc-track">
+                <div class="acc-fill" [style.width.%]="row.fill"></div>
+              </div>
             </div>
-            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().strikePercentage"></div></div>
-          </div>
-          <div class="acc-item">
-            <div class="acc-row">
-              <span class="acc-label">Spare %</span>
-              <span class="acc-val">{{ statsService.currentStats().overallSpareRate | number: "1.2-2" }}%</span>
-            </div>
-            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().overallSpareRate"></div></div>
-          </div>
-          <div class="acc-item">
-            <div class="acc-row">
-              <span class="acc-label">Mark %</span>
-              <span class="acc-val">{{ statsService.currentStats().markPercentage | number: "1.2-2" }}%</span>
-            </div>
-            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().markPercentage"></div></div>
-          </div>
-          <div class="acc-item">
-            <div class="acc-row">
-              <span class="acc-label">Open %</span>
-              <span class="acc-val">{{ statsService.currentStats().overallMissedRate | number: "1.2-2" }}%</span>
-            </div>
-            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().overallMissedRate"></div></div>
-          </div>
-          <div class="acc-item last">
-            <div class="acc-row">
-              <span class="acc-label">First ball avg</span>
-              <span class="acc-val">{{ statsService.currentStats().averageFirstCount | number: "1.2-2" }}/10</span>
-            </div>
-            <div class="acc-track"><div class="acc-fill" [style.width.%]="statsService.currentStats().averageFirstCount * 10"></div></div>
-          </div>
+          }
         </div>
 
         <!-- GAME QUALITY -->
-        <div class="sec-heading"><span>Game quality</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Game quality</span><span class="sec-line"></span></h2>
         <div class="stat-grid-3">
           <div class="stat-chip">
             <div class="chip-key">Perfect games</div>
-            <div class="chip-val">{{ statsService.currentStats().perfectGameCount }}</div>
+            <div class="chip-val">{{ stats.perfectGameCount }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">Clean games</div>
-            <div class="chip-val">{{ statsService.currentStats().cleanGameCount }}</div>
+            <div class="chip-val">{{ stats.cleanGameCount }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">Clean game %</div>
-            <div class="chip-val">{{ statsService.currentStats().cleanGamePercentage | number: "1.1-1" }}%</div>
+            <div class="chip-val">{{ stats.cleanGamePercentage | number: "1.1-1" }}%</div>
           </div>
         </div>
 
@@ -150,7 +128,7 @@
         <app-ball-stats
           [title]="'Most used ball'"
           [bestBall]="statsService.mostPlayedBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
+          [totalGames]="stats.totalGames"
           [allBalls]="statsService.allBallStats()">
         </app-ball-stats>
 
@@ -158,7 +136,7 @@
         <app-ball-stats
           [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
+          [totalGames]="stats.totalGames"
           [allBalls]="statsService.allBallStats()">
         </app-ball-stats>
 
@@ -166,7 +144,7 @@
         <app-pattern-stats
           [title]="'Most played pattern'"
           [bestPattern]="statsService.mostPlayedPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
+          [totalGames]="stats.totalGames"
           [allPatterns]="statsService.allPatternStats()">
         </app-pattern-stats>
 
@@ -174,12 +152,12 @@
         <app-pattern-stats
           [title]="'Best pattern'"
           [bestPattern]="statsService.bestPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
+          [totalGames]="stats.totalGames"
           [allPatterns]="statsService.allPatternStats()">
         </app-pattern-stats>
 
         <!-- SERIES STATS -->
-        <div class="sec-heading"><span>Series stats</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Series stats</span><span class="sec-line"></span></h2>
         <div class="series-table-card">
           <div class="st-header"><span>Series</span><span>Avg</span><span>High</span></div>
           @for (row of seriesRows(); track row.label; let last = $last) {
@@ -192,81 +170,54 @@
         </div>
 
         <!-- PLAY FREQUENCY -->
-        <div class="sec-heading"><span>Play frequency</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Play frequency</span><span class="sec-line"></span></h2>
         <div class="stat-grid-3">
-          <div class="stat-chip">
-            <div class="chip-key">Games / week</div>
-            <div class="chip-val">{{ statsService.currentStats().averageGamesPerWeek | number: "1.2-2" }}</div>
-          </div>
-          <div class="stat-chip">
-            <div class="chip-key">Games / month</div>
-            <div class="chip-val">{{ statsService.currentStats().averageGamesPerMonth | number: "1.2-2" }}</div>
-          </div>
-          <div class="stat-chip">
-            <div class="chip-key">Games / year</div>
-            <div class="chip-val">{{ statsService.currentStats().averageGamesPerYear | number: "1.2-2" }}</div>
-          </div>
-          <div class="stat-chip">
-            <div class="chip-key">Sessions / wk</div>
-            <div class="chip-val">{{ statsService.currentStats().averageSessionsPerWeek | number: "1.2-2" }}</div>
-          </div>
-          <div class="stat-chip">
-            <div class="chip-key">Sessions / month</div>
-            <div class="chip-val">{{ statsService.currentStats().averageSessionsPerMonth | number: "1.2-2" }}</div>
-          </div>
-          <div class="stat-chip">
-            <div class="chip-key">Games / session</div>
-            <div class="chip-val">{{ statsService.currentStats().averageGamesPerSession | number: "1.2-2" }}</div>
-          </div>
+          @for (chip of playFrequencyChips(); track chip.key) {
+            <div class="stat-chip">
+              <div class="chip-key">{{ chip.key }}</div>
+              <div class="chip-val">{{ chip.value | number: "1.2-2" }}</div>
+            </div>
+          }
         </div>
 
         <!-- SPECIAL STATS -->
-        <div class="sec-heading"><span>Special stats</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Special stats</span><span class="sec-line"></span></h2>
         <div class="stat-grid-3">
           <div class="stat-chip">
             <div class="chip-key">Dutch 200s</div>
-            <div class="chip-val">{{ statsService.currentStats().dutch200Count ?? 0 }}</div>
+            <div class="chip-val">{{ stats.dutch200Count ?? 0 }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">Varipapa 300s</div>
-            <div class="chip-val">{{ statsService.currentStats().varipapa300Count ?? 0 }}</div>
+            <div class="chip-val">{{ stats.varipapa300Count ?? 0 }}</div>
           </div>
           <div class="stat-chip">
             <div class="chip-key">All spare games</div>
-            <div class="chip-val">{{ statsService.currentStats().allSparesGameCount ?? 0 }}</div>
+            <div class="chip-val">{{ stats.allSparesGameCount ?? 0 }}</div>
           </div>
         </div>
 
         <!-- AVERAGE SCORE CHART -->
-        <div class="sec-heading"><span>Average score</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Average score</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
 
         <!-- SCORE DISTRIBUTION -->
-        <div class="sec-heading"><span>Score distribution</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Score distribution</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
       </section>
     </ion-segment-content>
 
-    <!-- ═══════════════════════ THROWS ═══════════════════════ -->
     <ion-segment-content id="Throws">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Throw stats'"
-          [statDefinitions]="THROW_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <app-stat-display
-          [title]="'Strike stats'"
-          [statDefinitions]="STRIKE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <div class="sec-heading"><span>Throw distribution</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Throw distribution</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
@@ -276,19 +227,19 @@
     <!-- ═══════════════════════ SPARES ═══════════════════════ -->
     <ion-segment-content id="Spares">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-spare-display [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="statsService.prevStats()" id="overalSpareStats">
+        <app-spare-display [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overalSpareStats">
         </app-spare-display>
         <app-stat-display
           [title]="'Spare conversion by pin count'"
           [statDefinitions]="SPARE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+          [currentStats]="stats"
+          [prevStats]="prevStats">
         </app-stat-display>
-        <div class="sec-heading"><span>Converted vs missed spares</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
-        <div class="sec-heading"><span>Spare distribution</span><span class="sec-line"></span></div>
+        <h2 class="sec-heading"><span>Spare distribution</span><span class="sec-line"></span></h2>
         <div class="chart-card">
           <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </div>
@@ -298,11 +249,7 @@
     <!-- ═══════════════════════ PINS ═══════════════════════ -->
     <ion-segment-content id="Pins">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Pin stats'"
-          [statDefinitions]="PIN_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
         <app-pin-leave-stats [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-pin-leave-stats>
         <app-pin-leave-stats [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-pin-leave-stats>
@@ -319,39 +266,34 @@
             [title]="'Overall stats'"
             [statDefinitions]="SESSION_STAT_DEFINITIONS"
             [currentStats]="sessionStats()"
-            [prevStats]="statsService.currentStats()">
+            [prevStats]="stats">
           </app-stat-display>
-          <div class="sec-heading"><span>Most used ball</span><span class="sec-line"></span></div>
           <app-ball-stats
-            [title]="''"
+            [title]="'Most used ball'"
             [bestBall]="sessionMostPlayedBallStats()"
             [totalGames]="sessionStats().totalGames"
             [allBalls]="sessionAllBallStats()">
           </app-ball-stats>
-          <div class="sec-heading"><span>Best ball</span><span class="sec-line"></span></div>
           <app-ball-stats
-            [title]="''"
+            [title]="'Best ball'"
             [bestBall]="sessionBestBallStats()"
             [totalGames]="sessionStats().totalGames"
             [allBalls]="sessionAllBallStats()">
           </app-ball-stats>
-          <div class="sec-heading"><span>Most played pattern</span><span class="sec-line"></span></div>
           <app-pattern-stats
-            [title]="''"
+            [title]="'Most played pattern'"
             [bestPattern]="sessionMostPlayedPatternStats()"
             [totalGames]="sessionStats().totalGames"
             [allPatterns]="sessionAllPatternStats()">
           </app-pattern-stats>
-          <div class="sec-heading"><span>Best pattern</span><span class="sec-line"></span></div>
           <app-pattern-stats
-            [title]="''"
+            [title]="'Best pattern'"
             [bestPattern]="sessionBestPatternStats()"
             [totalGames]="sessionStats().totalGames"
             [allPatterns]="sessionAllPatternStats()">
           </app-pattern-stats>
           <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
-          <app-spare-display [title]="'Spare stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
-          </app-spare-display>
+          <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
           <app-pin-leave-stats [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
           <app-pin-leave-stats [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
           <app-pin-leave-stats [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">

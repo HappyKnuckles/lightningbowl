@@ -180,7 +180,15 @@ export class StatsPage implements OnInit, AfterViewInit {
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
 
-  scoreTrend = computed<'up' | 'down' | null>(() => {
+  readonly hasGames = computed(
+    () =>
+      !(
+        (this.gameFilterService.filteredGames().length <= 0 && !this.loadingService.isLoading()) ||
+        this.gameFilterService.filteredGames().length <= 0
+      ),
+  );
+
+  readonly scoreTrend = computed<'up' | 'down' | null>(() => {
     const curr = this.statsService.currentStats().averageScore;
     const prev = this.statsService.prevStats()?.averageScore;
     if (!prev || prev === 0 || curr === prev) return null;
@@ -188,12 +196,35 @@ export class StatsPage implements OnInit, AfterViewInit {
   });
 
   readonly seriesRows = computed(() => {
-    const st = this.statsService.currentStats();
+    const stats = this.statsService.currentStats();
     return [3, 4, 5, 6].map((n) => ({
       label: `${n}-series`,
-      avg: st[`average${n}SeriesScore`] as number,
-      high: st[`high${n}Series`] as number,
+      avg: stats[`average${n}SeriesScore`] as number,
+      high: stats[`high${n}Series`] as number,
     }));
+  });
+
+  readonly accuracyRows = computed(() => {
+    const stats = this.statsService.currentStats();
+    return [
+      { label: 'Strike %', value: stats.strikePercentage, suffix: '%', fill: stats.strikePercentage },
+      { label: 'Spare %', value: stats.overallSpareRate, suffix: '%', fill: stats.overallSpareRate },
+      { label: 'Mark %', value: stats.markPercentage, suffix: '%', fill: stats.markPercentage },
+      { label: 'Open %', value: stats.overallMissedRate, suffix: '%', fill: stats.overallMissedRate },
+      { label: 'First ball avg', value: stats.averageFirstCount, suffix: '/10', fill: stats.averageFirstCount * 10 },
+    ];
+  });
+
+  readonly playFrequencyChips = computed(() => {
+    const s = this.statsService.currentStats();
+    return [
+      { key: 'Games / week', value: s.averageGamesPerWeek },
+      { key: 'Games / month', value: s.averageGamesPerMonth },
+      { key: 'Games / year', value: s.averageGamesPerYear },
+      { key: 'Sessions / wk', value: s.averageSessionsPerWeek },
+      { key: 'Sessions / month', value: s.averageSessionsPerMonth },
+      { key: 'Games / session', value: s.averageGamesPerSession },
+    ];
   });
 
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';

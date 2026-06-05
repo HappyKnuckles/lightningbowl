@@ -73,8 +73,9 @@ export class PatternsStore {
       if (!forceRefresh) {
         const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
         const isCacheValid = await this.cacheService.isValid(cacheKey);
+        const arePatternsValid = await this.cacheService.isValid('all_patterns');
 
-        if (cached && (isCacheValid || this.networkService.isOffline)) {
+        if (cached && (isCacheValid || this.networkService.isOffline) && (arePatternsValid || this.networkService.isOffline)) {
           this.#patternImageMap.set(cached);
           if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
             this.refreshPatternImageMapInBackground(cacheKey);
@@ -126,8 +127,8 @@ export class PatternsStore {
 
       const imageMap: Record<string, string> = {};
       for (const pattern of patterns) {
-        if (pattern.title && pattern.chart_horizontal) {
-          imageMap[pattern.title] = pattern.chart_horizontal;
+        if (pattern.title && pattern.chart_standard) {
+          imageMap[pattern.title] = pattern.chart_standard;
         }
       }
       this.#patternImageMap.set(imageMap);

@@ -1,9 +1,12 @@
-<div class="stats">
-  <ion-text [id]="id + '-tooltip'">{{ label }}: <ion-icon *ngIf="toolTip" name="information-circle-outline"></ion-icon> </ion-text>
-  <ion-popover *ngIf="toolTip" [trigger]="id + '-tooltip'" size="cover" class="tooltip-popover">
-    <ion-text class="tooltip">{{ toolTip }}</ion-text>
-  </ion-popover>
-  <div class="value-wrap">
+<dl class="stats">
+  <dt class="stat-label">
+    <ion-text [id]="id + '-tooltip'">{{ label }}: <ion-icon *ngIf="toolTip" name="information-circle-outline"></ion-icon> </ion-text>
+    <ion-popover *ngIf="toolTip" [trigger]="id + '-tooltip'" size="cover" class="tooltip-popover">
+      <ion-text class="tooltip">{{ toolTip }}</ion-text>
+    </ion-popover>
+  </dt>
+
+  <dd class="value-wrap">
     @if (statDifference !== "0") {
       <ion-icon class="diff-icon" [name]="getArrowIcon(currentStat, prevStat)" [color]="getDiffColor(currentStat, prevStat)"></ion-icon>
     }
@@ -17,13 +20,13 @@
         }
       }
     </ion-text>
-  </div>
 
-  @if (statDifference !== "0") {
-    <ion-popover class="diff-popover" [trigger]="id">
-      <ion-text [color]="getDiffColor(currentStat, prevStat)">
-        {{ statDifference }}
-      </ion-text>
-    </ion-popover>
-  }
-</div>
+    @if (statDifference !== "0") {
+      <ion-popover class="diff-popover" [trigger]="id">
+        <ion-text [color]="getDiffColor(currentStat, prevStat)">
+          {{ statDifference }}
+        </ion-text>
+      </ion-popover>
+    }
+  </dd>
+</dl>

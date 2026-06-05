@@ -87,6 +87,7 @@
     font-weight: 700;
     color: var(--ion-text-color, #f3f1ec);
     letter-spacing: -0.01em;
+    margin: 0;
   }
 
   .item-use {
@@ -99,7 +100,7 @@
   .item-stats {
     display: flex;
     gap: 16px;
-    margin-top: 10px;
+    margin: 10px 0 0;
   }
 
   .item-line {
@@ -118,8 +119,9 @@
     .item-value {
       font-size: 18px;
       font-weight: 800;
-      color: var(--ion-text-color #ece4d4);
+      color: var(--ion-text-color, #ece4d4);
       letter-spacing: -0.01em;
+      margin: 0;
     }
   }
 

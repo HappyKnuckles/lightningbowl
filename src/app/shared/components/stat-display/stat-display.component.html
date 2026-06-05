@@ -1,8 +1,8 @@
 <div class="stat-wrapper">
-  <div class="stat-title" *ngIf="title">{{ title }}</div>
-  <div class="stat-card">
+  <h2 class="stat-title" *ngIf="title">{{ title }}</h2>
+  <ul class="stat-card">
     @for (stat of statDefinitions; track stat.key) {
-      <div class="stat-row">
+      <li class="stat-row">
         <app-stat-row
           [label]="stat.label"
           [currentStat]="getNumericStat(currentStats, stat.key)!"
@@ -12,7 +12,7 @@
           [id]="stat.id"
           [isPercentage]="stat.isPercentage">
         </app-stat-row>
-      </div>
+      </li>
     }
-  </div>
+  </ul>
 </div>

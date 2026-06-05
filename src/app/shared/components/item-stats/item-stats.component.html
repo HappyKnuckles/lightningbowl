@@ -14,7 +14,7 @@
   </h2>
 }
 
-<div
+<article
   class="item-card"
   [class.ion-activatable]="allItems()?.length"
   [class.ripple-parent]="allItems()?.length"
@@ -30,31 +30,31 @@
     }
 
     <div class="item-meta">
-      <div class="item-top">
-        <span class="item-name">{{ item().name }}</span>
+      <header class="item-top">
+        <h3 class="item-name">{{ item().name }}</h3>
         <span class="item-use">{{ item().gameCount }} / {{ totalGames() }}</span>
-      </div>
-      <div class="item-stats">
+      </header>
+      <dl class="item-stats">
         <div class="item-line">
-          <span class="item-label">Avg</span>
-          <span class="item-value">{{ item().avg }}</span>
+          <dt class="item-label">Avg</dt>
+          <dd class="item-value">{{ item().avg }}</dd>
         </div>
         <div class="item-line">
-          <span class="item-label">High</span>
-          <span class="item-value">{{ item().highestGame }}</span>
+          <dt class="item-label">High</dt>
+          <dd class="item-value">{{ item().highestGame }}</dd>
         </div>
         <div class="item-line">
-          <span class="item-label">Low</span>
-          <span class="item-value">{{ item().lowestGame }}</span>
+          <dt class="item-label">Low</dt>
+          <dd class="item-value">{{ item().lowestGame }}</dd>
         </div>
-      </div>
+      </dl>
     </div>
   }
 
   @if (allItems()?.length) {
     <ion-ripple-effect></ion-ripple-effect>
   }
-</div>
+</article>
 
 @if (allItems()?.length) {
   <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
@@ -72,30 +72,30 @@
       <ion-content>
         <ion-list style="background: none">
           @for (listItem of allItems(); track listItem.name) {
-            <div class="item-card modal-card">
+            <article class="item-card modal-card">
               <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
               </ion-img>
               <div class="item-meta">
-                <div class="item-top">
-                  <span class="item-name">{{ listItem.name }}</span>
+                <header class="item-top">
+                  <h3 class="item-name">{{ listItem.name }}</h3>
                   <span class="item-use">{{ listItem.gameCount }} / {{ totalGames() }}</span>
-                </div>
-                <div class="item-stats">
+                </header>
+                <dl class="item-stats">
                   <div class="item-line">
-                    <span class="item-label">Avg</span>
-                    <span class="item-value">{{ listItem.avg }}</span>
+                    <dt class="item-label">Avg</dt>
+                    <dd class="item-value">{{ listItem.avg }}</dd>
                   </div>
                   <div class="item-line">
-                    <span class="item-label">High</span>
-                    <span class="item-value">{{ listItem.highestGame }}</span>
+                    <dt class="item-label">High</dt>
+                    <dd class="item-value">{{ listItem.highestGame }}</dd>
                   </div>
                   <div class="item-line">
-                    <span class="item-label">Low</span>
-                    <span class="item-value">{{ listItem.lowestGame }}</span>
+                    <dt class="item-label">Low</dt>
+                    <dd class="item-value">{{ listItem.lowestGame }}</dd>
                   </div>
-                </div>
+                </dl>
               </div>
-            </div>
+            </article>
           }
         </ion-list>
       </ion-content>

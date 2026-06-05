@@ -34,7 +34,6 @@
   font-size: 14px;
 }
 
-// ── Section headings ───────────────────────────────────────────
 .sec-heading {
   display: flex;
   align-items: center;
@@ -57,7 +56,6 @@
   }
 }
 
-// ── Feature card (big average) ─────────────────────────────────
 .feature-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
@@ -78,7 +76,7 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
-    margin-top: 8px;
+    margin: 8px 0 0;
   }
 
   .feature-val {
@@ -111,7 +109,6 @@
   }
 }
 
-// ── Stat grids ─────────────────────────────────────────────────
 .stat-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -135,6 +132,7 @@
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
   padding: 12px 12px 12px;
+  margin: 0;
   display: flex;
   flex-direction: column;
 
@@ -153,12 +151,11 @@
     font-size: 22px;
     font-weight: 800;
     color: var(--ion-text-color);
-    margin-top: auto;
+    margin: auto 0 0;
     letter-spacing: -0.02em;
   }
 }
 
-// ── Chart card ─────────────────────────────────────────────────
 .chart-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
@@ -173,13 +170,13 @@
   }
 }
 
-// ── Accuracy bars ──────────────────────────────────────────────
 .acc-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
   margin: 0 16px 12px;
   padding: 0 16px;
+  list-style: none;
 
   .acc-item {
     padding: 13px 0;
@@ -232,12 +229,25 @@
   }
 }
 
-// ── Series table ───────────────────────────────────────────────
 .series-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
   margin: 0 16px 12px;
+  display: block;
+  width: auto;
+  border-collapse: collapse;
+
+  thead,
+  tbody {
+    display: contents;
+  }
+
+  th,
+  td {
+    padding: 0;
+    text-align: left;
+  }
 
   .series-header {
     display: grid;
@@ -246,7 +256,7 @@
     padding: 12px 16px 9px;
     border-bottom: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 
-    span {
+    th {
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;

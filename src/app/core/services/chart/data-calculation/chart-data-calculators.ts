@@ -14,7 +14,7 @@ export function calculateScoreChartData(gameHistory: Game[], viewMode: 'week' | 
     case 'yearly':
       return calculateYearlyScoreChartData(gameHistory);
     default:
-      return calculatePerGameScoreChartData(gameHistory);
+      return calculateWeeklyScoreChartData(gameHistory);
   }
 }
 

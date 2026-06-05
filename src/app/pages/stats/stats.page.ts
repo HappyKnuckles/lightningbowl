@@ -227,7 +227,7 @@ export class StatsPage implements OnInit, AfterViewInit {
     ];
   });
 
-  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
+  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Sessions'];

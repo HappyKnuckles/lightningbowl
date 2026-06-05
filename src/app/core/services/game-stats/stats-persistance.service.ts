@@ -125,6 +125,6 @@ export class StatsPersistenceService {
       return prevStats;
     }
 
-    return prevStats;
+    return JSON.parse(localStorage.getItem('prevStats')!) ?? prevStats;
   });
 }

@@ -51,13 +51,15 @@
         }
 
         .stat-text {
+          position: relative;
+          margin: 0 auto;
+          width: 80px;
           display: block;
         }
 
         .arrow-icon {
           position: absolute;
-          left: 100%;
-          margin-left: 5px;
+          left: 95%;
           font-size: 14px;
           top: 50%;
           transform: translateY(-50%);

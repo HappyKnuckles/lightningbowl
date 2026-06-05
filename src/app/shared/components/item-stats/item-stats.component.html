@@ -1,18 +1,16 @@
-@if (title()) {
-  <h2
-    class="item-heading"
-    (click)="openModal()"
-    (keydown.enter)="openModal()"
-    [attr.tabindex]="allItems()?.length ? '0' : null"
-    [attr.role]="allItems()?.length ? 'button' : null"
-    [style.cursor]="allItems()?.length ? 'pointer' : 'default'">
-    <span>{{ title() }}</span>
-    <span class="item-heading-line"></span>
-    @if (allItems()?.length) {
-      <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
-    }
-  </h2>
-}
+<h2
+  class="item-heading"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  [attr.tabindex]="allItems()?.length ? '0' : null"
+  [attr.role]="allItems()?.length ? 'button' : null"
+  [style.cursor]="allItems()?.length ? 'pointer' : 'default'">
+  <span>{{ title() }}</span>
+  <span class="divider-line"></span>
+  @if (allItems()?.length) {
+    <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
+  }
+</h2>
 
 <article
   class="item-card"

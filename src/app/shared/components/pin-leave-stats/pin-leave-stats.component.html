@@ -1,7 +1,7 @@
 <ion-list (click)="openModal()" (keydown.enter)="openModal()" role="button">
   <div class="pls-heading">
     <span>{{ title() }}</span>
-    <span class="pls-line"></span>
+    <span class="divider-line"></span>
     @if (allLeaves()?.length) {
       <ion-icon name="chevron-forward-outline" class="pls-chevron"></ion-icon>
     }

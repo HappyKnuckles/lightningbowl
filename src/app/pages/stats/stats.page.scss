@@ -48,12 +48,6 @@
   &:first-child {
     margin-top: 12px;
   }
-
-  .sec-line {
-    flex: 1;
-    height: 1px;
-    background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-  }
 }
 
 .feature-card {

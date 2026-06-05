@@ -55,7 +55,7 @@
     <ion-segment-content id="Overall">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
         <!-- SCORING -->
-        <h2 class="sec-heading"><span>Scoring</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Scoring</span><span class="divider-line"></span></h2>
         <dl class="feature-card">
           <dt class="feature-label">Average</dt>
           <dd class="feature-row">
@@ -85,13 +85,13 @@
         </div>
 
         <!-- SCORE ANALYSIS -->
-        <h2 class="sec-heading"><span>Score analysis</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Score analysis</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>
 
         <!-- ACCURACY -->
-        <h2 class="sec-heading"><span>Accuracy</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Accuracy</span><span class="divider-line"></span></h2>
         <ul class="acc-card">
           @for (row of accuracyRows(); track row.label; let last = $last) {
             <li class="acc-item" [class.last]="last">
@@ -113,7 +113,7 @@
         </ul>
 
         <!-- GAME QUALITY -->
-        <h2 class="sec-heading"><span>Game quality</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Game quality</span><span class="divider-line"></span></h2>
         <div class="stat-grid-3">
           <dl class="stat-chip">
             <dt class="chip-key">Perfect games</dt>
@@ -162,7 +162,7 @@
         </app-pattern-stats>
 
         <!-- SERIES STATS -->
-        <h2 class="sec-heading"><span>Series stats</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Series stats</span><span class="divider-line"></span></h2>
         <table class="series-card">
           <thead>
             <tr class="series-header">
@@ -183,7 +183,7 @@
         </table>
 
         <!-- PLAY FREQUENCY -->
-        <h2 class="sec-heading"><span>Play frequency</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Play frequency</span><span class="divider-line"></span></h2>
         <div class="stat-grid-3">
           @for (chip of playFrequencyChips(); track chip.key) {
             <dl class="stat-chip">
@@ -194,7 +194,7 @@
         </div>
 
         <!-- SPECIAL STATS -->
-        <h2 class="sec-heading"><span>Special stats</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Special stats</span><span class="divider-line"></span></h2>
         <div class="stat-grid-3">
           <dl class="stat-chip">
             <dt class="chip-key">Dutch 200s</dt>
@@ -211,13 +211,13 @@
         </div>
 
         <!-- AVERAGE SCORE CHART -->
-        <h2 class="sec-heading"><span>Average score</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Average score</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>
 
         <!-- SCORE DISTRIBUTION -->
-        <h2 class="sec-heading"><span>Score distribution</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Score distribution</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>
@@ -230,7 +230,7 @@
         </app-stat-display>
         <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <h2 class="sec-heading"><span>Throw distribution</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Throw distribution</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>
@@ -247,11 +247,11 @@
           [currentStats]="stats"
           [prevStats]="prevStats">
         </app-stat-display>
-        <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>
-        <h2 class="sec-heading"><span>Spare distribution</span><span class="sec-line"></span></h2>
+        <h2 class="sec-heading"><span>Spare distribution</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
           <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
         </figure>

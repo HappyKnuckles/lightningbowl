@@ -9,12 +9,6 @@
   text-transform: uppercase;
   color: var(--ion-color-medium, #7c7c7a);
 
-  .item-heading-line {
-    flex: 1;
-    height: 1px;
-    background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-  }
-
   .item-heading-chevron {
     font-size: 14px;
     color: var(--ion-color-medium, #7c7c7a);

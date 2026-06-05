@@ -4,7 +4,6 @@ import {
   add,
   statsChartOutline,
   receipt,
-  medalOutline,
   bowlingBallOutline,
   ellipsisHorizontal,
   bagAddOutline,
@@ -12,6 +11,7 @@ import {
   mapOutline,
   gameControllerOutline,
   scaleOutline,
+  trophyOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -76,7 +76,7 @@ export class TabsPage {
       add,
       statsChartOutline,
       receipt,
-      medalOutline,
+      trophyOutline,
       ellipsisHorizontal,
       bowlingBallOutline,
       mapOutline,

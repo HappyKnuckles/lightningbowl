@@ -39,14 +39,19 @@
               <ion-label class="game-info">
                 <p>{{ game.date | date: "MM.dd.yyyy" }}</p>
                 <h2 class="title">Game {{ gameCount()! - $index }}</h2>
-                <p class="score" *ngIf="game.league && !isLeaguePage()">{{ game.league }}</p>
-                <p class="score" *ngIf="game.patterns && game.patterns.length > 0">{{ game.patterns.join(", ") }}</p>
+                <p class="score" *ngIf="game.league && !isLeaguePage()">
+                  <ion-icon name="trophy-outline"></ion-icon>
+                  <span>{{ game.league }}</span>
+                </p>
+                <p class="score" *ngIf="game.patterns && game.patterns.length > 0">
+                  <ion-icon src="assets/svg/lane.svg"></ion-icon>
+                  <span>{{ game.patterns.join(", ") }}</span>
+                </p>
               </ion-label>
               <div slot="end" class="score-badge">
                 <div class="score-text">
                   {{ game.totalScore }}
                 </div>
-
                 <div class="score-bar">
                   <div class="score-fill" [style.--fill]="(game.totalScore / 300) * 100" [style.width.%]="(game.totalScore / 300) * 100"></div>
                 </div>
@@ -159,7 +164,7 @@
                 </div>
               } @else {
                 <ion-item class="league" [disabled]="leagues().length === 0">
-                  <ion-icon name="medal-outline" slot="start"></ion-icon>
+                  <ion-icon name="trophy-outline" slot="start"></ion-icon>
                   <ion-select
                     name="league"
                     [(ngModel)]="game.league"

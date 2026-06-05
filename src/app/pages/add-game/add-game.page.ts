@@ -25,7 +25,7 @@ import {
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
-import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, medalOutline } from 'ionicons/icons';
+import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, trophyOutline } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { cloneFrames, createEmptyGame, Frame, Game, GameDraft, PinModeState, toCompletedFramesGame } from 'src/app/core/models/game.model';
@@ -169,7 +169,7 @@ export class AddGamePage implements OnInit {
     private gameImageImport: GameImageImportService,
     private gameStatsService: GameStatsService,
   ) {
-    addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, medalOutline, documentTextOutline, add });
+    addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, trophyOutline, documentTextOutline, add });
     effect(() => {
       const games = this.games();
       const pinModeState = this.pinModeState();

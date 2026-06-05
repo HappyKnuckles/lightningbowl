@@ -39,9 +39,9 @@ import {
   filterOutline,
   gridOutline,
   layersOutline,
-  medalOutline,
   shareOutline,
   trashOutline,
+  trophyOutline,
 } from 'ionicons/icons';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
@@ -61,13 +61,13 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
-import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
-import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 
 interface MonthHeader {
   name: string;
@@ -231,7 +231,7 @@ export class GameListComponent implements OnInit {
       bowlingBallOutline,
       gridOutline,
       documentTextOutline,
-      medalOutline,
+      trophyOutline,
       cloudUploadOutline,
       cloudDownloadOutline,
       filterOutline,

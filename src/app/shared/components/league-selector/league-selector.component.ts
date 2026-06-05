@@ -18,7 +18,7 @@ import {
 } from '@ionic/angular/standalone';
 import { IonSelectCustomEvent } from '@ionic/core';
 import { addIcons } from 'ionicons';
-import { addOutline, createOutline, medalOutline } from 'ionicons/icons';
+import { addOutline, createOutline, trophyOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
@@ -83,7 +83,7 @@ export class LeagueSelectorComponent {
     //     this.getLeagues();
     //   })
     // );
-    addIcons({ medalOutline, addOutline, createOutline });
+    addIcons({ trophyOutline, addOutline, createOutline });
   }
 
   async onLeagueChange(event: IonSelectCustomEvent<SelectChangeEventDetail>): Promise<void> {

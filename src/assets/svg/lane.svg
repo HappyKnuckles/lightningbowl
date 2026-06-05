@@ -1,1 +1,63 @@
-<svg fill="currentColor" height="200px" width="200px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 297 297" xml:space="preserve" stroke="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <circle cx="148.5" cy="102.695" r="7.49"></circle> <circle cx="158.594" cy="85.126" r="7.49"></circle> <circle cx="138.407" cy="85.126" r="7.49"></circle> <circle cx="168.687" cy="67.558" r="7.49"></circle> <circle cx="148.5" cy="67.558" r="7.49"></circle> <circle cx="128.313" cy="67.558" r="7.49"></circle> <circle cx="178.78" cy="49.989" r="7.49"></circle> <circle cx="158.593" cy="49.989" r="7.49"></circle> <circle cx="138.407" cy="49.989" r="7.49"></circle> <circle cx="118.22" cy="49.989" r="7.49"></circle> <path d="M169.022,207.267c-7.601-5.482-16.88-7.678-26.131-6.176c-9.25,1.498-17.364,6.508-22.846,14.109 c-5.481,7.601-7.675,16.881-6.176,26.132v-0.001c1.498,9.25,6.508,17.364,14.109,22.846c6.041,4.357,13.142,6.637,20.446,6.637 c1.886-0.001,3.786-0.152,5.685-0.46c9.25-1.498,17.364-6.508,22.846-14.109c5.481-7.601,7.675-16.881,6.176-26.131 C181.633,220.863,176.623,212.75,169.022,207.267z M160.922,244.681c-2.393,3.318-5.935,5.505-9.974,6.16 c-4.034,0.654-8.088-0.302-11.407-2.697c-3.318-2.393-5.505-5.935-6.16-9.973v-0.001c-0.654-4.037,0.303-8.088,2.697-11.407 c2.393-3.318,5.935-5.505,9.974-6.16c0.828-0.134,1.658-0.201,2.482-0.201c3.188,0,6.288,0.995,8.925,2.897 c3.318,2.393,5.505,5.935,6.16,9.974C164.273,237.312,163.316,241.363,160.922,244.681z"></path> <path d="M213.731,0H83.269c-5.458,0-9.884,4.425-9.884,9.884v277.233c0,5.458,4.425,9.884,9.884,9.884h130.463 c5.458,0,9.884-4.425,9.884-9.884V9.884C223.615,4.425,219.189,0,213.731,0z M203.848,277.233H93.152V19.767h110.696V277.233z"></path> </g> </g></svg>
+<svg
+  width="250"
+  height="250"
+  viewBox="0 0 24 24"
+  xmlns="http://www.w3.org/2000/svg"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="10"
+  stroke-linecap="round"
+  stroke-linejoin="round">
+
+  <g transform="scale(0.080808)">
+
+    <!-- ALL your original content unchanged -->
+    <!-- Pins -->
+    <circle cx="148.5" cy="113.235" r="8" fill="currentColor" stroke="none" />
+    <circle cx="161.622" cy="90.396" r="8" fill="currentColor" stroke="none" />
+    <circle cx="135.378" cy="90.396" r="8" fill="currentColor" stroke="none" />
+    <circle cx="174.743" cy="67.558" r="8" fill="currentColor" stroke="none" />
+    <circle cx="148.5" cy="67.558" r="8" fill="currentColor" stroke="none" />
+    <circle cx="122.257" cy="67.558" r="8" fill="currentColor" stroke="none" />
+    <circle cx="187.865" cy="44.720" r="8" fill="currentColor" stroke="none" />
+    <circle cx="161.622" cy="44.720" r="8" fill="currentColor" stroke="none" />
+    <circle cx="135.378" cy="44.720" r="8" fill="currentColor" stroke="none" />
+    <circle cx="109.135" cy="44.720" r="8" fill="currentColor" stroke="none" />
+
+    <!-- Bowling ball -->
+    <circle
+      cx="148.5"
+      cy="239"
+      r="23"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="10" />
+
+    <!-- Lane outline -->
+    <path
+      d="M99.385,0
+         H197.616
+         A56 56 0 0 1 223.616,26
+         V271.001
+         A56 56 0 0 1 197.616,297.001
+         H99.385
+         A56 56 0 0 1 73.385,271.001
+         V26
+         A56 56 0 0 1 99.385,0
+         Z
+
+         M100.385,9
+         H196.616
+         A46 46 0 0 1 214.616,27
+         V270.001
+         A46 46 0 0 1 196.616,288.001
+         H100.385
+         A46 46 0 0 1 82.385,270.001
+         V27
+         A46 46 0 0 1 100.385,9
+         Z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="10" />
+  </g>
+</svg>

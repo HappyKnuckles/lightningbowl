@@ -5,13 +5,11 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
   IonModal,
   IonRippleEffect,
   IonTitle,
   IonToolbar,
+  IonText,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
@@ -20,21 +18,7 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 @Component({
   selector: 'app-pin-leave-stats',
-  imports: [
-    IonList,
-    IonItem,
-    IonLabel,
-    PinDeckComponent,
-    IonModal,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonButton,
-    IonIcon,
-    IonContent,
-    IonRippleEffect,
-  ],
+  imports: [IonText, PinDeckComponent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonRippleEffect],
   templateUrl: './pin-leave-stats.component.html',
   styleUrl: './pin-leave-stats.component.scss',
 })

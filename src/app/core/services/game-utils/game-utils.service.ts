@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { createThrow, Frame, getThrowValue, Throw } from '../../models/game.model';
+import { PINS } from '../../constants/app.constants';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];
@@ -11,8 +12,6 @@ export interface PinThrowResult {
   providedIn: 'root',
 })
 export class GameUtilsService {
-  private readonly ALL_PINS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
   private readonly UNMAKEABLE_SPLITS = [
     [7, 10],
     [4, 6],
@@ -218,33 +217,33 @@ export class GameUtilsService {
   }
 
   getAvailablePins(frameIndex: number, throwIndex: number, frameThrows: Throw[]): number[] {
-    if (throwIndex === 0) return this.ALL_PINS;
+    if (throwIndex === 0) return PINS;
 
     const prevThrow = frameThrows[throwIndex - 1];
-    if (!prevThrow) return this.ALL_PINS;
+    if (!prevThrow) return PINS;
 
     // 10th Frame Special Logic
     if (frameIndex === 9) {
-      if (throwIndex === 1 && prevThrow.value === 10) return this.ALL_PINS; // Strike resets
+      if (throwIndex === 1 && prevThrow.value === 10) return PINS; // Strike resets
 
       if (throwIndex === 2) {
         const firstVal = frameThrows[0]?.value ?? 0;
         const secondVal = prevThrow.value ?? 0;
 
         // X X _ -> Reset
-        if (secondVal === 10) return this.ALL_PINS;
+        if (secondVal === 10) return PINS;
         // X 5 / -> Reset (Spare)
-        if (firstVal !== 10 && firstVal + secondVal === 10) return this.ALL_PINS;
+        if (firstVal !== 10 && firstVal + secondVal === 10) return PINS;
         // 5 / X -> Reset (Spare - captured)
       }
     }
 
     if (prevThrow.pinsLeftStanding?.length) return prevThrow.pinsLeftStanding;
-    if (prevThrow.pinsKnockedDown?.length) return this.ALL_PINS.filter((p) => !prevThrow.pinsKnockedDown!.includes(p));
+    if (prevThrow.pinsKnockedDown?.length) return PINS.filter((p) => !prevThrow.pinsKnockedDown!.includes(p));
 
     if (prevThrow.value === 10) return [];
 
-    return this.ALL_PINS;
+    return PINS;
   }
 
   // SPLIT & PATTERN LOGIC
@@ -479,12 +478,12 @@ export class GameUtilsService {
 
     // 10th Frame Logic
     if (throwIndex === 0) {
-      const availableForSecond = value === 10 ? this.ALL_PINS : pinsStandingAfter;
+      const availableForSecond = value === 10 ? PINS : pinsStandingAfter;
       this.validateOrClearThrow(nextThrow, availableForSecond, frame, 1);
     } else if (throwIndex === 1) {
       if (frame.throws.length > 2) {
         const firstVal = frame.throws[0].value;
-        const availableForThird = (firstVal === 10 && value === 10) || firstVal + value === 10 ? this.ALL_PINS : pinsStandingAfter;
+        const availableForThird = (firstVal === 10 && value === 10) || firstVal + value === 10 ? PINS : pinsStandingAfter;
 
         this.validateOrClearThrow(frame.throws[2], availableForThird, frame, 2);
       }

@@ -97,20 +97,21 @@ const STATS = {
   },
 
   // Play frequency
-  averageGamesPerWeek: { label: 'Average games per week', key: 'averageGamesPerWeek' },
-  averageGamesPerMonth: { label: 'Average games per month', key: 'averageGamesPerMonth' },
+  averageGamesPerWeek: { label: 'Games per week', key: 'averageGamesPerWeek' },
+  averageGamesPerMonth: { label: 'Games per month', key: 'averageGamesPerMonth' },
+  averageGamesPerYear: { label: 'Games per year', key: 'averageGamesPerYear' },
   averageSessionsPerWeek: {
-    label: 'Average sessions per week',
+    label: 'Sessions per week',
     key: 'averageSessionsPerWeek',
     toolTip: 'This is how often you usually bowl in a week.',
   },
   averageSessionsPerMonth: {
-    label: 'Average sessions per month',
+    label: 'Sessions per month',
     key: 'averageSessionsPerMonth',
     toolTip: 'This is how often you usually bowl in a month.',
   },
   averageGamesPerSession: {
-    label: 'Average games per session',
+    label: 'Games per session',
     key: 'averageGamesPerSession',
     toolTip: 'This is the amount of games you bowl on average in a session.',
   },

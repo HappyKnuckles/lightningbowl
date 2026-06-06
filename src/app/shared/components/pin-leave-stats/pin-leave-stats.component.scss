@@ -33,8 +33,9 @@ ion-list {
 
 .stat-container {
   margin-bottom: 20px;
+  margin-top: 12px;
 
-  .ripple-parent {
+  &.ripple-parent {
     position: relative;
     overflow: hidden;
   }
@@ -53,7 +54,7 @@ ion-list {
   align-items: center;
   width: 100%;
   gap: 16px;
-  padding: 8px 4px;
+  padding: 8px 20px;
 }
 
 .pin-deck-wrapper {
@@ -65,25 +66,31 @@ ion-list {
 }
 
 .leave-stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
   flex: 1;
-  justify-content: space-around;
   gap: 12px;
 
-  ion-label {
+  ion-text {
     text-align: center;
+
+    &:last-child {
+      text-align: right;
+    }
 
     h3 {
       font-size: 0.75rem;
       font-weight: 600;
-      margin: 0 0 4px 0;
+      margin: 0 0 4px;
       color: var(--ion-color-medium);
     }
 
     p {
-      font-size: 1rem;
-      font-weight: bold;
       margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ion-text-color, #ece4d4);
+      letter-spacing: -0.01em;
     }
   }
 }

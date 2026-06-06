@@ -183,7 +183,13 @@
         </table>
 
         <!-- PLAY FREQUENCY -->
-        <h2 class="sec-heading"><span>Play frequency</span><span class="divider-line"></span></h2>
+        <app-stat-display
+          [title]="'Play Frequency'"
+          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
+          [currentStats]="stats"
+          [prevStats]="prevStats">
+        </app-stat-display>
+        <!-- <h2 class="sec-heading"><span>Play frequency</span><span class="divider-line"></span></h2>
         <div class="stat-grid-3">
           @for (chip of playFrequencyChips(); track chip.key) {
             <dl class="stat-chip">
@@ -191,7 +197,7 @@
               <dd class="chip-val">{{ chip.value | number: "1.2-2" }}</dd>
             </dl>
           }
-        </div>
+        </div> -->
 
         <!-- SPECIAL STATS -->
         <h2 class="sec-heading"><span>Special stats</span><span class="divider-line"></span></h2>

@@ -1,50 +1,47 @@
-<ion-list (click)="openModal()" (keydown.enter)="openModal()" role="button">
-  <div class="pls-heading">
-    <span>{{ title() }}</span>
-    <span class="divider-line"></span>
-    @if (allLeaves()?.length) {
-      <ion-icon name="chevron-forward-outline" class="pls-chevron"></ion-icon>
-    }
-  </div>
+<h2 class="pls-heading">
+  <span>{{ title() }}</span>
+  <span class="divider-line"></span>
+  @if (allLeaves()?.length) {
+    <ion-icon name="chevron-forward-outline" class="pls-chevron"></ion-icon>
+  }
+</h2>
 
-  <div
-    class="stat-container"
-    [class.ion-activatable]="allLeaves()"
-    [class.ripple-parent]="allLeaves()"
-    [attr.tabindex]="allLeaves() ? '0' : null"
-    [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null">
-    @if (leaveStats().length === 0) {
-      <p class="leave-empty">No Games with pin-data saved.</p>
-    } @else {
-      @for (leave of leaveStats(); track $index) {
-        <ion-item lines="none" class="leave-item">
-          <div class="leave-container">
-            <div class="pin-deck-wrapper">
-              <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
-            </div>
-            <div class="leave-stats">
-              <ion-label>
-                <h3>Occurrences</h3>
-                <p>{{ leave.occurrences }}</p>
-              </ion-label>
-              <ion-label>
-                <h3>Pickups</h3>
-                <p>{{ leave.pickups }}</p>
-              </ion-label>
-              <ion-label>
-                <h3>Pickup %</h3>
-                <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
-              </ion-label>
-            </div>
-          </div>
-        </ion-item>
-      }
+<div
+  class="stat-container"
+  [class.ion-activatable]="allLeaves()"
+  [class.ripple-parent]="allLeaves()"
+  [attr.tabindex]="allLeaves() ? '0' : null"
+  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  (keydown.space)="openModal()">
+  @if (leaveStats().length === 0) {
+    <p class="leave-empty">No Games with pin-data saved.</p>
+  } @else {
+    @for (leave of leaveStats(); track $index) {
+      <div class="leave-container">
+        <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
+        <div class="leave-stats">
+          <ion-text>
+            <h3>Occurrences</h3>
+            <p>{{ leave.occurrences }}</p>
+          </ion-text>
+          <ion-text>
+            <h3>Pickups</h3>
+            <p>{{ leave.pickups }}</p>
+          </ion-text>
+          <ion-text>
+            <h3>Pickup %</h3>
+            <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
+          </ion-text>
+        </div>
+      </div>
     }
-    @if (allLeaves()?.length) {
-      <ion-ripple-effect></ion-ripple-effect>
-    }
-  </div>
-</ion-list>
+  }
+  @if (allLeaves()?.length) {
+    <ion-ripple-effect></ion-ripple-effect>
+  }
+</div>
 
 @if (allLeaves()) {
   <ion-modal #allLeaves [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
@@ -60,43 +57,37 @@
         </ion-toolbar>
       </ion-header>
       <ion-content>
-        <ion-list style="padding: 8px 0 16px">
-          <div class="stat-container">
-            @if (sortedAllLeaves().length === 0) {
-              <div class="inner-stat-container">
-                <div class="leave-container">
-                  <div class="leave-stats">
-                    <p>No stats available.</p>
-                  </div>
+        <div class="stat-container">
+          @if (sortedAllLeaves().length === 0) {
+            <div class="inner-stat-container">
+              <div class="leave-container">
+                <div class="leave-stats">
+                  <p>No stats available.</p>
                 </div>
               </div>
-            } @else {
-              @for (leave of sortedAllLeaves(); track $index) {
-                <ion-item lines="none" class="leave-item">
-                  <div class="leave-container">
-                    <div class="pin-deck-wrapper">
-                      <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
-                    </div>
-                    <div class="leave-stats">
-                      <ion-label>
-                        <h3>Occurrences</h3>
-                        <p>{{ leave.occurrences }}</p>
-                      </ion-label>
-                      <ion-label>
-                        <h3>Pickups</h3>
-                        <p>{{ leave.pickups }}</p>
-                      </ion-label>
-                      <ion-label>
-                        <h3>Pickup %</h3>
-                        <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
-                      </ion-label>
-                    </div>
-                  </div>
-                </ion-item>
-              }
+            </div>
+          } @else {
+            @for (leave of sortedAllLeaves(); track $index) {
+              <div class="leave-container">
+                <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
+                <div class="leave-stats">
+                  <ion-text>
+                    <h3>Occurrences</h3>
+                    <p>{{ leave.occurrences }}</p>
+                  </ion-text>
+                  <ion-text>
+                    <h3>Pickups</h3>
+                    <p>{{ leave.pickups }}</p>
+                  </ion-text>
+                  <ion-text>
+                    <h3>Pickup %</h3>
+                    <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
+                  </ion-text>
+                </div>
+              </div>
             }
-          </div>
-        </ion-list>
+          }
+        </div>
       </ion-content>
     </ng-template>
   </ion-modal>

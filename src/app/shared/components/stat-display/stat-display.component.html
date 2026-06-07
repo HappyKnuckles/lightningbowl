@@ -1,5 +1,5 @@
 <div class="stat-wrapper">
-  <h2 class="stat-title" *ngIf="title">{{ title }}</h2>
+  <h2 class="stat-heading" *ngIf="title">{{ title }}</h2>
   <ul class="stat-card">
     @for (stat of statDefinitions; track stat.key) {
       <li class="stat-row">

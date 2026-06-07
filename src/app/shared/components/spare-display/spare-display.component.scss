@@ -1,9 +1,9 @@
 .stat-heading {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   margin: 12px 16px 12px;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -22,7 +22,6 @@
   padding: 18px 20px 16px;
   border-bottom: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 
-
   .spare-overall-top {
     display: flex;
     align-items: baseline;
@@ -32,7 +31,7 @@
 
   .spare-overall-label {
     margin: 0;
-    font-size: 11px;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -40,7 +39,7 @@
   }
 
   .spare-overall-rate {
-    font-size: 28px;
+    font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -51,10 +50,9 @@
       align-items: center;
     }
 
-
     &.spare-overall-rate--na {
       color: var(--ion-color-medium, #7c7c7a);
-      font-size: 22px;
+      font-size: 1.375rem;
     }
   }
 
@@ -63,7 +61,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--ion-color-medium, #7c7c7a);
 
     b {
@@ -101,8 +99,8 @@
 .arrow-icon {
   position: absolute;
   left: 100%;
-  margin-left: 5px;
-  font-size: 14px;
+  margin-left: 4px;
+  font-size: 0.875rem;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -148,7 +146,7 @@
   thead th {
     padding-top: 12px;
     padding-bottom: 8px;
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -166,7 +164,7 @@
     }
 
     ion-icon {
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
 
@@ -182,17 +180,16 @@
     border-bottom: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   }
 
-  tbody tr.empty {
-    opacity: 0.55;
+  tr.empty {
 
     .spare-pin {
-      color: var(--ion-color-medium, #7c7c7a);
+      color: var(--ion-color-step-350, #595959);
     }
   }
 
   .spare-pin {
     text-align: left;
-    font-size: 13.5px;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--ion-text-color);
     letter-spacing: 0.01em;
@@ -200,7 +197,7 @@
   }
 
   .spare-count {
-    font-size: 13px;
+    font-size: 0.875rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
 
@@ -252,14 +249,15 @@
   }
 
   .spare-rate {
-    font-size: 13px;
+    // vllt 1rem
+    position: relative;
+    font-size: 0.875rem;
     font-weight: 600;
     text-align: right;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
 
     .rate-wrap {
-      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: flex-end;
@@ -269,10 +267,13 @@
       display: block;
     }
 
+    .arrow-icon {
+      margin-left: 4px;
+    }
 
     &.spare-rate--na {
       color: var(--ion-color-step-350, #595959);
-      font-weight: 400;
+      font-weight: 800;
     }
   }
 }
@@ -304,7 +305,7 @@
   li {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   i {
@@ -325,7 +326,7 @@
 
   .legend-note {
     margin-left: auto;
-    font-size: 10px;
+    font-size: 0.625rem;
     opacity: 0.6;
   }
 }

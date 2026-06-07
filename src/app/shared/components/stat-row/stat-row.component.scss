@@ -14,8 +14,7 @@
     ion-icon {
       position: relative;
       vertical-align: middle;
-      margin-left: 3px;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
 
@@ -29,12 +28,12 @@
   .diff-icon {
     position: absolute;
     left: 100%;
-    margin-left: 5px;
-    font-size: 14px;
+    margin-left: 4px;
+    font-size: 0.875rem;
   }
 
   .value {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 800;
     color: var(--ion-text-color, #ece4d4);
     letter-spacing: -0.01em;

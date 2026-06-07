@@ -7,7 +7,7 @@ ion-list {
   align-items: center;
   gap: 9px;
   margin: 0 16px 12px;
-  font-size: 11px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -15,7 +15,7 @@ ion-list {
   cursor: pointer;
 
   .pls-chevron {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ion-color-medium, #7c7c7a);
     flex: none;
   }
@@ -67,7 +67,7 @@ ion-list {
 
 .leave-stats {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 2fr auto;
   flex: 1;
   gap: 12px;
 
@@ -80,7 +80,7 @@ ion-list {
 
     h3 {
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       margin: 0 0 4px;
       color: var(--ion-color-medium);
     }

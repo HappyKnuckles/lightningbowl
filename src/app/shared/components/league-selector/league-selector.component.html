@@ -8,7 +8,7 @@
   </ion-item>
 } @else {
   <ion-item>
-    <ion-icon name="medal-outline" slot="start"></ion-icon>
+    <ion-icon name="trophy-outline" slot="start"></ion-icon>
     <ion-select
       label="Leagues/Tournaments"
       (ionChange)="onLeagueChange($event)"
@@ -37,7 +37,7 @@
     </ion-header>
     <ion-content>
       <ion-item>
-        <ion-icon name="medal-outline" slot="start"></ion-icon>
+        <ion-icon name="trophy-outline" slot="start"></ion-icon>
         <ion-select label="Choose League" [(ngModel)]="leagueToChange">
           <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
         </ion-select>

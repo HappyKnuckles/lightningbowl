@@ -11,7 +11,7 @@
   color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
   margin-inline-start: 4px;
   margin-inline-end: 0;
-  font-size: 18px;
+  font-size: 1.125rem;
   --ionicon-stroke-width: 48px;
 }
 
@@ -19,49 +19,143 @@ ion-list {
   margin-bottom: 32px;
 }
 
-.sliding {
-  .note {
-    --inner-border-width: 0;
+ion-item-divider {
+  background: none;
+  padding: 0 16px 12px;
+  margin-top: 20px;
+
+  &:first-child {
+    margin-top: 12px;
   }
 
-  ion-item:not(.note, .league, .arsenal, .pattern) {
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--ion-thin-border-color, #2b2828);
+    margin-inline-start: 8px;
+  }
+
+  ion-badge {
+    background: var(--ion-card-background);
+    margin-left: 8px;
+    border: 1px solid var(--ion-thin-border-color, #2b2828);
+    color: var(--ion-text-color);
+  }
+}
+
+.sliding {
+  margin: 0 16px 12px;
+  border-radius: var(--card-border-radius, 14px);
+  border: 1px solid var(--ion-border-color, #2b2828);
+  width: auto;
+
+  >ion-item {
     --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-start: 0;
     --inner-padding-end: 0;
+    --min-height: 0;
   }
 
   ion-accordion {
-    background-color: transparent;
+    background: var(--ion-card-background);
 
-    .score {
-      font-size: 0.875rem;
-      color: lightgray;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      width: 90%;
-    }
-
-    .title {
-      font-weight: 600;
-      font-size: 1.1rem;
+    ion-item {
+      --background: var(--ion-card-background);
     }
 
     .game-info {
       display: flex;
       flex-direction: column;
-      margin-left: 20px;
+
+      .title {
+        font-weight: 600;
+        font-size: 1.125rem;
+      }
+
+      .score {
+        font-size: 0.75rem;
+        color: var(--ion-color-step-750);
+        width: 90%;
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+
+        ion-icon {
+          flex-shrink: 0;
+          margin-top: 1px;
+          font-size: 0.75rem;
+        }
+
+        span {
+          min-width: 0;
+          flex: 1;
+        }
+      }
     }
 
-    ::ng-deep .ion-accordion-toggle-icon {
-      margin-right: 20px;
-      font-size: 1.375rem;
+    .score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      // maybe delete if bar as big as number
+      min-width: 80px;
+      margin-right: 12px;
+    }
+
+    .score-text {
+      text-align: right;
+      margin-bottom: 4px;
+      font-size: 1.125rem;
+      font-weight: 800;
+    }
+
+    // maybe
+    // .score-text {
+    //   text-align: right;
+    //   margin-bottom: 4px;
+    //   font-size: 1.15rem;
+    //   font-weight: 800;
+
+    //   background: linear-gradient(90deg,
+    //       var(--ion-color-primary) 0%,
+    //       var(--ion-color-primary) 60%,
+    //       var(--ion-color-secondary) 100%);
+
+    //   -webkit-background-clip: text;
+    //   -webkit-text-fill-color: transparent;
+
+    //   background-clip: text;
+    //   color: transparent;
+    // }
+
+    .score-bar {
+      height: 3px;
+      // maybe delete if bar as big as number
+      width: 60%;
+      margin-left: auto;
+      background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+      border-radius: var(--card-border-radius, 14px);
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-secondary));
+      background-size: calc(10000% / var(--fill, 100)) 100%;
+      background-position: left;
+      transition: width 0.9s cubic-bezier(0.4, 0, 0.1, 1);
+    }
+
+    .note {
+      --inner-border-width: 0;
     }
   }
 
   .action-row {
     display: flex;
     justify-content: space-between;
-    margin: 5px 8px;
+    margin: 4px 8px;
 
     ion-button {
       min-width: 96px;
@@ -81,4 +175,8 @@ ion-list {
     height: 22px;
     min-height: 22px;
   }
+}
+
+:host ::ng-deep app-pin-input .pin-input-container {
+  background: var(--ion-card-background);
 }

@@ -9,7 +9,7 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
+  @if (hasGames()) {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)" scrollable="true">
         @for (segment of segments; track segment) {
@@ -25,7 +25,7 @@
     </app-generic-filter-active>
   </ion-toolbar>
 
-  @if (!((gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) || gameFilterService.filteredGames().length <= 0)) {
+  @if (hasGames()) {
     <ion-toolbar [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'" class="ion-activatable ion-ripple-parent">
       <ion-select
         class="date-picker"
@@ -49,124 +49,228 @@
   </ion-refresher>
 
   <ion-segment-view>
+    @let stats = statsService.currentStats();
+    @let prevStats = statsService.prevStats();
+
     <ion-segment-content id="Overall">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Overall Stats'"
-          [statDefinitions]="OVERALL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Play Frequency Stats'"
-          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-stat-display
-          [title]="'Special Stats'"
-          [statDefinitions]="SPECIAL_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
-        </app-stat-display>
-        <app-ball-stats
+        <!-- SCORING -->
+        <h2 class="sec-heading"><span>Scoring</span><span class="divider-line"></span></h2>
+        <dl class="feature-card">
+          <dt class="feature-label">Average</dt>
+          <dd class="feature-row">
+            <span class="feature-val">{{ stats.averageScore | number: "1.2-2" }}</span>
+            @if (scoreTrend()) {
+              <span class="feature-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
+                <ion-icon [name]="scoreTrend() === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
+                {{ scoreTrend() === "up" ? "Trending up" : "Trending down" }}
+              </span>
+            }
+          </dd>
+        </dl>
+
+        <div class="stat-grid-3">
+          <dl class="stat-chip">
+            <dt class="chip-key">Games</dt>
+            <dd class="chip-val">{{ stats.totalGames }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">High game</dt>
+            <dd class="chip-val">{{ stats.highGame }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">Total pins</dt>
+            <dd class="chip-val">{{ stats.totalPins | number }}</dd>
+          </dl>
+        </div>
+
+        <!-- SCORE ANALYSIS -->
+        <h2 class="sec-heading"><span>Score analysis</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
+
+        <!-- ACCURACY -->
+        <h2 class="sec-heading"><span>Accuracy</span><span class="divider-line"></span></h2>
+        <ul class="acc-card">
+          @for (row of accuracyRows(); track row.label; let last = $last) {
+            <li class="acc-item" [class.last]="last">
+              <div class="acc-row">
+                <span class="acc-label">{{ row.label }}</span>
+                <span class="acc-val">{{ row.value | number: "1.2-2" }}{{ row.suffix }}</span>
+              </div>
+              <div
+                class="acc-track"
+                role="progressbar"
+                [attr.aria-valuenow]="row.fill"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-label]="row.label">
+                <div class="acc-fill" [style.width.%]="row.fill" [style.--fill]="row.fill || 1"></div>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <!-- GAME QUALITY -->
+        <h2 class="sec-heading"><span>Game quality</span><span class="divider-line"></span></h2>
+        <div class="stat-grid-3">
+          <dl class="stat-chip">
+            <dt class="chip-key">Perfect games</dt>
+            <dd class="chip-val">{{ stats.perfectGameCount }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">Clean games</dt>
+            <dd class="chip-val">{{ stats.cleanGameCount }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">Clean game %</dt>
+            <dd class="chip-val">{{ stats.cleanGamePercentage | number: "1.1-1" }}%</dd>
+          </dl>
+        </div>
+
+        <!-- MOST USED BALL -->
+        <app-stat-ball
           [title]="'Most used ball'"
           [bestBall]="statsService.mostPlayedBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
-        <app-ball-stats
+          [totalGames]="stats.totalGames"
+          [allBalls]="statsService.allBallStats()">
+        </app-stat-ball>
+
+        <!-- BEST BALL -->
+        <app-stat-ball
           [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allBalls]="statsService.allBallStats()"></app-ball-stats>
-        <app-pattern-stats
+          [totalGames]="stats.totalGames"
+          [allBalls]="statsService.allBallStats()">
+        </app-stat-ball>
+
+        <!-- MOST PLAYED PATTERN -->
+        <app-stat-pattern
           [title]="'Most played pattern'"
           [bestPattern]="statsService.mostPlayedPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
-        <app-pattern-stats
+          [totalGames]="stats.totalGames"
+          [allPatterns]="statsService.allPatternStats()">
+        </app-stat-pattern>
+
+        <!-- BEST PATTERN -->
+        <app-stat-pattern
           [title]="'Best pattern'"
           [bestPattern]="statsService.bestPatternStats()"
-          [totalGames]="statsService.currentStats().totalGames"
-          [allPatterns]="statsService.allPatternStats()"></app-pattern-stats>
+          [totalGames]="stats.totalGames"
+          [allPatterns]="statsService.allPatternStats()">
+        </app-stat-pattern>
+
+        <!-- SERIES STATS -->
+        <h2 class="sec-heading"><span>Series stats</span><span class="divider-line"></span></h2>
+        <table class="series-card">
+          <thead>
+            <tr class="series-header">
+              <th scope="col">Series</th>
+              <th scope="col">Avg</th>
+              <th scope="col">High</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of seriesRows(); track row.label; let last = $last) {
+              <tr class="series-row" [class.last]="last" [class.empty]="!row.avg">
+                <th scope="row" class="series-label">{{ row.label }}</th>
+                <td class="series-val">{{ row.avg ? (row.avg | number: "1.2-2") : "—" }}</td>
+                <td class="series-val">{{ row.high || "—" }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <!-- PLAY FREQUENCY -->
         <app-stat-display
-          [title]="'Series Stats'"
-          [statDefinitions]="SERIES_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+          [title]="'Play Frequency'"
+          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
+          [currentStats]="stats"
+          [prevStats]="prevStats">
         </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Score Analysis</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreChart class="score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
+        <!-- <h2 class="sec-heading"><span>Play frequency</span><span class="divider-line"></span></h2>
+        <div class="stat-grid-3">
+          @for (chip of playFrequencyChips(); track chip.key) {
+            <dl class="stat-chip">
+              <dt class="chip-key">{{ chip.key }}</dt>
+              <dd class="chip-val">{{ chip.value | number: "1.2-2" }}</dd>
+            </dl>
+          }
+        </div> -->
+
+        <!-- SPECIAL STATS -->
+        <h2 class="sec-heading"><span>Special stats</span><span class="divider-line"></span></h2>
+        <div class="stat-grid-3">
+          <dl class="stat-chip">
+            <dt class="chip-key">Dutch 200s</dt>
+            <dd class="chip-val">{{ stats.dutch200Count ?? 0 }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">Varipapa 300s</dt>
+            <dd class="chip-val">{{ stats.varipapa300Count ?? 0 }}</dd>
+          </dl>
+          <dl class="stat-chip">
+            <dt class="chip-key">All spare games</dt>
+            <dd class="chip-val">{{ stats.allSparesGameCount ?? 0 }}</dd>
+          </dl>
         </div>
-        <ion-list-header style="margin-bottom: 4px"> Average Score</ion-list-header>
-        <div class="stat-container">
-          <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-        <ion-list-header style="margin-bottom: 4px"> Score Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
+
+        <!-- AVERAGE SCORE CHART -->
+        <h2 class="sec-heading"><span>Average score</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #averageScoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
+
+        <!-- SCORE DISTRIBUTION -->
+        <h2 class="sec-heading"><span>Score distribution</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #scoreDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
       </section>
     </ion-segment-content>
 
     <ion-segment-content id="Throws">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Throw Stats'"
-          [statDefinitions]="THROW_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <app-stat-display
-          [title]="'Strike Stats'"
-          [statDefinitions]="STRIKE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Throw Distribution </ion-list-header>
-        <div class="stat-container">
-          <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
+        <h2 class="sec-heading"><span>Throw distribution</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
       </section>
     </ion-segment-content>
 
     <ion-segment-content id="Spares">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-spare-display
-          [title]="'Spare Stats'"
-          [stats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()"
-          id="overalSpareStats"></app-spare-display>
+        <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overalSpareStats"> </app-stat-spare>
         <app-stat-display
-          [title]="'Spare Conversion by Pin Count'"
+          [title]="'Spare conversion by pin count'"
           [statDefinitions]="SPARE_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+          [currentStats]="stats"
+          [prevStats]="prevStats">
         </app-stat-display>
-        <ion-list-header style="margin-bottom: 4px"> Converted vs Missed Spares</ion-list-header>
-        <div class="stat-container">
-          <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
-        <ion-list-header style="margin-bottom: 4px"> Spare Distribution</ion-list-header>
-        <div class="stat-container">
-          <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 700px"></canvas>
-        </div>
+        <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
+        <h2 class="sec-heading"><span>Spare distribution</span><span class="divider-line"></span></h2>
+        <figure class="chart-card">
+          <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
+        </figure>
       </section>
     </ion-segment-content>
 
     <ion-segment-content id="Pins">
       <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-display
-          [title]="'Pin Stats'"
-          [statDefinitions]="PIN_STAT_DEFINITIONS"
-          [currentStats]="statsService.currentStats()"
-          [prevStats]="statsService.prevStats()">
+        <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
-        <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="statsService.bestLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="statsService.worstLeaves()"> </app-pin-leave-stats>
-        <app-pin-leave-stats [title]="'Most Common Leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
-        </app-pin-leave-stats>
+        <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-stat-pin-leave>
+        <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-stat-pin-leave>
+        <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+        </app-stat-pin-leave>
       </section>
     </ion-segment-content>
 
@@ -174,46 +278,47 @@
       @if (gameFilterService.filteredGames().length > 0) {
         <section class="tab">
           <app-stat-display
-            [title]="'Overall Stats'"
+            [title]="'Overall stats'"
             [statDefinitions]="SESSION_STAT_DEFINITIONS"
             [currentStats]="sessionStats()"
-            [prevStats]="statsService.currentStats()">
+            [prevStats]="stats">
           </app-stat-display>
-          <app-ball-stats
+          <app-stat-best-ball
             [title]="'Most used ball'"
             [bestBall]="sessionMostPlayedBallStats()"
             [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()"></app-ball-stats>
-          <app-ball-stats
+            [allBalls]="sessionAllBallStats()">
+          </app-stat-best-ball>
+          <app-stat-best-ball
             [title]="'Best ball'"
             [bestBall]="sessionBestBallStats()"
             [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()"></app-ball-stats>
-          <app-pattern-stats
+            [allBalls]="sessionAllBallStats()">
+          </app-stat-best-ball>
+          <app-stat-best-pattern
             [title]="'Most played pattern'"
             [bestPattern]="sessionMostPlayedPatternStats()"
             [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
-          <app-pattern-stats
+            [allPatterns]="sessionAllPatternStats()">
+          </app-stat-best-pattern>
+          <app-stat-best-pattern
             [title]="'Best pattern'"
             [bestPattern]="sessionBestPatternStats()"
             [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()"></app-pattern-stats>
-          <app-stat-display [title]="'Pin Stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"> </app-stat-display>
-          <app-spare-display [title]="'Spare Stats'" [prevStats]="statsService.currentStats()" [stats]="sessionStats()" [id]="'sessionSpareStats'">
-          </app-spare-display>
-          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="sessionLeaves().best"></app-pin-leave-stats>
-          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="sessionLeaves().worst"></app-pin-leave-stats>
-          <app-pin-leave-stats
-            [title]="'Most Common Leaves'"
-            [leaveStats]="sessionLeaves().common"
-            [allLeaves]="sessionAllLeaves()"></app-pin-leave-stats>
+            [allPatterns]="sessionAllPatternStats()">
+          </app-stat-best-pattern>
+          <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
+          <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
+          <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-stat-pin-leave>
+          <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-stat-pin-leave>
+          <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
+          </app-stat-pin-leave>
         </section>
       }
     </ion-segment-content>
   </ion-segment-view>
 
-  <!-- Show this message if there are no game history items and it's not loading -->
+  <!-- No data states -->
   <ng-container *ngIf="gameFilterService.filteredGames().length <= 0">
     <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else checkFilteredGames">
       <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>

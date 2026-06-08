@@ -1,0 +1,39 @@
+<dl class="stats">
+  <dt class="stat-label">
+    <ion-text [id]="id() + '-tooltip'">
+      {{ label() }}:
+      @if (toolTip()) {
+        <ion-icon name="information-circle-outline"></ion-icon>
+      }
+    </ion-text>
+    @if (toolTip()) {
+      <ion-popover [trigger]="id() + '-tooltip'" size="cover" class="tooltip-popover">
+        <ion-text class="tooltip">{{ toolTip() }}</ion-text>
+      </ion-popover>
+    }
+  </dt>
+
+  <dd class="value-wrap">
+    @if (vm().showDiff) {
+      <ion-icon class="diff-icon" [name]="vm().arrowIcon" [color]="vm().diffColor"></ion-icon>
+    }
+    <ion-text class="value" [id]="id()">
+      @if (secondaryStat() !== undefined) {
+        {{ currentStat() | conditionalNumber }} / {{ secondaryStat()! | conditionalNumber }}
+      } @else {
+        {{ currentStat() | conditionalNumber }}
+        @if (isPercentage()) {
+          %
+        }
+      }
+    </ion-text>
+
+    @if (vm().showDiff) {
+      <ion-popover class="diff-popover" [trigger]="id()">
+        <ion-text [color]="vm().diffColor">
+          {{ vm().difference }}
+        </ion-text>
+      </ion-popover>
+    }
+  </dd>
+</dl>

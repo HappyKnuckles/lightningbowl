@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
-import { BestPatternStats } from 'src/app/core/models/stats.model';
+import { HighlightPatternStats } from 'src/app/core/models/stats.model';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 
 @Injectable({
@@ -9,7 +9,7 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 export class PatternStatsCalculatorService {
   constructor(private patternsStore: PatternsStore) {}
 
-  private _calculateAllPatternStats(gameHistory: Game[]): Record<string, BestPatternStats> {
+  private _calculateAllPatternStats(gameHistory: Game[]): Record<string, HighlightPatternStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);
     const tempStats: Record<
       string,
@@ -54,7 +54,7 @@ export class PatternStatsCalculatorService {
       });
     });
 
-    const finalStats: Record<string, BestPatternStats> = {};
+    const finalStats: Record<string, HighlightPatternStats> = {};
     for (const patternName in tempStats) {
       const stats = tempStats[patternName];
       const patternImage = this.patternsStore.patternImageMap()[patternName] ?? '';
@@ -74,14 +74,14 @@ export class PatternStatsCalculatorService {
     return finalStats;
   }
 
-  calculateAllPatternStats(gameHistory: Game[]): BestPatternStats[] {
+  calculateAllPatternStats(gameHistory: Game[]): HighlightPatternStats[] {
     return Object.values(this._calculateAllPatternStats(gameHistory));
   }
 
-  calculateBestPatternStats(gameHistory: Game[]): BestPatternStats {
+  calculateBestPatternStats(gameHistory: Game[]): HighlightPatternStats {
     const allPatternStats = this._calculateAllPatternStats(gameHistory);
     const patternNames = Object.keys(allPatternStats);
-    const defaultPattern: BestPatternStats = {
+    const defaultPattern: HighlightPatternStats = {
       patternName: '',
       patternImage: '',
       patternAvg: 0,
@@ -101,10 +101,10 @@ export class PatternStatsCalculatorService {
     }, defaultPattern);
   }
 
-  calculateMostPlayedPattern(gameHistory: Game[]): BestPatternStats {
+  calculateMostPlayedPattern(gameHistory: Game[]): HighlightPatternStats {
     const allPatternStats = this._calculateAllPatternStats(gameHistory);
     const patternNames = Object.keys(allPatternStats);
-    const defaultPattern: BestPatternStats = {
+    const defaultPattern: HighlightPatternStats = {
       patternName: '',
       patternImage: '',
       patternAvg: 0,

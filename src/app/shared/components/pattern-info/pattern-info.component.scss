@@ -1,8 +1,34 @@
+.pattern-container {
+  display: flex;
+  gap: 8px;
+  margin: 8px 16px;
+
+  .pattern-info {
+    display: grid;
+    width: 55%;
+
+    ion-chip {
+      justify-content: center;
+      border-radius: var(--card-border-radius);
+      border: 1px solid var(--ion-thin-border-color, #ffffff12);
+      background: var(--ion-card-background);
+
+      &:first-child {
+        margin-top: 0;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
 ion-grid {
   background-color: var(--ion-card-background);
   margin: 0 16px;
   padding: 4px;
-  border-radius: 7px;
+  border-radius: var(--card-border-radius);
   align-items: center;
   border: 1px solid var(--ion-border-color, #2b2828);
 
@@ -22,34 +48,7 @@ ion-grid {
 
     &:nth-child(even) {
       background-color: var(--ion-color-light-tint);
-      border-radius: 7px;
+      border-radius: var(--card-border-radius);
     }
   }
 }
-
-.pattern-container {
-  display: flex;
-  gap: 8px;
-  margin: 8px 16px;
-
-  .pattern-info {
-    display: grid;
-    width: 55%;
-
-    ion-chip {
-      border: 1px solid var(--ion-border-color, #2b2828);
-
-      &:first-child {
-        margin-top: 0;
-      }
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-}
-
-// .pattern-info{
-//   dis
-// }

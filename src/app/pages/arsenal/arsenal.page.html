@@ -189,10 +189,12 @@
                 >Diff:&nbsp;
                 <p class="info">{{ ball.core_diff }}</p></ion-text
               >
-              <ion-text
-                >Int. Diff:&nbsp;
-                <p class="info">{{ ball.core_int_diff }}</p></ion-text
-              >
+              @if (ball.core_int_diff) {
+                <ion-text
+                  >Int. Diff:&nbsp;
+                  <p class="info">{{ ball.core_int_diff }}</p></ion-text
+                >
+              }
             </div>
           </div>
         </ion-card-content>

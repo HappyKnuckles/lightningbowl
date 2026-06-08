@@ -344,6 +344,7 @@ export class OverallStatsCalculatorService {
     const months = totalDays / 30;
     const averageGamesPerWeek = totalGames / weeks || 0;
     const averageGamesPerMonth = totalGames / months || 0;
+    const averageGamesPerYear = totalGames / (totalDays / 365) || 0;
     const averageSessionsPerWeek = distinctDays.size / weeks || 0;
     const averageSessionsPerMonth = distinctDays.size / months || 0;
     const averageGamesPerSession = totalGames / distinctDays.size || 0;
@@ -420,6 +421,7 @@ export class OverallStatsCalculatorService {
       high6Series: seriesStats.high6Series,
       averageGamesPerWeek,
       averageGamesPerMonth,
+      averageGamesPerYear,
       averageSessionsPerWeek,
       averageSessionsPerMonth,
       averageGamesPerSession,

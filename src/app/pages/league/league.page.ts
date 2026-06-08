@@ -56,11 +56,11 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
-import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
+import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
-import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
+import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
+import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
+import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
 
 @Component({
   selector: 'app-league',
@@ -88,15 +88,15 @@ import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/
     NgIf,
     DecimalPipe,
     StatDisplayComponent,
-    SpareDisplayComponent,
     IonSegmentButton,
     IonSegment,
     IonSegmentView,
     IonSegmentContent,
     LongPressDirective,
-    BallStatsComponent,
-    PatternStatsComponent,
-    PinLeaveStatsComponent,
+    StatPatternComponent,
+    StatBallComponent,
+    StatSpareComponent,
+    StatPinLeaveComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

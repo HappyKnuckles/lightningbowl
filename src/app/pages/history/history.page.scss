@@ -15,7 +15,7 @@ ion-grid {
 
   --ion-grid-padding: 0;
 
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
 }
 
 .action-sheet {
@@ -31,7 +31,7 @@ ion-grid {
 ion-input {
   text-align: center;
   background-color: var(--ion-color-secondary);
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
   min-height: 35px !important;
   height: 35px;
 }
@@ -55,7 +55,7 @@ ion-row {
   color: black;
   background: var(--ion-color-primary);
   padding: 1px;
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
   z-index: 15555;
-  font-size: 14px;
+  font-size: 0.875rem;
 }

@@ -307,11 +307,16 @@ body {
   --ion-item-background: #0d0d0d;
   --ion-card-background: #141414;
   --ion-border-color: #2b2828;
+  --ion-thin-border-color: #ffffff12;
+  --default-border-radius: 7px;
+  --card-border-radius: 14px;
+  --small-border-radius: 5px;
 }
 
 .ios ion-modal {
   --ion-background-color: var(--ion-color-step-100);
 }
+
 
 html {
   /* 

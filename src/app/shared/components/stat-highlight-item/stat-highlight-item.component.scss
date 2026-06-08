@@ -1,0 +1,137 @@
+.item-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 16px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium, #7c7c7a);
+
+  .item-heading-chevron {
+    font-size: 0.875rem;
+    color: var(--ion-color-medium, #7c7c7a);
+    flex: none;
+  }
+}
+
+.item-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--ion-card-background, #141414);
+  border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  border-radius: var(--card-border-radius, 14px);
+  padding: 12px 20px;
+  margin: 12px 16px 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+
+  &.ion-activatable {
+    cursor: pointer;
+  }
+
+  &.modal-card {
+    margin-bottom: 0;
+  }
+
+  ion-img {
+    flex: none;
+
+    &.round {
+      width: 65px;
+      height: 65px;
+      margin: 0;
+
+      &::part(image) {
+        border-radius: 50%;
+        object-fit: cover;
+        width: 65px;
+        height: 65px;
+      }
+    }
+
+    &.pattern-img {
+      width: 65px;
+      margin: 0;
+      flex: none;
+
+      &::part(image) {
+        border-radius: 7px;
+      }
+    }
+  }
+
+  .item-meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .item-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ion-text-color, #f3f1ec);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .item-use {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ion-color-medium, #7c7c7a);
+    flex: none;
+  }
+
+  .item-stats {
+    display: flex;
+    gap: 16px;
+    margin: 10px 0 0;
+  }
+
+  .item-line {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .item-label {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ion-color-medium, #7c7c7a);
+    }
+
+    .item-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ion-text-color, #ece4d4);
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+  }
+
+  .card-chevron {
+    flex: none;
+    font-size: 18px;
+    color: var(--ion-color-medium, #7c7c7a);
+    margin-left: 4px;
+  }
+
+  .empty-msg {
+    color: var(--ion-color-medium, #7c7c7a);
+    font-style: italic;
+    padding: 8px 0;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+  }
+}

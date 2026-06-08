@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PinLeaveStatsComponent } from './pin-leave-stats.component';
+import { StatPinLeaveComponent } from './stat-pin-leave.component';
 
-describe('PinLeaveStatsComponent', () => {
-  let component: PinLeaveStatsComponent;
-  let fixture: ComponentFixture<PinLeaveStatsComponent>;
+describe('StatPinLeaveComponent', () => {
+  let component: StatPinLeaveComponent;
+  let fixture: ComponentFixture<StatPinLeaveComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PinLeaveStatsComponent],
+      imports: [StatPinLeaveComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(PinLeaveStatsComponent);
+    fixture = TestBed.createComponent(StatPinLeaveComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

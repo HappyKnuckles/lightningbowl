@@ -32,11 +32,16 @@ ion-segment-view {
   height: fit-content;
 }
 
+ion-card {
+  border-radius: var(--card-border-radius);
+}
+
 // Header background bleed hackaround
 // body {
 //   background: #0d0e0d;
 
 // }
+
 ion-content {
   --offset-top: 200px !important;
 }
@@ -45,16 +50,10 @@ ion-content {
   font-size: 22px;
 }
 
-.stat-container {
-  border: 1px solid var(--ion-border-color, #2b2828);
-  margin: 0 16px 12px;
-  padding: 4px 0;
-  border-radius: 7px;
-  background-color: #141414;
-
-  canvas {
-    touch-action: pinch-zoom pan-y;
-  }
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 }
 
 ion-list-header .open-icon {
@@ -63,7 +62,6 @@ ion-list-header .open-icon {
   font-size: 1.5rem;
   color: var(--ion-color-medium);
 }
-
 canvas {
   margin: 0 8px;
 }
@@ -199,7 +197,7 @@ ion-item {
   ion-grid {
     background-color: var(--ion-color-quartiary);
     --ion-grid-padding: 0;
-    border-radius: 7px;
+    border-radius: var(--default-border-radius);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -258,7 +256,7 @@ ion-item {
 
   &.frame {
     background-color: var(--ion-color-dark);
-    border-radius: 7px 7px 0 0;
+    border-radius: var(--default-border-radius) 7px 0 0;
   }
 
   &.count {

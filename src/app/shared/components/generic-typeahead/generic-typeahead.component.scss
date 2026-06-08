@@ -1,6 +1,6 @@
 %card {
   margin-bottom: 6px;
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
   border-left: 5px solid;
 }
 
@@ -24,7 +24,7 @@
   height: 40px;
   object-fit: contain;
   background-color: white;
-  border-radius: 7px;
+  border-radius: var(--default-border-radius);
   padding: 4px;
   flex-shrink: 0;
   margin-inline-end: 12px;

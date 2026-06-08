@@ -48,6 +48,7 @@ export interface Stats {
   allSparesGameCount?: number;
   averageGamesPerMonth?: number;
   averageGamesPerWeek?: number;
+  averageGamesPerYear?: number;
   average3SeriesScore?: number;
   high3Series?: number;
   average4SeriesScore?: number;
@@ -142,7 +143,7 @@ export interface GenericItemStats {
   gameCount: number;
 }
 
-export interface BestBallStats {
+export interface HighlightBallStats {
   ballName: string;
   ballImage: string;
   ballAvg: number;
@@ -153,7 +154,7 @@ export interface BestBallStats {
   cleanGameCount?: number;
 }
 
-export interface BestPatternStats {
+export interface HighlightPatternStats {
   patternName: string;
   patternImage: string;
   patternAvg: number;

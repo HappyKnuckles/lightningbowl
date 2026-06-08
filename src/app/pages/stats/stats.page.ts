@@ -48,7 +48,6 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { SpareDisplayComponent } from 'src/app/shared/components/spare-display/spare-display.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
@@ -63,11 +62,12 @@ import {
   STRIKE_STAT_DEFINITIONS,
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
-import { BallStatsComponent } from '../../shared/components/ball-stats/ball-stats.component';
-import { PatternStatsComponent } from '../../shared/components/pattern-stats/pattern-stats.component';
-import { PinLeaveStatsComponent } from '../../shared/components/pin-leave-stats/pin-leave-stats.component';
-import { Stats } from 'src/app/core/models/stats.model';
 import { GameFilter } from 'src/app/core/models/filter.model';
+import { Stats } from 'src/app/core/models/stats.model';
+import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
+import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
+import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
+import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
 
 @Component({
   selector: 'app-stats',
@@ -121,13 +121,14 @@ import { GameFilter } from 'src/app/core/models/filter.model';
     NgFor,
     FormsModule,
     DatePipe,
+    DecimalPipe,
     StatDisplayComponent,
-    SpareDisplayComponent,
+    StatBallComponent,
+    StatPatternComponent,
+    StatPinLeaveComponent,
     GenericFilterActiveComponent,
-    BallStatsComponent,
-    PinLeaveStatsComponent,
-    PatternStatsComponent,
     FileHeaderButtonsComponent,
+    StatSpareComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -179,7 +180,54 @@ export class StatsPage implements OnInit, AfterViewInit {
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
 
-  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
+  readonly hasGames = computed(
+    () =>
+      !(
+        (this.gameFilterService.filteredGames().length <= 0 && !this.loadingService.isLoading()) ||
+        this.gameFilterService.filteredGames().length <= 0
+      ),
+  );
+
+  readonly scoreTrend = computed<'up' | 'down' | null>(() => {
+    const curr = this.statsService.currentStats().averageScore;
+    const prev = this.statsService.prevStats()?.averageScore;
+    if (!prev || prev === 0 || curr === prev) return null;
+    return curr > prev ? 'up' : 'down';
+  });
+
+  readonly seriesRows = computed(() => {
+    const stats = this.statsService.currentStats();
+    return [3, 4, 5, 6].map((n) => ({
+      label: `${n}-series`,
+      avg: stats[`average${n}SeriesScore`] as number,
+      high: stats[`high${n}Series`] as number,
+    }));
+  });
+
+  readonly accuracyRows = computed(() => {
+    const stats = this.statsService.currentStats();
+    return [
+      { label: 'Strike %', value: stats.strikePercentage, suffix: '%', fill: stats.strikePercentage },
+      { label: 'Spare %', value: stats.overallSpareRate, suffix: '%', fill: stats.overallSpareRate },
+      { label: 'Mark %', value: stats.markPercentage, suffix: '%', fill: stats.markPercentage },
+      { label: 'Open %', value: stats.overallMissedRate, suffix: '%', fill: stats.overallMissedRate },
+      { label: 'First ball avg', value: stats.averageFirstCount, suffix: '/10', fill: stats.averageFirstCount * 10 },
+    ];
+  });
+
+  readonly playFrequencyChips = computed(() => {
+    const s = this.statsService.currentStats();
+    return [
+      { key: 'Games / week', value: s.averageGamesPerWeek },
+      { key: 'Games / month', value: s.averageGamesPerMonth },
+      { key: 'Games / year', value: s.averageGamesPerYear },
+      { key: 'Sessions / wk', value: s.averageSessionsPerWeek },
+      { key: 'Sessions / month', value: s.averageSessionsPerMonth },
+      { key: 'Games / session', value: s.averageGamesPerSession },
+    ];
+  });
+
+  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Sessions'];

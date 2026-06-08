@@ -1,0 +1,121 @@
+<h2 class="stat-heading" [id]="'heading' + id()">{{ title() }}<span class="divider-line"></span></h2>
+
+<div class="spare-card">
+  <header class="spare-overall">
+    <div class="spare-overall-top">
+      <p class="spare-overall-label">Overall conversion</p>
+      @if (overall().hasAttempts) {
+        <div class="spare-overall-rate" [style.color]="overall().rateColor">
+          <div class="rate-wrap">
+            <ion-text [id]="overall().triggerId">{{ overall().rateText }}%</ion-text>
+            @if (overall().arrow) {
+              <ion-icon class="arrow-icon" [name]="overall().arrow" [color]="overall().diffColor"></ion-icon>
+            }
+          </div>
+          @if (overall().diff) {
+            <ion-popover class="diff-popover" [trigger]="overall().triggerId">
+              <ion-text [color]="overall().diffColor">{{ overall().diff }}</ion-text>
+            </ion-popover>
+          }
+        </div>
+      } @else {
+        <div class="spare-overall-rate spare-overall-rate--na">—</div>
+      }
+    </div>
+
+    <p class="spare-overall-sub">
+      <span
+        ><b class="made-text">{{ overall().hit }}</b> made</span
+      >
+      <span
+        ><b class="missed-text">{{ overall().miss }}</b> missed</span
+      >
+      <span
+        ><b>{{ overall().attempts }}</b> attempts</span
+      >
+    </p>
+
+    @if (overall().hasAttempts) {
+      <div class="spare-overall-track">
+        <div class="spare-overall-fill" [style.width.%]="overall().rate" [style.--fill]="overall().fillValue"></div>
+      </div>
+    }
+  </header>
+
+  <div class="spare-table-wrap">
+    <table class="spare-table">
+      <caption class="visually-hidden">
+        Spare conversion rate by pin count left standing
+      </caption>
+
+      <colgroup>
+        <col class="col-pin" />
+        <col class="col-num" />
+        <col class="col-num" />
+        <col class="col-bar" />
+        <col class="col-rate" />
+      </colgroup>
+
+      <thead>
+        <tr>
+          <th scope="col" class="th-pin">
+            <span [id]="'tooltip' + id()"> Pins <ion-icon name="information-circle-outline"></ion-icon> </span>
+            <ion-popover [trigger]="'tooltip' + id()">
+              <ion-text class="tooltip">This is the pin count you left standing after your first throw.</ion-text>
+            </ion-popover>
+          </th>
+          <th scope="col" class="th-num">Hit</th>
+          <th scope="col" class="th-num">Miss</th>
+          <th scope="col" class="th-bar">Made / missed</th>
+          <th scope="col" class="th-num">Rate</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (row of rows(); track row.pin) {
+          <tr class="spare-row" [class.empty]="row.empty">
+            <th scope="row" class="spare-pin">{{ row.label }}</th>
+
+            <td class="spare-count spare-hit" [class.zero]="row.empty">{{ row.hit }}</td>
+            <td class="spare-count spare-miss" [class.zero]="row.miss === 0">{{ row.miss }}</td>
+
+            <td class="spare-bar-col">
+              @if (!row.empty) {
+                <div class="spare-bar" [style.width.%]="row.barWidth">
+                  <i class="spare-made" [style.width.%]="row.rate"></i>
+                  <i class="spare-missed" [style.width.%]="100 - row.rate"></i>
+                </div>
+              } @else {
+                <div class="spare-bar spare-bar--empty"></div>
+              }
+            </td>
+
+            @if (!row.empty) {
+              <td class="spare-rate" [style.color]="row.rateColor">
+                <div class="rate-wrap">
+                  <ion-text [id]="row.triggerId" class="stat-text">{{ row.rateText }}%</ion-text>
+                  @if (row.arrow) {
+                    <ion-icon class="arrow-icon" [name]="row.arrow" [color]="row.diffColor"></ion-icon>
+                  }
+                </div>
+                @if (row.diff) {
+                  <ion-popover class="diff-popover" [trigger]="row.triggerId">
+                    <ion-text [color]="row.diffColor">{{ row.diff }}</ion-text>
+                  </ion-popover>
+                }
+              </td>
+            } @else {
+              <td class="spare-rate spare-rate--na">—</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="spare-legend">
+    <li><i class="legend-made"></i>Made</li>
+    <li><i class="legend-missed"></i>Missed</li>
+    <li class="legend-note">bar length = attempts</li>
+  </ul>
+</div>

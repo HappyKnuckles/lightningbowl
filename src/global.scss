@@ -32,7 +32,7 @@ ion-segment-view {
   height: fit-content;
 }
 
-ion-card{
+ion-card {
   border-radius: var(--card-border-radius);
 }
 
@@ -41,27 +41,15 @@ ion-card{
 //   background: #0d0e0d;
 
 // }
+
 ion-content {
   --offset-top: 200px !important;
 }
 
-.stat-container {
-  border: 1px solid var(--ion-border-color, #2b2828);
-  margin: 0 16px 12px;
-  padding: 4px 0;
-  border-radius: var(--card-border-radius);
-  background-color: #141414;
-
-  canvas {
-    touch-action: pinch-zoom pan-y;
-  }
-}
-
-ion-list-header .open-icon {
-  margin-left: auto;
-  margin-right: 16px;
-  font-size: 1.5rem;
-  color: var(--ion-color-medium);
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 }
 
 canvas {

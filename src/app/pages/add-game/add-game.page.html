@@ -150,12 +150,9 @@
 
         @if (series.stats; as stats) {
           <app-stat-display [currentStats]="stats" [prevStats]="allStats()" [statDefinitions]="liveStatDefinitions"></app-stat-display>
-          <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-pin-leave-stats>
-          <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-pin-leave-stats>
-          <app-pin-leave-stats
-            [title]="'Most Common Leaves'"
-            [leaveStats]="series.leaves.common"
-            [allLeaves]="series.allLeaves"></app-pin-leave-stats>
+          <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-stat-pin-leave>
+          <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-stat-pin-leave>
+          <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="series.leaves.common" [allLeaves]="series.allLeaves"></app-stat-pin-leave>
         }
       }
     </ion-content>

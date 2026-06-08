@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import { SpareDisplayComponent } from './spare-display.component';
+import { StatSpareComponent } from './stat-spare.component';
 
 describe('SpareDisplayComponent', () => {
-  let component: SpareDisplayComponent;
-  let fixture: ComponentFixture<SpareDisplayComponent>;
+  let component: StatSpareComponent;
+  let fixture: ComponentFixture<StatSpareComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [SpareDisplayComponent],
+      imports: [StatSpareComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(SpareDisplayComponent);
+    fixture = TestBed.createComponent(StatSpareComponent);
     component = fixture.componentInstance;
 
     component.stats = {

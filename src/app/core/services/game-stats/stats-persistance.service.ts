@@ -89,10 +89,11 @@ export class StatsPersistenceService {
     const lastComparisonDate = parseInt(localStorage.getItem('lastComparisonDate') ?? '0');
     const today = Date.now();
 
-    let lastGameDate = today;
-    if (gameHistory.length > 0) {
-      lastGameDate = gameHistory[0].date;
+    if (gameHistory.length === 0) {
+      return JSON.parse(localStorage.getItem('prevStats')!) ?? this.getDefaultPrevStats();
     }
+
+    const lastGameDate = gameHistory[0].date;
 
     if (lastComparisonDate !== 0 && this.utilsService.isSameDay(lastComparisonDate, lastGameDate)) {
       return JSON.parse(localStorage.getItem('prevStats')!) ?? this.getDefaultPrevStats();
@@ -125,6 +126,6 @@ export class StatsPersistenceService {
       return prevStats;
     }
 
-    return prevStats;
+    return JSON.parse(localStorage.getItem('prevStats')!) ?? prevStats;
   });
 }

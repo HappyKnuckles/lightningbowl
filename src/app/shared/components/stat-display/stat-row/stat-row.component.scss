@@ -1,0 +1,43 @@
+.stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin: 0;
+
+  ion-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ion-text-color, #f3f1ec);
+    padding: 0;
+
+    ion-icon {
+      position: relative;
+      vertical-align: middle;
+      font-size: 0.875rem;
+    }
+  }
+
+  .value-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  .diff-icon {
+    position: absolute;
+    left: 100%;
+    margin-left: 4px;
+    font-size: 0.875rem;
+  }
+
+  .value {
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: var(--ion-text-color, #ece4d4);
+    letter-spacing: -0.01em;
+    text-align: right;
+    padding: 0;
+  }
+}

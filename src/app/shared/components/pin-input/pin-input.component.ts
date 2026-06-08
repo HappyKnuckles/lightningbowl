@@ -2,6 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+import { PINS } from 'src/app/core/constants/app.constants';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -13,7 +14,7 @@ export interface ThrowConfirmedEvent {
   imports: [IonButton, IonIcon],
 })
 export class PinInputComponent {
-  pinsLeftStanding = input<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  pinsLeftStanding = input<number[]>(PINS);
   canStrike = input<boolean>(false);
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
@@ -30,12 +31,8 @@ export class PinInputComponent {
     addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline });
   }
 
-  get allPins(): number[] {
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  }
-
   get pinsKnockedDownPreviously(): number[] {
-    return this.allPins.filter((pin) => !this.pinsLeftStanding().includes(pin));
+    return PINS.filter((pin) => !this.pinsLeftStanding().includes(pin));
   }
 
   togglePin(pinNumber: number): void {

@@ -4,7 +4,7 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats, BestPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { HighlightBallStats, HighlightPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -613,7 +613,7 @@ export class ExcelService {
     return { overall, spares, throwStats, strike, special, playFrequency, series, pinStats };
   }
 
-  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: BestBallStats[]): void {
+  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: HighlightBallStats[]): void {
     const worksheet = workbook.addWorksheet('Ball Stats');
     const headers = ['Ball', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
@@ -633,7 +633,7 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: BestPatternStats[]): void {
+  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: HighlightPatternStats[]): void {
     const worksheet = workbook.addWorksheet('Pattern Stats');
     const headers = ['Pattern', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 

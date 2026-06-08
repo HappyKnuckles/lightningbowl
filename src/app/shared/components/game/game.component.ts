@@ -51,6 +51,7 @@ import { createPartialPatternTypeaheadConfig } from 'src/app/core/configs/typeah
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { PINS } from 'src/app/core/constants/app.constants';
 
 @Component({
   selector: 'app-game',
@@ -93,7 +94,7 @@ export class GameComponent implements OnInit {
   isPinInputMode = input<boolean>(false);
 
   // Pin Input Mode
-  pinsLeftStanding = input<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  pinsLeftStanding = input<number[]>(PINS);
   currentFrameIndex = input<number>(0);
   currentThrowIndex = input<number>(0);
   canStrike = input<boolean>(false);

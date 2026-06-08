@@ -20,6 +20,7 @@ export const SPECIAL_STAT_DEFINITIONS = buildSection(['dutch200Count', 'varipapa
 export const PLAY_FREQUENCY_STAT_DEFINITIONS = buildSection([
   'averageGamesPerWeek',
   'averageGamesPerMonth',
+  'averageGamesPerYear',
   'averageSessionsPerWeek',
   'averageSessionsPerMonth',
   'averageGamesPerSession',

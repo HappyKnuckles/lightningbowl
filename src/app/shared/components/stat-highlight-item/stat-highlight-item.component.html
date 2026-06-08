@@ -1,0 +1,102 @@
+<h2
+  class="item-heading"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  [attr.tabindex]="allItems()?.length ? '0' : null"
+  [attr.role]="allItems()?.length ? 'button' : null"
+  [style.cursor]="allItems()?.length ? 'pointer' : 'default'">
+  <span>{{ title() }}</span>
+  <span class="divider-line"></span>
+  @if (allItems()?.length) {
+    <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
+  }
+</h2>
+
+<article
+  class="item-card"
+  [class.ion-activatable]="allItems()?.length"
+  [class.ripple-parent]="allItems()?.length"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  [attr.tabindex]="allItems()?.length ? '0' : null"
+  [attr.aria-label]="allItems()?.length ? 'View all ' + title().toLowerCase() : null">
+  @if (item().gameCount === 0) {
+    <p class="empty-msg">{{ emptyMessage() }}</p>
+  } @else {
+    @if (item().image) {
+      <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
+    }
+
+    <div class="item-meta">
+      <header class="item-top">
+        <h3 class="item-name">{{ item().name }}</h3>
+        <span class="item-use">{{ item().gameCount }} / {{ totalGames() }}</span>
+      </header>
+      <dl class="item-stats">
+        <div class="item-line">
+          <dt class="item-label">Avg</dt>
+          <dd class="item-value">{{ item().avg }}</dd>
+        </div>
+        <div class="item-line">
+          <dt class="item-label">High</dt>
+          <dd class="item-value">{{ item().highestGame }}</dd>
+        </div>
+        <div class="item-line">
+          <dt class="item-label">Low</dt>
+          <dd class="item-value">{{ item().lowestGame }}</dd>
+        </div>
+      </dl>
+    </div>
+  }
+
+  @if (allItems()?.length) {
+    <ion-ripple-effect></ion-ripple-effect>
+  }
+</article>
+
+@if (allItems()?.length) {
+  <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start" style="padding: 4px">
+            <ion-button color="medium" (click)="closeModal()">
+              <ion-icon name="chevron-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>All {{ title().toLowerCase() }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list style="background: none">
+          @for (listItem of allItems(); track listItem.name) {
+            <article class="item-card modal-card">
+              <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
+              </ion-img>
+              <div class="item-meta">
+                <header class="item-top">
+                  <h3 class="item-name">{{ listItem.name }}</h3>
+                  <span class="item-use">{{ listItem.gameCount }} / {{ totalGames() }}</span>
+                </header>
+                <dl class="item-stats">
+                  <div class="item-line">
+                    <dt class="item-label">Avg</dt>
+                    <dd class="item-value">{{ listItem.avg }}</dd>
+                  </div>
+                  <div class="item-line">
+                    <dt class="item-label">High</dt>
+                    <dd class="item-value">{{ listItem.highestGame }}</dd>
+                  </div>
+                  <div class="item-line">
+                    <dt class="item-label">Low</dt>
+                    <dd class="item-value">{{ listItem.lowestGame }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+          }
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}

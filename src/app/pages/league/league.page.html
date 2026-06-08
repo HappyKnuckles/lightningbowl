@@ -136,24 +136,24 @@
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                <app-ball-stats
+                <app-stat-ball
                   [title]="'Most used ball'"
                   [bestBall]="mostPlayedBallsByLeague()[league]"
-                  [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
-                <app-ball-stats
+                  [totalGames]="statsByLeague()[league].totalGames"></app-stat-ball>
+                <app-stat-ball
                   [title]="'Best ball'"
                   [bestBall]="bestBallsByLeague()[league]"
-                  [totalGames]="statsByLeague()[league].totalGames"></app-ball-stats>
-                <app-pattern-stats
+                  [totalGames]="statsByLeague()[league].totalGames"></app-stat-ball>
+                <app-stat-pattern
                   [title]="'Most played pattern'"
                   [bestPattern]="mostPlayedPatternsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"
-                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
-                <app-pattern-stats
+                  [allPatterns]="allPatternsByLeague()[league]"></app-stat-pattern>
+                <app-stat-pattern
                   [title]="'Best pattern'"
                   [bestPattern]="bestPatternsByLeague()[league]"
                   [totalGames]="statsByLeague()[league].totalGames"
-                  [allPatterns]="allPatternsByLeague()[league]"></app-pattern-stats>
+                  [allPatterns]="allPatternsByLeague()[league]"></app-stat-pattern>
                 <h2 class="sec-heading"><span>Score Analysis</span><span class="divider-line"></span></h2>
                 <figure class="chart-card">
                   <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
@@ -163,8 +163,8 @@
 
             <ion-segment-content id="Spares-{{ league }}">
               <section class="tab">
-                <app-spare-display [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
-                </app-spare-display>
+                <app-stat-spare [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
+                </app-stat-spare>
                 <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
                 <figure class="chart-card">
                   <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
@@ -180,13 +180,13 @@
                   [currentStats]="statsByLeague()[league]"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                <app-pin-leave-stats [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-pin-leave-stats>
-                <app-pin-leave-stats [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-pin-leave-stats>
-                <app-pin-leave-stats
+                <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-stat-pin-leave>
+                <app-stat-pin-leave
                   [title]="'Most Common Leaves'"
                   [leaveStats]="leaveStatsByLeague()[league].common"
                   [allLeaves]="leaveStatsByLeague()[league].all">
-                </app-pin-leave-stats>
+                </app-stat-pin-leave>
               </section>
             </ion-segment-content>
 

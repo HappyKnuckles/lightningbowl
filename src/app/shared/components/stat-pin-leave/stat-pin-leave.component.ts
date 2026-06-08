@@ -17,12 +17,12 @@ import { LeaveStats } from 'src/app/core/models/stats.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 @Component({
-  selector: 'app-pin-leave-stats',
+  selector: 'app-stat-pin-leave',
   imports: [IonText, PinDeckComponent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonRippleEffect],
-  templateUrl: './pin-leave-stats.component.html',
-  styleUrl: './pin-leave-stats.component.scss',
+  templateUrl: './stat-pin-leave.component.html',
+  styleUrl: './stat-pin-leave.component.scss',
 })
-export class PinLeaveStatsComponent {
+export class StatPinLeaveComponent {
   leaveStats = input.required<LeaveStats[]>();
   title = input<string>('Pin Leaves');
   allLeaves = input<LeaveStats[]>();

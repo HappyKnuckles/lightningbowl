@@ -1,4 +1,11 @@
-<h2 class="pls-heading">
+<h2
+  class="pls-heading"
+  (click)="openModal()"
+  (keydown.enter)="openModal()"
+  (keydown.space)="openModal()"
+  [attr.tabindex]="allLeaves() ? '0' : null"
+  [attr.role]="allLeaves() ? 'button' : null"
+  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null">
   <span>{{ title() }}</span>
   <span class="divider-line"></span>
   @if (allLeaves()?.length) {

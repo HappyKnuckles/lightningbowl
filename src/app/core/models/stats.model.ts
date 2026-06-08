@@ -143,7 +143,7 @@ export interface GenericItemStats {
   gameCount: number;
 }
 
-export interface BestBallStats {
+export interface HighlightBallStats {
   ballName: string;
   ballImage: string;
   ballAvg: number;
@@ -154,7 +154,7 @@ export interface BestBallStats {
   cleanGameCount?: number;
 }
 
-export interface BestPatternStats {
+export interface HighlightPatternStats {
   patternName: string;
   patternImage: string;
   patternAvg: number;

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
-import { BestBallStats } from 'src/app/core/models/stats.model';
+import { HighlightBallStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 
 @Injectable({
@@ -9,14 +9,14 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 export class BallStatsCalculatorService {
   constructor(private ballsStore: BallsStore) {}
 
-  calculateAllBallStats(gameHistory: Game[]): BestBallStats[] {
+  calculateAllBallStats(gameHistory: Game[]): HighlightBallStats[] {
     return Object.values(this._calculateAllBallStats(gameHistory));
   }
 
-  calculateBestBallStats(gameHistory: Game[]): BestBallStats {
+  calculateBestBallStats(gameHistory: Game[]): HighlightBallStats {
     const allBallStats = this._calculateAllBallStats(gameHistory);
     const ballNames = Object.keys(allBallStats);
-    const defaultBall: BestBallStats = {
+    const defaultBall: HighlightBallStats = {
       ballName: '',
       ballImage: '',
       ballAvg: 0,
@@ -36,10 +36,10 @@ export class BallStatsCalculatorService {
     }, defaultBall);
   }
 
-  calculateMostPlayedBall(gameHistory: Game[]): BestBallStats {
+  calculateMostPlayedBall(gameHistory: Game[]): HighlightBallStats {
     const allBallStats = this._calculateAllBallStats(gameHistory);
     const ballNames = Object.keys(allBallStats);
-    const defaultBall: BestBallStats = {
+    const defaultBall: HighlightBallStats = {
       ballName: '',
       ballImage: '',
       ballAvg: 0,
@@ -59,7 +59,7 @@ export class BallStatsCalculatorService {
     }, defaultBall);
   }
 
-  private _calculateAllBallStats(gameHistory: Game[]): Record<string, BestBallStats> {
+  private _calculateAllBallStats(gameHistory: Game[]): Record<string, HighlightBallStats> {
     const gamesWithBalls = gameHistory.filter((game) => game.balls && game.balls.length > 0);
     const tempStats: Record<
       string,
@@ -104,7 +104,7 @@ export class BallStatsCalculatorService {
       });
     });
 
-    const finalStats: Record<string, BestBallStats> = {};
+    const finalStats: Record<string, HighlightBallStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
       const ballImage = this.ballsStore.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';

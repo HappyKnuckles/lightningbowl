@@ -1,17 +1,18 @@
 <div class="stat-wrapper">
-  <h2 class="stat-heading" *ngIf="title">{{ title }}</h2>
+  @if (title()) {
+    <h2 class="stat-heading">{{ title() }}</h2>
+  }
   <ul class="stat-card">
-    @for (stat of statDefinitions; track stat.key) {
+    @for (row of rows(); track row.key) {
       <li class="stat-row">
         <app-stat-row
-          [label]="stat.label"
-          [currentStat]="getNumericStat(currentStats, stat.key)!"
-          [prevStat]="stat.prevKey ? getNumericStat(prevStats, stat.prevKey) : undefined"
-          [secondaryStat]="stat.secondaryKey ? getNumericStat(currentStats, stat.secondaryKey) : undefined"
-          [toolTip]="stat.toolTip"
-          [id]="stat.id"
-          [isPercentage]="stat.isPercentage">
-        </app-stat-row>
+          [label]="row.label"
+          [currentStat]="row.current"
+          [prevStat]="row.prev"
+          [secondaryStat]="row.secondary"
+          [toolTip]="row.toolTip"
+          [id]="row.id"
+          [isPercentage]="row.isPercentage" />
       </li>
     }
   </ul>

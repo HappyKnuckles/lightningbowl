@@ -47,7 +47,7 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
 import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
-import { PinLeaveStatsComponent } from 'src/app/shared/components/pin-leave-stats/pin-leave-stats.component';
+import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 
 const enum SeriesMode {
@@ -88,7 +88,7 @@ defineCustomElements(window);
     GameComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
-    PinLeaveStatsComponent,
+    StatPinLeaveComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

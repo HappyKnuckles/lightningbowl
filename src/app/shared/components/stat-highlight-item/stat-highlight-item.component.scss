@@ -41,25 +41,25 @@
     flex: none;
 
     &.round {
-      width: 66px;
-      height: 66px;
+      width: 65px;
+      height: 65px;
       margin: 0;
 
       &::part(image) {
         border-radius: 50%;
         object-fit: cover;
-        width: 66px;
-        height: 66px;
+        width: 65px;
+        height: 65px;
       }
     }
 
     &.pattern-img {
-      width: 30px;
+      width: 65px;
       margin: 0;
       flex: none;
 
       &::part(image) {
-        border-radius: var(--small-border-radius, 4px);
+        border-radius: 7px;
       }
     }
   }

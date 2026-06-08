@@ -38,14 +38,14 @@ interface SpareSummary {
 }
 
 @Component({
-  selector: 'app-spare-display',
-  templateUrl: './spare-display.component.html',
-  styleUrls: ['./spare-display.component.scss'],
+  selector: 'app-stat-spare',
+  templateUrl: './stat-spare.component.html',
+  styleUrls: ['./stat-spare.component.scss'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [IonText, IonIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SpareDisplayComponent {
+export class StatSpareComponent {
   readonly stats = input.required<Stats>();
   readonly title = input('');
   readonly prevStats = input<PrevStats | Stats>();

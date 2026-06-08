@@ -19,7 +19,7 @@
 }
 
 .spare-overall {
-  padding: 18px 20px 16px;
+  padding: 16px 20px 12px;
   border-bottom: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 
   .spare-overall-top {
@@ -139,9 +139,6 @@
       padding-inline: 8px;
     }
   }
-}
-
-.spare-table {
 
   thead th {
     padding-top: 12px;
@@ -267,10 +264,6 @@
       display: block;
     }
 
-    .arrow-icon {
-      margin-left: 4px;
-    }
-
     &.spare-rate--na {
       color: var(--ion-color-step-350, #595959);
       font-weight: 800;
@@ -296,7 +289,7 @@
   gap: 12px;
   flex-wrap: wrap;
   margin: 0;
-  padding: 10px 20px 12px;
+  padding: 8px 20px 12px;
   list-style: none;
   border-top: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   font-size: 11px;

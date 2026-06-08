@@ -53,12 +53,12 @@
 .feature-card {
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-  border-radius: 18px;
-  padding: 18px 20px 17px;
+  border-radius: var(--card-border-radius, 14px);
+  padding: 16px 12px 12px;
   margin: 0 16px 12px;
 
   .feature-label {
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -125,7 +125,7 @@
   background: var(--ion-card-background, #141414);
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
-  padding: 12px 12px 12px;
+  padding: 12px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -154,7 +154,7 @@
   border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
   border-radius: var(--card-border-radius, 14px);
   margin: 0 16px 12px;
-  padding: 12px;
+  padding: 12px 20px;
 
   canvas {
     margin: 0 !important;
@@ -172,7 +172,7 @@
   list-style: none;
 
   .acc-item {
-    padding: 13px 0;
+    padding: 12px 0;
     position: relative;
 
     &:not(.last):not(:last-child)::after {
@@ -245,7 +245,7 @@
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
-    padding: 12px 16px 8px;
+    padding: 12px 20px 8px;
     border-bottom: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
 
     th {
@@ -266,7 +266,7 @@
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
-    padding: 12px 16px;
+    padding: 12px 20px;
     position: relative;
 
     &:not(.last):not(:last-child)::after {

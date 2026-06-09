@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer } from '@angular/platform-browser';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -48,7 +47,6 @@ import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { PatternSortField, PatternSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
@@ -98,33 +96,24 @@ import { PatternFormComponent } from '../../shared/components/pattern-form/patte
 })
 export class PatternPage implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
-  patterns: Pattern[] = [];
+  patterns = signal<Pattern[]>([]);
   currentPage = 1;
   hasMoreData = true;
   isPageLoading = signal(false);
   searchTerm = signal('');
   favoritesFirst = signal(false);
-  currentSortOption: PatternSortOption = {
+  currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,
     label: 'Title (A-Z)',
-  };
+  });
   imagesUrl = environment.imagesUrl;
-
-  get displayedPatterns(): Pattern[] {
-    let patterns: Pattern[];
-
-    // If there's a search term, return patterns without additional sorting to preserve relevance ranking
+  displayedPatterns = computed(() => {
     if (this.searchTerm().trim() !== '') {
-      patterns = this.patterns;
-    } else {
-      // Apply sorting only when not searching
-      patterns = this.sortService.sortPatterns(this.patterns, this.currentSortOption, this.favoritesFirst());
+      return this.patterns();
     }
-
-    return patterns;
-  }
-
+    return this.sortService.sortPatterns(this.patterns(), this.currentSortOption(), this.favoritesFirst());
+  });
   private lastLoadTime = 0;
   private debounceMs = 300;
   constructor(
@@ -132,8 +121,6 @@ export class PatternPage implements OnInit {
     private hapticService: HapticService,
     public loadingService: LoadingService,
     private toastService: ToastService,
-    private chartService: ChartGenerationService,
-    private sanitizer: DomSanitizer,
     private modalCtrl: ModalController,
     public sortService: PatternSortService,
     private networkService: NetworkService,
@@ -166,8 +153,8 @@ export class PatternPage implements OnInit {
       this.isPageLoading.set(true);
       this.currentPage = 1;
       this.hasMoreData = true;
-      this.patterns = [];
-      this.searchTerm.set(''); // Clear search term on refresh
+      this.patterns.set([]);
+      this.searchTerm.set('');
       await this.loadPatterns(undefined, true);
     } catch (error) {
       console.error(error);
@@ -189,10 +176,11 @@ export class PatternPage implements OnInit {
       if (!event) {
         this.isPageLoading.set(true);
       }
-      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh);
+      const { field, direction } = this.currentSortOption();
+      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh, field, direction);
       const patterns = response.patterns;
       if (response.total > 0) {
-        this.patterns = [...this.patterns, ...patterns];
+        this.patterns.update((current) => [...current, ...patterns]);
         this.currentPage++;
       } else if (this.networkService.isOffline) {
         this.toastService.showToast('You are offline and no cached data is available.', 'information-circle-outline', true);
@@ -219,14 +207,15 @@ export class PatternPage implements OnInit {
       const searchValue = event.detail.value || '';
       this.searchTerm.set(searchValue);
 
+      const { field, direction } = this.currentSortOption();
       if (searchValue === '') {
         this.hasMoreData = true;
-        const response = await this.patternService.getPatterns(this.currentPage);
-        this.patterns = response.patterns;
+        const response = await this.patternService.getPatterns(this.currentPage, false, field, direction);
+        this.patterns.set(response.patterns);
         this.currentPage++;
       } else {
-        const response = await this.patternService.searchPattern(searchValue, true);
-        this.patterns = response.patterns;
+        const response = await this.patternService.searchPattern(searchValue, true, field, direction);
+        this.patterns.set(response.patterns);
         this.hasMoreData = false;
         this.currentPage = 1;
 
@@ -257,7 +246,7 @@ export class PatternPage implements OnInit {
   }
 
   // private generateChartImages(): void {
-  //   this.patterns.forEach((pattern) => {
+  //   this.patterns().forEach((pattern) => {
   //     if (!pattern.chartImageSrc) {
   //       try {
   //         const svgDataUri = this.chartService.generatePatternChartDataUri(pattern, 325, 1300, 1300, 400, 20, 1, 7, true);
@@ -272,7 +261,18 @@ export class PatternPage implements OnInit {
   // }
 
   onSortChanged(sortOption: PatternSortOption): void {
-    this.currentSortOption = sortOption as PatternSortOption;
+    this.currentSortOption.set(sortOption as PatternSortOption);
+    if (this.searchTerm().trim() !== '') {
+      const { field, direction } = sortOption;
+      void this.patternService.searchPattern(this.searchTerm(), true, field, direction).then((response) => {
+        this.patterns.set(response.patterns);
+      });
+    } else {
+      this.currentPage = 1;
+      this.hasMoreData = true;
+      this.patterns.set([]);
+      void this.loadPatterns();
+    }
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);
@@ -280,15 +280,15 @@ export class PatternPage implements OnInit {
     }
 
     void this.analyticsService.trackEvent('patterns_sorted', {
-      sort_field: this.currentSortOption.field,
-      sort_direction: this.currentSortOption.direction,
-      sort_label: this.currentSortOption.label,
+      sort_field: sortOption.field,
+      sort_direction: sortOption.direction,
+      sort_label: sortOption.label,
     });
   }
 
   toggleFavorite(event: Event, pattern: Pattern): void {
     event.stopPropagation();
-    const isFavorited = this.favoritesService.toggleFavorite(pattern.url);
+    const isFavorited = this.favoritesService.toggleFavorite(pattern);
 
     if (isFavorited) {
       this.toastService.showToast(`Added ${pattern.title} to favorites`, 'heart');

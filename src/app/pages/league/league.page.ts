@@ -1,11 +1,12 @@
 import { DecimalPipe, NgIf } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, QueryList, Signal, signal, ViewChild, ViewChildren } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
   IonButton,
   IonButtons,
+  IonCheckbox,
   IonContent,
   IonHeader,
   IonIcon,
@@ -16,6 +17,7 @@ import {
   IonLabel,
   IonModal,
   IonRefresher,
+  IonRefresherContent,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
@@ -68,6 +70,7 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
   styleUrls: ['./league.page.scss'],
   imports: [
     IonRefresher,
+    IonRefresherContent,
     IonModal,
     IonText,
     IonItemOptions,
@@ -82,6 +85,7 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
     IonHeader,
     IonTitle,
     IonToolbar,
+    IonCheckbox,
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
@@ -102,23 +106,27 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
 })
 export class LeaguePage {
   @ViewChild('modalContent') content!: IonContent;
-  @ViewChildren('modal') modals!: QueryList<IonModal>;
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
+
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
   isEditMode: Record<string, boolean> = {};
+
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
     const games = this.gamesStore.games();
     return this.sortUtilsService.sortGamesByLeagues(games, true);
   });
+
   leagueKeys: Signal<string[]> = computed(() => {
     return Object.keys(this.gamesByLeague());
   });
+
   overallStats: Signal<Stats> = computed(() => {
     const games = this.gamesStore.games();
     return this.statService.calculateBowlingStats(games);
   });
+
   gamesByLeagueReverse = this.perLeague((games) => this.sortUtilsService.sortGameHistoryByDate(games, true));
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
@@ -138,21 +146,19 @@ export class LeaguePage {
 
   statDefinitions = LEAGUE_STAT_DEFINITIONS;
   PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
+
   private scoreChartInstances: Record<string, Chart> = {};
   private pinChartInstances: Record<string, Chart> = {};
 
   isVisibilityEdit = signal(false);
-  get noLeaguesShown(): boolean {
-    const state = this.hiddenLeagueSelectionService.selectionState();
+  selectedLeague = signal<string | null>(null);
 
-    return !Object.values(state).some((isVisible) => isVisible);
-  }
+  readonly noLeaguesShown = computed(() => !Object.values(this.hiddenLeagueSelectionService.selectionState()).some((isVisible) => isVisible));
 
-  get leagueSelectionState() {
-    return this.hiddenLeagueSelectionService.selectionState();
-  }
+  readonly leagueSelectionState = this.hiddenLeagueSelectionService.selectionState;
+
   private previousLeagueSelectionState: Record<string, boolean> = {};
-  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'game';
+  chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'session';
 
   constructor(
     public gamesStore: GamesStore,
@@ -185,6 +191,16 @@ export class LeaguePage {
       this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
     });
   }
+
+  closeLeague(): void {
+    const league = this.selectedLeague();
+    if (league) {
+      this.destroyCharts(league);
+    }
+    this.selectedSegment = 'Overall';
+    this.selectedLeague.set(null);
+  }
+
   updateLeagueSelection(league: string, checked: boolean) {
     this.hiddenLeagueSelectionService.updateSelection(league, checked);
   }
@@ -226,7 +242,6 @@ export class LeaguePage {
       }
 
       const message = parts.length > 0 ? parts.join('<br>') : 'No changes made.';
-
       this.toastService.showToast(message, 'checkmark-outline');
     }
   }
@@ -240,15 +255,6 @@ export class LeaguePage {
       this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
-    }
-  }
-
-  closeModal(league: string): void {
-    this.selectedSegment = 'Overall';
-    const modalToDismiss = this.modals.find((modal) => modal.trigger === league);
-
-    if (modalToDismiss) {
-      modalToDismiss.dismiss();
     }
   }
 
@@ -310,7 +316,6 @@ export class LeaguePage {
             try {
               await this.leaguesStore.addLeague(data.league);
               this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
-
               void this.analyticsService.trackLeagueCreated({ name: data.league });
             } catch (error) {
               this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
@@ -332,7 +337,6 @@ export class LeaguePage {
         {
           text: 'Cancel',
           role: 'cancel',
-          // handler: () => { },
         },
         {
           text: 'Delete',
@@ -373,10 +377,8 @@ export class LeaguePage {
         {
           text: 'Edit',
           handler: async (data: { league: string }) => {
-            const newLeagueName = data.league;
-            const oldLeagueName = league;
             try {
-              await this.appFacade.editLeague(newLeagueName, oldLeagueName);
+              await this.appFacade.editLeague(data.league, league);
               this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
             } catch (error) {
               this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
@@ -386,7 +388,6 @@ export class LeaguePage {
         },
       ],
     });
-
     await alert.present();
   }
 
@@ -396,9 +397,7 @@ export class LeaguePage {
 
   private generateScoreChart(league: string, isReload?: boolean): void {
     try {
-      if (!this.scoreChart) {
-        return;
-      }
+      if (!this.scoreChart) return;
 
       this.scoreChartInstances[league] = this.chartService.generateScoreChart(
         this.scoreChart,
@@ -416,9 +415,7 @@ export class LeaguePage {
 
   private generatePinChart(league: string, isReload?: boolean): void {
     try {
-      if (!this.pinChart) {
-        return;
-      }
+      if (!this.pinChart) return;
 
       this.pinChartInstances[league] = this.chartService.generatePinChart(
         this.pinChart,

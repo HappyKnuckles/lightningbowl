@@ -38,7 +38,6 @@ import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.con
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Ball } from 'src/app/core/models/ball.model';
-import { BallFilter } from 'src/app/core/models/filter.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
@@ -96,25 +95,18 @@ import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BallsPage implements OnInit {
-  @ViewChild('core', { static: false }) coreModal!: IonModal;
-  @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
-  @ViewChild('movement', { static: false }) movementModal!: IonModal;
   @ViewChild(IonContent, { static: false }) content!: IonContent;
 
   ballFilterConfigs = BALL_FILTER_CONFIGS;
 
-  get currentFilters(): BallFilter {
-    return this.ballFilterService.filters();
-  }
+  readonly currentFilters = this.ballFilterService.filters;
 
-  get defaultFilters(): BallFilter {
-    return this.ballFilterService.defaultFilters;
-  }
+  readonly defaultFilters = this.ballFilterService.defaultFilters;
 
   balls = signal<Ball[]>([]);
-  coreBalls: Ball[] = [];
-  coverstockBalls: Ball[] = [];
-  movementBalls: Ball[] = [];
+  coreBalls = signal<Ball[]>([]);
+  coverstockBalls = signal<Ball[]>([]);
+  movementBalls = signal<Ball[]>([]);
   searchSubject = new Subject<string>();
   searchTerm = signal('');
   favoritesFirst = signal(false);
@@ -129,6 +121,7 @@ export class BallsPage implements OnInit {
     direction: SortDirection.DESC,
     label: 'Newest First',
   });
+
   // Computed getter for displayed balls.
   // • If a search term exists, we build a Fuse instance over the correct data source and return results sorted by relevance.
   // • If filters are active and no search term exists, we display only a slice (up to filterDisplayCount) of the filtered list.
@@ -155,7 +148,6 @@ export class BallsPage implements OnInit {
       };
 
       const baseArray = this.isFilterActive() ? this.ballFilterService.filteredBalls() : this.ballsStore.allBalls();
-
       const fuseInstance = new Fuse(baseArray, options);
 
       // Split the search term by commas and trim each term
@@ -225,9 +217,8 @@ export class BallsPage implements OnInit {
   }
 
   private async waitForAllBalls(): Promise<void> {
-    // Wait until allBalls are loaded
-    const maxWaitTime = 10000; // 10 seconds max wait
-    const checkInterval = 100; // Check every 100ms
+    const maxWaitTime = 10000;
+    const checkInterval = 100;
     let elapsed = 0;
 
     while (this.ballsStore.allBalls().length === 0 && elapsed < maxWaitTime) {
@@ -315,10 +306,6 @@ export class BallsPage implements OnInit {
     this.lastLoadTime = now;
 
     try {
-      if (!event) {
-        // this.loadingService.setLoading(true);
-      }
-      // If filters are active and an infinite scroll event is triggered, increase the display count.
       if (this.isFilterActive() && event) {
         this.filterDisplayCount += 100;
         const totalFiltered = this.ballFilterService.filteredBalls().length;
@@ -329,7 +316,6 @@ export class BallsPage implements OnInit {
         return;
       }
 
-      // Load the next page from the API.
       const response = await this.ballService.loadBalls(this.currentPage);
 
       if (response.length > 0) {
@@ -365,9 +351,9 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
-      this.coreBalls = await this.ballService.getBallsByCore(ball);
-      if (this.coreBalls.length > 0) {
-        this.coreModal.present();
+      const result = await this.ballService.getBallsByCore(ball);
+      if (result.length > 0) {
+        this.coreBalls.set(result);
       } else {
         this.toastService.showToast(`No similar balls found for core: ${ball.core_name}.`, 'information-circle-outline');
       }
@@ -383,9 +369,9 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
-      this.coverstockBalls = await this.ballService.getBallsByCoverstock(ball);
-      if (this.coverstockBalls.length > 0) {
-        await this.coverstockModal.present();
+      const result = await this.ballService.getBallsByCoverstock(ball);
+      if (result.length > 0) {
+        this.coverstockBalls.set(result);
       } else {
         this.toastService.showToast(`No similar balls found for coverstock: ${ball.coverstock_name}.`, 'information-circle-outline');
       }
@@ -401,18 +387,13 @@ export class BallsPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
       this.loadingService.setLoading(true);
-
-      // Use all available balls for comparison
-      const allBalls = this.ballsStore.allBalls();
-      this.movementBalls = await this.ballService.getBallsByMovementPattern(ball, allBalls);
-
-      if (this.movementBalls.length > 0) {
-        await this.movementModal.present();
-
+      const result = await this.ballService.getBallsByMovementPattern(ball, this.ballsStore.allBalls());
+      if (result.length > 0) {
+        this.movementBalls.set(result);
         void this.analyticsService.trackEvent('ball_similar_movement_viewed', {
           ball_name: ball.ball_name,
           brand: ball.brand_name,
-          similar_count: this.movementBalls.length,
+          similar_count: result.length - 1,
         });
       } else {
         this.toastService.showToast(`No balls found with similar reaction to ${ball.ball_name}.`, 'information-circle-outline');
@@ -441,11 +422,10 @@ export class BallsPage implements OnInit {
       }, 100);
     }
 
-    // Track sort change
     void this.analyticsService.trackEvent('balls_sorted', {
-      sort_field: this.currentSortOption().field,
-      sort_direction: this.currentSortOption().direction,
-      sort_label: this.currentSortOption().label,
+      sort_field: sortOption.field,
+      sort_direction: sortOption.direction,
+      sort_label: sortOption.label,
     });
   }
 
@@ -455,7 +435,6 @@ export class BallsPage implements OnInit {
 
     if (isFavorited) {
       this.toastService.showToast(`Added ${ball.ball_name} to favorites`, 'heart');
-
       void this.analyticsService.trackEvent('ball_favorited', {
         ball_name: ball.ball_name,
         brand: ball.brand_name,
@@ -463,7 +442,6 @@ export class BallsPage implements OnInit {
       });
     } else {
       this.toastService.showToast(`Removed ${ball.ball_name} from favorites`, 'heart-outline');
-
       void this.analyticsService.trackEvent('ball_unfavorited', {
         ball_name: ball.ball_name,
         brand: ball.brand_name,
@@ -526,16 +504,8 @@ export class BallsPage implements OnInit {
   }
 
   onBallSelected(ball: Ball): void {
-    // Close the modal
-    // modal.dismiss();
-
-    // Set the search term to the ball name
     this.searchTerm.set(ball.ball_name);
-
-    // Trigger search
     this.searchSubject.next(ball.ball_name);
-
-    // Scroll to top to show search results
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);

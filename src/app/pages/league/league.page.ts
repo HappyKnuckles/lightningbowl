@@ -17,7 +17,6 @@ import {
   IonLabel,
   IonModal,
   IonRefresher,
-  IonRefresherContent,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
@@ -63,6 +62,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-league',
@@ -70,7 +70,6 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
   styleUrls: ['./league.page.scss'],
   imports: [
     IonRefresher,
-    IonRefresherContent,
     IonModal,
     IonText,
     IonItemOptions,
@@ -101,6 +100,7 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
     StatBallComponent,
     StatSpareComponent,
     StatPinLeaveComponent,
+    BowlingRefresherComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -152,6 +152,7 @@ export class LeaguePage {
 
   isVisibilityEdit = signal(false);
   selectedLeague = signal<string | null>(null);
+  isRefreshing = signal(false);
 
   readonly noLeaguesShown = computed(() => !Object.values(this.hiddenLeagueSelectionService.selectionState()).some((isVisible) => isVisible));
 
@@ -247,6 +248,7 @@ export class LeaguePage {
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
+    this.isRefreshing.set(true);
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       await this.gamesStore.loadGameHistory();

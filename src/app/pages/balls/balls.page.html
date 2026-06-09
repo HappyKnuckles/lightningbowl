@@ -16,7 +16,7 @@
         #sortHeader
         [id]="'ball-sort-header'"
         [sortOptions]="sortService.BALL_SORT_OPTIONS"
-        [selectedSort]="currentSortOption"
+        [selectedSort]="currentSortOption()"
         [storageKey]="'balls-sort-option'"
         [favoritesFirst]="favoritesFirst()"
         [favoritesFirstStorageKey]="'balls-favorites-first'"
@@ -50,12 +50,12 @@
   </ion-refresher>
 
   @if (!isPageLoading()) {
-    <ng-container *ngIf="displayedBalls.length <= 0; else content">
+    <ng-container *ngIf="displayedBalls().length <= 0; else content">
       <ion-text class="no-game-text"> No balls found. </ion-text>
     </ng-container>
 
     <ng-template #content>
-      @for (ball of displayedBalls; track ball.ball_id) {
+      @for (ball of displayedBalls(); track ball.ball_id) {
         <ion-card role="article">
           <div class="action-header">
             <ion-select

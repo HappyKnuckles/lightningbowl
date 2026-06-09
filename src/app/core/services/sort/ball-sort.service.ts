@@ -26,41 +26,20 @@ export class BallSortService {
     { field: BallSortField.COVERSTOCK_TYPE, direction: SortDirection.DESC, label: 'Coverstock (Z-A)' },
   ];
 
-  sortBalls(balls: Ball[], sortOption: BallSortOption, favoritesFirst = false, allBalls: Ball[] = []): Ball[] {
-    const sortedBalls = [...balls];
-
+  sortBalls(balls: Ball[], sortOption: BallSortOption, favoritesFirst = false): Ball[] {
     if (favoritesFirst) {
-      const favorites = this.favoritesService.favoriteBalls();
-      const favoriteBalls: Ball[] = [];
-      const nonFavoriteBalls: Ball[] = [];
+      const favoriteBalls = this.favoritesService.getFavoriteBalls();
+      const favoriteKeys = new Set(favoriteBalls.map((b) => `${b.ball_id}-${b.core_weight}`));
 
-      // Get favorite balls from allBalls if provided, otherwise from the balls array
-      const ballsToSearchForFavorites = allBalls.length > 0 ? allBalls : sortedBalls;
+      const nonFavoriteBalls = balls.filter((b) => !favoriteKeys.has(`${b.ball_id}-${b.core_weight}`));
 
-      // Extract all favorite balls from allBalls
-      ballsToSearchForFavorites.forEach((ball) => {
-        const ballKey = `${ball.ball_id}-${ball.core_weight}`;
-        if (favorites.has(ballKey)) {
-          favoriteBalls.push(ball);
-        }
-      });
-
-      // Separate non-favorites from the current balls array
-      sortedBalls.forEach((ball) => {
-        const ballKey = `${ball.ball_id}-${ball.core_weight}`;
-        if (!favorites.has(ballKey)) {
-          nonFavoriteBalls.push(ball);
-        }
-      });
-
-      // Sort both groups using the selected sort option
-      const sortedFavorites = this.applySortToBalls(favoriteBalls, sortOption);
-      const sortedNonFavorites = this.applySortToBalls(nonFavoriteBalls, sortOption);
+      const sortedFavorites = this.applySortToBalls([...favoriteBalls], sortOption);
+      const sortedNonFavorites = this.applySortToBalls([...nonFavoriteBalls], sortOption);
 
       return [...sortedFavorites, ...sortedNonFavorites];
     }
 
-    return this.applySortToBalls(sortedBalls, sortOption);
+    return this.applySortToBalls([...balls], sortOption);
   }
 
   private applySortToBalls(balls: Ball[], sortOption: BallSortOption): Ball[] {

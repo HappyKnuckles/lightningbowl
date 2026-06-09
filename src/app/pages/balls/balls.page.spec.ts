@@ -71,6 +71,6 @@ describe('BallsPage', () => {
     component.toggleFavorite(mockEvent, mockBall);
 
     expect(mockEvent.stopPropagation).toHaveBeenCalled();
-    expect(favoritesService.toggleBallFavorite).toHaveBeenCalledWith('test-ball-id', '15lb');
+    expect(favoritesService.toggleBallFavorite).toHaveBeenCalledWith(mockBall);
   });
 });

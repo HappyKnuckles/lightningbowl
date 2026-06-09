@@ -261,7 +261,7 @@ export class PatternPage implements OnInit {
   // }
 
   onSortChanged(sortOption: PatternSortOption): void {
-    this.currentSortOption.set(sortOption as PatternSortOption);
+    this.currentSortOption.set(sortOption);
     if (this.searchTerm().trim() !== '') {
       const { field, direction } = sortOption;
       void this.patternService.searchPattern(this.searchTerm(), true, field, direction).then((response) => {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnInit, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -124,16 +124,16 @@ export class BallsPage implements OnInit {
   filterDisplayCount = 100;
   loadingWeightBallIds = signal<Set<string>>(new Set());
   readonly availableWeights = ['12', '13', '14', '15', '16'];
-  currentSortOption: BallSortOption = {
+  currentSortOption = signal<BallSortOption>({
     field: BallSortField.RELEASE_DATE,
     direction: SortDirection.DESC,
     label: 'Newest First',
-  };
+  });
   // Computed getter for displayed balls.
   // • If a search term exists, we build a Fuse instance over the correct data source and return results sorted by relevance.
   // • If filters are active and no search term exists, we display only a slice (up to filterDisplayCount) of the filtered list.
   // • Otherwise, we display the paged API-loaded balls.
-  get displayedBalls(): Ball[] {
+  displayedBalls: Signal<Ball[]> = computed(() => {
     let result: Ball[];
     if (this.searchTerm().trim() !== '') {
       this.hasMoreData = false;
@@ -166,8 +166,7 @@ export class BallsPage implements OnInit {
       // Collect results for each search term
       result = searchTerms.flatMap((term) => fuseInstance.search(term).map((result) => result.item));
 
-      // Return search results without additional sorting to preserve relevance ranking
-      return result;
+      return this.sortService.sortBalls(result, this.currentSortOption(), false);
     } else {
       result = this.isFilterActive() ? this.ballFilterService.filteredBalls() : this.balls();
       if (this.isFilterActive()) {
@@ -176,9 +175,8 @@ export class BallsPage implements OnInit {
       this.hasMoreData = true;
     }
 
-    // Apply sorting only when not searching
-    return this.sortService.sortBalls(result, this.currentSortOption, this.favoritesFirst(), this.ballsStore.allBalls());
-  }
+    return this.sortService.sortBalls(result, this.currentSortOption(), this.favoritesFirst());
+  });
 
   private lastLoadTime = 0;
   private debounceMs = 300;
@@ -436,7 +434,7 @@ export class BallsPage implements OnInit {
   }
 
   onSortChanged(sortOption: BallSortOption): void {
-    this.currentSortOption = sortOption;
+    this.currentSortOption.set(sortOption);
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);
@@ -445,15 +443,15 @@ export class BallsPage implements OnInit {
 
     // Track sort change
     void this.analyticsService.trackEvent('balls_sorted', {
-      sort_field: this.currentSortOption.field,
-      sort_direction: this.currentSortOption.direction,
-      sort_label: this.currentSortOption.label,
+      sort_field: this.currentSortOption().field,
+      sort_direction: this.currentSortOption().direction,
+      sort_label: this.currentSortOption().label,
     });
   }
 
   toggleFavorite(event: Event, ball: Ball): void {
     event.stopPropagation();
-    const isFavorited = this.favoritesService.toggleBallFavorite(ball.ball_id, ball.core_weight);
+    const isFavorited = this.favoritesService.toggleBallFavorite(ball);
 
     if (isFavorited) {
       this.toastService.showToast(`Added ${ball.ball_name} to favorites`, 'heart');

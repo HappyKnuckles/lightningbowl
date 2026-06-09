@@ -1,6 +1,34 @@
 import { TestBed } from '@angular/core/testing';
+import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
 import { FavoritesService } from './favorites.service';
+
+function makeBall(ballId: string, coreWeight: string): Ball {
+  return {
+    ball_id: ballId,
+    core_weight: coreWeight,
+    ball_name: ballId,
+    brand_id: '',
+    brand_name: '',
+    ball_image: '',
+    thumbnail_image: '',
+    core_id: '',
+    core_name: '',
+    core_image: '',
+    core_rg: '',
+    core_diff: '',
+    core_int_diff: '',
+    core_type: '',
+    coverstock_id: '',
+    coverstock_name: '',
+    coverstock_type: '',
+    factory_finish: '',
+    availability: '',
+    release_date: '',
+    last_update: '',
+    us_int: '',
+  };
+}
 
 function makePattern(url: string): Pattern {
   return {
@@ -81,37 +109,30 @@ describe('FavoritesService', () => {
 
   describe('Ball Favorites', () => {
     it('should toggle ball favorite status', () => {
-      const ballId = 'test-ball-id';
-      const coreWeight = '15lb';
+      const ball = makeBall('test-ball-id', '15lb');
 
-      // Initially should not be favorite
-      expect(service.isBallFavorite(ballId, coreWeight)).toBe(false);
+      expect(service.isBallFavorite(ball.ball_id, ball.core_weight)).toBe(false);
 
-      // Toggle to favorite
-      const firstToggle = service.toggleBallFavorite(ballId, coreWeight);
+      const firstToggle = service.toggleBallFavorite(ball);
       expect(firstToggle).toBe(true);
-      expect(service.isBallFavorite(ballId, coreWeight)).toBe(true);
+      expect(service.isBallFavorite(ball.ball_id, ball.core_weight)).toBe(true);
 
-      // Toggle back to not favorite
-      const secondToggle = service.toggleBallFavorite(ballId, coreWeight);
+      const secondToggle = service.toggleBallFavorite(ball);
       expect(secondToggle).toBe(false);
-      expect(service.isBallFavorite(ballId, coreWeight)).toBe(false);
+      expect(service.isBallFavorite(ball.ball_id, ball.core_weight)).toBe(false);
     });
 
     it('should persist ball favorites in localStorage', () => {
-      const ballId1 = 'ball-1';
-      const coreWeight1 = '15lb';
-      const ballId2 = 'ball-2';
-      const coreWeight2 = '16lb';
+      const ball1 = makeBall('ball-1', '15lb');
+      const ball2 = makeBall('ball-2', '16lb');
 
-      service.addBallFavorite(ballId1, coreWeight1);
-      service.addBallFavorite(ballId2, coreWeight2);
+      service.addBallFavorite(ball1);
+      service.addBallFavorite(ball2);
 
-      // Create new instance to test persistence
       const newService = new FavoritesService();
 
-      expect(newService.isBallFavorite(ballId1, coreWeight1)).toBe(true);
-      expect(newService.isBallFavorite(ballId2, coreWeight2)).toBe(true);
+      expect(newService.isBallFavorite(ball1.ball_id, ball1.core_weight)).toBe(true);
+      expect(newService.isBallFavorite(ball2.ball_id, ball2.core_weight)).toBe(true);
     });
 
     it('should handle invalid ball favorites localStorage data gracefully', () => {
@@ -122,29 +143,24 @@ describe('FavoritesService', () => {
     });
 
     it('should use correct ball key format', () => {
-      const ballId = 'test-ball-123';
-      const coreWeight = '15lb';
+      service.addBallFavorite(makeBall('test-ball-123', '15lb'));
 
-      service.addBallFavorite(ballId, coreWeight);
-
-      const keys = service.getFavoriteBallKeys();
-      expect(keys).toContain('test-ball-123-15lb');
+      expect(service.getFavoriteBallKeys()).toContain('test-ball-123-15lb');
     });
   });
 
   it('should handle both pattern and ball favorites independently', () => {
     const pattern = makePattern('test-pattern');
-    const ballId = 'test-ball';
-    const coreWeight = '15lb';
+    const ball = makeBall('test-ball', '15lb');
 
     service.addFavorite(pattern);
-    service.addBallFavorite(ballId, coreWeight);
+    service.addBallFavorite(ball);
 
     expect(service.isFavorite(pattern.url)).toBe(true);
-    expect(service.isBallFavorite(ballId, coreWeight)).toBe(true);
+    expect(service.isBallFavorite(ball.ball_id, ball.core_weight)).toBe(true);
 
     service.removeFavorite(pattern.url);
     expect(service.isFavorite(pattern.url)).toBe(false);
-    expect(service.isBallFavorite(ballId, coreWeight)).toBe(true);
+    expect(service.isBallFavorite(ball.ball_id, ball.core_weight)).toBe(true);
   });
 });

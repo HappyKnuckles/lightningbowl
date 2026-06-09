@@ -158,7 +158,7 @@ export class BallsPage implements OnInit {
       // Collect results for each search term
       result = searchTerms.flatMap((term) => fuseInstance.search(term).map((result) => result.item));
 
-      return this.sortService.sortBalls(result, this.currentSortOption(), false);
+      return result;
     } else {
       result = this.isFilterActive() ? this.ballFilterService.filteredBalls() : this.balls();
       if (this.isFilterActive()) {

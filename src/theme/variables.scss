@@ -12,7 +12,7 @@
   --ion-input-color: #000;
   --ion-color-dark-rgb: rgb(81 7 7 / 80%);
   --ion-text-color-rgb: blue;
-
+  --background-color: #0a0202;
   // --ion-color-success: ;
 
   &.ios body {
@@ -24,11 +24,12 @@
     --ion-color-quartiary: #a91d3a;
     --ion-color-dark: #340404;
     --ion-color-dark-rgb: rgb(81 7 7 / 80%);
+    background: var(--background-color);
   }
 
   ion-content,
   ion-app {
-    --background: #0a0202;
+    --background: var(--background-color);
   }
 }
 
@@ -40,7 +41,7 @@
   --ion-color-dark: #164863;
   --ion-input-color: #000;
   --ion-color-dark-rgb: rgb(14 75 108 / 80%);
-
+  --background-color: #02070a;
   // --ion-color-success: ;
 
   &.ios body {
@@ -50,13 +51,13 @@
     --ion-color-quartiary: #427d9d;
     --ion-color-dark: #093147;
     --ion-color-dark-rgb: rgb(14 75 108 / 80%);
-
+    background: var(--background-color);
     // --ion-text-color: #000;
   }
 
   ion-content,
   ion-app {
-    --background: #02070a;
+    --background: var(--background-color);
   }
 }
 
@@ -70,14 +71,14 @@
   --ion-color-quartiary: #7d7c7c;
   --ion-color-dark: #313131;
   --ion-color-dark-rgb: rgb(77 77 77 / 80%);
-
+  --background-color: #0d0e0d;
   // --ion-color-success: ;
 
   --ion-input-color: #000;
 
   &.ios body {
     --ion-color-primary: #f1efef;
-
+    background: var(--background-color);
     // --ion-color-secondary: #cfcfcf;
 
     --ion-color-secondary: #ccc8aa;
@@ -89,7 +90,7 @@
 
   ion-content,
   ion-app {
-    --background: #0d0e0d;
+    --background: var(--background-color);
   }
 }
 
@@ -104,14 +105,14 @@
   --ion-color-dark: #222847;
   --ion-color-dark-rgb: rgb(34, 40, 71);
   --ion-input-color: #000;
-
+  --background-color: #05020a;
   // --ion-color-success: ;
 
   &.ios body {
     --ion-color-primary: #f0ece5;
     --ion-color-secondary: #b6bbc4;
     --ion-color-tertiary: #31304d;
-
+    background: var(--background-color);
     // --ion-color-quartiary: #565581;
     // --ion-color-quartiary: #31304d;
     --ion-color-quartiary: #65658e;
@@ -121,7 +122,7 @@
 
   ion-content,
   ion-app {
-    --background: #05020a;
+    --background: var(--background-color);
   }
 }
 
@@ -206,10 +207,15 @@
   --ion-color-light-contrast-rgb: 0, 0, 0;
   --ion-color-light-shade: #d7d8da;
   --ion-color-light-tint: #f5f6f9;
+  --background-color: #020a06;
+
+  &.ios body {
+    background: var(--background-color);
+  }
 
   ion-content,
   ion-app {
-    --background: #020a06;
+    --background: var(--background-color);
   }
 }
 

@@ -20,7 +20,7 @@
 
 <ion-content [fullscreen]="true">
   <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
-    <ion-refresher-content></ion-refresher-content>
+    <app-bowling-refresher [refreshing]="isRefreshing()"></app-bowling-refresher>
   </ion-refresher>
   <!-- Show this message if there are no game history items and it's not loading -->
   <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else noLeagues">

@@ -61,6 +61,7 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-league',
@@ -97,11 +98,13 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
     StatBallComponent,
     StatSpareComponent,
     StatPinLeaveComponent,
+    BowlingRefresherComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class LeaguePage {
   @ViewChild('modalContent') content!: IonContent;
+  isRefreshing = signal(false);
   @ViewChildren('modal') modals!: QueryList<IonModal>;
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
@@ -232,6 +235,7 @@ export class LeaguePage {
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
+    this.isRefreshing.set(true);
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       await this.gamesStore.loadGameHistory();
@@ -240,6 +244,7 @@ export class LeaguePage {
       this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
+      this.isRefreshing.set(false);
     }
   }
 

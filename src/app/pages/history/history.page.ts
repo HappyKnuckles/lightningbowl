@@ -1,5 +1,5 @@
 import { DatePipe, NgIf } from '@angular/common';
-import { Component, ViewChild } from '@angular/core';
+import { Component, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -14,7 +14,6 @@ import {
   IonHeader,
   IonIcon,
   IonRefresher,
-  IonRefresherContent,
   IonText,
   IonTitle,
   IonToolbar,
@@ -36,6 +35,7 @@ import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-heade
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
+import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-history',
@@ -43,7 +43,6 @@ import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-
   styleUrls: ['history.page.scss'],
   providers: [DatePipe, ModalController],
   imports: [
-    IonRefresherContent,
     IonButtons,
     IonHeader,
     IonToolbar,
@@ -61,11 +60,13 @@ import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-
     GameListComponent,
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
+    BowlingRefresherComponent,
   ],
 })
 export class HistoryPage {
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
   @ViewChild(IonContent, { static: false }) content!: IonContent;
+  isRefreshing = signal(false);
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
 
@@ -129,6 +130,7 @@ export class HistoryPage {
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
+    this.isRefreshing.set(true);
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       await this.gamesStore.loadGameHistory();
@@ -137,6 +139,7 @@ export class HistoryPage {
       this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
+      this.isRefreshing.set(false);
     }
   }
 

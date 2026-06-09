@@ -20,12 +20,11 @@ import {
   IonInfiniteScrollContent,
   IonModal,
   IonRefresher,
-  IonRefresherContent,
   IonRippleEffect,
+  IonSkeletonText,
   IonSearchbar,
   IonSelect,
   IonSelectOption,
-  IonSkeletonText,
   IonText,
   IonTitle,
   IonToolbar,
@@ -55,6 +54,7 @@ import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
+import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-balls',
@@ -62,9 +62,9 @@ import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-
   styleUrls: ['./balls.page.scss'],
   providers: [ModalController],
   imports: [
-    IonSkeletonText,
     IonRefresher,
-    IonRefresherContent,
+    IonSkeletonText,
+    BowlingRefresherComponent,
     IonRippleEffect,
     IonModal,
     IonText,

@@ -62,6 +62,7 @@ import {
   STRIKE_STAT_DEFINITIONS,
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 import { GameFilter } from 'src/app/core/models/filter.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
@@ -129,11 +130,13 @@ import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-sp
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
     StatSpareComponent,
+    BowlingRefresherComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatsPage implements OnInit, AfterViewInit {
   @ViewChild(IonContent) content!: IonContent;
+  isRefreshing = signal(false);
   OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
   SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
   THROW_STAT_DEFINITIONS = THROW_STAT_DEFINITIONS;
@@ -307,6 +310,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   }
 
   async handleRefresh(event: RefresherCustomEvent): Promise<void> {
+    this.isRefreshing.set(true);
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       await this.gamesStore.loadGameHistory();
@@ -316,6 +320,7 @@ export class StatsPage implements OnInit, AfterViewInit {
       this.toastService.showToast(TOAST_MESSAGES.gameLoadError, 'bug', true);
     } finally {
       event.target.complete();
+      this.isRefreshing.set(false);
     }
   }
   onSegmentChanged(event: SegmentCustomEvent): void {

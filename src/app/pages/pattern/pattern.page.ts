@@ -22,7 +22,6 @@ import {
   IonModal,
   IonPopover,
   IonRefresher,
-  IonRefresherContent,
   IonSearchbar,
   IonSkeletonText,
   IonText,
@@ -60,6 +59,7 @@ import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pat
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { environment } from 'src/environments/environment';
 import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-pattern',
@@ -74,7 +74,6 @@ import { PatternFormComponent } from '../../shared/components/pattern-form/patte
     IonButtons,
     IonModal,
     IonText,
-    IonRefresherContent,
     IonSearchbar,
     IonSkeletonText,
     IonRefresher,
@@ -94,6 +93,7 @@ import { PatternFormComponent } from '../../shared/components/pattern-form/patte
     PatternInfoComponent,
     SearchBlurDirective,
     SortHeaderComponent,
+    BowlingRefresherComponent,
   ],
 })
 export class PatternPage implements OnInit {
@@ -167,7 +167,7 @@ export class PatternPage implements OnInit {
       this.currentPage = 1;
       this.hasMoreData = true;
       this.patterns = [];
-      this.searchTerm.set(''); // Clear search term on refresh
+      this.searchTerm.set('');
       await this.loadPatterns(undefined, true);
     } catch (error) {
       console.error(error);

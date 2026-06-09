@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AlertController, IonApp, IonBackdrop, IonSpinner, IonRouterOutlet } from '@ionic/angular/standalone';
+import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Subscription } from 'rxjs';
-import { NgIf } from '@angular/common';
 import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -16,12 +15,13 @@ import { ThemeChangerService } from './core/services/theme-changer/theme-changer
 import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
 import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { AnalyticsService } from './core/services/analytics/analytics.service';
+import { BowlingRefresherComponent } from './shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
-  imports: [IonApp, NgIf, IonBackdrop, IonSpinner, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent],
+  imports: [IonApp, IonBackdrop, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent, BowlingRefresherComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly GREETING_THROTTLE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds

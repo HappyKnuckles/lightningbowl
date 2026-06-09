@@ -4,6 +4,7 @@ import {
   Component,
   OnInit,
   QueryList,
+  Signal,
   ViewChild,
   ViewChildren,
   computed,
@@ -145,9 +146,7 @@ export class GameComponent implements OnInit {
   private localFrameIndex = 0;
   private localThrowIndex = 0;
 
-  get currentGame(): Game {
-    return this.game() || createEmptyGame();
-  }
+  currentGame: Signal<Game> = computed(() => this.game() || createEmptyGame());
 
   constructor(
     public settingsStore: SettingsStore,
@@ -321,7 +320,7 @@ export class GameComponent implements OnInit {
 
   // --- Template Getters ---
   getSelectedBallsText(): string {
-    const balls = this.currentGame?.balls || [];
+    const balls = this.currentGame()?.balls || [];
     return balls.length > 0 ? balls.join(', ') : 'None';
   }
 

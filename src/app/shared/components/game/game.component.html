@@ -187,7 +187,7 @@
   </div>
 }
 
-@if (showMetadata() && currentGame) {
+@if (showMetadata() && currentGame()) {
   <ion-accordion-group style="margin: 0 5px 5px">
     <ion-accordion style="border-radius: var(--card-border-radius)">
       <ion-item slot="header">
@@ -203,7 +203,11 @@
       <div slot="content">
         <ion-list lines="full">
           <ion-item>
-            <ion-checkbox [checked]="currentGame.isPractice" name="isPractice" #checkbox (ionChange)="onIsPracticeChange($any($event.target).checked)"
+            <ion-checkbox
+              [checked]="currentGame().isPractice"
+              name="isPractice"
+              #checkbox
+              (ionChange)="onIsPracticeChange($any($event.target).checked)"
               >Practice</ion-checkbox
             >
           </ion-item>
@@ -211,14 +215,14 @@
           <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
           <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
             <ion-label>Patterns</ion-label>
-            <span class="ion-text-right">{{ currentGame.patterns.join(", ") || "None" }}</span>
+            <span class="ion-text-right">{{ currentGame().patterns.join(", ") || "None" }}</span>
           </ion-item>
           <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
             <ng-template>
               <app-generic-typeahead
                 [items]="patternsStore.allPatterns()"
                 [config]="patternTypeaheadConfig"
-                [prevSelectedItems]="currentGame.patterns || []"
+                [prevSelectedItems]="currentGame().patterns || []"
                 (selectedItemsChange)="onPatternChanged($event)">
               </app-generic-typeahead>
             </ng-template>
@@ -230,7 +234,7 @@
           @if (ballsStore.arsenal().length > 0) {
             <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal [trigger]="ballSelectorId()" class="ball-modal">
               <ng-template>
-                <app-ball-select (ballSelect)="onBallSelect($event, modal)" [selectedBalls]="currentGame.balls || []"></app-ball-select>
+                <app-ball-select (ballSelect)="onBallSelect($event, modal)" [selectedBalls]="currentGame().balls || []"></app-ball-select>
               </ng-template>
             </ion-modal>
           } @else {
@@ -249,7 +253,7 @@
             <ion-textarea
               label="Note"
               type="text"
-              [value]="currentGame.note || ''"
+              [value]="currentGame().note || ''"
               (ionInput)="onNoteChange($any($event).detail.value)"
               name="note"
               [autoGrow]="true"

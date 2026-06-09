@@ -8,7 +8,6 @@ import { FavoritesService } from '../favorites/favorites.service';
 })
 export class PatternSortService {
   private favoritesService = inject(FavoritesService);
-
   readonly PATTERN_SORT_OPTIONS: PatternSortOption[] = [
     { field: PatternSortField.TITLE, direction: SortDirection.ASC, label: 'Title (A-Z)' },
     { field: PatternSortField.TITLE, direction: SortDirection.DESC, label: 'Title (Z-A)' },
@@ -22,30 +21,18 @@ export class PatternSortService {
   ];
 
   sortPatterns(patterns: Pattern[], sortOption: PatternSortOption, favoritesFirst = false): Pattern[] {
-    const sortedPatterns = [...patterns];
-
-    if (favoritesFirst) {
-      const favorites = this.favoritesService.favoritePatterns();
-      const favoritePatterns: Pattern[] = [];
-      const nonFavoritePatterns: Pattern[] = [];
-
-      // Separate favorites from non-favorites
-      sortedPatterns.forEach((pattern) => {
-        if (favorites.has(pattern.url)) {
-          favoritePatterns.push(pattern);
-        } else {
-          nonFavoritePatterns.push(pattern);
-        }
-      });
-
-      // Sort both groups using the selected sort option
-      const sortedFavorites = this.applySortToPatterns(favoritePatterns, sortOption);
-      const sortedNonFavorites = this.applySortToPatterns(nonFavoritePatterns, sortOption);
-
-      return [...sortedFavorites, ...sortedNonFavorites];
+    if (!favoritesFirst) {
+      return [...patterns];
     }
 
-    return this.applySortToPatterns(sortedPatterns, sortOption);
+    const favoritePatterns = this.favoritesService.getFavoritePatterns();
+    const favoriteUrlSet = new Set(favoritePatterns.map((p) => p.url));
+
+    const nonFavoritePatterns = patterns.filter((pattern) => !favoriteUrlSet.has(pattern.url));
+
+    const sortedFavorites = this.applySortToPatterns([...favoritePatterns], sortOption);
+
+    return [...sortedFavorites, ...nonFavoritePatterns];
   }
 
   private applySortToPatterns(patterns: Pattern[], sortOption: PatternSortOption): Pattern[] {

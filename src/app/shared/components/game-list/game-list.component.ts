@@ -127,6 +127,7 @@ export class GameListComponent implements OnInit {
   games = input.required<Game[]>();
   isLeaguePage = input<boolean>(false);
   gameCount = input<number | undefined>(undefined);
+  batchSize = input<number>(100);
 
   // Services
   public editService = inject(GameEditService);
@@ -214,8 +215,7 @@ export class GameListComponent implements OnInit {
     return headers;
   });
   // Pagination state
-  private batchSize = 100;
-  public loadedCount = signal(this.batchSize);
+  public loadedCount = signal(0);
   public presentingElement?: HTMLElement;
 
   // Config
@@ -240,17 +240,16 @@ export class GameListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadedCount.set(this.batchSize());
+
     this.presentingElement = document.querySelector('.ion-page')!;
   }
 
   // PAGINATION
   loadMoreGames(event: InfiniteScrollCustomEvent): void {
     setTimeout(() => {
-      this.loadedCount.update((count) => count + this.batchSize);
+      this.loadedCount.update((count) => count + this.batchSize());
       event.target.complete();
-      if (this.loadedCount() >= this.showingGames().length) {
-        event.target.disabled = true;
-      }
     }, 50);
   }
 

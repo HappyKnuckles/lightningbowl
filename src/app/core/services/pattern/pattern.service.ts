@@ -53,8 +53,8 @@ export class PatternService {
     }
   }
 
-  async getPatterns(page: number, forceRefresh = false): Promise<AllPatternsResult> {
-    const cacheKey = `patterns_page_${page}`;
+  async getPatterns(page: number, forceRefresh = false, sortField = 'title', sortDirection = 'asc'): Promise<AllPatternsResult> {
+    const cacheKey = `patterns_page_${page}_${sortField}_${sortDirection}`;
 
     try {
       if (!forceRefresh) {
@@ -71,7 +71,9 @@ export class PatternService {
       }
 
       const response = await firstValueFrom(
-        this.http.get<AllPatternsResult>(`${environment.patternEndpoint}patterns?page=${page}`).pipe(retry({ count: 5, delay: 2000 })),
+        this.http
+          .get<AllPatternsResult>(`${environment.patternEndpoint}patterns?page=${page}&sort_field=${sortField}&sort_direction=${sortDirection}`)
+          .pipe(retry({ count: 5, delay: 2000 })),
       );
 
       if (response.total !== 0) {
@@ -82,7 +84,6 @@ export class PatternService {
     } catch (error) {
       console.error('Error fetching patterns:', error);
 
-      // Try to use cached data as fallback
       const cachedPatterns = await this.cacheService.get<AllPatternsResult>(cacheKey);
       if (cachedPatterns) {
         return cachedPatterns;
@@ -148,8 +149,8 @@ export class PatternService {
     }
   }
 
-  async searchPattern(searchTerm: string, include_metadata = false): Promise<SearchResult> {
-    const cacheKey = `pattern_search_${encodeURIComponent(searchTerm)}`;
+  async searchPattern(searchTerm: string, include_metadata = false, sortField = 'title', sortDirection = 'asc'): Promise<SearchResult> {
+    const cacheKey = `pattern_search_${encodeURIComponent(searchTerm)}_${sortField}_${sortDirection}`;
 
     try {
       const cachedResult = await this.cacheService.get<SearchResult>(cacheKey);
@@ -165,7 +166,9 @@ export class PatternService {
       }
 
       const response = await firstValueFrom(
-        this.http.get<SearchResult>(`${environment.patternEndpoint}search?q=${searchTerm}&include_metadata=${include_metadata}`),
+        this.http.get<SearchResult>(
+          `${environment.patternEndpoint}search?q=${searchTerm}&include_metadata=${include_metadata}&sort_field=${sortField}&sort_direction=${sortDirection}`,
+        ),
       );
 
       await this.cacheService.set(cacheKey, response, 2 * 60 * 60 * 1000); // 2 hours

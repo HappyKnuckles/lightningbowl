@@ -16,7 +16,7 @@
         #sortHeader
         [id]="'ball-sort-header'"
         [sortOptions]="sortService.BALL_SORT_OPTIONS"
-        [selectedSort]="currentSortOption"
+        [selectedSort]="currentSortOption()"
         [storageKey]="'balls-sort-option'"
         [favoritesFirst]="favoritesFirst()"
         [favoritesFirstStorageKey]="'balls-favorites-first'"
@@ -39,7 +39,7 @@
       debounce="300"></ion-searchbar>
   </ion-toolbar>
   <ion-toolbar style="text-align: center" *ngIf="ballFilterService.activeFilterCount() !== 0">
-    <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="ballFilterConfigs">
+    <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="ballFilterConfigs">
     </app-generic-filter-active>
   </ion-toolbar>
 </ion-header>
@@ -50,12 +50,12 @@
   </ion-refresher>
 
   @if (!isPageLoading()) {
-    <ng-container *ngIf="displayedBalls.length <= 0; else content">
+    <ng-container *ngIf="displayedBalls().length <= 0; else content">
       <ion-text class="no-game-text"> No balls found. </ion-text>
     </ng-container>
 
     <ng-template #content>
-      @for (ball of displayedBalls; track ball.ball_id) {
+      @for (ball of displayedBalls(); track ball.ball_id) {
         <ion-card role="article">
           <div class="action-header">
             <ion-select
@@ -264,25 +264,29 @@
   }
 </ion-content>
 
-<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #coverstock>
+<ion-modal
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35, 0.5, 0.75]"
+  [isOpen]="coverstockBalls().length > 0"
+  (didDismiss)="coverstockBalls.set([])">
   <ng-template>
-    <app-ball-list [balls]="coverstockBalls" [isCoverstock]="true" (ballSelected)="onBallSelected($event)"></app-ball-list>
+    <app-ball-list [balls]="coverstockBalls()" [isCoverstock]="true" (ballSelected)="onBallSelected($event)"></app-ball-list>
   </ng-template>
 </ion-modal>
 
-<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #core>
+<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" [isOpen]="coreBalls().length > 0" (didDismiss)="coreBalls.set([])">
   <ng-template>
-    <app-ball-list [balls]="coreBalls" [isCoverstock]="false" (ballSelected)="onBallSelected($event)"></app-ball-list>
+    <app-ball-list [balls]="coreBalls()" [isCoverstock]="false" (ballSelected)="onBallSelected($event)"></app-ball-list>
   </ng-template>
 </ion-modal>
 
-<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #movement>
+<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" [isOpen]="movementBalls().length > 0" (didDismiss)="movementBalls.set([])">
   <ng-template>
-    <!--This is done so i dont have to programmtically create the modal and still have the title of the ball without it being inside the modal-->
     <app-ball-list
-      [balls]="movementBalls.slice(1, 10)"
+      [balls]="movementBalls().slice(1, 10)"
       [isCoverstock]="false"
-      [title]="'Similar reaction to ' + movementBalls[0]!.ball_name"
-      (ballSelected)="onBallSelected($event)"></app-ball-list>
+      [title]="'Similar reaction to ' + movementBalls()[0]!.ball_name"
+      (ballSelected)="onBallSelected($event)">
+    </app-ball-list>
   </ng-template>
 </ion-modal>

@@ -63,7 +63,6 @@ import {
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
-import { GameFilter } from 'src/app/core/models/filter.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
 import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
@@ -250,13 +249,8 @@ export class StatsPage implements OnInit, AfterViewInit {
   private averageScoreChartInstance: Chart | null = null;
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
-  get currentFilters(): GameFilter {
-    return this.gameFilterService.filters();
-  }
-
-  get defaultFilters(): GameFilter {
-    return this.gameFilterService.defaultFilters;
-  }
+  readonly currentFilters = this.gameFilterService.filters;
+  readonly defaultFilters = this.gameFilterService.defaultFilters;
 
   constructor(
     public loadingService: LoadingService,

@@ -123,7 +123,7 @@ export class AddGamePage implements OnInit {
   maxScores = signal(new Array(19).fill(300));
 
   // Pin input mode state
-  isPinInputMode = false;
+  isPinInputMode = true;
 
   pinModeState = signal<PinModeState[]>(
     Array.from({ length: 19 }, () => ({

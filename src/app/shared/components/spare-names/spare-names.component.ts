@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, computed, signal, Signal } from '@angular/core';
 import { IonButton } from '@ionic/angular/standalone';
 
 enum SpareNames {
@@ -21,14 +21,12 @@ enum SpareNames {
   styleUrl: './spare-names.component.scss',
 })
 export class SpareNamesComponent {
-  selectedPins: number[] = [];
+  selectedPins = signal<number[]>([]);
 
-  get displayedNames(): string {
-    return [...this.selectedPins].sort((a, b) => a - b).join('-');
-  }
+  displayedNames: Signal<string> = computed(() => [...this.selectedPins()].sort((a, b) => a - b).join('-'));
 
-  get spareName(): string {
-    const pins = [...this.selectedPins].sort((a, b) => a - b);
+  spareName: Signal<string> = computed(() => {
+    const pins = [...this.selectedPins()].sort((a, b) => a - b);
 
     if (this.isBigFour(pins)) {
       return SpareNames.BigFour;
@@ -51,14 +49,10 @@ export class SpareNamesComponent {
     }
 
     return '';
-  }
+  });
 
   togglePin(pin: number): void {
-    if (this.selectedPins.includes(pin)) {
-      this.selectedPins = this.selectedPins.filter((p) => p !== pin);
-    } else {
-      this.selectedPins.push(pin);
-    }
+    this.selectedPins.update((pins) => (pins.includes(pin) ? pins.filter((p) => p !== pin) : [...pins, pin]));
   }
 
   private isLiliy(pins: number[]): boolean {

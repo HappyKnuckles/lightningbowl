@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, model, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
@@ -102,6 +102,7 @@ export class PatternPage implements OnInit {
   isPageLoading = signal(false);
   searchTerm = signal('');
   favoritesFirst = signal(false);
+  selectedPattern = model<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,

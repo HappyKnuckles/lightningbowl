@@ -20,7 +20,7 @@
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
-    <app-generic-filter-active [filters]="currentFilters" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
+    <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
     </app-generic-filter-active>
   </ion-toolbar>
 </ion-header>

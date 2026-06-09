@@ -1,25 +1,25 @@
 <div class="reverse-bowling-layout">
   <div class="pin-row">
-    <ion-button class="pin" [class.active]="selectedPins.includes(7)" (click)="togglePin(7)" data-pin="7"> 7 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(8)" (click)="togglePin(8)" data-pin="8"> 8 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(9)" (click)="togglePin(9)" data-pin="9"> 9 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(10)" (click)="togglePin(10)" data-pin="10"> 10 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(7)" (click)="togglePin(7)" data-pin="7"> 7 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(8)" (click)="togglePin(8)" data-pin="8"> 8 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(9)" (click)="togglePin(9)" data-pin="9"> 9 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(10)" (click)="togglePin(10)" data-pin="10"> 10 </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button class="pin" [class.active]="selectedPins.includes(4)" (click)="togglePin(4)" data-pin="4"> 4 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(5)" (click)="togglePin(5)" data-pin="5"> 5 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(6)" (click)="togglePin(6)" data-pin="6"> 6 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(4)" (click)="togglePin(4)" data-pin="4"> 4 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(5)" (click)="togglePin(5)" data-pin="5"> 5 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(6)" (click)="togglePin(6)" data-pin="6"> 6 </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button class="pin" [class.active]="selectedPins.includes(2)" (click)="togglePin(2)" data-pin="2"> 2 </ion-button>
-    <ion-button class="pin" [class.active]="selectedPins.includes(3)" (click)="togglePin(3)" data-pin="3"> 3 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(2)" (click)="togglePin(2)" data-pin="2"> 2 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(3)" (click)="togglePin(3)" data-pin="3"> 3 </ion-button>
   </div>
   <div class="pin-row">
-    <ion-button class="pin" [class.active]="selectedPins.includes(1)" (click)="togglePin(1)" data-pin="1"> 1 </ion-button>
+    <ion-button class="pin" [class.active]="selectedPins().includes(1)" (click)="togglePin(1)" data-pin="1"> 1 </ion-button>
   </div>
 </div>
 
 <div class="pin-names">
-  <p>{{ displayedNames }}</p>
-  <h1 *ngIf="spareName">"{{ spareName }}"</h1>
+  <p>{{ displayedNames() }}</p>
+  <h1 *ngIf="spareName()">"{{ spareName() }}"</h1>
 </div>

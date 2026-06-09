@@ -31,10 +31,6 @@ export class PinInputComponent {
     addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline });
   }
 
-  get pinsKnockedDownPreviously(): number[] {
-    return PINS.filter((pin) => !this.pinsLeftStanding().includes(pin));
-  }
-
   togglePin(pinNumber: number): void {
     if (this.isGameComplete()) return;
     if (!this.pinsLeftStanding().includes(pinNumber)) return;

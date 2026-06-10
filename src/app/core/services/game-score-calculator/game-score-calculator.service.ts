@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Frame } from '../../models/game.model';
-import { getThrowValue } from '../game-utils/game-utils.service';
+import { getThrowValue } from '../../utils/game-utils/frame.utils';
 
 @Injectable({
   providedIn: 'root',

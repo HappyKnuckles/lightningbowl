@@ -28,6 +28,7 @@ import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, trophyOutline } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -39,34 +40,30 @@ import { GameDataTransformerService } from 'src/app/core/services/game-transform
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
-import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
-import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
-import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import {
-  canRecordStrike,
+  cloneFrames,
+  createEmptyGame,
+  generateUniqueSeriesId,
+  recordThrow,
+  removeThrow,
+  toCompletedFramesGame,
+} from 'src/app/core/utils/game-utils/frame.utils';
+import {
   canRecordSpare,
+  canRecordStrike,
   canUndoLastThrow,
   isGameValid,
   isValidFrameScore,
-} from 'src/app/core/services/game-utils/bowling-game-validation.service';
-import {
-  getAvailablePins,
-  processPinThrow,
-  applyPinModeUndo,
-  isCellAccessible,
-  removeThrow,
-  recordThrow,
-  generateUniqueSeriesId,
-  cloneFrames,
-  createEmptyGame,
-  toCompletedFramesGame,
-} from 'src/app/core/services/game-utils/game-utils.service';
-import { parseInputValue } from 'src/app/core/services/game-utils/bowling-frame-formatter.service';
-import { Game, Frame, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+} from 'src/app/core/utils/game-utils/game-validation.utils';
+import { applyPinModeUndo, getAvailablePins, isCellAccessible, processPinThrow } from 'src/app/core/utils/game-utils/pin.utils';
+import { parseInputValue } from 'src/app/core/utils/game-utils/score-input.utils';
+import { UtilsService } from 'src/app/core/utils/utils.service';
+import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
+import { GameComponent } from 'src/app/shared/components/game/game.component';
+import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
+import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 
 const enum SeriesMode {
   Single = 'Single',

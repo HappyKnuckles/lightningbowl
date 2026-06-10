@@ -6,13 +6,13 @@ import * as ExcelJS from 'exceljs';
 import { Game } from 'src/app/core/models/game.model';
 import { HighlightBallStats, HighlightPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
+import { isSplit } from '../../utils/game-utils/pin.utils';
+import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
-import { isSplit } from '../game-utils/game-utils.service';
 
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
@@ -26,7 +26,6 @@ export class ExcelService {
     private gamesStore: GamesStore,
     private ballsStore: BallsStore,
     private leaguesStore: LeaguesStore,
-    private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
   ) {}
@@ -238,7 +237,7 @@ export class ExcelService {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
-      const sortedGames = this.sortUtils.sortGameHistoryByDate(gameData);
+      const sortedGames = sortGameHistoryByDate(gameData);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       this.gameFilterService.setDefaultFilters();
     } catch (error) {

@@ -8,8 +8,9 @@ import { ImageProcesserService } from 'src/app/core/services/image-processer/ima
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
-import { numberArraysToFrames, parseBowlingScores } from '../game-utils/game-utils.service';
 import { Game } from '../../models/game.model';
+import { numberArraysToFrames } from '../../utils/game-utils/frame.utils';
+import { parseBowlingScores } from '../../utils/game-utils/score-input.utils';
 
 const WARNING_STORAGE_KEY = 'alert';
 const WARNING_TTL_DAYS = 7;

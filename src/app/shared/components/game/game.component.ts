@@ -32,28 +32,28 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
+import { createPartialPatternTypeaheadConfig } from 'src/app/core/configs/typeahead/pattern.config';
+import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { KeyboardToolbarService } from 'src/app/core/services/keyboard-toolbar/keyboard-toolbar.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
-import { KeyboardToolbarService } from 'src/app/core/services/keyboard-toolbar/keyboard-toolbar.service';
-import { createPartialPatternTypeaheadConfig } from 'src/app/core/configs/typeahead/pattern.config';
-import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
-import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
-import { PINS } from 'src/app/core/constants/app.constants';
-import { createEmptyGame, getThrowValue } from 'src/app/core/services/game-utils/game-utils.service';
 
 @Component({
   selector: 'app-game',

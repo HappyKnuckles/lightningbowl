@@ -3,13 +3,13 @@ import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { Frame, Game, Throw } from '../../models/game.model';
+import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
+import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
-import { calculateIsClean, createEmptyFrames } from '../game-utils/game-utils.service';
-import { Game, Frame, Throw } from '../../models/game.model';
 
 interface GameRow {
   pk: number;
@@ -37,7 +37,6 @@ export class PinpalService {
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
-    private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
     private toastService: ToastService,
   ) {}
@@ -102,7 +101,7 @@ export class PinpalService {
         });
       }
 
-      const sortedGames = this.sortUtils.sortGameHistoryByDate(games);
+      const sortedGames = sortGameHistoryByDate(games);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       const arsenalSaveResults = await Promise.allSettled([...ballsToAddToArsenal.values()].map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Game, Frame, Throw } from 'src/app/core/models/game.model';
-import { calculateIsClean } from '../game-utils/game-utils.service';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
+import { calculateIsClean } from '../../utils/game-utils/frame.utils';
 
 /**
  * Configuration for series-specific properties that override game defaults

@@ -1,6 +1,6 @@
-import { Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { isSplit } from 'src/app/core/services/game-utils/game-utils.service';
+import { Component, computed, input } from '@angular/core';
+import { isSplit } from 'src/app/core/utils/game-utils/pin.utils';
 
 interface Pin {
   id: number;

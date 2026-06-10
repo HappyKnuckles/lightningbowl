@@ -49,15 +49,15 @@ import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
-import { isGameValid } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { isGameValid } from 'src/app/core/utils/game-utils/game-validation.utils';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';

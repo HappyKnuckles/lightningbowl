@@ -1,0 +1,294 @@
+import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
+import { Frame, Throw } from 'src/app/core/models/game.model';
+
+export interface PinThrowResult {
+  updatedFrames: Frame[];
+  nextFrameIndex: number;
+  nextThrowIndex: number;
+}
+
+// Cell accessibility & navigation
+
+/** Cell at (frameIndex, throwIndex) is reachable given current throws. */
+export function isCellAccessible(frames: Frame[], frameIndex: number, throwIndex: number): boolean {
+  if (throwIndex === 0) return true;
+
+  const frame = frames[frameIndex];
+  if (!frame || !frame.throws) return false;
+
+  const firstThrow = frame.throws[0];
+  const firstVal = firstThrow?.value;
+
+  if (throwIndex === 1) {
+    if (firstThrow === undefined || firstVal === undefined) return false;
+    if (frameIndex < 9 && firstVal === 10) return false;
+    return true;
+  }
+
+  if (frameIndex === 9 && throwIndex === 2) {
+    const secondThrow = frame.throws[1];
+    const secondVal = secondThrow?.value;
+
+    if (firstThrow === undefined || firstVal === undefined) return false;
+    if (secondThrow === undefined || secondVal === undefined) return false;
+
+    const isStrikeThrow = firstVal === 10;
+    const isSpareThrow = !isStrikeThrow && firstVal + secondVal === 10;
+    return isStrikeThrow || isSpareThrow;
+  }
+
+  return false;
+}
+
+export function calculateNextPosition(
+  frames: Frame[],
+  frameIndex: number,
+  throwIndex: number,
+  currentInput?: number[] | number,
+): { nextFrameIndex: number; nextThrowIndex: number } {
+  const val = resolveInputValue(frames, frameIndex, throwIndex, currentInput);
+
+  if (frameIndex < 9) {
+    if (throwIndex === 0) {
+      return val === 10 ? { nextFrameIndex: frameIndex + 1, nextThrowIndex: 0 } : { nextFrameIndex: frameIndex, nextThrowIndex: 1 };
+    }
+    return { nextFrameIndex: frameIndex + 1, nextThrowIndex: 0 };
+  }
+
+  if (throwIndex === 0) return { nextFrameIndex: 9, nextThrowIndex: 1 };
+
+  if (throwIndex === 1) {
+    const firstThrowVal = frames[9]?.throws?.[0]?.value ?? 0;
+    const isBonusEarned = firstThrowVal === 10 || firstThrowVal + val === 10;
+    return isBonusEarned ? { nextFrameIndex: 9, nextThrowIndex: 2 } : { nextFrameIndex: 9, nextThrowIndex: 1 };
+  }
+
+  return { nextFrameIndex: 9, nextThrowIndex: 2 };
+}
+
+export function getAvailablePins(frameIndex: number, throwIndex: number, frameThrows: Throw[]): number[] {
+  if (throwIndex === 0) return PINS;
+
+  const prevThrow = frameThrows[throwIndex - 1];
+  if (!prevThrow) return PINS;
+
+  if (frameIndex === 9) {
+    if (throwIndex === 1 && prevThrow.value === 10) return PINS;
+
+    if (throwIndex === 2) {
+      const firstVal = frameThrows[0]?.value ?? 0;
+      const secondVal = prevThrow.value ?? 0;
+
+      if (secondVal === 10) return PINS;
+      if (firstVal !== 10 && firstVal + secondVal === 10) return PINS;
+    }
+  }
+
+  if (prevThrow.pinsLeftStanding?.length) return prevThrow.pinsLeftStanding;
+  if (prevThrow.pinsKnockedDown?.length) return PINS.filter((p) => !prevThrow.pinsKnockedDown!.includes(p));
+
+  if (prevThrow.value === 10) return [];
+
+  return PINS;
+}
+
+// Split logic
+
+export function calculateSplit(frameIndex: number, throwIndex: number, pinsLeftStanding: number[], throwsData: Throw[][]): boolean {
+  const isFirstThrow = throwIndex === 0;
+  const isTenthFrame = frameIndex === 9;
+
+  if (!isTenthFrame) return isFirstThrow ? isSplit(pinsLeftStanding) : false;
+
+  if (isFirstThrow) return isSplit(pinsLeftStanding);
+
+  const firstThrow = throwsData[9]?.[0];
+  const secondThrow = throwsData[9]?.[1];
+
+  if (throwIndex === 1 && firstThrow?.value === 10) return isSplit(pinsLeftStanding);
+
+  if (throwIndex === 2) {
+    const doubleStrike = firstThrow?.value === 10 && secondThrow?.value === 10;
+    const spare = firstThrow && secondThrow && firstThrow.value !== 10 && firstThrow.value + secondThrow.value === 10;
+
+    if (doubleStrike || spare) return isSplit(pinsLeftStanding);
+  }
+
+  return false;
+}
+
+export function isSplit(pinsLeftStanding: number[]): boolean {
+  const numPins = pinsLeftStanding?.length ?? 0;
+  if (numPins < 2 || pinsLeftStanding.includes(1)) return false;
+
+  const occupiedColumns = new Set<number>();
+  for (const pin of pinsLeftStanding) {
+    const col = PIN_TO_COLUMN[pin];
+    if (col) occupiedColumns.add(col);
+  }
+
+  const sortedCols = Array.from(occupiedColumns).sort((a, b) => a - b);
+  for (let i = 0; i < sortedCols.length - 1; i++) {
+    if (sortedCols[i + 1] - sortedCols[i] > 1) return true;
+  }
+  return false;
+}
+
+export function isMakeableSplit(pinsLeftStanding: number[]): boolean {
+  if (!isSplit(pinsLeftStanding)) return false;
+
+  const sortedPins = [...pinsLeftStanding].sort((a, b) => a - b);
+  for (const unmakeable of UNMAKEABLE_SPLITS) {
+    const sortedUnmakeable = [...unmakeable].sort((a, b) => a - b);
+    if (arraysEqual(sortedPins, sortedUnmakeable)) return false;
+  }
+  return true;
+}
+
+// Pin processing
+
+export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex: number, pinsKnockedDown: number[]): PinThrowResult {
+  const updatedFrames: Frame[] = structuredClone(frames);
+  ensureFrameStructure(updatedFrames, frameIndex, throwIndex);
+
+  const frame = updatedFrames[frameIndex];
+
+  const availablePins = getAvailablePins(frameIndex, throwIndex, frame.throws);
+  const validPinsHit = validatePinsHit(frame, throwIndex, availablePins, pinsKnockedDown);
+
+  const value = validPinsHit.length;
+  const pinsStandingAfter = availablePins.filter((p) => !validPinsHit.includes(p));
+
+  const isSplitThrow = calculateSplit(
+    frameIndex,
+    throwIndex,
+    pinsStandingAfter,
+    updatedFrames.map((f) => f.throws),
+  );
+
+  frame.throws[throwIndex] = {
+    value,
+    throwIndex: throwIndex + 1,
+    pinsLeftStanding: pinsStandingAfter,
+    pinsKnockedDown: validPinsHit,
+    isSplit: isSplitThrow,
+  };
+
+  cleanupSubsequentThrows(frame, frameIndex, throwIndex, value, pinsStandingAfter);
+
+  const next = calculateNextPosition(updatedFrames, frameIndex, throwIndex, validPinsHit);
+
+  return {
+    updatedFrames,
+    nextFrameIndex: next.nextFrameIndex,
+    nextThrowIndex: next.nextThrowIndex,
+  };
+}
+
+export function applyPinModeUndo(frames: Frame[], currentFrameIndex: number, currentThrowIndex: number): PinThrowResult | null {
+  const updatedFrames = structuredClone(frames);
+  const currentFrame = updatedFrames[currentFrameIndex];
+
+  if (!currentFrame?.throws) return null;
+
+  const hasValueAtCursor = currentFrame.throws[currentThrowIndex] !== undefined;
+  let targetFrameIdx = currentFrameIndex;
+  let targetThrowIdx = currentThrowIndex;
+
+  if (hasValueAtCursor) {
+    updatedFrames[targetFrameIdx].throws.splice(targetThrowIdx, 1);
+  } else {
+    targetThrowIdx--;
+
+    if (targetThrowIdx < 0) {
+      targetFrameIdx--;
+      if (targetFrameIdx < 0) return null;
+
+      const prevFrame = updatedFrames[targetFrameIdx];
+      const prevLength = prevFrame?.throws?.length ?? 0;
+      targetThrowIdx = Math.max(0, prevLength - 1);
+    }
+
+    if (updatedFrames[targetFrameIdx]?.throws?.length > 0) {
+      updatedFrames[targetFrameIdx].throws.splice(targetThrowIdx, 1);
+    }
+  }
+
+  return {
+    updatedFrames,
+    nextFrameIndex: targetFrameIdx,
+    nextThrowIndex: targetThrowIdx,
+  };
+}
+
+// Private helpers
+
+function ensureFrameStructure(frames: Frame[], frameIndex: number, throwIndex: number): void {
+  while (frames.length < 10) {
+    frames.push({ frameIndex: frames.length + 1, throws: [] } as Frame);
+  }
+  const frame = frames[frameIndex];
+  while (frame.throws.length <= throwIndex) {
+    frame.throws.push({
+      value: 0,
+      throwIndex: frame.throws.length + 1,
+      pinsLeftStanding: [],
+      pinsKnockedDown: [],
+    });
+  }
+}
+
+function validatePinsHit(frame: Frame, throwIndex: number, availablePins: number[], inputPins: number[]): number[] {
+  const isDataTrap = availablePins.length === 0 && throwIndex > 0 && frame.throws[throwIndex - 1].value !== 10;
+
+  if (isDataTrap) return inputPins;
+  return inputPins.filter((p) => availablePins.includes(p));
+}
+
+function resolveInputValue(frames: Frame[], frameIndex: number, throwIndex: number, currentInput?: number[] | number): number {
+  if (Array.isArray(currentInput)) return currentInput.length;
+  if (typeof currentInput === 'number') return currentInput;
+  return frames[frameIndex]?.throws?.[throwIndex]?.value ?? 0;
+}
+
+function arraysEqual(arr1: number[], arr2: number[]): boolean {
+  if (arr1.length !== arr2.length) return false;
+  return arr1.every((val, idx) => val === arr2[idx]);
+}
+
+function cleanupSubsequentThrows(frame: Frame, frameIndex: number, throwIndex: number, value: number, pinsStandingAfter: number[]): void {
+  if (frame.throws.length <= throwIndex + 1) return;
+
+  const isTenthFrame = frameIndex === 9;
+  const nextThrow = frame.throws[throwIndex + 1];
+
+  if (!isTenthFrame) {
+    if (value === 10) {
+      frame.throws.splice(1);
+    } else {
+      validateOrClearThrow(nextThrow, pinsStandingAfter, frame, throwIndex + 1);
+    }
+    return;
+  }
+
+  if (throwIndex === 0) {
+    const availableForSecond = value === 10 ? PINS : pinsStandingAfter;
+    validateOrClearThrow(nextThrow, availableForSecond, frame, 1);
+  } else if (throwIndex === 1) {
+    if (frame.throws.length > 2) {
+      const firstVal = frame.throws[0].value;
+      const availableForThird = (firstVal === 10 && value === 10) || firstVal + value === 10 ? PINS : pinsStandingAfter;
+      validateOrClearThrow(frame.throws[2], availableForThird, frame, 2);
+    }
+  }
+}
+
+function validateOrClearThrow(targetThrow: Throw, availablePins: number[], frame: Frame, targetIndex: number): void {
+  const invalidPins = (targetThrow.pinsKnockedDown || []).filter((p) => !availablePins.includes(p));
+
+  if (invalidPins.length > 0) {
+    frame.throws.splice(targetIndex);
+  } else {
+    targetThrow.pinsLeftStanding = availablePins.filter((p) => !targetThrow.pinsKnockedDown!.includes(p));
+  }
+}

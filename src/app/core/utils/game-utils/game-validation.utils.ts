@@ -1,5 +1,5 @@
-import { Frame, Game } from '../../models/game.model';
-import { getThrowValue } from './game-utils.service';
+import { Frame, Game } from 'src/app/core/models/game.model';
+import { getThrowValue } from './frame.utils';
 
 export function canRecordStrike(frameIndex: number, throwIndex: number, frames: Frame[]): boolean {
   if (frameIndex < 9) {

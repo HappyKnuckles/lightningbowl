@@ -42,19 +42,6 @@ ion-item-divider {
     color: var(--ion-text-color);
   }
 }
-.input-col {
-  .cell {
-    color: var(--ion-input-color);
-      text-align: center;
-      background-color: var(--ion-color-secondary);
-      border-radius: 5px;
-      min-height: 35px !important;
-      height: 35px;
-    display: flex;
-      justify-content: center;
-      align-items: center;
-  }
-}
 
 .sliding {
   margin: 0 16px 12px;

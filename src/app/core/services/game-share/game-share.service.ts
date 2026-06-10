@@ -21,9 +21,7 @@ export class GameShareService {
     this.renderer = rendererFactory.createRenderer(null, null);
   }
 
-  async shareGame(game: Game, scoreTemplate: HTMLElement, resizableContainer: HTMLElement): Promise<void> {
-    const originalWidth = resizableContainer.style.width;
-
+  async shareGame(game: Game, scoreTemplate: HTMLElement): Promise<void> {
     try {
       this.loadingService.setLoading(true);
 
@@ -50,7 +48,6 @@ export class GameShareService {
       console.error('Error taking screenshot and sharing', error);
       this.toastService.showToast(TOAST_MESSAGES.screenshotShareError, 'bug', true);
     } finally {
-      this.renderer.setStyle(resizableContainer, 'width', originalWidth);
       this.loadingService.setLoading(false);
     }
   }

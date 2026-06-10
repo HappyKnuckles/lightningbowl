@@ -22,7 +22,7 @@ interface Pin {
         <div class="lane"></div>
 
         <div class="pins">
-          @for (p of pins; track p.x) {
+          @for (p of pins; track $index) {
             <div
               class="pin"
               [style.left]="p.x - 15 + 'px'"

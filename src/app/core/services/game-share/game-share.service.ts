@@ -26,13 +26,20 @@ export class GameShareService {
 
     try {
       this.loadingService.setLoading(true);
-      this.renderer.setStyle(resizableContainer, 'width', '700px');
 
       await new Promise((r) => setTimeout(r, 100));
 
       const message = this.buildShareMessage(game);
-      const dataUrl = await toPng(scoreTemplate, { quality: 0.7 });
-
+      const dataUrl = await toPng(scoreTemplate, {
+        quality: 1,
+        pixelRatio: 3,
+        width: scoreTemplate.scrollWidth,
+        height: scoreTemplate.scrollHeight,
+        style: {
+          margin: '0',
+          overflow: 'visible',
+        },
+      });
       if (this.canUseNavigatorShare()) {
         await this.shareViaNavigator(dataUrl, game.gameId, message);
       } else {

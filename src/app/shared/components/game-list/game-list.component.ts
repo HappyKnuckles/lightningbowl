@@ -67,7 +67,7 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 interface MonthHeader {
   name: string;
@@ -113,7 +113,7 @@ interface MonthHeader {
     GameComponent,
     GenericTypeaheadComponent,
     BallSelectComponent,
-    PinDeckFrameRowComponent,
+    PinDeckComponent,
   ],
 })
 export class GameListComponent implements OnInit {

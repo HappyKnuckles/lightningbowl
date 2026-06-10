@@ -42,6 +42,19 @@ ion-item-divider {
     color: var(--ion-text-color);
   }
 }
+.input-col {
+  .cell {
+    color: var(--ion-input-color);
+      text-align: center;
+      background-color: var(--ion-color-secondary);
+      border-radius: 5px;
+      min-height: 35px !important;
+      height: 35px;
+    display: flex;
+      justify-content: center;
+      align-items: center;
+  }
+}
 
 .sliding {
   margin: 0 16px 12px;
@@ -167,13 +180,13 @@ ion-item-divider {
   }
 }
 
-// Pin deck frame row styling for history games
-:host ::ng-deep app-pin-deck-frame-row {
-  display: block;
+:host ::ng-deep .pin-deck-row {
+  min-height: 22px;
 
-  .pin-deck-row {
-    height: 22px;
-    min-height: 22px;
+  .input-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 

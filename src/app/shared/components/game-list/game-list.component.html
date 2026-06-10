@@ -82,81 +82,87 @@
                     <ion-row>
                       <ion-col class="middle frame">{{ j + 1 }}</ion-col>
                     </ion-row>
+
+                    <!-- Frames 1–9 -->
                     <ion-row *ngIf="j !== 9">
                       <ion-col class="input-col"></ion-col>
                       <ion-col class="input-col">
-                        <ion-input
-                          readonly="true"
-                          type="text"
-                          inputmode="numeric"
-                          [class.is-split]="frame?.throws?.[0]?.isSplit"
-                          [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
-                        </ion-input>
+                        <div class="cell" [class.is-split]="frame?.throws?.[0]?.isSplit">
+                          {{ frame?.throws?.[0]?.value === 10 ? "X" : frame?.throws?.[0]?.value === 0 ? "–" : frame?.throws?.[0]?.value }}
+                        </div>
                       </ion-col>
                       <ion-col class="input-col">
-                        <ion-input
-                          readonly="true"
-                          type="text"
-                          inputmode="numeric"
-                          [value]="
+                        <div class="cell">
+                          {{
                             frame?.throws?.[0]?.value !== 10 && (frame?.throws?.[0]?.value ?? 0) + (frame?.throws?.[1]?.value ?? 0) === 10
-                              ? '/'
+                              ? "/"
                               : frame?.throws?.[1]?.value === 0
-                                ? '–'
+                                ? "–"
                                 : frame?.throws?.[1]?.value
-                          ">
-                        </ion-input>
+                          }}
+                        </div>
                       </ion-col>
                     </ion-row>
+
+                    <!-- 10th frame -->
                     <ion-row *ngIf="j === 9">
                       <ion-col class="input-col">
-                        <ion-input
-                          readonly="true"
-                          type="text"
-                          inputmode="numeric"
-                          [class.is-split]="frame?.throws?.[0]?.isSplit"
-                          [value]="frame?.throws?.[0]?.value === 10 ? 'X' : frame?.throws?.[0]?.value === 0 ? '–' : frame?.throws?.[0]?.value">
-                        </ion-input>
+                        <div class="cell" [class.is-split]="frame?.throws?.[0]?.isSplit">
+                          {{ frame?.throws?.[0]?.value === 10 ? "X" : frame?.throws?.[0]?.value === 0 ? "–" : frame?.throws?.[0]?.value }}
+                        </div>
                       </ion-col>
                       <ion-col class="input-col">
-                        <ion-input
-                          readonly="true"
-                          type="text"
-                          inputmode="numeric"
-                          [class.is-split]="frame?.throws?.[1]?.isSplit"
-                          [value]="
+                        <div class="cell" [class.is-split]="frame?.throws?.[1]?.isSplit">
+                          {{
                             frame?.throws?.[1]?.value === 10
-                              ? 'X'
+                              ? "X"
                               : frame?.throws?.[0]?.value !== 10 && (frame?.throws?.[0]?.value ?? 0) + (frame?.throws?.[1]?.value ?? 0) === 10
-                                ? '/'
+                                ? "/"
                                 : frame?.throws?.[1]?.value === 0
-                                  ? '–'
+                                  ? "–"
                                   : frame?.throws?.[1]?.value
-                          ">
-                        </ion-input>
+                          }}
+                        </div>
                       </ion-col>
-                      <ion-col class="input-col" *ngIf="j === 9">
-                        <ion-input
-                          readonly="true"
-                          type="text"
-                          inputmode="numeric"
-                          [class.is-split]="frame?.throws?.[2]?.isSplit"
-                          [value]="
+                      <ion-col class="input-col">
+                        <div class="cell" [class.is-split]="frame?.throws?.[2]?.isSplit">
+                          {{
                             frame?.throws?.[0]?.value === 10 &&
                             frame?.throws?.[1]?.value !== 10 &&
                             (frame?.throws?.[1]?.value ?? 0) + (frame?.throws?.[2]?.value ?? 0) === 10
-                              ? '/'
+                              ? "/"
                               : frame?.throws?.[2]?.value === 10
-                                ? 'X'
+                                ? "X"
                                 : frame?.throws?.[2]?.value === 0
-                                  ? '–'
+                                  ? "–"
                                   : frame?.throws?.[2]?.value
-                          ">
-                        </ion-input>
+                          }}
+                        </div>
                       </ion-col>
                     </ion-row>
-                    <!-- Pin Deck Frame Row for pin mode games -->
-                    <app-pin-deck-frame-row *ngIf="game.isPinMode" [game]="game" [frameIndex]="j"></app-pin-deck-frame-row>
+
+                    <ion-row class="pin-deck-row" *ngIf="game.isPinMode">
+                      <ion-col class="input-col" *ngIf="j !== 9"></ion-col>
+                      <ion-col class="input-col">
+                        <app-pin-deck
+                          *ngIf="frame?.throws?.[0]?.value !== undefined"
+                          [scale]="0.3"
+                          [activePins]="frame?.throws?.[0]?.pinsLeftStanding ?? []"></app-pin-deck>
+                      </ion-col>
+                      <ion-col class="input-col">
+                        <app-pin-deck
+                          *ngIf="frame?.throws?.[1]?.value !== undefined && (j === 9 || frame?.throws?.[0]?.value !== 10)"
+                          [scale]="0.3"
+                          [activePins]="frame?.throws?.[1]?.pinsLeftStanding ?? []"></app-pin-deck>
+                      </ion-col>
+                      <ion-col class="input-col" *ngIf="j === 9">
+                        <app-pin-deck
+                          *ngIf="frame?.throws?.[2]?.value !== undefined"
+                          [scale]="0.3"
+                          [activePins]="frame?.throws?.[2]?.pinsLeftStanding ?? []"></app-pin-deck>
+                      </ion-col>
+                    </ion-row>
+
                     <ion-row>
                       <ion-col class="middle count">{{ game.frameScores[j] }}</ion-col>
                     </ion-row>

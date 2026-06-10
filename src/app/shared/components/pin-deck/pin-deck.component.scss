@@ -5,8 +5,10 @@ $pin-size: 8px;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  max-width: 500px;
-  margin: 0 auto;
+  // Keep natural (unscaled) size so the host's smaller scaled box doesn't squeeze it;
+  // the transform then shrinks it to exactly fill that box from the top-left corner.
+  width: max-content;
+  transform-origin: top left;
 }
 
 .pin-deck-container.stat-mode .pin:not(.active) {

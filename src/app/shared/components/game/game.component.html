@@ -40,8 +40,34 @@
             [class.is-split]="isThrowSplit(frameIndex, 2)"></ion-input>
         </ion-col>
       </ion-row>
-      <!-- Pin Deck Frame Row: shows pins standing after each throw -->
-      <app-pin-deck-frame-row [game]="game()" [frameIndex]="frameIndex"></app-pin-deck-frame-row>
+
+      <ion-row class="pin-deck-row">
+        <ion-col class="input-col" *ngIf="i !== 10"></ion-col>
+        <ion-col class="input-col">
+          <app-pin-deck
+            *ngIf="getLocalFrameValue(frameIndex, 0) !== undefined"
+            [scale]="0.3"
+            [activePins]="getPinsStanding(frameIndex, 0)"></app-pin-deck>
+        </ion-col>
+        <ion-col class="input-col" *ngIf="i !== 10">
+          <app-pin-deck
+            *ngIf="getLocalFrameValue(frameIndex, 1) !== undefined && getLocalFrameValue(frameIndex, 0) !== 10"
+            [scale]="0.3"
+            [activePins]="getPinsStanding(frameIndex, 1)"></app-pin-deck>
+        </ion-col>
+        <ion-col class="input-col" *ngIf="i === 10">
+          <app-pin-deck
+            *ngIf="getLocalFrameValue(frameIndex, 1) !== undefined"
+            [scale]="0.3"
+            [activePins]="getPinsStanding(frameIndex, 1)"></app-pin-deck>
+        </ion-col>
+        <ion-col class="input-col" *ngIf="i === 10">
+          <app-pin-deck
+            *ngIf="getLocalFrameValue(frameIndex, 2) !== undefined"
+            [scale]="0.3"
+            [activePins]="getPinsStanding(frameIndex, 2)"></app-pin-deck>
+        </ion-col>
+      </ion-row>
       <ion-row>
         <ion-col class="middle count">
           <ng-container

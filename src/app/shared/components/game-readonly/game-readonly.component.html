@@ -1,0 +1,57 @@
+<div class="grid-container" #captureRoot>
+  @for (f of frameVms(); track f.frameNumber) {
+    <ion-grid fixed="true">
+      <ion-row>
+        <ion-col class="middle frame">{{ f.frameNumber }}</ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col class="input-col" *ngIf="!f.isTenth"></ion-col>
+
+        <ion-col class="input-col">
+          <div class="cell" [class.is-split]="f.throw0.isSplit">{{ f.throw0.display }}</div>
+        </ion-col>
+
+        <ion-col class="input-col">
+          <div class="cell" [class.is-split]="f.throw1.isSplit">{{ f.throw1.display }}</div>
+        </ion-col>
+
+        @if (f.isTenth && f.throw2; as t2) {
+          <ion-col class="input-col">
+            <div class="cell" [class.is-split]="t2.isSplit">{{ t2.display }}</div>
+          </ion-col>
+        }
+      </ion-row>
+
+      @if (isPinMode()) {
+        <ion-row class="pin-deck-row">
+          <ion-col class="input-col" *ngIf="!f.isTenth"></ion-col>
+
+          <ion-col class="input-col">
+            @if (f.throw0.pinShow) {
+              <app-pin-deck [scale]="pinScale()" [activePins]="f.throw0.pinPins"></app-pin-deck>
+            }
+          </ion-col>
+
+          <ion-col class="input-col">
+            @if (f.throw1.pinShow) {
+              <app-pin-deck [scale]="pinScale()" [activePins]="f.throw1.pinPins"></app-pin-deck>
+            }
+          </ion-col>
+
+          @if (f.isTenth && f.throw2; as t2) {
+            <ion-col class="input-col">
+              @if (t2.pinShow) {
+                <app-pin-deck [scale]="pinScale()" [activePins]="t2.pinPins"></app-pin-deck>
+              }
+            </ion-col>
+          }
+        </ion-row>
+      }
+
+      <ion-row>
+        <ion-col class="middle count">{{ f.score }}</ion-col>
+      </ion-row>
+    </ion-grid>
+  }
+</div>

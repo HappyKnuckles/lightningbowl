@@ -21,18 +21,23 @@ export class GameShareService {
     this.renderer = rendererFactory.createRenderer(null, null);
   }
 
-  async shareGame(game: Game, scoreTemplate: HTMLElement, resizableContainer: HTMLElement): Promise<void> {
-    const originalWidth = resizableContainer.style.width;
-
+  async shareGame(game: Game, scoreTemplate: HTMLElement): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      this.renderer.setStyle(resizableContainer, 'width', '700px');
 
       await new Promise((r) => setTimeout(r, 100));
 
       const message = this.buildShareMessage(game);
-      const dataUrl = await toPng(scoreTemplate, { quality: 0.7 });
-
+      const dataUrl = await toPng(scoreTemplate, {
+        quality: 1,
+        pixelRatio: 3,
+        width: scoreTemplate.scrollWidth,
+        height: scoreTemplate.scrollHeight,
+        style: {
+          margin: '0',
+          overflow: 'visible',
+        },
+      });
       if (this.canUseNavigatorShare()) {
         await this.shareViaNavigator(dataUrl, game.gameId, message);
       } else {
@@ -43,7 +48,6 @@ export class GameShareService {
       console.error('Error taking screenshot and sharing', error);
       this.toastService.showToast(TOAST_MESSAGES.screenshotShareError, 'bug', true);
     } finally {
-      this.renderer.setStyle(resizableContainer, 'width', originalWidth);
       this.loadingService.setLoading(false);
     }
   }

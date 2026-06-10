@@ -2,14 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { AlertController, isPlatform } from '@ionic/angular/standalone';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Game, numberArraysToFrames } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
+import { numberArraysToFrames, parseBowlingScores } from '../game-utils/game-utils.service';
+import { Game } from '../../models/game.model';
 
 const WARNING_STORAGE_KEY = 'alert';
 const WARNING_TTL_DAYS = 7;
@@ -18,7 +18,6 @@ const WARNING_TTL_DAYS = 7;
 export class GameImageImportService {
   private alertController = inject(AlertController);
   private imageProcessingService = inject(ImageProcesserService);
-  private gameUtilsService = inject(GameUtilsService);
   private transformGameService = inject(GameDataTransformerService);
   private loadingService = inject(LoadingService);
   private toastService = inject(ToastService);
@@ -148,7 +147,7 @@ export class GameImageImportService {
 
   private parseBowlingScores(input: string): Game | null {
     try {
-      const { frames, frameScores, totalScore } = this.gameUtilsService.parseBowlingScores(input, this.userService.username());
+      const { frames, frameScores, totalScore } = parseBowlingScores(input, this.userService.username());
       const framesAsFrameArray = numberArraysToFrames(frames);
 
       const parsedGame: Game = {

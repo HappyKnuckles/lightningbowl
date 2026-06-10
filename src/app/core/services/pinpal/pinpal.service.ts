@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Frame, Game, Throw, createEmptyFrames } from 'src/app/core/models/game.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
 import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { ToastService } from '../toast/toast.service';
+import { calculateIsClean, createEmptyFrames } from '../game-utils/game-utils.service';
+import { Game, Frame, Throw } from '../../models/game.model';
 
 interface GameRow {
   pk: number;
@@ -37,7 +37,6 @@ export class PinpalService {
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
-    private gameUtilsService: GameUtilsService,
     private sortUtils: SortUtilsService,
     private gameFilterService: GameFilterService,
     private toastService: ToastService,
@@ -92,7 +91,7 @@ export class PinpalService {
           frames,
           totalScore,
           frameScores,
-          isClean: this.gameUtilsService.calculateIsClean(frames),
+          isClean: calculateIsClean(frames),
           isPerfect: totalScore === 300,
           isPractice: (row.leagueName ?? '') === '',
           isPinMode: isPinMode,

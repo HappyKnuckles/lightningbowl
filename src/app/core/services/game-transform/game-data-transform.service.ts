@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Game, Frame, Throw } from 'src/app/core/models/game.model';
-import { GameUtilsService } from '../game-utils/game-utils.service';
+import { calculateIsClean } from '../game-utils/game-utils.service';
 
 /**
  * Configuration for series-specific properties that override game defaults
@@ -14,8 +14,6 @@ export interface SeriesConfig {
   providedIn: 'root',
 })
 export class GameDataTransformerService {
-  constructor(private gameUtilsService: GameUtilsService) {}
-
   /**
    * Transforms and normalizes a Game object for persistence.
    * - Generates gameId and date if not present
@@ -33,7 +31,7 @@ export class GameDataTransformerService {
       const date = game.date || Date.now();
       const isPerfect = game.totalScore === 300;
 
-      const isClean = this.gameUtilsService.calculateIsClean(game.frames);
+      const isClean = calculateIsClean(game.frames);
 
       // Ensure frames are in proper Frame[] format
       const normalizedFrames: Frame[] = this.normalizeFrames(game.frames);

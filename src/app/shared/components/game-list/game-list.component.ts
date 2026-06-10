@@ -49,7 +49,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
+import { isGameValid } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UtilsService } from 'src/app/core/services/utils/utils.service';
@@ -143,7 +143,6 @@ export class GameListComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private validationService = inject(BowlingGameValidationService);
   private shareService = inject(GameShareService);
   private typeaheadConfigService = inject(TypeaheadConfigService);
 
@@ -407,7 +406,7 @@ export class GameListComponent implements OnInit {
 
   // HELPERS
   isGameValid(game: Game): boolean {
-    return this.validationService.isGameValid(game);
+    return isGameValid(game);
   }
 
   parseIntValue(value: string): number {

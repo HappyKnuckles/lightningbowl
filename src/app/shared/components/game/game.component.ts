@@ -33,7 +33,7 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game, createEmptyGame, getThrowValue } from 'src/app/core/models/game.model';
+import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -53,6 +53,7 @@ import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { PINS } from 'src/app/core/constants/app.constants';
+import { createEmptyGame, getThrowValue } from 'src/app/core/services/game-utils/game-utils.service';
 
 @Component({
   selector: 'app-game',

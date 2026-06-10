@@ -1,5 +1,4 @@
 import { computed, Injectable, Signal } from '@angular/core';
-import { Game, isAllFramesComplete, toCompletedFramesGame } from 'src/app/core/models/game.model';
 import {
   HighlightBallStats,
   HighlightPatternStats,
@@ -19,6 +18,8 @@ import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-c
 import { PatternStatsCalculatorService } from './game-stats-calculator/pattern-stats-calculator.service';
 import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
 import { PinStatsCalculatorService } from './game-stats-calculator/pin-stats-calculator.service';
+import { Game } from '../../models/game.model';
+import { isAllFramesComplete, toCompletedFramesGame } from '../game-utils/game-utils.service';
 
 @Injectable({
   providedIn: 'root',

@@ -32,10 +32,6 @@ export function createEmptyGame(): Game {
   };
 }
 
-export function generateUniqueSeriesId(): string {
-  return 'series-' + Math.random().toString(36).substring(2, 15);
-}
-
 // Accessors
 
 /** Throw value at an index, or undefined if it doesn't exist. */

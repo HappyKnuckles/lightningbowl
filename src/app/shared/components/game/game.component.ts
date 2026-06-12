@@ -54,6 +54,7 @@ import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahea
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
+import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
 @Component({
   selector: 'app-game',
@@ -219,48 +220,7 @@ export class GameComponent implements OnInit {
   }
 
   getFrameValue(frameIndex: number, throwIndex: number): string {
-    const frame = this.game().frames[frameIndex];
-    if (!frame) return '';
-
-    const val = getThrowValue(frame, throwIndex);
-    if (val === undefined || val === null) {
-      return '';
-    }
-
-    const firstBall = getThrowValue(frame, 0);
-    const isTenth = frameIndex === 9;
-
-    if (throwIndex === 0) {
-      return val === 10 ? 'X' : val.toString();
-    }
-
-    if (!isTenth) {
-      if (firstBall !== undefined && firstBall !== 10 && firstBall + val === 10) {
-        return '/';
-      }
-      return val.toString();
-    }
-
-    const secondBall = getThrowValue(frame, 1);
-
-    if (throwIndex === 1) {
-      if (firstBall !== undefined && firstBall !== 10 && firstBall + val === 10) {
-        return '/';
-      }
-      return val === 10 ? 'X' : val.toString();
-    }
-
-    if (throwIndex === 2) {
-      if (firstBall === 10) {
-        if (secondBall === 10) {
-          return val === 10 ? 'X' : val.toString();
-        }
-        return secondBall !== undefined && secondBall + val === 10 ? '/' : val.toString();
-      }
-      return val === 10 ? 'X' : val.toString();
-    }
-
-    return val.toString();
+    return formatThrowDisplay(this.game().frames[frameIndex], throwIndex, frameIndex === 9);
   }
 
   async focusNextInput(frameIndex: number, inputIndex: number) {

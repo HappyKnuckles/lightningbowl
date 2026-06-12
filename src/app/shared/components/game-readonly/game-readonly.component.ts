@@ -56,7 +56,7 @@ export class GameReadonlyComponent {
       const v2 = getThrowValue(frame, 2);
 
       const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => ({
-        display: formatThrowDisplay(frame, throwIndex, isTenth, '–'),
+        display: formatThrowDisplay(frame, throwIndex, isTenth),
         isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
         pinShow,
         pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],

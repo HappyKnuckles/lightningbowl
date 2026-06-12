@@ -5,6 +5,7 @@ import { getThrowValue } from './frame.utils';
 export function parseInputValue(input: string, frameIndex: number, throwIndex: number, frames: Frame[]): number {
   const upperInput = input.toUpperCase();
   if (upperInput === 'X') return 10;
+  if (upperInput === '-') return 0;
 
   if (upperInput === '/') {
     const firstThrow = getThrowValue(frames[frameIndex], 0);
@@ -28,7 +29,11 @@ export function parseInputValue(input: string, frameIndex: number, throwIndex: n
  * @param missSymbol shown for a knocked - zero throw.Omit to render the number(live grid);
  * pass '–' for the readonly / share grid.
  */
-export function formatThrowDisplay(frame: Frame | undefined, throwIndex: number, isTenth: boolean, missSymbol?: string): string {
+export function formatThrowDisplay(frame: Frame | undefined, throwIndex: number, isTenth: boolean): string {
+  const missSymbol = '—';
+  const spareSymbol = '/';
+  const strikeSymbol = 'X';
+
   if (!frame) return '';
 
   const val = getThrowValue(frame, throwIndex);
@@ -39,26 +44,26 @@ export function formatThrowDisplay(frame: Frame | undefined, throwIndex: number,
   const num = (n: number) => (n === 0 && missSymbol !== undefined ? missSymbol : String(n));
 
   if (throwIndex === 0) {
-    return val === 10 ? 'X' : num(val);
+    return val === 10 ? strikeSymbol : num(val);
   }
 
   if (!isTenth) {
-    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return '/';
+    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return spareSymbol;
     return num(val);
   }
 
   // --- 10th frame ---
   if (throwIndex === 1) {
-    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return '/';
-    return val === 10 ? 'X' : num(val);
+    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return spareSymbol;
+    return val === 10 ? strikeSymbol : num(val);
   }
 
   // throwIndex === 2
   if (v0 === 10) {
-    if (v1 === 10) return val === 10 ? 'X' : num(val);
-    return v1 !== undefined && v1 + val === 10 ? '/' : num(val);
+    if (v1 === 10) return val === 10 ? strikeSymbol : num(val);
+    return v1 !== undefined && v1 + val === 10 ? spareSymbol : num(val);
   }
-  return val === 10 ? 'X' : num(val);
+  return val === 10 ? strikeSymbol : num(val);
 }
 
 export function parseBowlingScores(input: string, username: string): { frames: number[][]; frameScores: number[]; totalScore: number } {

@@ -41,14 +41,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import {
-  cloneFrames,
-  createEmptyGame,
-  generateUniqueSeriesId,
-  recordThrow,
-  removeThrow,
-  toCompletedFramesGame,
-} from 'src/app/core/utils/game-utils/frame.utils';
+import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
   canRecordStrike,
@@ -552,7 +545,7 @@ export class AddGamePage implements OnInit {
     const isSeries = this.selectedMode() !== SeriesMode.Single;
 
     if (isSeries) {
-      this.seriesId = generateUniqueSeriesId();
+      this.seriesId = this.utilsService.generateUniqueSeriesId();
     }
 
     const success = await this.processAndSaveGames(gamesToSave, isSeries, this.seriesId);

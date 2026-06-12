@@ -55,7 +55,7 @@ export class StatSpareComponent {
     addIcons({ informationCircleOutline, arrowUp, arrowDown });
   }
 
-  readonly overall = computed<SpareSummary>(() => {
+  readonly overallVm = computed<SpareSummary>(() => {
     const stats = this.stats();
     const prev = this.prevStats();
     const attempts = stats.totalSparesConverted + stats.totalSparesMissed;
@@ -75,7 +75,7 @@ export class StatSpareComponent {
     };
   });
 
-  readonly rows = computed<SpareRow[]>(() => {
+  readonly rowVms = computed<SpareRow[]>(() => {
     const stats = this.stats();
     const prev = this.prevStats();
     const id = this.id();

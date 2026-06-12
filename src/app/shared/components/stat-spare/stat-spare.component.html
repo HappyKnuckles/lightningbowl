@@ -4,17 +4,17 @@
   <header class="spare-overall">
     <div class="spare-overall-top">
       <p class="spare-overall-label">Overall conversion</p>
-      @if (overall().hasAttempts) {
-        <div class="spare-overall-rate" [style.color]="overall().rateColor">
+      @if (overallVm().hasAttempts) {
+        <div class="spare-overall-rate" [style.color]="overallVm().rateColor">
           <div class="rate-wrap">
-            <ion-text [id]="overall().triggerId">{{ overall().rateText }}%</ion-text>
-            @if (overall().arrow) {
-              <ion-icon class="arrow-icon" [name]="overall().arrow" [color]="overall().diffColor"></ion-icon>
+            <ion-text [id]="overallVm().triggerId">{{ overallVm().rateText }}%</ion-text>
+            @if (overallVm().arrow) {
+              <ion-icon class="arrow-icon" [name]="overallVm().arrow" [color]="overallVm().diffColor"></ion-icon>
             }
           </div>
-          @if (overall().diff) {
-            <ion-popover class="diff-popover" [trigger]="overall().triggerId">
-              <ion-text [color]="overall().diffColor">{{ overall().diff }}</ion-text>
+          @if (overallVm().diff) {
+            <ion-popover class="diff-popover" [trigger]="overallVm().triggerId">
+              <ion-text [color]="overallVm().diffColor">{{ overallVm().diff }}</ion-text>
             </ion-popover>
           }
         </div>
@@ -25,19 +25,19 @@
 
     <p class="spare-overall-sub">
       <span
-        ><b class="made-text">{{ overall().hit }}</b> made</span
+        ><b class="made-text">{{ overallVm().hit }}</b> made</span
       >
       <span
-        ><b class="missed-text">{{ overall().miss }}</b> missed</span
+        ><b class="missed-text">{{ overallVm().miss }}</b> missed</span
       >
       <span
-        ><b>{{ overall().attempts }}</b> attempts</span
+        ><b>{{ overallVm().attempts }}</b> attempts</span
       >
     </p>
 
-    @if (overall().hasAttempts) {
+    @if (overallVm().hasAttempts) {
       <div class="spare-overall-track">
-        <div class="spare-overall-fill" [style.width.%]="overall().rate" [style.--fill]="overall().fillValue"></div>
+        <div class="spare-overall-fill" [style.width.%]="overallVm().rate" [style.--fill]="overallVm().fillValue"></div>
       </div>
     }
   </header>
@@ -66,13 +66,13 @@
           </th>
           <th scope="col" class="th-num">Hit</th>
           <th scope="col" class="th-num">Miss</th>
-          <th scope="col" class="th-bar">Made / missed</th>
+          <th scope="col" class="th-bar">hit / miss</th>
           <th scope="col" class="th-num">Rate</th>
         </tr>
       </thead>
 
       <tbody>
-        @for (row of rows(); track row.pin) {
+        @for (row of rowVms(); track row.pin) {
           <tr class="spare-row" [class.empty]="row.empty">
             <th scope="row" class="spare-pin">{{ row.label }}</th>
 

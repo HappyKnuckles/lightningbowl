@@ -18,7 +18,6 @@ import {
 import { addIcons } from 'ionicons';
 import { bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline } from 'ionicons/icons';
 import * as L from 'leaflet';
-import 'leaflet.markercluster/dist/leaflet.markercluster.js';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Alley, AlleyFilters, AlleySearchOrigin, DEFAULT_ALLEY_FILTERS } from 'src/app/core/models/alley.model';
 import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
@@ -108,8 +107,8 @@ export class AlleyMapPage implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit(): void {
-    this.initializeMap();
+  async ngOnInit(): Promise<void> {
+    await this.initializeMap();
     void this.locateAndLoad();
   }
 
@@ -208,7 +207,15 @@ export class AlleyMapPage implements OnInit, OnDestroy {
     this.selectedAlley.set(null);
   }
 
-  private initializeMap(): void {
+  private async initializeMap(): Promise<void> {
+    // The markercluster dist bundle attaches itself to the global `L`, not to
+    // the Leaflet module instance this page imports. In optimized builds those
+    // are different objects, so point the global at our instance and only then
+    // load the plugin. Loaded dynamically because a static import would be
+    // hoisted above the assignment (and import sorters could reorder it).
+    (window as unknown as { L: typeof L }).L = L;
+    await import('leaflet.markercluster/dist/leaflet.markercluster.js');
+
     this.map = L.map(this.mapContainer.nativeElement, {
       center: DEFAULT_COORDS,
       zoom: DEFAULT_ZOOM,

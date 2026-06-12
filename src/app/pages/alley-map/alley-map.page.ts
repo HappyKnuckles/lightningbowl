@@ -1,540 +1,363 @@
-import { Component, ElementRef, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { IonToolbar, IonHeader, IonContent, IonSearchbar, IonTitle } from '@ionic/angular/standalone';
-import * as L from 'leaflet';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Geolocation } from '@capacitor/geolocation';
 import { SearchbarCustomEvent } from '@ionic/angular';
+import {
+  IonButton,
+  IonChip,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonLabel,
+  IonModal,
+  IonSearchbar,
+  IonSpinner,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline } from 'ionicons/icons';
+import * as L from 'leaflet';
+import 'leaflet.markercluster/dist/leaflet.markercluster.js';
+import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { Alley, AlleyFilters, AlleySearchOrigin, DEFAULT_ALLEY_FILTERS } from 'src/app/core/models/alley.model';
+import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
+import { AlleyService } from 'src/app/core/services/alley/alley.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { NetworkService } from 'src/app/core/services/network/network.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { getOpenState } from 'src/app/core/utils/opening-hours.util';
+import { AlleyDetailSheetComponent } from './components/alley-detail-sheet/alley-detail-sheet.component';
+import { AlleyListComponent } from './components/alley-list/alley-list.component';
 
-// Type definitions for Overpass API
-interface OverpassTags {
-  name?: string;
-  leisure?: string;
-  sport?: string;
-  amenity?: string;
-  opening_hours?: string;
-  phone?: string;
-  website?: string;
-  'addr:housenumber'?: string;
-  'addr:street'?: string;
-  'addr:city'?: string;
-  'addr:postcode'?: string;
-  'addr:country'?: string;
-  [key: string]: string | undefined;
-}
-
-interface OverpassElement {
-  type: 'node' | 'way' | 'relation';
-  id: number;
-  lat?: number;
-  lon?: number;
-  center?: {
-    lat: number;
-    lon: number;
-  };
-  tags?: OverpassTags;
-}
-
-interface OverpassResponse {
-  elements?: OverpassElement[];
-}
-
-interface NominatimResult {
-  lat: string;
-  lon: string;
-  display_name: string;
-}
-
-if (L.Icon?.Default?.prototype) {
-  const iconPrototype = L.Icon.Default.prototype as unknown as Record<string, unknown>;
-  if (typeof iconPrototype['_getIconUrl'] === 'function') {
-    delete iconPrototype['_getIconUrl'];
-  }
-
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'assets/leaflet/marker-icon-2x.png',
-    iconUrl: 'assets/leaflet/marker-icon.png',
-    shadowUrl: 'assets/leaflet/marker-shadow.png',
-  });
-}
+const RADIUS_OPTIONS_KM = [10, 25, 50, 100];
+const DEFAULT_COORDS: [number, number] = [40.7128, -74.006];
+const DEFAULT_ZOOM = 12;
 
 @Component({
   selector: 'app-alley-map',
-  imports: [IonTitle, IonSearchbar, IonContent, IonHeader, IonToolbar],
+  imports: [
+    IonLabel,
+    IonButton,
+    IonChip,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonModal,
+    IonSearchbar,
+    IonSpinner,
+    IonTitle,
+    IonToolbar,
+    SearchBlurDirective,
+    AlleyDetailSheetComponent,
+    AlleyListComponent,
+  ],
   templateUrl: './alley-map.page.html',
-  styleUrls: ['./alley-map.page.css'],
+  styleUrls: ['./alley-map.page.scss'],
 })
 export class AlleyMapPage implements OnInit, OnDestroy {
-  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
+  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
 
-  private map!: L.Map;
-  private markerClusterGroup!: L.LayerGroup;
-  private userMarker!: L.CircleMarker;
-  private userCoords: [number, number] = [40.7128, -74.006];
-  private initialUserCoords: [number, number] | null = null;
-  private readonly overpassUrl = 'https://overpass-api.de/api/interpreter';
-  private readonly nominatimUrl = 'https://nominatim.openstreetmap.org/search';
+  private alleyService = inject(AlleyService);
+  private analyticsService = inject(AnalyticsService);
+  private toastService = inject(ToastService);
+  favoritesService = inject(AlleyFavoritesService);
+  networkService = inject(NetworkService);
 
-  constructor(
-    private http: HttpClient,
-    private analyticsService: AnalyticsService,
-  ) {}
+  alleys = signal<Alley[]>([]);
+  filters = signal<AlleyFilters>({ ...DEFAULT_ALLEY_FILTERS });
+  selectedAlley = signal<Alley | null>(null);
+  isLoading = signal(false);
+  hasError = signal(false);
+  errorMessage = signal("Couldn't load alleys.");
+  isListOpen = signal(false);
+  locationState = signal<'pending' | 'granted' | 'denied'>('pending');
+  searchOrigin = signal<AlleySearchOrigin>({ lat: DEFAULT_COORDS[0], lon: DEFAULT_COORDS[1], source: 'user' });
 
-  async ngOnInit(): Promise<void> {
-    this.initializeMapAndAttemptGeolocation();
+  filteredAlleys = computed(() => {
+    const { openNow, favoritesOnly } = this.filters();
+    const favorites = this.favoritesService.favorites();
+    return this.alleys().filter((alley) => (!openNow || getOpenState(alley.openingHours) === 'open') && (!favoritesOnly || favorites.has(alley.id)));
+  });
+
+  showEmptyState = computed(() => !this.isLoading() && !this.hasError() && this.alleys().length > 0 && this.filteredAlleys().length === 0);
+  showNoResults = computed(() => !this.isLoading() && !this.hasError() && this.alleys().length === 0 && this.locationState() !== 'pending');
+
+  private map?: L.Map;
+  private clusterGroup?: L.MarkerClusterGroup;
+  private userMarker?: L.Marker;
+  private markersById = new Map<string, L.Marker>();
+  private resizeObserver?: ResizeObserver;
+  private radiusReloadTimer?: ReturnType<typeof setTimeout>;
+  private moveFetchTimer?: ReturnType<typeof setTimeout>;
+  private loadSequence = 0;
+
+  constructor() {
+    addIcons({ bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline });
+
+    // Rebuild markers when the visible set changes; update icons in place on
+    // selection/favorite changes so open clusters don't collapse.
+    effect(() => {
+      const alleys = this.filteredAlleys();
+      untracked(() => this.renderMarkers(alleys));
+    });
+    effect(() => {
+      const selectedId = this.selectedAlley()?.id ?? null;
+      const favorites = this.favoritesService.favorites();
+      untracked(() => this.updateMarkerIcons(selectedId, favorites));
+    });
+  }
+
+  ngOnInit(): void {
+    this.initializeMap();
+    void this.locateAndLoad();
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.radiusReloadTimer);
+    clearTimeout(this.moveFetchTimer);
+    this.resizeObserver?.disconnect();
+    this.map?.off();
+    this.map?.remove();
   }
 
   async onSearch(event: SearchbarCustomEvent): Promise<void> {
-    const query = event.detail.value;
-    if (!query || query.trim() === '') {
-      this.resetToInitialLocation();
+    const query = event.detail.value?.trim();
+    if (!query) {
+      // Only jump back when clearing an active place search, not on a blur of an empty bar.
+      if (this.searchOrigin().source === 'search') {
+        await this.recenterOnUser(false);
+      }
       return;
     }
 
     void this.analyticsService.trackAlleySearch(query);
-
     try {
-      const url = `${this.nominatimUrl}?q=${encodeURIComponent(query)}&format=json&limit=1`;
-      const results: NominatimResult[] = (await this.http.get<NominatimResult[]>(url).toPromise()) || [];
-      if (results && results.length > 0) {
-        const { lat, lon } = results[0];
-        this.userCoords = [parseFloat(lat), parseFloat(lon)];
-        this.map.setView(this.userCoords, 13);
-        if (this.userMarker) {
-          this.userMarker.setLatLng(this.userCoords).setPopupContent('Searched Location').openPopup();
-        }
-        await this.loadBowlingAlleysWithFallback();
-      } else {
-        console.warn('No results found for:', query);
+      const result = await this.alleyService.geocode(query);
+      if (!result) {
+        this.toastService.showToast(`No place found for "${query}"`, 'search-outline');
+        return;
       }
-    } catch (error) {
-      console.error('Geocoding error:', error);
+      this.searchOrigin.set({ lat: result.lat, lon: result.lon, source: 'search', label: result.label });
+      this.map?.flyTo([result.lat, result.lon], DEFAULT_ZOOM, { duration: 0.8 });
+      await this.loadAlleys();
+    } catch {
+      this.toastService.showToast('Search failed. Check your connection.', 'cloud-offline-outline', true);
     }
   }
 
-  private async resetToInitialLocation(): Promise<void> {
-    if (this.initialUserCoords) {
-      this.userCoords = [...this.initialUserCoords];
-      this.map.setView(this.userCoords, 13);
-      if (this.userMarker) {
-        this.userMarker.setLatLng(this.userCoords).setPopupContent('You!').openPopup();
+  async recenterOnUser(showErrors = true): Promise<void> {
+    try {
+      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+      this.locationState.set('granted');
+      this.searchOrigin.set({ lat: coords[0], lon: coords[1], source: 'user' });
+      this.updateUserMarker(coords);
+      this.map?.flyTo(coords, DEFAULT_ZOOM, { duration: 0.8 });
+      await this.loadAlleys();
+    } catch {
+      this.locationState.set('denied');
+      if (showErrors) {
+        this.toastService.showToast('Location unavailable. Search for a place instead.', 'locate-outline', true);
       }
-      await this.loadBowlingAlleysWithFallback();
-    }
-  }
-  private initializeMapAndAttemptGeolocation(): void {
-    if (this.map) {
-      this.map.off();
-      this.map.remove();
-    }
-    this.map = L.map(this.mapContainer.nativeElement);
-
-    if (navigator.geolocation) {
-      const options = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      };
-
-      navigator.geolocation.getCurrentPosition(
-        async ({ coords }) => {
-          this.userCoords = [coords.latitude, coords.longitude];
-          this.initialUserCoords = [coords.latitude, coords.longitude];
-          this.map.setView(this.userCoords, 13);
-          await this.addMapLayersAndMarkers();
-        },
-        async (error) => {
-          console.warn(`Error getting current location: ${error.message} (Code: ${error.code})`);
-          this.initialUserCoords = [...this.userCoords];
-          this.map.setView(this.userCoords, 13);
-          await this.addMapLayersAndMarkers();
-        },
-        options,
-      );
-    } else {
-      console.warn('Geolocation not supported.');
-      this.initialUserCoords = [...this.userCoords];
-      this.map.setView(this.userCoords, 13);
-      void this.addMapLayersAndMarkers();
     }
   }
 
-  private async addMapLayersAndMarkers(): Promise<void> {
+  toggleOpenNow(): void {
+    this.filters.update((f) => ({ ...f, openNow: !f.openNow }));
+  }
+
+  toggleFavoritesOnly(): void {
+    this.filters.update((f) => ({ ...f, favoritesOnly: !f.favoritesOnly }));
+  }
+
+  cycleRadius(): void {
+    const current = this.filters().radiusKm;
+    const next = RADIUS_OPTIONS_KM[(RADIUS_OPTIONS_KM.indexOf(current) + 1) % RADIUS_OPTIONS_KM.length];
+    this.filters.update((f) => ({ ...f, radiusKm: next }));
+    // Debounced so tapping through the radius options fires one request, not four.
+    clearTimeout(this.radiusReloadTimer);
+    this.radiusReloadTimer = setTimeout(() => void this.loadAlleys(), 700);
+  }
+
+  async expandRadius(): Promise<void> {
+    const larger = RADIUS_OPTIONS_KM.find((r) => r > this.filters().radiusKm);
+    if (larger) {
+      this.filters.update((f) => ({ ...f, radiusKm: larger }));
+      await this.loadAlleys();
+    }
+  }
+
+  async retry(): Promise<void> {
+    await this.loadAlleys();
+  }
+
+  selectAlley(alley: Alley): void {
+    this.selectedAlley.set(alley);
+    this.isListOpen.set(false);
+    this.favoritesService.addRecent(alley);
+    this.panToAlley(alley);
+  }
+
+  onListSelect(alley: Alley): void {
+    this.isListOpen.set(false);
+    this.selectAlley(alley);
+  }
+
+  onSheetDismiss(): void {
+    this.selectedAlley.set(null);
+  }
+
+  private initializeMap(): void {
+    this.map = L.map(this.mapContainer.nativeElement, {
+      center: DEFAULT_COORDS,
+      zoom: DEFAULT_ZOOM,
+      zoomControl: false,
+    });
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19,
     }).addTo(this.map);
 
-    this.userMarker = L.circleMarker(this.userCoords, {
-      radius: 8,
-      fillColor: 'red',
-      color: 'red',
-      weight: 1,
-      opacity: 1,
-      fillOpacity: 0.8,
-    })
-      .addTo(this.map)
-      .bindPopup('You!')
-      .openPopup();
+    this.clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 60,
+    });
+    this.map.addLayer(this.clusterGroup);
 
-    if (typeof (L as unknown as { markerClusterGroup?: () => L.LayerGroup }).markerClusterGroup === 'function') {
-      this.markerClusterGroup = (L as unknown as { markerClusterGroup: () => L.LayerGroup }).markerClusterGroup();
-      this.map.addLayer(this.markerClusterGroup);
-    }
+    this.map.on('moveend', () => this.onMapMoved());
 
-    await this.loadBowlingAlleysWithFallback();
+    // The container gets its final size only after Ionic finishes layout;
+    // without this Leaflet renders tiles for a collapsed viewport.
+    this.resizeObserver = new ResizeObserver(() => this.map?.invalidateSize());
+    this.resizeObserver.observe(this.mapContainer.nativeElement);
   }
 
-  private async loadBowlingAlleys(): Promise<void> {
-    if (this.markerClusterGroup) {
-      this.markerClusterGroup.clearLayers();
+  private async locateAndLoad(): Promise<void> {
+    await this.recenterOnUser(false);
+    // Without a location fix we stay at the default view; load it anyway so
+    // the map isn't empty and the user can search from there.
+    if (this.locationState() === 'denied') {
+      await this.loadAlleys();
     }
+  }
 
-    const [lat, lon] = this.userCoords;
-    const radius = 50000;
-
-    // More comprehensive but simpler query to avoid API errors
-    const query = `
-[out:json][timeout:25];
-(
-  node["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  way["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  relation["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  node["sport"="bowling"](around:${radius},${lat},${lon});
-  way["sport"="bowling"](around:${radius},${lat},${lon});
-  relation["sport"="bowling"](around:${radius},${lat},${lon});
-  node["sport"="10pin"](around:${radius},${lat},${lon});
-  way["sport"="10pin"](around:${radius},${lat},${lon});
-  relation["sport"="10pin"](around:${radius},${lat},${lon});
-  node["amenity"="bowling_alley"](around:${radius},${lat},${lon});
-  way["amenity"="bowling_alley"](around:${radius},${lat},${lon});
-  relation["amenity"="bowling_alley"](around:${radius},${lat},${lon});
-);
-out center;`;
-
+  private async loadAlleys(): Promise<void> {
+    const origin = this.searchOrigin();
+    const sequence = ++this.loadSequence;
+    this.isLoading.set(true);
+    this.hasError.set(false);
     try {
-      const response = (await this.http
-        .post(this.overpassUrl, query, {
-          headers: { 'Content-Type': 'text/plain' },
-        })
-        .toPromise()) as OverpassResponse;
-
-      if (response?.elements?.length) {
-        // Filter and score results for accuracy
-        const validBowlingAlleys = this.filterBowlingAlleys(response.elements);
-        this.addMarkersToMap(validBowlingAlleys, lat, lon);
-        console.warn(`Found ${validBowlingAlleys.length} bowling alleys out of ${response.elements.length} total results`);
-      } else {
-        console.warn('No bowling alleys found nearby.');
-        // Try a simpler fallback search
-        await this.searchWithSimpleQuery(lat, lon, radius);
+      const alleys = await this.alleyService.searchNearby(origin.lat, origin.lon, this.filters().radiusKm);
+      if (sequence === this.loadSequence) {
+        this.alleys.set(alleys);
       }
     } catch (error) {
       console.error('Error loading bowling alleys:', error);
-      console.warn('Trying fallback search method...');
-      // Try a simpler search as fallback
-      await this.searchWithSimpleQuery(lat, lon, radius);
+      if (sequence === this.loadSequence) {
+        this.hasError.set(true);
+        this.errorMessage.set(
+          error instanceof HttpErrorResponse && error.status === 429 ? 'The map server is busy. Wait a moment, then retry.' : "Couldn't load alleys.",
+        );
+      }
+    } finally {
+      if (sequence === this.loadSequence) {
+        this.isLoading.set(false);
+      }
     }
   }
 
-  private async searchWithSimpleQuery(lat: number, lon: number, radius: number): Promise<void> {
-    const simpleQuery = `
-[out:json][timeout:15];
-(
-  node["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  way["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-);
-out center;`;
+  private onMapMoved(): void {
+    clearTimeout(this.moveFetchTimer);
+    this.moveFetchTimer = setTimeout(() => void this.fetchAroundMapCenter(), 900);
+  }
 
-    try {
-      const response = (await this.http
-        .post(this.overpassUrl, simpleQuery, {
-          headers: { 'Content-Type': 'text/plain' },
-        })
-        .toPromise()) as OverpassResponse;
+  /** Reloads alleys around the map center once panning settles far enough from the last origin. */
+  private async fetchAroundMapCenter(): Promise<void> {
+    // Skip while a fly-to animation for a selected alley is showing its sheet.
+    if (!this.map || this.isLoading() || this.selectedAlley() !== null) {
+      return;
+    }
+    const origin = this.searchOrigin();
+    const center = this.map.getCenter();
+    const movedMeters = this.alleyService.calculateDistance(origin.lat, origin.lon, center.lat, center.lng);
+    const threshold = Math.max(2000, this.filters().radiusKm * 1000 * 0.25);
+    if (movedMeters <= threshold) {
+      return;
+    }
+    this.searchOrigin.set({ lat: center.lat, lon: center.lng, source: 'search' });
+    await this.loadAlleys();
+  }
 
-      if (response?.elements?.length) {
-        this.addMarkersToMap(response.elements, lat, lon);
-        console.warn(`Fallback search found ${response.elements.length} bowling alleys`);
-      }
-    } catch (error) {
-      console.error('Fallback search also failed:', error);
+  private renderMarkers(alleys: Alley[]): void {
+    if (!this.map || !this.clusterGroup) {
+      return;
+    }
+    this.clusterGroup.clearLayers();
+    this.markersById.clear();
+
+    const selectedId = this.selectedAlley()?.id ?? null;
+    const favorites = this.favoritesService.favorites();
+    for (const alley of alleys) {
+      const marker = L.marker([alley.lat, alley.lon], {
+        icon: this.createPinIcon(favorites.has(alley.id), alley.id === selectedId),
+        alt: alley.name,
+        keyboard: true,
+      });
+      marker.on('click', () => this.selectAlley(alley));
+      this.markersById.set(alley.id, marker);
+      this.clusterGroup.addLayer(marker);
     }
   }
 
-  private addMarkersToMap(elements: OverpassElement[], lat: number, lon: number): void {
-    const blueIcon = new L.Icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-    });
-
-    elements.forEach((elem) => {
-      const elemLat = elem.center?.lat ?? elem.lat;
-      const elemLon = elem.center?.lon ?? elem.lon;
-
-      if (elemLat === undefined || elemLon === undefined) {
-        return; // Skip elements without coordinates
-      }
-
-      const coords: [number, number] = [elemLat, elemLon];
-      const tags = elem.tags || {};
-      const name = tags.name || 'Bowling Alley';
-      const openingHours = tags.opening_hours;
-      const phone = tags.phone;
-      const website = tags.website;
-      const address = this.formatAddress(tags);
-
-      // Calculate distance from user
-      const distanceKm = this.calculateDistance(lat, lon, coords[0], coords[1]) / 1000;
-
-      let popupContent = `<b>${name}</b>`;
-      if (address) {
-        popupContent += `<br><i>${address}</i>`;
-      }
-      popupContent += `<br><b>Distance:</b> ${distanceKm.toFixed(1)} km`;
-      if (openingHours) {
-        const formattedHours = openingHours.replace(/;\s*/g, '<br>');
-        popupContent += `<br><b>Hours:</b><br>${formattedHours}`;
-      }
-      if (phone) {
-        popupContent += `<br><b>Phone:</b> ${phone}`;
-      }
-      if (website) {
-        const url = website.startsWith('http') ? website : `http://${website}`;
-        popupContent += `<br><a href="${url}" target="_blank" rel="noopener noreferrer">Website</a>`;
-      }
-
-      const marker = L.marker(coords, { icon: blueIcon });
-      marker.bindPopup(popupContent);
-      if (this.markerClusterGroup) {
-        this.markerClusterGroup.addLayer(marker);
-      } else {
-        marker.addTo(this.map);
-      }
+  private updateMarkerIcons(selectedId: string | null, favorites: Map<string, Alley>): void {
+    this.markersById.forEach((marker, id) => {
+      marker.setIcon(this.createPinIcon(favorites.has(id), id === selectedId));
+      marker.setZIndexOffset(id === selectedId ? 1000 : 0);
     });
   }
 
-  private filterBowlingAlleys(elements: OverpassElement[]): OverpassElement[] {
-    return elements.filter((elem) => {
-      const tags = elem.tags || {};
-      const name = (tags.name || '').toLowerCase();
-
-      // Primary bowling identifiers - always include these
-      if (tags.leisure === 'bowling_alley' || tags.sport === 'bowling' || tags.sport === '10pin' || tags.amenity === 'bowling_alley') {
-        return true;
-      }
-
-      // Name-based filtering with positive and negative keywords
-      const positiveKeywords = ['bowling', 'bowl', 'alley', 'lanes', 'ten pin', 'tenpin', 'strike', 'spare'];
-      const negativeKeywords = ['restaurant', 'bar', 'pub', 'hotel', 'motel', 'casino', 'pool', 'billiard', 'golf'];
-
-      const hasPositiveKeyword = positiveKeywords.some((keyword) => name.includes(keyword));
-      const hasNegativeKeyword = negativeKeywords.some((keyword) => name.includes(keyword));
-
-      // Include if it has bowling-related keywords and no negative keywords
-      if (hasPositiveKeyword && !hasNegativeKeyword) {
-        return true;
-      }
-
-      // Additional filtering for entertainment venues
-      if (tags.amenity === 'entertainment' && hasPositiveKeyword) {
-        return true;
-      }
-
-      // Tourism attractions with bowling in the name
-      if (tags['tourism'] === 'attraction' && hasPositiveKeyword) {
-        return true;
-      }
-
-      return false;
+  private createPinIcon(isFavorite: boolean, isSelected: boolean): L.DivIcon {
+    const classes = ['alley-pin'];
+    if (isFavorite) {
+      classes.push('alley-pin--favorite');
+    }
+    if (isSelected) {
+      classes.push('alley-pin--selected');
+    }
+    return L.divIcon({
+      className: '',
+      html: `<div class="${classes.join(' ')}"><ion-icon name="bowling-ball" aria-hidden="true"></ion-icon></div>`,
+      iconSize: [36, 44],
+      iconAnchor: [18, 44],
     });
   }
 
-  private formatAddress(tags: OverpassTags): string {
-    const parts = [];
-
-    if (tags['addr:housenumber'] && tags['addr:street']) {
-      parts.push(`${tags['addr:housenumber']} ${tags['addr:street']}`);
-    } else if (tags['addr:street']) {
-      parts.push(tags['addr:street']);
+  private updateUserMarker(coords: [number, number]): void {
+    if (!this.map) {
+      return;
     }
-
-    if (tags['addr:city']) {
-      parts.push(tags['addr:city']);
-    }
-
-    if (tags['addr:postcode']) {
-      parts.push(tags['addr:postcode']);
-    }
-
-    return parts.join(', ');
-  }
-
-  private async loadBowlingAlleysWithFallback(): Promise<void> {
-    // Try the comprehensive search first
-    await this.loadBowlingAlleys();
-
-    // If we didn't find many results, try additional searches
-    const currentMarkers = this.markerClusterGroup?.getLayers().length || 0;
-    console.warn(`Initial search found ${currentMarkers} bowling alleys`);
-
-    if (currentMarkers < 5) {
-      console.warn('Few results found, trying fallback searches...');
-
-      // Try name-based search first (faster and more reliable)
-      const [lat, lon] = this.userCoords;
-      await this.searchByNameFallback(lat, lon, 50000);
-
-      // If still not enough results, try wider radius search
-      const newMarkerCount = this.markerClusterGroup?.getLayers().length || 0;
-      if (newMarkerCount < 3) {
-        await this.searchWithDifferentRadii();
-      }
+    if (!this.userMarker) {
+      this.userMarker = L.marker(coords, {
+        icon: L.divIcon({ className: '', html: '<div class="user-dot"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
+        interactive: false,
+        keyboard: false,
+      }).addTo(this.map);
+    } else {
+      this.userMarker.setLatLng(coords);
     }
   }
 
-  private async searchWithDifferentRadii(): Promise<void> {
-    const [lat, lon] = this.userCoords;
-    const radii = [75000, 100000]; // 75km, 100km
-
-    for (const radius of radii) {
-      const query = `
-[out:json][timeout:30];
-(
-  // Focus on the most reliable tags for wider searches
-  node["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  way["leisure"="bowling_alley"](around:${radius},${lat},${lon});
-  node["sport"="bowling"](around:${radius},${lat},${lon});
-  way["sport"="bowling"](around:${radius},${lat},${lon});
-  
-  // Name-based search with stricter filtering
-  node["name"~".*[Bb]owling.*"](around:${radius},${lat},${lon});
-  way["name"~".*[Bb]owling.*"](around:${radius},${lat},${lon});
-);
-out center;`;
-
-      try {
-        const response = (await this.http
-          .post(this.overpassUrl, query, {
-            headers: { 'Content-Type': 'text/plain' },
-          })
-          .toPromise()) as OverpassResponse;
-
-        if (response?.elements?.length) {
-          const newAlleys = this.filterBowlingAlleys(response.elements);
-          const existingMarkers = this.markerClusterGroup?.getLayers() || [];
-
-          newAlleys.forEach((elem) => {
-            const elemLat = elem.center?.lat ?? elem.lat;
-            const elemLon = elem.center?.lon ?? elem.lon;
-
-            if (elemLat === undefined || elemLon === undefined) {
-              return; // Skip elements without coordinates
-            }
-
-            const coords: [number, number] = [elemLat, elemLon];
-
-            // Check if this location already exists (avoid duplicates)
-            const isDuplicate = existingMarkers.some((marker: L.Layer) => {
-              const markerLatLng = (marker as L.Marker).getLatLng();
-              const distance = this.calculateDistance(coords[0], coords[1], markerLatLng.lat, markerLatLng.lng);
-              return distance < 100; // Less than 100 meters apart
-            });
-
-            if (!isDuplicate) {
-              const tags = elem.tags || {};
-              const name = tags.name || 'Bowling Alley';
-              const address = this.formatAddress(tags);
-
-              // Calculate distance from user
-              const distanceKm = this.calculateDistance(lat, lon, coords[0], coords[1]) / 1000;
-
-              const blueIcon = new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-              });
-
-              let popupContent = `<b>${name}</b>`;
-              if (address) {
-                popupContent += `<br><i>${address}</i>`;
-              }
-              popupContent += `<br><b>Distance:</b> ${distanceKm.toFixed(1)} km`;
-
-              const marker = L.marker(coords, { icon: blueIcon });
-              marker.bindPopup(popupContent);
-              if (this.markerClusterGroup) {
-                this.markerClusterGroup.addLayer(marker);
-              } else {
-                marker.addTo(this.map);
-              }
-            }
-          });
-
-          // Use console.warn instead of console.log per linting rules
-        }
-      } catch (error) {
-        console.error(`Error in fallback search with radius ${radius}:`, error);
-      }
+  /** Flies to the alley, offset downwards so the pin stays visible above the bottom sheet. */
+  private panToAlley(alley: Alley): void {
+    if (!this.map) {
+      return;
     }
-  }
-
-  private async searchByNameFallback(lat: number, lon: number, radius: number): Promise<void> {
-    // Search for places with bowling-related names
-    const nameQuery = `
-[out:json][timeout:15];
-(
-  node["name"~"[Bb]owling"](around:${radius},${lat},${lon});
-  way["name"~"[Bb]owling"](around:${radius},${lat},${lon});
-  node["name"~"[Aa]lley"](around:${radius},${lat},${lon});
-  way["name"~"[Aa]lley"](around:${radius},${lat},${lon});
-  node["name"~"[Ll]anes"](around:${radius},${lat},${lon});
-  way["name"~"[Ll]anes"](around:${radius},${lat},${lon});
-);
-out center;`;
-
-    try {
-      const response = (await this.http
-        .post(this.overpassUrl, nameQuery, {
-          headers: { 'Content-Type': 'text/plain' },
-        })
-        .toPromise()) as OverpassResponse;
-
-      if (response?.elements?.length) {
-        // Filter results to only include likely bowling alleys
-        const filteredResults = this.filterBowlingAlleys(response.elements);
-        if (filteredResults.length > 0) {
-          this.addMarkersToMap(filteredResults, lat, lon);
-          console.warn(`Name-based search found ${filteredResults.length} additional bowling alleys`);
-        }
-      }
-    } catch (error) {
-      console.error('Name-based search failed:', error);
-    }
-  }
-
-  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371000; // Earth's radius in meters
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLng = this.toRadians(lng2 - lng1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  private toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
-  }
-
-  ngOnDestroy(): void {
-    this.map?.remove();
+    const zoom = Math.max(this.map.getZoom(), 14);
+    const offsetY = this.mapContainer.nativeElement.clientHeight * 0.15;
+    const point = this.map.project([alley.lat, alley.lon], zoom).add([0, offsetY]);
+    this.map.flyTo(this.map.unproject(point, zoom), zoom, { duration: 0.6 });
   }
 }

@@ -1,0 +1,65 @@
+.alley-list {
+  background: transparent;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+
+  ion-item {
+    --background: transparent;
+    --min-height: 64px;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #fff;
+
+      .favorite-icon {
+        font-size: 0.9rem;
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+}
+
+.meta-line {
+  display: flex;
+  gap: 10px;
+
+  .open-label {
+    color: var(--ion-color-success);
+    font-weight: 600;
+  }
+
+  .closed-label {
+    color: var(--ion-color-danger);
+    font-weight: 600;
+  }
+}
+
+.distance-note {
+  font-size: 0.875rem;
+  font-weight: 700;
+  align-self: center;
+  color: var(--ion-color-primary);
+}
+
+.empty-list {
+  padding: 24px 16px;
+  color: var(--ion-color-medium, #92949c);
+}
+
+.recents-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 16px 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ion-color-medium, #92949c);
+
+  ion-icon {
+    font-size: 0.875rem;
+  }
+}

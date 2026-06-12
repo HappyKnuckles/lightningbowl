@@ -167,13 +167,13 @@ ion-item-divider {
   }
 }
 
-// Pin deck frame row styling for history games
-:host ::ng-deep app-pin-deck-frame-row {
-  display: block;
+:host ::ng-deep .pin-deck-row {
+  min-height: 22px;
 
-  .pin-deck-row {
-    height: 22px;
-    min-height: 22px;
+  .input-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 

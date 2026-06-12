@@ -23,6 +23,44 @@ export function parseInputValue(input: string, frameIndex: number, throwIndex: n
   return parseInt(input, 10) || 0;
 }
 
+/**
+ * Display symbol for a single throw: 'X', '/', the miss symbol, a number, or ''.
+ * @param missSymbol shown for a knocked - zero throw.Omit to render the number(live grid);
+ * pass '–' for the readonly / share grid.
+ */
+export function formatThrowDisplay(frame: Frame | undefined, throwIndex: number, isTenth: boolean, missSymbol?: string): string {
+  if (!frame) return '';
+
+  const val = getThrowValue(frame, throwIndex);
+  if (val === undefined || val === null) return '';
+
+  const v0 = getThrowValue(frame, 0);
+  const v1 = getThrowValue(frame, 1);
+  const num = (n: number) => (n === 0 && missSymbol !== undefined ? missSymbol : String(n));
+
+  if (throwIndex === 0) {
+    return val === 10 ? 'X' : num(val);
+  }
+
+  if (!isTenth) {
+    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return '/';
+    return num(val);
+  }
+
+  // --- 10th frame ---
+  if (throwIndex === 1) {
+    if (v0 !== undefined && v0 !== 10 && v0 + val === 10) return '/';
+    return val === 10 ? 'X' : num(val);
+  }
+
+  // throwIndex === 2
+  if (v0 === 10) {
+    if (v1 === 10) return val === 10 ? 'X' : num(val);
+    return v1 !== undefined && v1 + val === 10 ? '/' : num(val);
+  }
+  return val === 10 ? 'X' : num(val);
+}
+
 export function parseBowlingScores(input: string, username: string): { frames: number[][]; frameScores: number[]; totalScore: number } {
   const lines = input.split('\n').filter((line) => line.trim() !== '');
   const userIndex = lines.findIndex((line) => line.toLowerCase().includes(username.toLowerCase()));

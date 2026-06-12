@@ -6,6 +6,16 @@
   --max-height: auto;
 }
 
+.pin-deck-row {
+  min-height: 22px;
+
+  .input-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
 .ball-selector::part(detail-icon) {
   opacity: 1;
   color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));

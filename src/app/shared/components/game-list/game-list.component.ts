@@ -9,12 +9,9 @@ import {
   IonAccordionGroup,
   IonBadge,
   IonButton,
-  IonCol,
-  IonGrid,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonInput,
   IonItem,
   IonItemDivider,
   IonItemOption,
@@ -23,7 +20,6 @@ import {
   IonLabel,
   IonList,
   IonModal,
-  IonRow,
   IonSelect,
   IonSelectOption,
   IonText,
@@ -66,8 +62,8 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
+import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
 
 interface MonthHeader {
   name: string;
@@ -88,10 +84,6 @@ interface MonthHeader {
     IonText,
     IonInfiniteScrollContent,
     IonInfiniteScroll,
-    IonInput,
-    IonCol,
-    IonRow,
-    IonGrid,
     IonTextarea,
     IonAccordion,
     IonItem,
@@ -111,9 +103,9 @@ interface MonthHeader {
     LongPressDirective,
     AccordionDelayedCloseDirective,
     GameComponent,
+    GameReadonlyComponent,
     GenericTypeaheadComponent,
     BallSelectComponent,
-    PinDeckFrameRowComponent,
   ],
 })
 export class GameListComponent implements OnInit {
@@ -312,10 +304,8 @@ export class GameListComponent implements OnInit {
     const accordionIsOpen = this.accordionGroup.value?.includes(game.gameId) ?? false;
     if (!accordionIsOpen) this.openExpansionPanel(game.gameId);
 
-    const childNode = accordion.childNodes[1] as HTMLElement;
-
     try {
-      await this.shareService.shareGame(game, scoreTemplate, childNode);
+      await this.shareService.shareGame(game, scoreTemplate);
     } finally {
       this.accordionGroup.value = previousValue;
       this.delayedClose.clear(game.gameId);

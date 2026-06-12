@@ -52,7 +52,7 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
-import { PinDeckFrameRowComponent } from '../pin-deck-frame-row/pin-deck-frame-row.component';
+import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 
 @Component({
@@ -78,7 +78,7 @@ import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.c
     IonLabel,
     BallSelectComponent,
     PinInputComponent,
-    PinDeckFrameRowComponent,
+    PinDeckComponent,
     IonAccordion,
     IonAccordionGroup,
   ],
@@ -327,6 +327,10 @@ export class GameComponent implements OnInit {
 
   isNumber(value: unknown): boolean {
     return this.utilsService.isNumber(value);
+  }
+
+  getPinsStanding(frameIndex: number, throwIndex: number): number[] {
+    return this.game()?.frames?.[frameIndex]?.throws?.[throwIndex]?.pinsLeftStanding ?? [];
   }
 
   isThrowSplit(frameIndex: number, throwIndex: number): boolean {

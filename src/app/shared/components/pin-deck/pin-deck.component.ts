@@ -7,16 +7,27 @@ interface Pin {
   active: boolean;
 }
 
+const PIN_SIZE = 8;
+const PIN_GAP = 4;
+const DECK_SPAN = 4 * PIN_SIZE + 3 * PIN_GAP;
+
 @Component({
   selector: 'app-pin-deck',
   imports: [CommonModule],
   templateUrl: './pin-deck.component.html',
   styleUrl: './pin-deck.component.scss',
+  host: {
+    '[style.width.px]': 'boxSize()',
+    '[style.height.px]': 'boxSize()',
+  },
 })
 export class PinDeckComponent {
   activePins = input.required<number[]>();
   isStatPage = input<boolean>(false);
   scale = input<number>(1);
+
+  /** The scaled bounding box so the host reserves exactly what the deck renders. */
+  readonly boxSize = computed(() => DECK_SPAN * this.scale());
 
   readonly pinDeck = computed<readonly (readonly Pin[])[]>(() => {
     const activeSet = new Set(this.activePins());

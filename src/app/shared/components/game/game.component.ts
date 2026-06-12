@@ -1,4 +1,3 @@
-import { NgFor, NgIf } from '@angular/common';
 import {
   CUSTOM_ELEMENTS_SCHEMA,
   Component,
@@ -47,7 +46,6 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
-import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -56,13 +54,31 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
+interface ThrowCellView {
+  value: number | undefined;
+  display: string;
+  isSplit: boolean;
+  pinsStanding: number[];
+  showPinDeck: boolean;
+  disabled: boolean;
+}
+
+interface FrameView {
+  frameIndex: number;
+  frameNumber: number;
+  isTenth: boolean;
+  throws: ThrowCellView[];
+  score: number | undefined;
+  showScore: boolean;
+  showZeroPlaceholder: boolean;
+}
+
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.scss'],
   providers: [KeyboardToolbarService],
   imports: [
-    NgFor,
     IonList,
     IonCheckbox,
     IonItem,
@@ -72,7 +88,6 @@ import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.ut
     IonCol,
     IonInput,
     FormsModule,
-    NgIf,
     LeagueSelectorComponent,
     IonModal,
     GenericTypeaheadComponent,
@@ -130,8 +145,48 @@ export class GameComponent implements OnInit {
   @ViewChild('checkbox') checkbox!: IonCheckbox;
 
   // --- Computed State ---
-  frames = computed(() => this.game()?.frames ?? []);
-  frameScores = computed(() => this.game()?.frameScores ?? []);
+  currentGame: Signal<Game> = computed(() => this.game() || createEmptyGame());
+
+  frameVms: Signal<FrameView[]> = computed(() => {
+    const frames = this.game()?.frames ?? [];
+    const frameScores = this.game()?.frameScores ?? [];
+
+    return Array.from({ length: 10 }, (_, frameIndex): FrameView => {
+      const frame = frames[frameIndex];
+      const isTenth = frameIndex === 9;
+      const first = getThrowValue(frame, 0);
+      const second = getThrowValue(frame, 1);
+
+      const throws = Array.from({ length: isTenth ? 3 : 2 }, (_, throwIndex): ThrowCellView => {
+        const value = getThrowValue(frame, throwIndex);
+        return {
+          value,
+          display: formatThrowDisplay(frame, throwIndex, isTenth),
+          isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
+          pinsStanding: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
+          showPinDeck: value !== undefined && (throwIndex !== 1 || isTenth || first !== 10),
+          disabled: (throwIndex === 1 && !isTenth && first === 10) || (throwIndex === 2 && first !== 10 && (first ?? 0) + (second ?? 0) !== 10),
+        };
+      });
+
+      const score = frameScores[frameIndex];
+      const hasScore = Number.isFinite(score);
+      const hasThrow = first !== undefined || second !== undefined;
+
+      return {
+        frameIndex,
+        frameNumber: frameIndex + 1,
+        isTenth,
+        throws,
+        score,
+        showScore: hasThrow && hasScore,
+        showZeroPlaceholder: !(hasThrow && hasScore) && !(isTenth && first === undefined),
+      };
+    });
+  });
+
+  ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
+  patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
@@ -148,14 +203,11 @@ export class GameComponent implements OnInit {
   private localFrameIndex = 0;
   private localThrowIndex = 0;
 
-  currentGame: Signal<Game> = computed(() => this.game() || createEmptyGame());
-
   constructor(
     public settingsStore: SettingsStore,
     public patternsStore: PatternsStore,
     public ballsStore: BallsStore,
     private hapticService: HapticService,
-    public utilsService: UtilsService,
     private patternService: PatternService,
     private toastService: ToastService,
     private typeaheadConfigService: TypeaheadConfigService,
@@ -208,19 +260,6 @@ export class GameComponent implements OnInit {
       throwIndex: this.localThrowIndex,
       value: char,
     });
-  }
-
-  // --- Helpers for Template ---
-  isCellFocused(frameIndex: number, throwIndex: number): boolean {
-    return this.currentFrameIndex() === frameIndex && this.currentThrowIndex() === throwIndex;
-  }
-
-  getLocalFrameValue(frameIndex: number, throwIndex: number): number | undefined {
-    return getThrowValue(this.game().frames[frameIndex], throwIndex);
-  }
-
-  getFrameValue(frameIndex: number, throwIndex: number): string {
-    return formatThrowDisplay(this.game().frames[frameIndex], throwIndex, frameIndex === 9);
   }
 
   async focusNextInput(frameIndex: number, inputIndex: number) {
@@ -277,32 +316,6 @@ export class GameComponent implements OnInit {
   }
   onIsPracticeChange(isPractice: boolean) {
     this.isPracticeChanged.emit(isPractice);
-  }
-
-  // --- Template Getters ---
-  getSelectedBallsText(): string {
-    const balls = this.currentGame()?.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
-  }
-
-  isNumber(value: unknown): boolean {
-    return this.utilsService.isNumber(value);
-  }
-
-  getPinsStanding(frameIndex: number, throwIndex: number): number[] {
-    return this.game()?.frames?.[frameIndex]?.throws?.[throwIndex]?.pinsLeftStanding ?? [];
-  }
-
-  isThrowSplit(frameIndex: number, throwIndex: number): boolean {
-    const frame = this.game()?.frames?.[frameIndex];
-    if (!frame || !frame.throws || throwIndex >= frame.throws.length) {
-      return false;
-    }
-    return frame.throws[throwIndex]?.isSplit ?? false;
-  }
-
-  trackByFrameIndex(index: number): number {
-    return index;
   }
 
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {

@@ -9,95 +9,52 @@
 @if (isPinInputMode()) {
   <!-- Pin Input Mode: Score Grid + Pin Deck -->
   <div class="grid-container">
-    <ion-grid fixed="true" *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; let frameIndex = index">
-      <ion-row>
-        <ion-col class="middle frame">{{ i }}</ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="input-col" *ngIf="i !== 10"></ion-col>
-        <ion-col class="input-col" [class.current-throw]="isCellFocused(frameIndex, 0)" (click)="onScoreCellClicked(frameIndex, 0)">
-          <ion-input type="text" readonly="true" [value]="getFrameValue(frameIndex, 0)" [class.is-split]="isThrowSplit(frameIndex, 0)"></ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i !== 10" [class.current-throw]="isCellFocused(frameIndex, 1)" (click)="onScoreCellClicked(frameIndex, 1)">
-          <ion-input
-            type="text"
-            readonly="true"
-            [disabled]="getLocalFrameValue(frameIndex, 0) === 10 && i !== 10"
-            [value]="getFrameValue(frameIndex, 1)"
-            [class.is-split]="isThrowSplit(frameIndex, 1)"></ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10" [class.current-throw]="isCellFocused(frameIndex, 1)" (click)="onScoreCellClicked(frameIndex, 1)">
-          <ion-input type="text" readonly="true" [value]="getFrameValue(frameIndex, 1)" [class.is-split]="isThrowSplit(frameIndex, 1)"></ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10" [class.current-throw]="isCellFocused(frameIndex, 2)" (click)="onScoreCellClicked(frameIndex, 2)">
-          <ion-input
-            type="text"
-            readonly="true"
-            [disabled]="
-              getLocalFrameValue(frameIndex, 0) !== 10 && (getLocalFrameValue(frameIndex, 0) ?? 0) + (getLocalFrameValue(frameIndex, 1) ?? 0) !== 10
-            "
-            [value]="getFrameValue(frameIndex, 2)"
-            [class.is-split]="isThrowSplit(frameIndex, 2)"></ion-input>
-        </ion-col>
-      </ion-row>
+    @for (frame of frameVms(); track frame.frameIndex) {
+      <ion-grid fixed="true">
+        <ion-row>
+          <ion-col class="middle frame">{{ frame.frameNumber }}</ion-col>
+        </ion-row>
+        <ion-row>
+          @if (!frame.isTenth) {
+            <ion-col class="input-col"></ion-col>
+          }
+          @for (cell of frame.throws; track $index) {
+            <ion-col
+              class="input-col"
+              [class.current-throw]="currentFrameIndex() === frame.frameIndex && currentThrowIndex() === $index"
+              (click)="onScoreCellClicked(frame.frameIndex, $index)">
+              <ion-input type="text" readonly="true" [disabled]="cell.disabled" [value]="cell.display" [class.is-split]="cell.isSplit"></ion-input>
+            </ion-col>
+          }
+        </ion-row>
 
-      <ion-row class="pin-deck-row">
-        <ion-col class="input-col" *ngIf="i !== 10"></ion-col>
-        <ion-col class="input-col">
-          <app-pin-deck
-            *ngIf="getLocalFrameValue(frameIndex, 0) !== undefined"
-            [scale]="0.3"
-            [activePins]="getPinsStanding(frameIndex, 0)"></app-pin-deck>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i !== 10">
-          <app-pin-deck
-            *ngIf="getLocalFrameValue(frameIndex, 1) !== undefined && getLocalFrameValue(frameIndex, 0) !== 10"
-            [scale]="0.3"
-            [activePins]="getPinsStanding(frameIndex, 1)"></app-pin-deck>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10">
-          <app-pin-deck
-            *ngIf="getLocalFrameValue(frameIndex, 1) !== undefined"
-            [scale]="0.3"
-            [activePins]="getPinsStanding(frameIndex, 1)"></app-pin-deck>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10">
-          <app-pin-deck
-            *ngIf="getLocalFrameValue(frameIndex, 2) !== undefined"
-            [scale]="0.3"
-            [activePins]="getPinsStanding(frameIndex, 2)"></app-pin-deck>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="middle count">
-          <ng-container
-            *ngIf="
-              (getLocalFrameValue(frameIndex, 0) !== undefined ||
-                getLocalFrameValue(frameIndex, 1) !== undefined ||
-                (i === 10 && getLocalFrameValue(frameIndex, 0) !== undefined && getLocalFrameValue(frameIndex, 1) !== undefined)) &&
-              isNumber(frameScores()[i - 1])
-            ">
-            {{ frameScores()[i - 1] }}
-          </ng-container>
-          <ng-container *ngIf="i === 10 && !isGameComplete() && maxScore() !== undefined">
-            <span style="color: var(--ion-color-secondary)"> ({{ maxScore() }}) </span>
-          </ng-container>
-        </ion-col>
-        <ion-col
-          *ngIf="
-            !(
-              (getLocalFrameValue(frameIndex, 0) !== undefined ||
-                getLocalFrameValue(frameIndex, 1) !== undefined ||
-                (i === 10 && getLocalFrameValue(frameIndex, 0) !== undefined)) &&
-              isNumber(frameScores()[i - 1])
-            ) && !(i === 10 && getLocalFrameValue(frameIndex, 0) === undefined)
-          "
-          class="middle count"
-          style="color: var(--ion-color-quartiary)">
-          0
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+        <ion-row class="pin-deck-row">
+          @if (!frame.isTenth) {
+            <ion-col class="input-col"></ion-col>
+          }
+          @for (cell of frame.throws; track $index) {
+            <ion-col class="input-col">
+              @if (cell.showPinDeck) {
+                <app-pin-deck [scale]="0.3" [activePins]="cell.pinsStanding"></app-pin-deck>
+              }
+            </ion-col>
+          }
+        </ion-row>
+        <ion-row>
+          <ion-col class="middle count">
+            @if (frame.showScore) {
+              {{ frame.score }}
+            }
+            @if (frame.isTenth && !isGameComplete() && maxScore() !== undefined) {
+              <span style="color: var(--ion-color-secondary)"> ({{ maxScore() }}) </span>
+            }
+          </ion-col>
+          @if (frame.showZeroPlaceholder) {
+            <ion-col class="middle count" style="color: var(--ion-color-quartiary)">0</ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
   </div>
 
   <!-- Pin Input Component -->
@@ -118,98 +75,46 @@
 } @else {
   <!-- Standard Grid Mode -->
   <div class="grid-container">
-    <ion-grid fixed="true" *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; let frameIndex = index">
-      <ion-row>
-        <ion-col class="middle frame">{{ i }}</ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="input-col" *ngIf="i !== 10"></ion-col>
-        <ion-col class="input-col">
-          <ion-input
-            type="text"
-            clearOnEdit="true"
-            inputmode="numeric"
-            autocapitalize="on"
-            [debounce]="showMetadata() ? 0 : 500"
-            [value]="getFrameValue(frameIndex, 0)"
-            (ionInput)="onScoreInput($event, frameIndex, 0)"
-            (ionFocus)="handleInputFocus(frameIndex, 0)">
-          </ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i !== 10">
-          <ion-input
-            type="text"
-            clearOnEdit="true"
-            inputmode="numeric"
-            autocapitalize="on"
-            [debounce]="showMetadata() ? 0 : 500"
-            [disabled]="getLocalFrameValue(frameIndex, 0) === 10 && i !== 10"
-            [value]="getFrameValue(frameIndex, 1)"
-            (ionInput)="onScoreInput($event, frameIndex, 1)"
-            (ionFocus)="handleInputFocus(frameIndex, 1)">
-          </ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10">
-          <ion-input
-            type="text"
-            clearOnEdit="true"
-            inputmode="numeric"
-            autocapitalize="on"
-            [debounce]="showMetadata() ? 0 : 500"
-            [disabled]="getLocalFrameValue(frameIndex, 0) === 10 && i !== 10"
-            [value]="getFrameValue(frameIndex, 1)"
-            (ionInput)="onScoreInput($event, frameIndex, 1)"
-            (ionFocus)="handleInputFocus(frameIndex, 1)">
-          </ion-input>
-        </ion-col>
-        <ion-col class="input-col" *ngIf="i === 10">
-          <ion-input
-            type="text"
-            clearOnEdit="true"
-            inputmode="numeric"
-            autocapitalize="on"
-            [debounce]="showMetadata() ? 0 : 500"
-            [value]="getFrameValue(frameIndex, 2)"
-            [disabled]="
-              getLocalFrameValue(frameIndex, 0) !== 10 && (getLocalFrameValue(frameIndex, 0) ?? 0) + (getLocalFrameValue(frameIndex, 1) ?? 0) !== 10
-            "
-            (ionInput)="onScoreInput($event, frameIndex, 2)"
-            (ionFocus)="handleInputFocus(frameIndex, 2)">
-          </ion-input>
-        </ion-col>
-      </ion-row>
-      <ion-row>
-        <ion-col class="middle count">
-          <ng-container
-            *ngIf="
-              (getLocalFrameValue(frameIndex, 0) !== undefined ||
-                getLocalFrameValue(frameIndex, 1) !== undefined ||
-                (i === 10 && getLocalFrameValue(frameIndex, 0) !== undefined && getLocalFrameValue(frameIndex, 1) !== undefined)) &&
-              isNumber(frameScores()[i - 1])
-            ">
-            {{ frameScores()[i - 1] }}
-          </ng-container>
-
-          <ng-container *ngIf="i === 10 && !isGameComplete() && maxScore() !== undefined">
-            <span style="color: var(--ion-color-secondary)"> ({{ maxScore() }}) </span>
-          </ng-container>
-        </ion-col>
-
-        <ion-col
-          *ngIf="
-            !(
-              (getLocalFrameValue(frameIndex, 0) !== undefined ||
-                getLocalFrameValue(frameIndex, 1) !== undefined ||
-                (i === 10 && getLocalFrameValue(frameIndex, 0) !== undefined)) &&
-              isNumber(frameScores()[i - 1])
-            ) && !(i === 10 && getLocalFrameValue(frameIndex, 0) === undefined)
-          "
-          class="middle count"
-          style="color: var(--ion-color-quartiary)"
-          >0</ion-col
-        >
-      </ion-row>
-    </ion-grid>
+    @for (frame of frameVms(); track frame.frameIndex) {
+      <ion-grid fixed="true">
+        <ion-row>
+          <ion-col class="middle frame">{{ frame.frameNumber }}</ion-col>
+        </ion-row>
+        <ion-row>
+          @if (!frame.isTenth) {
+            <ion-col class="input-col"></ion-col>
+          }
+          @for (cell of frame.throws; track $index) {
+            <ion-col class="input-col">
+              <ion-input
+                type="text"
+                clearOnEdit="true"
+                inputmode="numeric"
+                autocapitalize="on"
+                [debounce]="showMetadata() ? 0 : 500"
+                [disabled]="cell.disabled"
+                [value]="cell.display"
+                (ionInput)="onScoreInput($event, frame.frameIndex, $index)"
+                (ionFocus)="handleInputFocus(frame.frameIndex, $index)">
+              </ion-input>
+            </ion-col>
+          }
+        </ion-row>
+        <ion-row>
+          <ion-col class="middle count">
+            @if (frame.showScore) {
+              {{ frame.score }}
+            }
+            @if (frame.isTenth && !isGameComplete() && maxScore() !== undefined) {
+              <span style="color: var(--ion-color-secondary)"> ({{ maxScore() }}) </span>
+            }
+          </ion-col>
+          @if (frame.showZeroPlaceholder) {
+            <ion-col class="middle count" style="color: var(--ion-color-quartiary)">0</ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
   </div>
 }
 
@@ -220,9 +125,15 @@
         <ion-label
           >Game Details
           <p>{{ game().isPractice ? "Practice" : "Regular" }}</p>
-          <p *ngIf="game().league">{{ game().league }}</p>
-          <p *ngIf="game().balls">{{ game().balls!.join(", ") }}</p>
-          <p *ngIf="game().patterns">{{ game().patterns.join(", ") }}</p>
+          @if (game().league) {
+            <p>{{ game().league }}</p>
+          }
+          @if (game().balls) {
+            <p>{{ ballsText() }}</p>
+          }
+          @if (game().patterns) {
+            <p>{{ patternsText() }}</p>
+          }
         </ion-label>
       </ion-item>
 
@@ -239,23 +150,9 @@
           </ion-item>
           <!-- TODO make this reset on save-->
           <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
-          <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
-            <ion-label>Patterns</ion-label>
-            <span class="ion-text-right">{{ currentGame().patterns.join(", ") || "None" }}</span>
-          </ion-item>
-          <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
-            <ng-template>
-              <app-generic-typeahead
-                [items]="patternsStore.allPatterns()"
-                [config]="patternTypeaheadConfig"
-                [prevSelectedItems]="currentGame().patterns || []"
-                (selectedItemsChange)="onPatternChanged($event)">
-              </app-generic-typeahead>
-            </ng-template>
-          </ion-modal>
           <ion-item [id]="ballSelectorId()" class="ball-selector" button detail="true" detailIcon="chevron-expand-outline">
             <ion-label>Balls</ion-label>
-            <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
+            <span class="ion-text-right">{{ ballsText() || "None" }}</span>
           </ion-item>
           @if (ballsStore.arsenal().length > 0) {
             <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal [trigger]="ballSelectorId()" class="ball-modal">
@@ -275,6 +172,20 @@
               </ng-template>
             </ion-modal>
           }
+          <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
+            <ion-label>Patterns</ion-label>
+            <span class="ion-text-right">{{ patternsText() || "None" }}</span>
+          </ion-item>
+          <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
+            <ng-template>
+              <app-generic-typeahead
+                [items]="patternsStore.allPatterns()"
+                [config]="patternTypeaheadConfig"
+                [prevSelectedItems]="currentGame().patterns || []"
+                (selectedItemsChange)="onPatternChanged($event)">
+              </app-generic-typeahead>
+            </ng-template>
+          </ion-modal>
           <ion-item lines="none">
             <ion-textarea
               label="Note"

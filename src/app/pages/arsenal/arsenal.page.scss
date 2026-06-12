@@ -103,3 +103,16 @@ ion-card {
     }
   }
 }
+.recommended-pattern {
+  --background: transparent;
+  --padding-start: 0;
+
+  h3 {
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium, #8a8a90);
+  }
+}

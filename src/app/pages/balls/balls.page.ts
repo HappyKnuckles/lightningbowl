@@ -31,16 +31,30 @@ import {
 } from '@ionic/angular/standalone';
 import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
-import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
+import {
+  addOutline,
+  camera,
+  chevronBack,
+  chevronDownOutline,
+  closeCircle,
+  filterOutline,
+  globeOutline,
+  heart,
+  heartOutline,
+  openOutline,
+} from 'ionicons/icons';
 import { Subject } from 'rxjs';
 import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { Ball } from 'src/app/core/models/ball.model';
+import { Pattern } from 'src/app/core/models/pattern.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
+import { PatternRecommendation, recommendPatternsForBall } from 'src/app/core/services/ball/ball-patterns.util';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -49,8 +63,10 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
@@ -88,6 +104,7 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     CommonModule,
     FormsModule,
     BallListComponent,
+    PatternInfoComponent,
     GenericFilterActiveComponent,
     SearchBlurDirective,
     SortHeaderComponent,
@@ -170,6 +187,25 @@ export class BallsPage implements OnInit {
     return this.sortService.sortBalls(result, this.currentSortOption(), this.favoritesFirst());
   });
 
+  /**
+   * Patterns each displayed ball fits best, computed from its specs (RG, diff,
+   * coverstock, finish) against the live pattern library; keyed by
+   * ball_id + core_weight. Balls without a match (e.g. spare balls) get no entry.
+   */
+  recommendedPatternsByBall: Signal<Map<string, PatternRecommendation[]>> = computed(() => {
+    const allPatterns = this.patternsStore.allPatterns();
+    const map = new Map<string, PatternRecommendation[]>();
+    for (const ball of this.displayedBalls()) {
+      const recommendations = recommendPatternsForBall(ball, allPatterns);
+      if (recommendations.length > 0) {
+        map.set(ball.ball_id + ball.core_weight, recommendations);
+      }
+    }
+    return map;
+  });
+
+  viewedPattern = signal<Pattern | null>(null);
+
   private lastLoadTime = 0;
   private debounceMs = 300;
 
@@ -177,6 +213,8 @@ export class BallsPage implements OnInit {
     private modalCtrl: ModalController,
     public loadingService: LoadingService,
     public ballsStore: BallsStore,
+    public patternsStore: PatternsStore,
+    private patternService: PatternService,
     private toastService: ToastService,
     private hapticService: HapticService,
     private ballService: BallService,
@@ -187,7 +225,7 @@ export class BallsPage implements OnInit {
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
   ) {
-    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline });
+    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronBack, chevronDownOutline });
     this.searchSubject.subscribe((query) => {
       this.searchTerm.set(query);
       if (this.content) {
@@ -427,6 +465,21 @@ export class BallsPage implements OnInit {
       sort_direction: sortOption.direction,
       sort_label: sortOption.label,
     });
+  }
+
+  async openRecommendedPattern(pattern: Partial<Pattern>): Promise<void> {
+    if (!pattern.url) {
+      return;
+    }
+    try {
+      this.loadingService.setLoading(true);
+      this.viewedPattern.set(await this.patternService.getPatternData(pattern.url));
+    } catch (error) {
+      console.error('Error loading pattern:', error);
+      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
+    } finally {
+      this.loadingService.setLoading(false);
+    }
   }
 
   toggleFavorite(event: Event, ball: Ball): void {

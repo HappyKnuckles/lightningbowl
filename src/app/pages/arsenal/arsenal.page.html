@@ -33,7 +33,7 @@
       @if (ballsStore.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
+            <ion-item-sliding *ngFor="let ball of ballsStore.arsenal(); trackBy: trackArsenalBall" #slidingItem class="sliding">
               <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
                 <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
                   <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
@@ -118,7 +118,7 @@
   </ng-template> -->
 </ion-content>
 
-<ion-modal *ngFor="let ball of ballsStore.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
+<ion-modal *ngFor="let ball of ballsStore.arsenal(); trackBy: trackArsenalBall" [trigger]="ball.ball_id + ball.core_weight" #modal>
   <ng-template>
     <ion-header [translucent]="true">
       <ion-toolbar>
@@ -200,6 +200,46 @@
         </ion-card-content>
         <ion-ripple-effect></ion-ripple-effect>
       </ion-card>
+
+      <ion-list-header style="margin-bottom: 4px">Recommended Patterns</ion-list-header>
+      <ion-card>
+        <ion-card-content>
+          @if (recommendedPatternsByBall().get(ball.ball_id + ball.core_weight); as recommendations) {
+            @if (recommendations.length > 0) {
+              @for (recommendation of recommendations; track recommendation.pattern.url) {
+                <ion-item button detail="true" lines="none" class="recommended-pattern" (click)="openRecommendedPattern(recommendation.pattern)">
+                  <ion-label class="ion-text-wrap">
+                    <h3>{{ recommendation.pattern.title }}</h3>
+                    <p>{{ recommendation.reason }}</p>
+                  </ion-label>
+                </ion-item>
+              }
+            } @else {
+              <ion-text color="medium">No matching patterns for this ball.</ion-text>
+            }
+          }
+        </ion-card-content>
+      </ion-card>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="viewedPattern() !== null" (didDismiss)="viewedPattern.set(null)">
+  <ng-template>
+    <ion-header [translucent]="true">
+      <ion-toolbar>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="viewedPattern.set(null)">
+            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+        <ion-title>{{ viewedPattern()?.title }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content [fullscreen]="true">
+      @if (viewedPattern(); as pattern) {
+        <app-pattern-info [pattern]="pattern"></app-pattern-info>
+      }
     </ion-content>
   </ng-template>
 </ion-modal>

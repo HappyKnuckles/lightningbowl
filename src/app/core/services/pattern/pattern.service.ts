@@ -131,7 +131,9 @@ export class PatternService {
 
   async getPatternData(url: string): Promise<Pattern> {
     try {
-      const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`));
+      // Pattern urls are full Kegel URLs — encode them so their slashes don't
+      // get path-normalized away (the API unquotes the segment server-side).
+      const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${encodeURIComponent(url)}`));
       return response;
     } catch (error) {
       console.error('Error fetching pattern data:', error);

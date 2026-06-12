@@ -215,3 +215,54 @@ ion-card {
     }
   }
 }
+ion-card .ball-info .recommended-patterns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--ion-thin-border-color, #ffffff12);
+
+  .recommended-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ion-color-medium, #8a8a90);
+  }
+
+  .recommendation {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+    border-radius: var(--default-border-radius);
+
+    .rec-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .rec-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .rec-reason {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium, #8a8a90);
+    }
+
+    > ion-icon {
+      flex-shrink: 0;
+      font-size: 0.875rem;
+      color: var(--ion-color-medium, #9b9ba1);
+    }
+  }
+}

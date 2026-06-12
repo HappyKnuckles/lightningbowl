@@ -40,13 +40,18 @@ import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
+import { Pattern } from 'src/app/core/models/pattern.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
+import { PatternRecommendation, recommendPatternsForBall } from 'src/app/core/services/ball/ball-patterns.util';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
@@ -85,6 +90,7 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
     FormsModule,
     BallListComponent,
     GenericTypeaheadComponent,
+    PatternInfoComponent,
     IonSegmentContent,
     IonSegmentView,
     IonCard,
@@ -106,6 +112,16 @@ export class ArsenalPage implements OnInit {
       .allBalls()
       .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
+  /** Patterns each arsenal ball fits best, computed from its specs; keyed by ball_id + core_weight. */
+  recommendedPatternsByBall: Signal<Map<string, PatternRecommendation[]>> = computed(() => {
+    const allPatterns = this.patternsStore.allPatterns();
+    const map = new Map<string, PatternRecommendation[]>();
+    for (const ball of this.ballsStore.arsenal()) {
+      map.set(ball.ball_id + ball.core_weight, recommendPatternsForBall(ball, allPatterns));
+    }
+    return map;
+  });
+  viewedPattern = signal<Pattern | null>(null);
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
@@ -114,6 +130,8 @@ export class ArsenalPage implements OnInit {
 
   constructor(
     public ballsStore: BallsStore,
+    public patternsStore: PatternsStore,
+    private patternService: PatternService,
     private hapticService: HapticService,
     private alertController: AlertController,
     private loadingService: LoadingService,
@@ -133,6 +151,25 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page');
+  }
+
+  trackArsenalBall(_index: number, ball: Ball): string {
+    return ball.ball_id + ball.core_weight;
+  }
+
+  async openRecommendedPattern(pattern: Partial<Pattern>): Promise<void> {
+    if (!pattern.url) {
+      return;
+    }
+    try {
+      this.loadingService.setLoading(true);
+      this.viewedPattern.set(await this.patternService.getPatternData(pattern.url));
+    } catch (error) {
+      console.error('Error loading pattern:', error);
+      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
+    } finally {
+      this.loadingService.setLoading(false);
+    }
   }
 
   private generateBallDistributionChart(): void {

@@ -3,7 +3,7 @@
 import { computed, Injectable, Signal } from '@angular/core';
 import { PrevStats, Stats } from 'src/app/core/models/stats.model';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { UtilsService } from '../utils/utils.service';
+import { UtilsService } from '../../utils/utils.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
 

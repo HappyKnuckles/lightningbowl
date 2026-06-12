@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, input } from '@angular/core';
-import { IonText, IonIcon } from '@ionic/angular/standalone';
-import { PrevStats, Stats } from 'src/app/core/models/stats.model';
+import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
+import { IonIcon, IonText } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { PINS } from 'src/app/core/constants/app.constants';
+import { PrevStats, Stats } from 'src/app/core/models/stats.model';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 
 interface SpareRow {
   pin: number;
@@ -55,7 +55,7 @@ export class StatSpareComponent {
     addIcons({ informationCircleOutline, arrowUp, arrowDown });
   }
 
-  readonly overall = computed<SpareSummary>(() => {
+  readonly overallVm = computed<SpareSummary>(() => {
     const stats = this.stats();
     const prev = this.prevStats();
     const attempts = stats.totalSparesConverted + stats.totalSparesMissed;
@@ -75,7 +75,7 @@ export class StatSpareComponent {
     };
   });
 
-  readonly rows = computed<SpareRow[]>(() => {
+  readonly rowVms = computed<SpareRow[]>(() => {
     const stats = this.stats();
     const prev = this.prevStats();
     const id = this.id();

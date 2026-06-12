@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { ExcelService } from './excel.service';
-import { HapticService } from '../haptic/haptic.service';
-import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { ToastService } from '../toast/toast.service';
-import { SortUtilsService } from '../sort-utils/sort-utils.service';
+import { SortUtilsService } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
+import { HapticService } from '../haptic/haptic.service';
+import { ToastService } from '../toast/toast.service';
+import { ExcelService } from './excel.service';
 
 describe('ExcelService', () => {
   let service: ExcelService;

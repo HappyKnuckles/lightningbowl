@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, input } from '@angular/core';
-import { IonText, IonIcon } from '@ionic/angular/standalone';
+import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
+import { IonIcon, IonText } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 import { ConditionalNumberPipe } from 'src/app/shared/pipes/number-pipe/conditional-number.pipe';
 
 interface StatRowVm {

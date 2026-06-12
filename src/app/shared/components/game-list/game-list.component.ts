@@ -45,15 +45,15 @@ import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
-import { BowlingGameValidationService } from 'src/app/core/services/game-utils/bowling-game-validation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { isGameValid } from 'src/app/core/utils/game-utils/game-validation.utils';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
@@ -64,6 +64,7 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { Ball } from 'src/app/core/models/ball.model';
 
 interface MonthHeader {
   name: string;
@@ -135,7 +136,6 @@ export class GameListComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private validationService = inject(BowlingGameValidationService);
   private shareService = inject(GameShareService);
   private typeaheadConfigService = inject(TypeaheadConfigService);
 
@@ -212,6 +212,8 @@ export class GameListComponent implements OnInit {
 
   // Config
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
+
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -386,6 +388,17 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
+  onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
+    const allBalls = this.ballsStore.allBalls();
+    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    this.onBallSelect(
+      selected.map((b) => b.ball_name),
+      game,
+      modal,
+    );
+    this.saveBallToArsenal(selected);
+  }
+
   onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
     modal.dismiss();
     game.balls = selectedBalls;
@@ -397,7 +410,7 @@ export class GameListComponent implements OnInit {
 
   // HELPERS
   isGameValid(game: Game): boolean {
-    return this.validationService.isGameValid(game);
+    return isGameValid(game);
   }
 
   parseIntValue(value: string): number {
@@ -407,5 +420,17 @@ export class GameListComponent implements OnInit {
   getSelectedBallsText(game: Game): string {
     const balls = game.balls || [];
     return balls.length > 0 ? balls.join(', ') : 'None';
+  }
+
+  private async saveBallToArsenal(balls: Ball[]): Promise<void> {
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((b) => !failed.includes(b));
+
+    if (saved.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+    if (failed.length) {
+      this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
+    }
   }
 }

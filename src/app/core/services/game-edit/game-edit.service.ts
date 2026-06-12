@@ -1,15 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Frame, Game, cloneFrames } from 'src/app/core/models/game.model';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { Frame, Game } from '../../models/game.model';
+import { calculateIsClean, cloneFrames, recordThrow, removeThrow } from '../../utils/game-utils/frame.utils';
+import { canUndoLastThrow, isGameValid, isValidFrameScore } from '../../utils/game-utils/game-validation.utils';
+import { applyPinModeUndo, getAvailablePins, isCellAccessible, processPinThrow } from '../../utils/game-utils/pin.utils';
+import { parseInputValue } from '../../utils/game-utils/score-input.utils';
+import { UtilsService } from '../../utils/utils.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { GameScoreCalculatorService } from '../game-score-calculator/game-score-calculator.service';
-import { BowlingGameValidationService } from '../game-utils/bowling-game-validation.service';
-import { GameUtilsService } from '../game-utils/game-utils.service';
 import { HapticService } from '../haptic/haptic.service';
 import { ToastService } from '../toast/toast.service';
-import { UtilsService } from '../utils/utils.service';
 
 export interface EditFocus {
   frameIndex: number;
@@ -24,8 +26,6 @@ export class GameEditService {
   private hapticService = inject(HapticService);
   private toastService = inject(ToastService);
   private utilsService = inject(UtilsService);
-  private gameUtilsService = inject(GameUtilsService);
-  private validationService = inject(BowlingGameValidationService);
   private gameScoreCalculator = inject(GameScoreCalculatorService);
   private analyticsService = inject(AnalyticsService);
 
@@ -83,7 +83,7 @@ export class GameEditService {
       const editedState = this.editedGameStates[game.gameId];
       const updatedGame = this.buildUpdatedGame(game, editedState);
 
-      if (!this.validationService.isGameValid(updatedGame)) {
+      if (!isGameValid(updatedGame)) {
         this.hapticService.vibrate(ImpactStyle.Heavy);
         this.toastService.showToast(TOAST_MESSAGES.invalidInput, 'bug', true);
         return false;
@@ -123,24 +123,24 @@ export class GameEditService {
     const frames = cloneFrames(editedGame.frames);
 
     if (value.length === 0) {
-      this.gameUtilsService.removeThrow(frames, frameIndex, throwIndex);
+      removeThrow(frames, frameIndex, throwIndex);
       this.updateGameWithNewFrames(game.gameId, frames);
       return 'removed';
     }
 
-    const parsed = this.gameUtilsService.parseInputValue(value, frameIndex, throwIndex, frames);
+    const parsed = parseInputValue(value, frameIndex, throwIndex, frames);
 
     if (!this.utilsService.isValidNumber0to10(parsed)) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
       return 'invalid';
     }
 
-    if (!this.validationService.isValidFrameScore(parsed, frameIndex, throwIndex, frames)) {
+    if (!isValidFrameScore(parsed, frameIndex, throwIndex, frames)) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
       return 'invalid';
     }
 
-    this.gameUtilsService.recordThrow(frames, frameIndex, throwIndex, parsed);
+    recordThrow(frames, frameIndex, throwIndex, parsed);
     this.updateGameWithNewFrames(game.gameId, frames);
     return 'recorded';
   }
@@ -150,7 +150,7 @@ export class GameEditService {
     if (!this.isEditModeMap[game.gameId] || !game.isPinMode) return;
 
     const editedGame = this.editedGameStates[game.gameId];
-    if (this.gameUtilsService.isCellAccessible(editedGame.frames, frameIndex, throwIndex)) {
+    if (isCellAccessible(editedGame.frames, frameIndex, throwIndex)) {
       this.editedFocusMap[game.gameId] = { frameIndex, throwIndex };
     }
   }
@@ -161,7 +161,7 @@ export class GameEditService {
     const focus = this.editedFocusMap[game.gameId] ?? { frameIndex: 0, throwIndex: 0 };
     const editedGame = this.editedGameStates[game.gameId] ?? structuredClone(game);
 
-    const result = this.gameUtilsService.processPinThrow(editedGame.frames, focus.frameIndex, focus.throwIndex, pinsKnockedDown);
+    const result = processPinThrow(editedGame.frames, focus.frameIndex, focus.throwIndex, pinsKnockedDown);
 
     this.editedFocusMap[game.gameId] = {
       frameIndex: result.nextFrameIndex,
@@ -178,7 +178,7 @@ export class GameEditService {
     if (!focus) return;
 
     const editedGame = this.editedGameStates[game.gameId];
-    const result = this.gameUtilsService.applyPinModeUndo(editedGame.frames, focus.frameIndex, focus.throwIndex);
+    const result = applyPinModeUndo(editedGame.frames, focus.frameIndex, focus.throwIndex);
     if (!result) return;
 
     this.editedFocusMap[game.gameId] = {
@@ -191,11 +191,11 @@ export class GameEditService {
 
   getPinsLeftStanding(game: Game): number[] {
     const focus = this.editedFocusMap[game.gameId];
-    if (!focus) return this.gameUtilsService.getAvailablePins(0, 0, []);
+    if (!focus) return getAvailablePins(0, 0, []);
 
     const editedGame = this.editedGameStates[game.gameId];
     const frame = editedGame.frames[focus.frameIndex];
-    return this.gameUtilsService.getAvailablePins(focus.frameIndex, focus.throwIndex, frame.throws ?? []);
+    return getAvailablePins(focus.frameIndex, focus.throwIndex, frame.throws ?? []);
   }
 
   canRecordStrike(game: Game): boolean {
@@ -212,7 +212,7 @@ export class GameEditService {
     if (!focus) return false;
 
     const editedGame = this.editedGameStates[game.gameId];
-    return this.validationService.canUndoLastThrow(editedGame.frames, focus.frameIndex, focus.throwIndex);
+    return canUndoLastThrow(editedGame.frames, focus.frameIndex, focus.throwIndex);
   }
 
   // SERIES PROPAGATION (in-memory only)
@@ -255,7 +255,7 @@ export class GameEditService {
       totalScore: editedState.totalScore,
       isPractice: !game.league,
       isPerfect: editedState.totalScore === 300,
-      isClean: this.gameUtilsService.calculateIsClean(editedState.frames),
+      isClean: calculateIsClean(editedState.frames),
     };
   }
 

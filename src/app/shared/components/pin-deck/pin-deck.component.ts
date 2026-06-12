@@ -1,6 +1,6 @@
-import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GameUtilsService } from 'src/app/core/services/game-utils/game-utils.service';
+import { Component, computed, input } from '@angular/core';
+import { isSplit } from 'src/app/core/utils/game-utils/pin.utils';
 
 interface Pin {
   id: number;
@@ -22,7 +22,6 @@ const DECK_SPAN = 4 * PIN_SIZE + 3 * PIN_GAP;
   },
 })
 export class PinDeckComponent {
-  private gameUtilsService = inject(GameUtilsService);
   activePins = input.required<number[]>();
   isStatPage = input<boolean>(false);
   scale = input<number>(1);
@@ -42,7 +41,7 @@ export class PinDeckComponent {
     return [row([7, 8, 9, 10]), row([4, 5, 6]), row([2, 3]), row([1])];
   });
 
-  readonly isSplit = computed(() => this.gameUtilsService.isSplit(this.activePins()));
+  readonly isSplit = computed(() => isSplit(this.activePins()));
 
   trackByPinId(_: number, pin: Pin): number {
     return pin.id;

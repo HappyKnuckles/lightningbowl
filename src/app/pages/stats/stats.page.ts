@@ -40,11 +40,10 @@ import { GameFilterService } from 'src/app/core/services/game-filter/game-filter
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UtilsService } from 'src/app/core/services/utils/utils.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { UtilsService } from 'src/app/core/utils/utils.service';
 import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
@@ -62,12 +61,13 @@ import {
   STRIKE_STAT_DEFINITIONS,
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
-import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 import { Stats } from 'src/app/core/models/stats.model';
+import { sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
 import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
 import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-stats',
@@ -260,7 +260,6 @@ export class StatsPage implements OnInit, AfterViewInit {
     public gameFilterService: GameFilterService,
     private hapticService: HapticService,
     private modalCtrl: ModalController,
-    private sortUtilsService: SortUtilsService,
     private utilsService: UtilsService,
     private chartService: ChartGenerationService,
     private toastService: ToastService,
@@ -347,7 +346,7 @@ export class StatsPage implements OnInit, AfterViewInit {
 
       this.scoreChartInstance = this.chartService.generateScoreChart(
         this.scoreChart,
-        this.sortUtilsService.sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
         this.scoreChartInstance!,
         this.chartViewMode,
         () => this.toggleChartView(),
@@ -396,7 +395,7 @@ export class StatsPage implements OnInit, AfterViewInit {
 
       this.averageScoreChartInstance = this.chartService.generateAverageScoreChart(
         this.averageScoreChart,
-        this.sortUtilsService.sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
         this.averageScoreChartInstance!,
         this.averageChartViewMode,
         () => this.toggleAverageChartView(),
@@ -416,7 +415,7 @@ export class StatsPage implements OnInit, AfterViewInit {
 
       this.scoreDistributionChartInstance = this.chartService.generateScoreDistributionChart(
         this.scoreDistributionChart,
-        this.sortUtilsService.sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
         this.scoreDistributionChartInstance!,
         isReload,
       );

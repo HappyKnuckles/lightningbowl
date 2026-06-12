@@ -31,7 +31,6 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
-import { createPartialPatternTypeaheadConfig } from 'src/app/core/configs/typeahead/pattern.config';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
@@ -218,7 +217,6 @@ export class GameComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.presentingElement = document.querySelector('.ion-page')!;
-    this.patternTypeaheadConfig = createPartialPatternTypeaheadConfig((searchTerm: string) => this.patternService.searchPattern(searchTerm));
   }
 
   // PIN INPUT MODE - PASS-THROUGH HANDLERS

@@ -30,7 +30,7 @@ export function parseInputValue(input: string, frameIndex: number, throwIndex: n
  * pass '–' for the readonly / share grid.
  */
 export function formatThrowDisplay(frame: Frame | undefined, throwIndex: number, isTenth: boolean): string {
-  const missSymbol = '—';
+  const missSymbol = '–';
   const spareSymbol = '/';
   const strikeSymbol = 'X';
 

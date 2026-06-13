@@ -80,7 +80,6 @@ export class AlleyDetailSheetComponent {
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lon}`)}`;
     const text = address ? `${name} — ${address}` : name;
 
-    // Native app: the Capacitor plugin opens the OS share sheet.
     if (Capacitor.isNativePlatform()) {
       try {
         await Share.share({ title: name, text, url, dialogTitle: `Share ${name}` });
@@ -90,8 +89,6 @@ export class AlleyDetailSheetComponent {
       return;
     }
 
-    // PWA / mobile browser: Web Share API. A canceled sheet throws AbortError
-    // and must not trigger the clipboard fallback.
     if (navigator.share) {
       try {
         await navigator.share({ title: name, text, url });
@@ -104,7 +101,6 @@ export class AlleyDetailSheetComponent {
       return;
     }
 
-    // Desktop browsers without share support.
     await this.copyToClipboard(text, url);
   }
 

@@ -9,7 +9,6 @@ export interface Alley {
   website?: string;
   /** Raw OSM opening_hours string, e.g. "Mo-Fr 14:00-23:00; Sa,Su 12:00-24:00". */
   openingHours?: string;
-  /** Number of lanes if tagged in OSM. */
   laneCount?: number;
   /** Distance from the current search origin in meters. */
   distanceMeters?: number;
@@ -28,7 +27,6 @@ export type AlleyOpenState = 'open' | 'closed' | 'unknown';
 export interface AlleyFilters {
   openNow: boolean;
   favoritesOnly: boolean;
-  /** Search radius in kilometers. */
   radiusKm: number;
 }
 

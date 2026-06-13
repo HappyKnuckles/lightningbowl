@@ -5,10 +5,6 @@ const FAVORITES_KEY = 'favoriteAlleys';
 const RECENTS_KEY = 'recentAlleys';
 const MAX_RECENTS = 10;
 
-/**
- * Persists the user's favorite bowling alleys and a short list of recently
- * viewed ones, mirroring the localStorage approach of FavoritesService.
- */
 @Injectable({ providedIn: 'root' })
 export class AlleyFavoritesService {
   private _favorites = signal<Map<string, Alley>>(new Map());

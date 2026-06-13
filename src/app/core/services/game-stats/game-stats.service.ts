@@ -1,5 +1,4 @@
 import { computed, Injectable, Signal } from '@angular/core';
-import { Game, isAllFramesComplete, toCompletedFramesGame } from 'src/app/core/models/game.model';
 import {
   HighlightBallStats,
   HighlightPatternStats,
@@ -10,15 +9,17 @@ import {
   Stats,
 } from 'src/app/core/models/stats.model';
 
-import { GameFilterService } from '../game-filter/game-filter.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { GameFilterService } from '../game-filter/game-filter.service';
 
-import { StatsPersistenceService } from './stats-persistance.service';
-import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
+import { Game } from '../../models/game.model';
+import { isAllFramesComplete, toCompletedFramesGame } from '../../utils/game-utils/frame.utils';
 import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-calculator.service';
+import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { PatternStatsCalculatorService } from './game-stats-calculator/pattern-stats-calculator.service';
-import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
 import { PinStatsCalculatorService } from './game-stats-calculator/pin-stats-calculator.service';
+import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';
+import { StatsPersistenceService } from './stats-persistance.service';
 
 @Injectable({
   providedIn: 'root',

@@ -50,12 +50,12 @@ import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.se
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { SortUtilsService } from 'src/app/core/services/sort-utils/sort-utils.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { sortGameHistoryByDate, sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
@@ -115,7 +115,7 @@ export class LeaguePage {
 
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
     const games = this.gamesStore.games();
-    return this.sortUtilsService.sortGamesByLeagues(games, true);
+    return sortGamesByLeagues(games, true);
   });
 
   leagueKeys: Signal<string[]> = computed(() => {
@@ -127,7 +127,7 @@ export class LeaguePage {
     return this.statService.calculateBowlingStats(games);
   });
 
-  gamesByLeagueReverse = this.perLeague((games) => this.sortUtilsService.sortGameHistoryByDate(games, true));
+  gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
   mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBall(games));
@@ -166,7 +166,6 @@ export class LeaguePage {
     public ballsStore: BallsStore,
     public leaguesStore: LeaguesStore,
     private appFacade: AppFacade,
-    private sortUtilsService: SortUtilsService,
     private hapticService: HapticService,
     private statService: GameStatsService,
     public loadingService: LoadingService,

@@ -4,6 +4,10 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class UtilsService {
+  generateUniqueSeriesId(): string {
+    return 'series-' + Math.random().toString(36).substring(2, 15);
+  }
+
   transformDate(date: Date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');

@@ -91,6 +91,35 @@
                     <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
                   </ion-select>
                 </ion-item>
+                <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                  <ion-label>Balls</ion-label>
+                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
+                </ion-item>
+
+                @if (ballsStore.arsenal().length > 0) {
+                  <ion-modal
+                    [enterAnimation]="enterAnimation"
+                    [leaveAnimation]="leaveAnimation"
+                    #modal
+                    trigger="ball-selector-{{ game.gameId }}"
+                    class="ball-modal">
+                    <ng-template>
+                      <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
+                    </ng-template>
+                  </ion-modal>
+                } @else {
+                  <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
+                    <ng-template>
+                      <app-generic-typeahead
+                        [items]="ballsStore.allBalls()"
+                        [config]="ballTypeaheadConfig"
+                        [prevSelectedItems]="game.balls ?? []"
+                        (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                      </app-generic-typeahead>
+                    </ng-template>
+                  </ion-modal>
+                }
                 <ion-item class="pattern" button [id]="'selectPatternHistory' + $index">
                   <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                   <ion-label>Patterns</ion-label>
@@ -104,31 +133,6 @@
                       [prevSelectedItems]="game.patterns"
                       (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
                     </app-generic-typeahead>
-                  </ng-template>
-                </ion-modal>
-                <ion-item
-                  class="arsenal"
-                  id="ball-selector-{{ game.gameId }}"
-                  button
-                  detailIcon="chevron-expand-outline"
-                  [disabled]="ballsStore.arsenal().length === 0">
-                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                  <!-- <ion-select [(ngModel)]="game.balls" multiple="true" name="balls" label="Balls">
-                    <ion-select-option *ngFor="let ball of ballsStore.arsenal()" [value]="ball.ball_name">
-                      {{ ball.ball_name }}
-                    </ion-select-option>
-                  </ion-select> -->
-                  <ion-label>Balls</ion-label>
-                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
-                </ion-item>
-                <ion-modal
-                  [enterAnimation]="enterAnimation"
-                  [leaveAnimation]="leaveAnimation"
-                  #modal
-                  trigger="ball-selector-{{ game.gameId }}"
-                  class="ball-modal">
-                  <ng-template>
-                    <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls"></app-ball-select>
                   </ng-template>
                 </ion-modal>
                 <ion-item class="note" lines="none">

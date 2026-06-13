@@ -1,4 +1,4 @@
-<ng-container *ngFor="let toast of activeToasts; let i = index">
+@for (toast of activeToasts; track $index) {
   <ion-toast
     #toastRef
     class="custom-toast"
@@ -8,11 +8,10 @@
     [color]="toast.isError ? 'danger' : 'primary'"
     [duration]="TOAST_DURATION"
     position="bottom"
+    (didPresent)="onToastDidPresent(toast.id, $event)"
     (didDismiss)="onToastDidDismiss(toast.id)"
     (click)="toastRef.dismiss()"
     swipeGesture="vertical"
-    [ngStyle]="{
-      transform: 'translateY(-' + i * getMarginAccordingToTextLength(toast.message) + 'px)',
-    }">
+    [ngStyle]="{ transform: 'translateY(-' + getOffset($index) + 'px)' }">
   </ion-toast>
-</ng-container>
+}

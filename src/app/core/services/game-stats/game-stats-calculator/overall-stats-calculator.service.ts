@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
-import { GameUtilsService } from '../../game-utils/game-utils.service';
+import { isMakeableSplit, isSplit } from '../../../utils/game-utils/pin.utils';
 
 const MAX_FRAMES = 10;
 
@@ -9,8 +9,6 @@ const MAX_FRAMES = 10;
   providedIn: 'root',
 })
 export class OverallStatsCalculatorService {
-  constructor(private gameUtilsService: GameUtilsService) {}
-
   private getRate(converted: number, missed: number): number {
     if (converted + missed === 0) {
       return 0;
@@ -250,15 +248,14 @@ export class OverallStatsCalculatorService {
         if (!isStrike && game.isPinMode && frame.throws && frame.throws[0] && frame.throws[0].pinsLeftStanding) {
           const pinsLeft = frame.throws[0].pinsLeftStanding;
           if (pinsLeft.length > 1) {
-            const isSplit = this.gameUtilsService.isSplit(pinsLeft);
-            if (isSplit) {
+            if (isSplit(pinsLeft)) {
               splitOpportunities++;
-              if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+              if (isMakeableSplit(pinsLeft)) {
                 makeableSplitOpportunities++;
               }
               if (isSpare) {
                 splits++;
-                if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+                if (isMakeableSplit(pinsLeft)) {
                   makeableSplits++;
                 }
               }
@@ -279,15 +276,14 @@ export class OverallStatsCalculatorService {
         ) {
           const pinsLeft = frame.throws[1].pinsLeftStanding;
           if (pinsLeft.length > 1) {
-            const isSplit = this.gameUtilsService.isSplit(pinsLeft);
-            if (isSplit) {
+            if (isSplit(pinsLeft)) {
               splitOpportunities++;
-              if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+              if (isMakeableSplit(pinsLeft)) {
                 makeableSplitOpportunities++;
               }
               if (throw3 !== undefined && throw2 + throw3 === 10) {
                 splits++;
-                if (this.gameUtilsService.isMakeableSplit(pinsLeft)) {
+                if (isMakeableSplit(pinsLeft)) {
                   makeableSplits++;
                 }
               }

@@ -1,8 +1,10 @@
 import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { IonCol, IonGrid, IonRow } from '@ionic/angular/standalone';
-import { Game, formatThrowDisplay, getThrowValue } from 'src/app/core/models/game.model';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
+import { Game } from 'src/app/core/models/game.model';
+import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
+import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
 interface ReadonlyThrowVm {
   display: string;
@@ -54,7 +56,7 @@ export class GameReadonlyComponent {
       const v2 = getThrowValue(frame, 2);
 
       const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => ({
-        display: formatThrowDisplay(frame, throwIndex, isTenth, '–'),
+        display: formatThrowDisplay(frame, throwIndex, isTenth),
         isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
         pinShow,
         pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],

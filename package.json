@@ -13,7 +13,12 @@
     "pretty": "npx prettier --write .",
     "prepare": "husky install || echo 'Skipping husky install'",
     "lint": "ng lint",
-    "stylelint": "npx stylelint \"src/**/*.scss\""
+    "stylelint": "npx stylelint \"src/**/*.scss\"",
+    "update:screenshots": "playwright test --config=playwright.config.ts",
+    "update:screenshots:mobile": "playwright test --config=playwright.config.ts --project=mobile",
+    "update:screenshots:desktop": "playwright test --config=playwright.config.ts --project=desktop",
+    "update:screenshots:ui": "playwright test --config=playwright.config.ts --ui",
+    "capture:fixtures": "playwright test --config=playwright.capture.config.ts playwright/screenshots/capture-fixtures.spec.ts --project=desktop"  
   },
   "private": true,
   "dependencies": {
@@ -73,6 +78,7 @@
     "@angular/language-service": "^20.3.18",
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.0.0",
+    "@playwright/test": "^1.49.0",
     "@ionic/angular-toolkit": "11.0.1",
     "@types/d3": "^7.4.3",
     "@types/events": "^3.0.3",

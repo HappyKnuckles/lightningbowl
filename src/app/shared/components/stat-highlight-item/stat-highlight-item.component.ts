@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import {
   IonButton,
   IonButtons,
@@ -34,7 +34,19 @@ export class StatHighlightItemComponent {
   allItems = input<GenericItemStats[]>();
 
   isModalOpen = signal(false);
+  sortMode = signal<'score' | 'plays'>('score');
+  sortedItems = computed(() => {
+    const items = this.allItems() ?? [];
 
+    switch (this.sortMode()) {
+      case 'plays':
+        return [...items].sort((a, b) => b.gameCount - a.gameCount);
+
+      case 'score':
+      default:
+        return [...items].sort((a, b) => b.avg - a.avg);
+    }
+  });
   constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });
   }

@@ -265,9 +265,8 @@ export class AlleyMapPage implements OnInit, OnDestroy {
       console.error('Error loading bowling alleys:', error);
       if (sequence === this.loadSequence) {
         this.hasError.set(true);
-        this.errorMessage.set(
-          error instanceof HttpErrorResponse && error.status === 429 ? 'The map server is busy. Wait a moment, then retry.' : "Couldn't load alleys.",
-        );
+        const busy = error instanceof HttpErrorResponse && [406, 429, 504].includes(error.status);
+        this.errorMessage.set(busy ? 'The map server is busy. Wait a moment, then retry.' : "Couldn't load alleys.");
       }
     } finally {
       if (sequence === this.loadSequence) {

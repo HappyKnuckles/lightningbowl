@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Capacitor } from '@capacitor/core';
 import { firstValueFrom } from 'rxjs';
 import { Alley } from '../../models/alley.model';
 
@@ -54,10 +55,26 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 @Injectable({ providedIn: 'root' })
 export class AlleyService {
   private http = inject(HttpClient);
-  private readonly overpassUrl = 'https://overpass-api.de/api/interpreter';
-  private readonly nominatimUrl = 'https://nominatim.openstreetmap.org/search';
+  private readonly overpassUrl = this.resolveEndpoint('/api/overpass', 'https://overpass-api.de/api/interpreter');
+  private readonly nominatimUrl = this.resolveEndpoint('/api/nominatim', 'https://nominatim.openstreetmap.org/search');
   private cache = new Map<string, { timestamp: number; alleys: Alley[] }>();
   private inflight = new Map<string, Promise<Alley[]>>();
+
+  /**
+   * Picks where map-data requests go. The public Overpass/Nominatim instances
+   * block requests carrying the hosted *.vercel.app Origin/Referer (HTTP 406),
+   * so the deployed web app routes through same-origin /api proxies that strip
+   * those headers. Native apps and local dev call the upstreams directly —
+   * their origins are allowed and no serverless proxy runs there.
+   */
+  private resolveEndpoint(proxyPath: string, directUrl: string): string {
+    if (Capacitor.isNativePlatform()) {
+      return directUrl;
+    }
+    const host = typeof location !== 'undefined' ? location.hostname : '';
+    const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+    return isLocalDev ? directUrl : proxyPath;
+  }
 
   /**
    * Finds bowling alleys around the given origin in a single Overpass request.
@@ -124,12 +141,15 @@ out center;`;
     return { lat: parseFloat(lat), lon: parseFloat(lon), label: display_name };
   }
 
-  /** POSTs an Overpass query, retrying once after a pause when rate-limited. */
+  /** POSTs an Overpass query, retrying once after a pause when the instance throttles. */
   private async postWithRetry(query: string): Promise<OverpassResponse> {
+    // 406/429/504 are the transient responses the overloaded public instance
+    // returns under load; a short pause and one retry usually clears them.
+    const retryableStatuses = [406, 429, 504];
     try {
       return await firstValueFrom(this.http.post<OverpassResponse>(this.overpassUrl, query, { headers: { 'Content-Type': 'text/plain' } }));
     } catch (error) {
-      if (error instanceof HttpErrorResponse && (error.status === 429 || error.status === 504)) {
+      if (error instanceof HttpErrorResponse && retryableStatuses.includes(error.status)) {
         await new Promise((resolve) => setTimeout(resolve, 3000));
         return firstValueFrom(this.http.post<OverpassResponse>(this.overpassUrl, query, { headers: { 'Content-Type': 'text/plain' } }));
       }

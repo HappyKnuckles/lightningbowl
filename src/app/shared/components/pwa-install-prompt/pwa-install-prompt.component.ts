@@ -49,14 +49,73 @@ export class PwaInstallPromptComponent implements OnInit {
   isChrome = false;
   isIOS = false;
   images = [
-    { src: 'assets/screenshots/start.png', alt: 'Start Screen', name: 'Start', id: 'start-screen', index: 0 },
-    { src: 'assets/screenshots/stats.png', alt: 'Stats Screen', name: 'Stats', id: 'stats-screen', index: 1 },
-    { src: 'assets/screenshots/history.png', alt: 'History Screen', name: 'History', id: 'history-screen', index: 2 },
-    { src: 'assets/screenshots/arsenal.png', alt: 'Arsenal Screen', name: 'Arsenal', id: 'arsenal-screen', index: 3 },
-    { src: 'assets/screenshots/balls.png', alt: 'Balls Screen', name: 'Balls', id: 'balls-screen', index: 4 },
-    { src: 'assets/screenshots/pattern.png', alt: 'Pattern Screen', name: 'Pattern', id: 'pattern-screen', index: 5 },
+    {
+      src: 'assets/screenshots/games/pin-input.png',
+      alt: 'Pin-by-pin input',
+      name: 'Track',
+      id: 'pin-input-screen',
+      caption: 'Track games pin by pin',
+      index: 0,
+    },
+    {
+      src: 'assets/screenshots/statistics/overall.png',
+      alt: 'Statistics',
+      name: 'Stats',
+      id: 'stats-screen',
+      caption: 'View detailed stats',
+      index: 1,
+    },
+    {
+      src: 'assets/screenshots/statistics/spares.png',
+      alt: 'Spare & pin stats',
+      name: 'Spares',
+      id: 'spare-screen',
+      caption: 'Analyze spares',
+      index: 2,
+    },
+    {
+      src: 'assets/screenshots/statistics/pins.png',
+      alt: 'Leave stats',
+      name: 'Leaves',
+      id: 'pin-screen',
+      caption: 'View detailed leave info',
+      index: 3,
+    },
+    {
+      src: 'assets/screenshots/games/game-details.png',
+      alt: 'Game history',
+      name: 'History',
+      id: 'history-screen',
+      caption: 'Browse game history',
+      index: 4,
+    },
+    { src: 'assets/screenshots/leagues/list.png', alt: 'Leagues', name: 'Leagues', id: 'leagues-screen', caption: 'Follow your leagues', index: 5 },
+    {
+      src: 'assets/screenshots/equipment/arsenal.png',
+      alt: 'Your arsenal',
+      name: 'Arsenal',
+      id: 'arsenal-screen',
+      caption: 'Manage your arsenal',
+      index: 6,
+    },
+    {
+      src: 'assets/screenshots/equipment/ball-library.png',
+      alt: 'Ball library',
+      name: 'Balls',
+      id: 'balls-screen',
+      caption: 'Explore the ball library',
+      index: 7,
+    },
+    {
+      src: 'assets/screenshots/patterns/library.png',
+      alt: 'Oil patterns',
+      name: 'Patterns',
+      id: 'pattern-screen',
+      caption: 'Discover oil patterns',
+      index: 8,
+    },
   ];
-  selectedImage = 'start-screen';
+  selectedImage = 'pin-input-screen';
   currentImageIndex = 0;
   isModalOpen = false;
   constructor() {
@@ -108,8 +167,11 @@ export class PwaInstallPromptComponent implements OnInit {
   }
 
   openImageModal(image: string): void {
-    this.selectedImage = image;
-    this.currentImageIndex = this.images.findIndex((img) => img.id === image);
     this.isModalOpen = true;
+
+    setTimeout(() => {
+      this.selectedImage = image;
+      this.currentImageIndex = this.images.findIndex((img) => img.id === image);
+    }, 50);
   }
 }

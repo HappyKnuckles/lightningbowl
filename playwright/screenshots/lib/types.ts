@@ -22,9 +22,13 @@ export interface ShotContext {
 export interface ShotDefinition {
   /** Stable, unique id. Used for logging and `--grep` filtering. */
   id: string;
-  /** Output folder under src/assets/screenshots, e.g. "games". */
+  /** Optional grouping label for the manifest only (not part of the file path). */
   feature: string;
-  /** File name without extension or viewport suffix, e.g. "history". */
+  /**
+   * Flat file name (no extension/suffix) written under src/assets/screenshots,
+   * e.g. "start" → start.png (+ start_wide.png). These names are what the PWA
+   * manifest and install prompt reference, so keep them stable.
+   */
   name: string;
   /** App route to navigate to, e.g. "/tabs/history". */
   route: string;

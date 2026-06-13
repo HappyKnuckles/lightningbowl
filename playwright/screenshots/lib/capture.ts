@@ -5,7 +5,16 @@ import { SCREENSHOT_ROOT } from './constants';
 import { installMocks } from './mocks';
 import { applySeed } from './seed';
 import { getSeedBundle } from '../fixtures-data/seed-profiles';
-import { injectFreezeStyles, installStabilizers, settle, waitForAppReady, waitForCharts, waitForImages, waitForNetworkIdle } from './stabilize';
+import {
+  injectFreezeStyles,
+  installStabilizers,
+  settle,
+  waitForAppReady,
+  waitForCharts,
+  waitForImages,
+  waitForNetworkIdle,
+  waitForNoLoading,
+} from './stabilize';
 import type { ShotContext, ShotDefinition } from './types';
 import { VIEWPORTS, type ViewportName } from './viewports';
 
@@ -59,6 +68,9 @@ export async function captureShot(page: Page, shot: ShotDefinition, viewport: Vi
   await settle(page);
   if (shot.ready) await shot.ready(ctx);
   await settle(page, 200);
+
+  // Never capture the global loading overlay — wait until isLoading is false.
+  await waitForNoLoading(page);
 
   await write(page, shot, outPath);
   validate(outPath, shot, viewport);

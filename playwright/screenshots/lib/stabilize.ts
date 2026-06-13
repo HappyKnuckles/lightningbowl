@@ -20,8 +20,8 @@ const FREEZE_STYLE = `
     caret-color: transparent !important;
     scroll-behavior: auto !important;
   }
-  /* Hide the blinking lottie/refresher spinners that should never be captured. */
-  lottie-player, ion-spinner { visibility: hidden !important; }
+  /* Hide transient overlays that should never be captured. */
+  lottie-player, ion-spinner, app-toast, ion-toast { visibility: hidden !important; }
 `;
 
 /** Init scripts that must be present before any app code runs. */
@@ -104,6 +104,7 @@ export async function waitForAppReady(page: Page): Promise<void> {
   });
   await waitForFonts(page);
   await waitForNoSkeletons(page);
+  await waitForNoLoading(page);
 }
 
 export async function waitForFonts(page: Page): Promise<void> {
@@ -126,6 +127,29 @@ export async function waitForNoSkeletons(page: Page): Promise<void> {
     .catch(() => {
       /* page may legitimately have no skeletons */
     });
+}
+
+/**
+ * Wait until the global loading overlay is gone — i.e. LoadingService.isLoading
+ * has flipped back to false. While loading, app.component renders an
+ * <ion-backdrop> + <app-bowling-refresher class="custom-loader"> over the page;
+ * neither must ever land in a screenshot. (The other <app-bowling-refresher>s
+ * are in-page pull-to-refreshers and are intentionally ignored here.)
+ *
+ * Note: returns immediately if the overlay isn't currently in the DOM, so it
+ * can't catch a load that hasn't started yet — call it once the app is up and
+ * again right before the capture, by which point any load has begun.
+ */
+export async function waitForNoLoading(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const loader = document.querySelector('app-bowling-refresher.custom-loader');
+      if (!loader) return true;
+      const rect = (loader as HTMLElement).getBoundingClientRect();
+      return rect.width === 0 || rect.height === 0 || (loader as HTMLElement).offsetParent === null;
+    },
+    { timeout: 30_000 },
+  );
 }
 
 /** Ensure every <img>/<ion-img> currently in the viewport has finished loading. */
@@ -157,31 +181,44 @@ export async function waitForCharts(page: Page): Promise<void> {
       () => {
         const w = window as unknown as { __chartSamples?: Record<number, string> };
         w.__chartSamples = w.__chartSamples || {};
-        const canvases = Array.from(document.querySelectorAll('canvas')) as HTMLCanvasElement[];
-        let allStable = true;
+        // Only consider on-screen canvases (inactive ion-segment-content is display:none).
+        const canvases = (Array.from(document.querySelectorAll('canvas')) as HTMLCanvasElement[]).filter((c) => c.offsetParent !== null);
+        if (canvases.length === 0) return true;
+        let allReady = true;
         canvases.forEach((c, i) => {
-          if (c.width === 0 || c.height === 0) return;
+          // Visible but not yet sized/drawn by Chart.js — keep waiting.
+          if (c.width === 0 || c.height === 0) {
+            allReady = false;
+            return;
+          }
           let sig = '';
+          let hasContent = false;
           try {
-            // Cheap signature: sample a downscaled strip rather than the whole canvas.
             const ctx = c.getContext('2d');
             if (ctx) {
-              const data = ctx.getImageData(0, 0, Math.min(c.width, 64), Math.min(c.height, 64)).data;
+              const data = ctx.getImageData(0, 0, Math.min(c.width, 96), Math.min(c.height, 96)).data;
               let hash = 0;
-              for (let p = 0; p < data.length; p += 97) hash = (hash * 31 + data[p]) | 0;
+              for (let p = 0; p < data.length; p += 53) {
+                hash = (hash * 31 + data[p]) | 0;
+                // Non-uniform vs the first pixel ⇒ something has actually been drawn.
+                if (data[p] !== data[0] || data[p + 1] !== data[1] || data[p + 2] !== data[2] || data[p + 3] !== data[3]) {
+                  hasContent = true;
+                }
+              }
               sig = String(hash);
             }
           } catch {
-            sig = String(c.width) + 'x' + c.height;
+            // Cross-origin/tainted canvas (e.g. minigame) — treat as drawn.
+            sig = `tainted-${c.width}x${c.height}`;
+            hasContent = true;
           }
-          if (w.__chartSamples![i] !== sig) {
-            allStable = false;
-            w.__chartSamples![i] = sig;
-          }
+          // Ready only once the canvas has real content AND is stable between polls.
+          if (!hasContent || w.__chartSamples![i] !== sig) allReady = false;
+          w.__chartSamples![i] = sig;
         });
-        return allStable;
+        return allReady;
       },
-      { timeout: 12_000, polling: 350 },
+      { timeout: 12_000, polling: 400 },
     )
     .catch(() => undefined);
 }

@@ -1,6 +1,6 @@
 {
   "generatedFrom": "playwright/screenshots/registry.ts",
-  "count": 35,
+  "count": 40,
   "viewports": {
     "mobile": {
       "viewport": {
@@ -221,6 +221,91 @@
         {
           "viewport": "desktop",
           "path": "src/assets/screenshots/statistics/sessions_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.overall.scrolled",
+      "feature": "statistics",
+      "page": "overall-scrolled",
+      "description": "Overall stats + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/overall-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/overall-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.throws.scrolled",
+      "feature": "statistics",
+      "page": "throws-scrolled",
+      "description": "Throw stats + distribution",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/throws-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/throws-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.spares.scrolled",
+      "feature": "statistics",
+      "page": "spares-scrolled",
+      "description": "Spare conversion + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/spares-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/spares-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.pins.scrolled",
+      "feature": "statistics",
+      "page": "pins-scrolled",
+      "description": "Pin leaves + diagrams",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/pins-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/pins-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.sessions.scrolled",
+      "feature": "statistics",
+      "page": "sessions-scrolled",
+      "description": "Per-session stats + date picker",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/sessions-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/sessions-scrolled_wide.png"
         }
       ]
     },

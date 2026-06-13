@@ -1,131 +1,123 @@
 # Automated Screenshot System
 
-Deterministic, maintainable screenshots of **every page and important state** of
-Lightning Bowl, rendered at mobile **and** desktop sizes for documentation, the
-README, app‑store listings and marketing.
+Generates the **small, curated set of screenshots that the PWA actually bundles**
+— the images shown in the install/download modal and the ones declared in the
+web app manifest — at iPhone (and where needed, desktop) sizes, deterministically.
 
 ```bash
-npm run update:screenshots          # regenerate everything (mobile + desktop)
-npm run update:screenshots:mobile   # only iPhone shots
-npm run update:screenshots:desktop  # only 1440×900 shots
+npm run update:screenshots          # regenerate everything (mobile + the few wide ones)
+npm run update:screenshots:mobile   # only the iPhone shots
+npm run update:screenshots:desktop  # only the _wide shots
 npm run update:screenshots:ui       # interactive Playwright UI (debug)
-npx playwright test -g "leagues."   # regenerate just the league shots
+npx playwright test -g "stats"      # regenerate just the stats shots
 ```
 
-Output lands in [`src/assets/screenshots/`](../../src/assets/screenshots) as
-`feature/page.png` (mobile) and `feature/page_wide.png` (desktop), plus a
-generated `manifest.json`.
+Output is written **flat** into [`src/assets/screenshots/`](../../src/assets/screenshots)
+as `<name>.png` (mobile) and `<name>_wide.png` (desktop), plus a `manifest.json`.
 
----
+## What gets generated & where it's used
 
-## How it works
+| file | used by | viewports |
+|------|---------|-----------|
+| `start.png` / `start_wide.png` | install modal + manifest | mobile + wide |
+| `stats.png` / `stats_wide.png` | install modal + manifest | mobile + wide |
+| `history.png` / `history_wide.png` | install modal + manifest | mobile + wide |
+| `stats2.png` | manifest | mobile |
+| `arsenal.png` | install modal | mobile |
+| `balls.png` | install modal | mobile |
+| `pattern.png` | install modal | mobile |
+
+- **Install modal** → [`pwa-install-prompt.component.ts`](../../src/app/shared/components/pwa-install-prompt/pwa-install-prompt.component.ts) `images[]` references `start, stats, history, arsenal, balls, pattern`.
+- **Manifest** → [`src/manifest.webmanifest`](../../src/manifest.webmanifest) `screenshots[]` references the `_wide` trio + `start, stats, stats2, history`.
+
+Wide (`_wide`) variants are **only** produced for `start`, `stats`, `history`
+(the manifest's `form_factor: "wide"` entries) — everything else is mobile-only.
+
+## Real images (no placeholders)
+
+The Ball Library, Arsenal and Pattern Library are captured against the **live
+APIs**, so they show genuine balls/patterns and real product imagery:
+
+- `lib/mocks.ts` mocks **nothing** data-related; it only neutralises telemetry
+  / analytics / OCR / the GitHub update check so they don't error or pop a
+  prompt over a shot.
+- The seeded **Arsenal** and ball favourites use real balls captured in
+  `fixtures-data/real-balls.json` (so their thumbnails resolve on bowwwl.com).
+
+> Because balls/patterns are live, those three screenshots reflect the current
+> catalogue and need network access at capture time. Refresh the seeded arsenal
+> balls anytime with `npm run capture:fixtures` (or re-fetch the balls API).
+
+The local screens (`start`, `stats`, `stats2`, `history`) are driven entirely by
+**seeded, fixed data** (games/leagues from `fixtures-data/seed-profiles.ts`), so
+they stay visually stable run-to-run.
+
+## Architecture
 
 ```
 playwright.config.ts                # 2 projects: mobile (iPhone 15 Pro) + desktop (1440×900)
 playwright/screenshots/
-├── registry.ts                     # ★ THE SOURCE OF TRUTH — every shot is one entry
+├── registry.ts                     # ★ THE SOURCE OF TRUTH — the curated shot list
 ├── screenshot.spec.ts              # turns each registry entry into a test
-├── capture-fixtures.spec.ts        # opt-in: record live API responses (npm run capture:fixtures)
-├── pages/                          # page objects — all selectors/interactions live here
-│   ├── base.page.ts                #   shared primitives (modals, segments, search, long-press…)
-│   ├── add-game.page.ts  stats.page.ts  history.page.ts  league.page.ts
-│   ├── equipment.pages.ts (balls / arsenal / comparison)
-│   └── pattern.page.ts  alley-map.page.ts  settings.page.ts
-├── fixtures-data/                  # deterministic data
-│   ├── seed-profiles.ts            #   games / leagues / arsenal + localStorage ("rich"/"empty")
-│   ├── drafts.ts                   #   in-progress game draft (for the score-entry shot)
-│   └── remote.ts                   #   balls / patterns / alleys served to the network mocks
-└── lib/                            # the engine
+├── capture-fixtures.spec.ts        # opt-in: refresh real-balls.json from the live API
+├── pages/                          # page objects — all selectors/interactions
+│   ├── base.page.ts  add-game.page.ts  stats.page.ts  history.page.ts
+│   ├── equipment.pages.ts          #   balls + arsenal (+ comparison, unused)
+│   └── pattern.page.ts  league.page.ts  alley-map.page.ts  settings.page.ts (reusable, unused)
+├── fixtures-data/
+│   ├── seed-profiles.ts            #   seeded games/leagues/arsenal + localStorage
+│   ├── drafts.ts                   #   the populated scorecard shown on `start`
+│   └── real-balls.json             #   real balls for the arsenal/favourites seed
+└── lib/
     ├── capture.ts                  #   per-shot pipeline (seed → navigate → wait → shoot → validate)
     ├── seed.ts                     #   writes Ionic Storage (IndexedDB) + localStorage
-    ├── mocks.ts                    #   intercepts every external API and serves fixtures
-    ├── stabilize.ts                #   kills animations, pins Math.random, waits for fonts/imgs/charts
-    ├── assets.ts                   #   inline SVG placeholders (ball thumbs, map tiles, charts…)
+    ├── mocks.ts                    #   neutralises telemetry/side-effect endpoints only
+    ├── stabilize.ts                #   kills animations, pins Math.random, waits fonts/imgs/charts
     ├── scoring.ts                  #   standalone ten-pin scorer + game builders
-    ├── viewports.ts  constants.ts  types.ts  manifest.ts  global-setup.ts
+    └── viewports.ts  constants.ts  types.ts  manifest.ts  global-setup.ts
 ```
 
-### Determinism (why these screenshots never flake)
+### Determinism / anti-flake
 
-- **Local data is seeded** directly into Ionic Storage's IndexedDB (`_ionicstorage`/
-  `_ionickv`) and `localStorage` before the app boots — games, leagues, arsenal,
-  favourites, username, prefs. See `fixtures-data/seed-profiles.ts`.
-- **Remote data is mocked** from `fixtures-data/remote.ts` (Ball Library, Pattern
-  Library, Alley Map / Overpass / Nominatim, OSM tiles, marker icons). Telemetry,
-  OCR, GitHub and analytics endpoints are neutralised. The run is fully offline.
-- **Time** is fixed: every displayed date derives from `REFERENCE_NOW`
-  (`lib/constants.ts`), and seeded game dates are computed from it.
-- **Randomness** is pinned (`Math.random` → seeded mulberry32).
-- **Motion is removed**: CSS transitions/animations are zeroed, `prefers-reduced-motion`
-  is forced, and the pipeline waits for fonts, images, charts (canvas pixel
-  stability) and map tiles before shooting. Skeletons/spinners are never captured.
+- Local data (games, leagues, arsenal, favourites, prefs) is seeded into Ionic
+  Storage's IndexedDB + localStorage **before** the app boots.
+- All displayed dates derive from `REFERENCE_NOW`; `Math.random` is pinned;
+  CSS animations/transitions are zeroed and reduced-motion is forced.
+- The pipeline waits for the Ionic shell, fonts, images and chart-canvas pixel
+  stability, and rides out the dev server's first-load vite optimisation with a
+  reload-retry. Skeletons/spinners are never captured.
 
 ### Validation
 
-`lib/capture.ts` enforces the naming convention (kebab-case `feature`/`name`),
-creates folders as needed, **overwrites** old files, and fails the shot if the
-PNG is missing or suspiciously small. Invalid registry paths throw.
+`lib/capture.ts` enforces kebab-case names, creates the folder, **overwrites**
+old files, and fails a shot if the PNG is missing or suspiciously small.
 
----
+## Add / change a screenshot
 
-## Add a new screenshot
+Edit `registry.ts` (and, if you want it bundled, reference it from the manifest
+and/or the install-prompt component), then run `npm run update:screenshots`.
 
-1. Open `registry.ts` and add an entry:
-
-   ```ts
-   {
-     id: 'statistics.average-chart',     // unique, used for -g filtering
-     feature: 'statistics',              // → src/assets/screenshots/statistics/
-     name: 'average-chart',              // → average-chart.png + average-chart_wide.png
-     route: '/tabs/stats',
-     description: 'Average progression chart',
-     fullPage: true,
-     prepare: ({ page }) => new StatsPage(page).openTab('Overall'),
-   }
-   ```
-
-2. If you need a new interaction, add a method to the relevant page object in
-   `pages/` (keep selectors out of the registry).
-
-3. Run `npm run update:screenshots`. Done.
-
-### Options on a registry entry
-
-| field        | purpose |
-|--------------|---------|
-| `seed`       | `'rich'` (default) or `'empty'` for empty-state shots |
-| `viewports`  | restrict to `['mobile']` / `['desktop']` (default: both) |
-| `prepare`    | reach the desired state (open modal, switch tab, search…) |
-| `ready`      | extra readiness wait beyond the defaults |
-| `fullPage`   | capture the full scrollable Ionic content, not just the viewport |
-| `clip`       | screenshot a single element by selector |
-| `extraLocal` | extra `localStorage` merged onto the seed (e.g. a game draft) |
-
----
-
-## Refreshing the fixtures from live data
-
-The mocked Ball/Pattern data is a curated snapshot. To re-snapshot from the live
-APIs:
-
-```bash
-npm run capture:fixtures
+```ts
+{
+  id: 'stats2',
+  name: 'stats2',                 // → src/assets/screenshots/stats2.png
+  route: '/tabs/stats',
+  viewports: ['mobile'],          // omit `desktop` to skip the _wide variant
+  prepare: ({ page }) => new StatsPage(page).openTab('Spares'),
+}
 ```
 
-This records the real responses to `fixtures-data/captured/*.json` (git-ignored).
-Review them and merge the relevant parts into `remote.ts`.
-
-> Prefer real map imagery for marketing? Drop the `tile.openstreetmap.org`
-> route in `lib/mocks.ts` to let live tiles through (at the cost of determinism).
-
----
+| field | purpose |
+|-------|---------|
+| `seed` | `'rich'` (default) or `'empty'` |
+| `viewports` | `['mobile']`, `['desktop']`, or both (controls whether `_wide` is made) |
+| `prepare` | reach the desired state (open modal, switch tab, …) |
+| `extraLocal` | extra `localStorage` merged onto the seed (e.g. the `start` draft) |
+| `fullPage` / `clip` | full scrollable capture / single-element capture |
 
 ## Viewports
 
-| project | size | DSF | file suffix |
-|---------|------|-----|-------------|
-| mobile  | 393×852 (iPhone 15 Pro, iOS mode) | 3 | _none_ |
-| desktop | 1440×900 | 2 | `_wide` |
-
-Change or add sizes in `lib/viewports.ts` + a matching project in
-`playwright.config.ts`.
+| project | size | DSF | output |
+|---------|------|-----|--------|
+| mobile  | 393×852 (iPhone 15 Pro, iOS mode) | 3 | `<name>.png` → 1179×2556 |
+| desktop | 1440×900 | 2 | `<name>_wide.png` → 2880×1800 |

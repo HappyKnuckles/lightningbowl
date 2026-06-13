@@ -8,21 +8,38 @@
  * Game scores/dates are fully fixed (computed from REFERENCE_NOW) so every
  * chart, average and "session" grouping is identical on every run.
  */
+import type { Ball } from '../../../src/app/core/models/ball.model';
 import type { Game } from '../../../src/app/core/models/game.model';
 import type { SeedBundle } from '../lib/seed';
 import type { SeedProfileName } from '../lib/types';
 import { REFERENCE_NOW } from '../lib/constants';
 import { StorageKeys } from '../../../src/app/core/services/storage/storage-keys';
 import { buildGame, buildPinGame, op, sp, X, type GameMeta, type PinFrame } from '../lib/scoring';
-import { BALLS, PATTERNS } from './remote';
+import REAL_BALLS_JSON from './real-balls.json';
+
+// Real balls captured from the live API (npm run capture:fixtures or fetched
+// once). Seeding the arsenal/favourites with these means their thumbnails
+// resolve to genuine product images on bowwwl.com — no placeholders.
+const REAL_BALLS = REAL_BALLS_JSON as unknown as Ball[];
+
+// Real oil-pattern names shown (as text) on game/history cards.
+const PATTERN_TITLES = [
+  'Kegel Main Street',
+  'PBA Cheetah 35',
+  'PBA Scorpion 41',
+  'Kegel Stone Street',
+  'USBC Red',
+  'PBA Chameleon 39',
+  'Kegel Navigation',
+];
 
 const DAY = 86_400_000;
 const STRIKE_THROW = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const TENTH_TURKEY: PinFrame = [STRIKE_THROW, STRIKE_THROW, STRIKE_THROW];
 const TENTH_SPARE_FILL: PinFrame = [[1, 2, 3, 4, 5, 6, 7, 8, 9], [10], STRIKE_THROW];
 
-const ball = (i: number) => BALLS[i].ball_name;
-const pattern = (i: number) => PATTERNS[i].title;
+const ball = (i: number) => REAL_BALLS[i % REAL_BALLS.length].ball_name;
+const pattern = (i: number) => PATTERN_TITLES[i % PATTERN_TITLES.length];
 
 // ---- Non-pin frame templates (drive scores, charts, distributions) -------
 // 10th frame has 3 throws only when the first two are a mark.
@@ -136,8 +153,9 @@ function richBundle(): SeedBundle {
   // League registry entries (used by the settings league selector / visibility).
   for (const name of LEAGUE_NAMES) idb.push([StorageKeys.league(name), name]);
 
-  // Arsenal: five balls, ordered.
-  const arsenalBalls = [0, 3, 5, 7, 11].map((i, pos) => ({ ...BALLS[i], position: pos + 1 }));
+  // Arsenal: a handful of real balls, ordered. Their thumbnails resolve to real
+  // product images on bowwwl.com.
+  const arsenalBalls = REAL_BALLS.slice(0, 5).map((b, pos) => ({ ...b, position: pos + 1 }));
   for (const b of arsenalBalls) idb.push([StorageKeys.arsenal(b.ball_id, b.core_weight), b]);
 
   const local: Record<string, string> = {
@@ -146,8 +164,9 @@ function richBundle(): SeedBundle {
     'pin-input-mode': 'missing',
     pinInputMode: 'false',
     'first-game': String(REFERENCE_NOW - 60 * DAY),
-    favoriteBalls: JSON.stringify([BALLS[0], BALLS[3]]),
-    favoritePatterns: JSON.stringify([PATTERNS[0], PATTERNS[4]]),
+    // Favourite a couple of real balls so the library shows filled hearts.
+    favoriteBalls: JSON.stringify([REAL_BALLS[0], REAL_BALLS[1]]),
+    favoritePatterns: '[]',
   };
 
   return { idb, local };

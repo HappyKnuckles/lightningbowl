@@ -44,6 +44,41 @@ export class BasePage {
     await settle(this.page, 500);
   }
 
+  /** Scroll the active page's <ion-content> down by `px` (instant, deterministic). */
+  async scrollContentBy(px: number, scope: Locator = this.active()): Promise<void> {
+    const content = scope.locator('ion-content').first();
+    await content.evaluate((el: any, y: number) => el.scrollToPoint(0, y, 0), px);
+    await settle(this.page, 300);
+  }
+
+  /** Trigger an ion-refresher by pulling down. */
+  async refresh(scope: Locator = this.active()): Promise<void> {
+    const content = scope.locator('ion-content').first();
+
+    // Scroll to top first
+    await content.evaluate((el: any) => el.scrollToTop(0));
+    await settle(this.page, 200);
+
+    const box = await content.boundingBox();
+    if (!box) {
+      throw new Error('ion-content not visible');
+    }
+
+    const x = box.x + box.width / 2;
+    const startY = box.y + 80;
+    const endY = startY + 150;
+
+    await this.page.mouse.move(x, startY);
+    await this.page.mouse.down();
+
+    // Drag slowly downward
+    await this.page.mouse.move(x, endY, { steps: 20 });
+
+    await this.page.mouse.up();
+
+    await settle(this.page, 1000);
+  }
+
   async waitForActionSheet(): Promise<void> {
     await this.page.locator('ion-action-sheet').waitFor({ state: 'visible', timeout: 10_000 });
     await settle(this.page, 300);

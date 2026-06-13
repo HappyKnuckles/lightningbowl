@@ -74,64 +74,14 @@
         <div class="screenshots-section">
           <h3>App Screenshots</h3>
           <div class="screenshots-carousel">
-            <div class="screenshot-container">
-              <button type="button" class="screenshot-button" (click)="openImageModal('start-screen')" (keyup.enter)="openImageModal('start-screen')">
-                <img src="assets/screenshots/start.png" alt="Start Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Track your games</p>
-            </div>
-            <div class="screenshot-container">
-              <button type="button" class="screenshot-button" (click)="openImageModal('stats-screen')" (keyup.enter)="openImageModal('stats-screen')">
-                <img src="assets/screenshots/stats.png" alt="Statistics Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">View detailed stats</p>
-            </div>
-            <div class="screenshot-container">
-              <button
-                type="button"
-                class="screenshot-button"
-                (click)="openImageModal('history-screen')"
-                (keyup.enter)="openImageModal('history-screen')">
-                <img src="assets/screenshots/history.png" alt="History Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Browse game history</p>
-            </div>
-            <div class="screenshot-container">
-              <button
-                type="button"
-                class="screenshot-button"
-                (click)="openImageModal('arsenal-screen')"
-                (keyup.enter)="openImageModal('arsenal-screen')">
-                <img src="assets/screenshots/arsenal.png" alt="Arsenal Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Manage your arsenals</p>
-            </div>
-            <div class="screenshot-container">
-              <button
-                type="button"
-                class="screenshot-button"
-                (click)="openImageModal('history-screen')"
-                (keyup.enter)="openImageModal('history-screen')">
-                <img src="assets/screenshots/history.png" alt="History Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Browse game history</p>
-            </div>
-            <div class="screenshot-container">
-              <button type="button" class="screenshot-button" (click)="openImageModal('balls-screen')" (keyup.enter)="openImageModal('balls-screen')">
-                <img src="assets/screenshots/balls.png" alt="Balls Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Browse balls</p>
-            </div>
-            <div class="screenshot-container">
-              <button
-                type="button"
-                class="screenshot-button"
-                (click)="openImageModal('pattern-screen')"
-                (keyup.enter)="openImageModal('pattern-screen')">
-                <img src="assets/screenshots/pattern.png" alt="Pattern Page" class="screenshot" />
-              </button>
-              <p class="screenshot-caption">Browse patterns</p>
-            </div>
+            @for (image of images; track image.id) {
+              <div class="screenshot-container">
+                <button type="button" class="screenshot-button" (click)="openImageModal(image.id)" (keyup.enter)="openImageModal(image.id)">
+                  <img [src]="image.src" [alt]="image.alt" class="screenshot" />
+                </button>
+                <p class="screenshot-caption">{{ image.caption }}</p>
+              </div>
+            }
           </div>
         </div>
 

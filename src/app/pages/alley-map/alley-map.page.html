@@ -3,11 +3,108 @@
     <ion-title>Alley map</ion-title>
   </ion-toolbar>
   <ion-toolbar>
-    <ion-searchbar appSearchBlur placeholder="Search" (ionInput)="onSearch($event)" debounce="300"></ion-searchbar>
+    <ion-searchbar
+      appSearchBlur
+      placeholder="Search city, address or alley"
+      inputmode="search"
+      enterkeyhint="search"
+      (ionChange)="onSearch($event)"></ion-searchbar>
+  </ion-toolbar>
+  <ion-toolbar class="chips-toolbar">
+    <div class="filter-chips" role="group" aria-label="Filter alleys">
+      <ion-chip [class.active]="filters().openNow" (click)="toggleOpenNow()" [attr.aria-pressed]="filters().openNow"> Open now </ion-chip>
+      <ion-chip [class.active]="filters().favoritesOnly" (click)="toggleFavoritesOnly()" [attr.aria-pressed]="filters().favoritesOnly">
+        <ion-icon name="heart" aria-hidden="true"></ion-icon>
+        <ion-label> Favorites</ion-label>
+      </ion-chip>
+      <ion-chip (click)="cycleRadius()" aria-label="Change search radius">Within {{ filters().radiusKm }} km</ion-chip>
+    </div>
   </ion-toolbar>
 </ion-header>
+
 <ion-content [fullscreen]="true">
   <div class="map-wrapper">
-    <div #mapContainer id="map_canvas"></div>
+    <div #mapContainer id="map_canvas" role="application" aria-label="Map of bowling alleys"></div>
+
+    <div class="map-overlay-top">
+      @if (isLoading()) {
+        <div class="map-pill" role="status" aria-live="polite">
+          <ion-spinner name="crescent"></ion-spinner>
+          Finding alleys…
+        </div>
+      } @else if (networkService.isOffline) {
+        <div class="map-banner" role="alert">
+          <ion-icon name="cloud-offline-outline" aria-hidden="true"></ion-icon>
+          You're offline — showing last loaded results.
+        </div>
+      } @else if (hasError()) {
+        <div class="map-banner" role="alert">
+          {{ errorMessage() }}
+          <ion-button size="small" fill="clear" (click)="retry()">
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+            Retry
+          </ion-button>
+        </div>
+      } @else if (showNoResults()) {
+        <div class="map-banner">
+          No bowling alleys within {{ filters().radiusKm }} km.
+          @if (filters().radiusKm < 100) {
+            <ion-button size="small" fill="clear" (click)="expandRadius()">Expand radius</ion-button>
+          }
+        </div>
+      } @else if (showEmptyState()) {
+        <div class="map-banner">No alleys match the active filters.</div>
+      } @else if (locationState() === "denied") {
+        <div class="map-banner">
+          Location is off — search a place or
+          <ion-button size="small" fill="clear" (click)="recenterOnUser()">
+            <ion-icon slot="start" name="locate-outline"></ion-icon>
+            retry
+          </ion-button>
+        </div>
+      }
+    </div>
+
+    <ion-button
+      class="list-button"
+      shape="round"
+      (click)="isListOpen.set(true)"
+      [disabled]="filteredAlleys().length === 0"
+      aria-label="Show alleys as list">
+      <ion-icon slot="start" name="list-outline"></ion-icon>
+      List · {{ filteredAlleys().length }}
+    </ion-button>
+
+    <ion-button class="locate-button" shape="round" (click)="recenterOnUser()" aria-label="Center map on my location">
+      <ion-icon slot="icon-only" name="locate-outline"></ion-icon>
+    </ion-button>
   </div>
+
+  <ion-modal
+    class="alley-sheet"
+    [isOpen]="selectedAlley() !== null"
+    [breakpoints]="[0, 0.45, 0.85]"
+    [initialBreakpoint]="0.45"
+    [backdropBreakpoint]="0.5"
+    handleBehavior="cycle"
+    (didDismiss)="onSheetDismiss()">
+    <ng-template>
+      @if (selectedAlley(); as alley) {
+        <app-alley-detail-sheet [alley]="alley"></app-alley-detail-sheet>
+      }
+    </ng-template>
+  </ion-modal>
+
+  <ion-modal
+    class="alley-sheet"
+    [isOpen]="isListOpen()"
+    [breakpoints]="[0, 0.5, 0.9]"
+    [initialBreakpoint]="0.5"
+    [backdropBreakpoint]="0.5"
+    handleBehavior="cycle"
+    (didDismiss)="isListOpen.set(false)">
+    <ng-template>
+      <app-alley-list [alleys]="filteredAlleys()" (alleySelected)="onListSelect($event)"></app-alley-list>
+    </ng-template>
+  </ion-modal>
 </ion-content>

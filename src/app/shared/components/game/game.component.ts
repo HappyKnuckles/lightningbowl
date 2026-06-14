@@ -291,6 +291,15 @@ export class GameComponent implements OnInit {
     return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
 
+  getBallIds(names: string[] | undefined): string[] {
+    if (!names) return [];
+
+    return this.ballsStore
+      .allBalls()
+      .filter((ball) => names.includes(ball.ball_name))
+      .map((ball) => ball.ball_id);
+  }
+
   // --- Passthrough Event Emitters ---
   onBallAdd(ballIds: string[]) {
     const allBalls = this.ballsStore.allBalls();

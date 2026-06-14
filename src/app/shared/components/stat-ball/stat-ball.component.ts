@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
-import { GenericItemStats, HighlightBallStats } from 'src/app/core/models/stats.model';
+import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
 import { StatHighlightItemComponent } from '../stat-highlight-item/stat-highlight-item.component';
+import { HighlightItemStats } from 'src/app/core/models/stats.model';
 
 @Component({
   selector: 'app-stat-ball',
@@ -9,25 +10,16 @@ import { StatHighlightItemComponent } from '../stat-highlight-item/stat-highligh
   templateUrl: './stat-ball.component.html',
 })
 export class StatBallComponent {
-  bestBall = input.required<HighlightBallStats>();
+  bestBall = input.required<HighlightItemStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
   imageUrlBase = input<string>();
   emptyMessage = input<string>('No Games with balls saved.');
-  allBalls = input<HighlightBallStats[]>();
-  toGeneric = (ball: HighlightBallStats): GenericItemStats => ({
-    name: ball.ballName,
-    image: ball.ballImage,
-    avg: ball.ballAvg,
-    highestGame: ball.ballHighestGame,
-    lowestGame: ball.ballLowestGame,
-    gameCount: ball.gameCount,
-  });
+  allBalls = input<HighlightItemStats[]>();
+  sortMode = input<ItemSortMode>('gameCount');
 
-  asGeneric = computed(() => this.toGeneric(this.bestBall()));
-  allBallsGeneric = computed(() =>
-    this.allBalls()
-      ?.map(this.toGeneric)
-      .sort((a, b) => b.gameCount - a.gameCount),
-  );
+  allBallsSorted = computed(() => {
+    const items = this.allBalls();
+    return items && sortGenericItems(items, this.sortMode());
+  });
 }

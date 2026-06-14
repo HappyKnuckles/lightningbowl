@@ -134,7 +134,8 @@
           [title]="'Most used ball'"
           [bestBall]="statsService.mostPlayedBallStats()"
           [totalGames]="stats.totalGames"
-          [allBalls]="statsService.allBallStats()">
+          [allBalls]="statsService.allBallStats()"
+          [sortMode]="'gameCount'">
         </app-stat-ball>
 
         <!-- BEST BALL -->
@@ -142,7 +143,8 @@
           [title]="'Best ball'"
           [bestBall]="statsService.bestBallStats()"
           [totalGames]="stats.totalGames"
-          [allBalls]="statsService.allBallStats()">
+          [allBalls]="statsService.allBallStats()"
+          [sortMode]="'avg'">
         </app-stat-ball>
 
         <!-- MOST PLAYED PATTERN -->
@@ -150,7 +152,8 @@
           [title]="'Most played pattern'"
           [bestPattern]="statsService.mostPlayedPatternStats()"
           [totalGames]="stats.totalGames"
-          [allPatterns]="statsService.allPatternStats()">
+          [allPatterns]="statsService.allPatternStats()"
+          [sortMode]="'gameCount'">
         </app-stat-pattern>
 
         <!-- BEST PATTERN -->
@@ -158,7 +161,8 @@
           [title]="'Best pattern'"
           [bestPattern]="statsService.bestPatternStats()"
           [totalGames]="stats.totalGames"
-          [allPatterns]="statsService.allPatternStats()">
+          [allPatterns]="statsService.allPatternStats()"
+          [sortMode]="'avg'">
         </app-stat-pattern>
 
         <!-- SERIES STATS -->

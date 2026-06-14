@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
-import { GenericItemStats, HighlightPatternStats } from 'src/app/core/models/stats.model';
+import { HighlightItemStats } from 'src/app/core/models/stats.model';
+import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
 import { environment } from 'src/environments/environment';
 import { StatHighlightItemComponent } from '../stat-highlight-item/stat-highlight-item.component';
 
@@ -10,24 +11,14 @@ import { StatHighlightItemComponent } from '../stat-highlight-item/stat-highligh
   templateUrl: './stat-pattern.component.html',
 })
 export class StatPatternComponent {
-  bestPattern = input.required<HighlightPatternStats>();
+  bestPattern = input.required<HighlightItemStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
-  allPatterns = input<HighlightPatternStats[]>();
+  allPatterns = input<HighlightItemStats[]>();
+  sortMode = input<ItemSortMode>('gameCount');
   imagesUrl = environment.imagesUrl;
-  toGeneric = (pattern: HighlightPatternStats): GenericItemStats => ({
-    name: pattern.patternName,
-    image: pattern.patternImage,
-    avg: pattern.patternAvg,
-    highestGame: pattern.patternHighestGame,
-    lowestGame: pattern.patternLowestGame,
-    gameCount: pattern.gameCount,
+  allPatternsSorted = computed(() => {
+    const items = this.allPatterns();
+    return items && sortGenericItems(items, this.sortMode());
   });
-
-  asGeneric = computed(() => this.toGeneric(this.bestPattern()));
-  allPatternsGeneric = computed(() =>
-    this.allPatterns()
-      ?.map(this.toGeneric)
-      .sort((a, b) => b.gameCount - a.gameCount),
-  );
 }

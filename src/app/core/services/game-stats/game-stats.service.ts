@@ -1,13 +1,5 @@
 import { computed, Injectable, Signal } from '@angular/core';
-import {
-  HighlightBallStats,
-  HighlightPatternStats,
-  LeaveStats,
-  LiveSeriesStats,
-  PrevStats,
-  SeriesStats,
-  Stats,
-} from 'src/app/core/models/stats.model';
+import { HighlightItemStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -40,45 +32,45 @@ export class GameStatsService {
     return this.statsPersistenceService.prevStats;
   }
 
-  #bestBallStats: Signal<HighlightBallStats> = computed(() => {
+  #bestBallStats: Signal<HighlightItemStats> = computed(() => {
     return this.calculateBestBallStats(this.gameFilterService.filteredGames());
   });
-  get bestBallStats(): Signal<HighlightBallStats> {
+  get bestBallStats(): Signal<HighlightItemStats> {
     return this.#bestBallStats;
   }
 
-  #mostPlayedBallStats: Signal<HighlightBallStats> = computed(() => {
+  #mostPlayedBallStats: Signal<HighlightItemStats> = computed(() => {
     return this.calculateMostPlayedBallStats(this.gameFilterService.filteredGames());
   });
-  get mostPlayedBallStats(): Signal<HighlightBallStats> {
+  get mostPlayedBallStats(): Signal<HighlightItemStats> {
     return this.#mostPlayedBallStats;
   }
 
-  #allBallStats: Signal<HighlightBallStats[]> = computed(() => {
+  #allBallStats: Signal<HighlightItemStats[]> = computed(() => {
     return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
   });
-  get allBallStats(): Signal<HighlightBallStats[]> {
+  get allBallStats(): Signal<HighlightItemStats[]> {
     return this.#allBallStats;
   }
 
-  #allPatternStats: Signal<HighlightPatternStats[]> = computed(() => {
+  #allPatternStats: Signal<HighlightItemStats[]> = computed(() => {
     return this.patternStatsCalculatorService.calculateAllPatternStats(this.gameFilterService.filteredGames());
   });
-  get allPatternStats(): Signal<HighlightPatternStats[]> {
+  get allPatternStats(): Signal<HighlightItemStats[]> {
     return this.#allPatternStats;
   }
 
-  #bestPatternStats: Signal<HighlightPatternStats> = computed(() => {
+  #bestPatternStats: Signal<HighlightItemStats> = computed(() => {
     return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
   });
-  get bestPatternStats(): Signal<HighlightPatternStats> {
+  get bestPatternStats(): Signal<HighlightItemStats> {
     return this.#bestPatternStats;
   }
 
-  #mostPlayedPatternStats: Signal<HighlightPatternStats> = computed(() => {
-    return this.patternStatsCalculatorService.calculateMostPlayedPattern(this.gameFilterService.filteredGames());
+  #mostPlayedPatternStats: Signal<HighlightItemStats> = computed(() => {
+    return this.patternStatsCalculatorService.calculateMostPlayedPatternStats(this.gameFilterService.filteredGames());
   });
-  get mostPlayedPatternStats(): Signal<HighlightPatternStats> {
+  get mostPlayedPatternStats(): Signal<HighlightItemStats> {
     return this.#mostPlayedPatternStats;
   }
 
@@ -185,31 +177,31 @@ export class GameStatsService {
     };
   }
 
-  calculateMostPlayedBallStats(gameHistory: Game[]): HighlightBallStats {
-    return this.ballStatsCalculatorService.calculateMostPlayedBall(gameHistory);
+  calculateMostPlayedBallStats(gameHistory: Game[]): HighlightItemStats {
+    return this.ballStatsCalculatorService.calculateMostPlayedBallStats(gameHistory);
   }
 
-  calculateBestBallStats(gameHistory: Game[]): HighlightBallStats {
+  calculateBestBallStats(gameHistory: Game[]): HighlightItemStats {
     return this.ballStatsCalculatorService.calculateBestBallStats(gameHistory);
   }
 
-  calculateMostPlayedBall(gameHistory: Game[]): HighlightBallStats {
-    return this.ballStatsCalculatorService.calculateMostPlayedBall(gameHistory);
+  calculateMostPlayedBall(gameHistory: Game[]): HighlightItemStats {
+    return this.ballStatsCalculatorService.calculateMostPlayedBallStats(gameHistory);
   }
 
-  calculateAllBallStats(gameHistory: Game[]): HighlightBallStats[] {
+  calculateAllBallStats(gameHistory: Game[]): HighlightItemStats[] {
     return this.ballStatsCalculatorService.calculateAllBallStats(gameHistory);
   }
 
-  calculateBestPatternStats(gameHistory: Game[]): HighlightPatternStats {
+  calculateBestPatternStats(gameHistory: Game[]): HighlightItemStats {
     return this.patternStatsCalculatorService.calculateBestPatternStats(gameHistory);
   }
 
-  calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightPatternStats {
-    return this.patternStatsCalculatorService.calculateMostPlayedPattern(gameHistory);
+  calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightItemStats {
+    return this.patternStatsCalculatorService.calculateMostPlayedPatternStats(gameHistory);
   }
 
-  calculateAllPatternStats(gameHistory: Game[]): HighlightPatternStats[] {
+  calculateAllPatternStats(gameHistory: Game[]): HighlightItemStats[] {
     return this.patternStatsCalculatorService.calculateAllPatternStats(gameHistory);
   }
 

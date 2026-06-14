@@ -3,7 +3,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, Throw } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -396,7 +396,7 @@ export class ExcelService {
         const framePins: string[] = ['', '', ''];
 
         if (frame) {
-          const pins = frame.throws.map((t: any) => t.pinsLeftStanding?.join(',') || '');
+          const pins = frame.throws.map((t: Throw) => t.pinsLeftStanding?.join(',') || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
@@ -517,7 +517,7 @@ export class ExcelService {
       ['Spares per Game', formatFixed(stats.averageSparesPerGame)],
       ['Total Opens', stats.totalSparesMissed.toString()],
       ['Opens per Game', formatFixed(stats.averageOpensPerGame)],
-      ['Spare Conversion %', formatPercent(stats.spareConversionPercentage)],
+      ['Spare Conversion %', formatPercent(stats.overallSpareRate)],
       ['Mark %', formatPercent(stats.markPercentage)],
       ['Strike %', formatPercent(stats.strikePercentage)],
       ['Spare %', formatPercent(stats.sparePercentage)],

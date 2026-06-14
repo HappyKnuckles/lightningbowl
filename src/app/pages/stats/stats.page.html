@@ -59,15 +59,20 @@
         <dl class="feature-card">
           <dt class="feature-label">Average</dt>
           <dd class="feature-row">
-            <span class="feature-val">{{ stats.averageScore | number: "1.2-2" }}</span>
-            @if (scoreTrend()) {
-              <span class="feature-trend" [class.up]="scoreTrend() === 'up'" [class.down]="scoreTrend() === 'down'">
-                <ion-icon [name]="scoreTrend() === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
-                {{ scoreTrend() === "up" ? "Trending up" : "Trending down" }}
+            <span class="feature-val" id="average">{{ stats.averageScore | number: "1.2-2" }}</span>
+            @if (averageVm().trend) {
+              <span class="feature-trend" [class.up]="averageVm().trend === 'up'" [class.down]="averageVm().trend === 'down'">
+                <ion-icon [name]="averageVm().trend === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
+                {{ averageVm().trend === "up" ? "Trending up" : "Trending down" }}
               </span>
             }
           </dd>
         </dl>
+        @if (averageVm().diff) {
+          <ion-popover class="diff-popover" [trigger]="'average'" alignment="start">
+            <ion-text [color]="averageVm().diffColor">{{ averageVm().diff }}</ion-text>
+          </ion-popover>
+        }
 
         <div class="stat-grid-3">
           <dl class="stat-chip">

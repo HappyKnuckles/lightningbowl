@@ -190,11 +190,25 @@ export class StatsPage implements OnInit, AfterViewInit {
       ),
   );
 
-  readonly scoreTrend = computed<'up' | 'down' | null>(() => {
-    const curr = this.statsService.currentStats().averageScore;
-    const prev = this.statsService.prevStats()?.averageScore;
-    if (!prev || prev === 0 || curr === prev) return null;
-    return curr > prev ? 'up' : 'down';
+  readonly averageVm = computed(() => {
+    const stats = this.statsService.currentStats();
+    const prev = this.statsService.prevStats();
+    const curr = stats.averageScore;
+    const prevScore = prev?.averageScore;
+
+    if (prevScore == null || prevScore === 0 || curr === prevScore) {
+      return { trend: null as 'up' | 'down' | null, diff: '', diffColor: '' };
+    }
+
+    const { delta } = this.utilsService.calculateStatDelta(curr, prevScore);
+    if (delta === 0) {
+      return { trend: null, diff: '', diffColor: '' };
+    }
+    return {
+      trend: delta > 0 ? 'up' : 'down',
+      diff: this.utilsService.formatStatDifference(curr, prevScore),
+      diffColor: this.utilsService.getDiffColor(curr, prevScore),
+    };
   });
 
   readonly seriesRows = computed(() => {

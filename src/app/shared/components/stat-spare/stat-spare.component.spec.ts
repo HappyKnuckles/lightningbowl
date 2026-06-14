@@ -32,7 +32,6 @@ describe('SpareDisplayComponent', () => {
       strikePercentage: 0,
       sparePercentage: 0,
       openPercentage: 0,
-      spareConversionPercentage: 0,
       averageFirstCount: 0,
       averageScore: 0,
       highGame: 0,

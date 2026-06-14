@@ -51,7 +51,7 @@ export class StatSpareComponent {
   readonly prevStats = input<PrevStats | Stats>();
   readonly id = input('');
 
-  constructor(private utils: UtilsService) {
+  constructor(private utilsService: UtilsService) {
     addIcons({ informationCircleOutline, arrowUp, arrowDown });
   }
 
@@ -67,9 +67,9 @@ export class StatSpareComponent {
       hit: stats.totalSparesConverted,
       miss: stats.totalSparesMissed,
       attempts,
-      arrow: prev ? this.utils.getArrowIcon(stats.overallSpareRate, prev.overallSpareRate) : '',
-      diffColor: prev ? this.utils.getDiffColor(stats.overallSpareRate, prev.overallSpareRate) : '',
-      diff: prev ? this.hideZeroDiff(this.utils.calculateStatDifference(stats.overallSpareRate, prev.overallSpareRate)) : '',
+      arrow: prev ? this.utilsService.getArrowIcon(stats.overallSpareRate, prev.overallSpareRate) : '',
+      diffColor: prev ? this.utilsService.getDiffColor(stats.overallSpareRate, prev.overallSpareRate) : '',
+      diff: prev ? this.hideZeroDiff(this.utilsService.formatStatDifference(stats.overallSpareRate, prev.overallSpareRate)) : '',
       fillValue: stats.overallSpareRate || 1,
       triggerId: 'overall' + this.id(),
     };
@@ -98,9 +98,9 @@ export class StatSpareComponent {
         rate,
         rateText: rate.toFixed(2),
         rateColor: this.rateColor(rate),
-        arrow: prev ? this.utils.getArrowIcon(rate, prevRate) : '',
-        diffColor: prev ? this.utils.getDiffColor(rate, prevRate) : '',
-        diff: prev ? this.hideZeroDiff(this.utils.calculateStatDifference(rate, prevRate)) : '',
+        arrow: prev ? this.utilsService.getArrowIcon(rate, prevRate) : '',
+        diffColor: prev ? this.utilsService.getDiffColor(rate, prevRate) : '',
+        diff: prev ? this.hideZeroDiff(this.utilsService.formatStatDifference(rate, prevRate)) : '',
         triggerId: id + i,
       };
     });

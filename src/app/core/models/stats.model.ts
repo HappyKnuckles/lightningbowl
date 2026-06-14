@@ -19,7 +19,6 @@ export interface Stats {
   strikePercentage: number;
   sparePercentage: number;
   openPercentage: number;
-  spareConversionPercentage: number;
   averageFirstCount: number;
   averageScore: number;
   highGame: number;

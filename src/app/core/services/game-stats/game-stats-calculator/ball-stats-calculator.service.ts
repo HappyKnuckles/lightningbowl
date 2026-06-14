@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Frame, Game } from 'src/app/core/models/game.model';
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
@@ -34,7 +34,7 @@ export class BallStatsCalculatorService {
       const uniqueBallsInGame = new Set(game.balls);
 
       let totalStrikesInGame = 0;
-      game.frames.forEach((frame: { throws: any[] }, index: number) => {
+      game.frames.forEach((frame: Frame, index: number) => {
         if (index < 9) {
           if (frame.throws[0]?.value === 10) {
             totalStrikesInGame++;

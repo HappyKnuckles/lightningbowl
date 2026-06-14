@@ -57,12 +57,13 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { sortGameHistoryByDate, sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
-import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
 import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
+import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
+import { environment } from 'src/environments/environment';
+import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
 
 @Component({
   selector: 'app-league',
@@ -96,8 +97,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonSegmentView,
     IonSegmentContent,
     LongPressDirective,
-    StatPatternComponent,
-    StatBallComponent,
+    StatHighlightItemComponent,
     StatSpareComponent,
     StatPinLeaveComponent,
     BowlingRefresherComponent,
@@ -108,7 +108,7 @@ export class LeaguePage {
   @ViewChild('modalContent') content!: IonContent;
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
-
+  imagesUrl = environment.imagesUrl;
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
   isEditMode: Record<string, boolean> = {};
@@ -131,6 +131,7 @@ export class LeaguePage {
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
   mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBall(games));
+  allBallsByLeague = this.perLeague((games) => this.statService.calculateAllBallStats(games));
   bestPatternsByLeague = this.perLeague((games) => this.statService.calculateBestPatternStats(games));
   mostPlayedPatternsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedPatternStats(games));
   allPatternsByLeague = this.perLeague((games) => this.statService.calculateAllPatternStats(games));
@@ -142,6 +143,23 @@ export class LeaguePage {
       best: this.statService.calculateBestSpares(all),
       worst: this.statService.calculateWorstSpares(all),
     };
+  });
+  // beobachten ob rebuild für alle leagues teuer ist
+  readonly leagueHighlights = computed(() => {
+    const statsByLeague = this.statsByLeague();
+    const result: Record<string, ReturnType<typeof buildHighlights>> = {};
+
+    for (const league of Object.keys(statsByLeague)) {
+      result[league] = buildHighlights({
+        mostPlayedBall: this.mostPlayedBallsByLeague()[league],
+        bestBall: this.bestBallsByLeague()[league],
+        allBalls: this.allBallsByLeague()[league],
+        mostPlayedPattern: this.mostPlayedPatternsByLeague()[league],
+        bestPattern: this.bestPatternsByLeague()[league],
+        allPatterns: this.allPatternsByLeague()[league],
+      });
+    }
+    return result;
   });
 
   statDefinitions = LEAGUE_STAT_DEFINITIONS;

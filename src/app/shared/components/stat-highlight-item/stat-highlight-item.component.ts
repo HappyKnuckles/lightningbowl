@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import {
   IonButton,
   IonButtons,
@@ -16,6 +16,7 @@ import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
 
 @Component({
   selector: 'app-stat-highlight-item',
@@ -32,7 +33,12 @@ export class StatHighlightItemComponent {
   emptyMessage = input<string>('No data saved.');
   roundImage = input<boolean>(true);
   allItems = input<HighlightItemStats[]>();
+  sortMode = input<ItemSortMode>('gameCount');
   isModalOpen = signal(false);
+  allItemsSorted = computed(() => {
+    const items = this.allItems();
+    return items && sortGenericItems(items, this.sortMode());
+  });
   constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });
   }

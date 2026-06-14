@@ -53,7 +53,7 @@
     @let prevStats = statsService.prevStats();
 
     <ion-segment-content id="Overall">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
+      <section class="tab" *ngIf="hasFilteredGames()">
         <!-- SCORING -->
         <h2 class="sec-heading"><span>Scoring</span><span class="divider-line"></span></h2>
         <dl class="feature-card">
@@ -134,41 +134,18 @@
           </dl>
         </div>
 
-        <!-- MOST USED BALL -->
-        <app-stat-ball
-          [title]="'Most used ball'"
-          [bestBall]="statsService.mostPlayedBallStats()"
-          [totalGames]="stats.totalGames"
-          [allBalls]="statsService.allBallStats()"
-          [sortMode]="'gameCount'">
-        </app-stat-ball>
-
-        <!-- BEST BALL -->
-        <app-stat-ball
-          [title]="'Best ball'"
-          [bestBall]="statsService.bestBallStats()"
-          [totalGames]="stats.totalGames"
-          [allBalls]="statsService.allBallStats()"
-          [sortMode]="'avg'">
-        </app-stat-ball>
-
-        <!-- MOST PLAYED PATTERN -->
-        <app-stat-pattern
-          [title]="'Most played pattern'"
-          [bestPattern]="statsService.mostPlayedPatternStats()"
-          [totalGames]="stats.totalGames"
-          [allPatterns]="statsService.allPatternStats()"
-          [sortMode]="'gameCount'">
-        </app-stat-pattern>
-
-        <!-- BEST PATTERN -->
-        <app-stat-pattern
-          [title]="'Best pattern'"
-          [bestPattern]="statsService.bestPatternStats()"
-          [totalGames]="stats.totalGames"
-          [allPatterns]="statsService.allPatternStats()"
-          [sortMode]="'avg'">
-        </app-stat-pattern>
+        @for (highlight of overallHighlights(); track highlight.title) {
+          <app-stat-highlight-item
+            [title]="highlight.title"
+            [item]="highlight.item"
+            [allItems]="highlight.allItems"
+            [sortMode]="highlight.sortMode"
+            [totalGames]="stats.totalGames"
+            [emptyMessage]="highlight.emptyMessage"
+            [imageUrlBase]="highlight.imageUrlBase"
+            [roundImage]="highlight.roundImage">
+          </app-stat-highlight-item>
+        }
 
         <!-- SERIES STATS -->
         <h2 class="sec-heading"><span>Series stats</span><span class="divider-line"></span></h2>
@@ -240,7 +217,7 @@
     </ion-segment-content>
 
     <ion-segment-content id="Throws">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
+      <section class="tab" *ngIf="hasFilteredGames()">
         <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
         <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
@@ -253,8 +230,9 @@
     </ion-segment-content>
 
     <ion-segment-content id="Spares">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
-        <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overalSpareStats"> </app-stat-spare>
+      <section class="tab" *ngIf="hasFilteredGames()">
+        <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overallSpareStats">
+        </app-stat-spare>
         <app-stat-display
           [title]="'Spare conversion by pin count'"
           [statDefinitions]="SPARE_STAT_DEFINITIONS"
@@ -273,7 +251,7 @@
     </ion-segment-content>
 
     <ion-segment-content id="Pins">
-      <section class="tab" *ngIf="gameFilterService.filteredGames().length > 0">
+      <section class="tab" *ngIf="hasFilteredGames()">
         <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
         </app-stat-display>
         <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-stat-pin-leave>
@@ -284,7 +262,7 @@
     </ion-segment-content>
 
     <ion-segment-content id="Sessions">
-      @if (gameFilterService.filteredGames().length > 0) {
+      @if (hasFilteredGames()) {
         <section class="tab">
           <app-stat-display
             [title]="'Overall stats'"
@@ -292,30 +270,18 @@
             [currentStats]="sessionStats()"
             [prevStats]="stats">
           </app-stat-display>
-          <app-stat-best-ball
-            [title]="'Most used ball'"
-            [bestBall]="sessionMostPlayedBallStats()"
-            [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()">
-          </app-stat-best-ball>
-          <app-stat-best-ball
-            [title]="'Best ball'"
-            [bestBall]="sessionBestBallStats()"
-            [totalGames]="sessionStats().totalGames"
-            [allBalls]="sessionAllBallStats()">
-          </app-stat-best-ball>
-          <app-stat-best-pattern
-            [title]="'Most played pattern'"
-            [bestPattern]="sessionMostPlayedPatternStats()"
-            [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()">
-          </app-stat-best-pattern>
-          <app-stat-best-pattern
-            [title]="'Best pattern'"
-            [bestPattern]="sessionBestPatternStats()"
-            [totalGames]="sessionStats().totalGames"
-            [allPatterns]="sessionAllPatternStats()">
-          </app-stat-best-pattern>
+          @for (highlight of sessionHighlights(); track highlight.title) {
+            <app-stat-highlight-item
+              [title]="highlight.title"
+              [item]="highlight.item"
+              [allItems]="highlight.allItems"
+              [sortMode]="highlight.sortMode"
+              [totalGames]="sessionStats().totalGames"
+              [emptyMessage]="highlight.emptyMessage"
+              [imageUrlBase]="highlight.imageUrlBase"
+              [roundImage]="highlight.roundImage">
+            </app-stat-highlight-item>
+          }
           <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
           <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
           <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-stat-pin-leave>

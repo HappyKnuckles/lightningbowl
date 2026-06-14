@@ -63,10 +63,11 @@ import {
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { Stats } from 'src/app/core/models/stats.model';
 import { sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
-import { StatBallComponent } from 'src/app/shared/components/stat-ball/stat-ball.component';
-import { StatPatternComponent } from 'src/app/shared/components/stat-pattern/stat-pattern.component';
+import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
+import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
+import { environment } from 'src/environments/environment';
 import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
@@ -123,13 +124,12 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     DatePipe,
     DecimalPipe,
     StatDisplayComponent,
-    StatBallComponent,
-    StatPatternComponent,
     StatPinLeaveComponent,
     GenericFilterActiveComponent,
     FileHeaderButtonsComponent,
     StatSpareComponent,
     BowlingRefresherComponent,
+    StatHighlightItemComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -145,6 +145,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   STRIKE_STAT_DEFINITIONS = STRIKE_STAT_DEFINITIONS;
   SPARE_STAT_DEFINITIONS = SPARE_STAT_DEFINITIONS;
   PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
+  imagesUrl = environment.imagesUrl;
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
 
@@ -189,6 +190,7 @@ export class StatsPage implements OnInit, AfterViewInit {
         this.gameFilterService.filteredGames().length <= 0
       ),
   );
+  readonly hasFilteredGames = computed(() => this.gameFilterService.filteredGames().length > 0);
 
   readonly averageVm = computed(() => {
     const stats = this.statsService.currentStats();
@@ -242,7 +244,27 @@ export class StatsPage implements OnInit, AfterViewInit {
       { key: 'Games / session', value: s.averageGamesPerSession },
     ];
   });
+  readonly overallHighlights = computed(() =>
+    buildHighlights({
+      mostPlayedBall: this.statsService.mostPlayedBallStats(),
+      bestBall: this.statsService.bestBallStats(),
+      allBalls: this.statsService.allBallStats(),
+      mostPlayedPattern: this.statsService.mostPlayedPatternStats(),
+      bestPattern: this.statsService.bestPatternStats(),
+      allPatterns: this.statsService.allPatternStats(),
+    }),
+  );
 
+  readonly sessionHighlights = computed(() =>
+    buildHighlights({
+      mostPlayedBall: this.sessionMostPlayedBallStats(),
+      bestBall: this.sessionBestBallStats(),
+      allBalls: this.sessionAllBallStats(),
+      mostPlayedPattern: this.sessionMostPlayedPatternStats(),
+      bestPattern: this.sessionBestPatternStats(),
+      allPatterns: this.sessionAllPatternStats(),
+    }),
+  );
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';

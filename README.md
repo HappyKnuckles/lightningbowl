@@ -19,7 +19,7 @@ You can select a league, pattern, ball and even a note to all your games. If you
 
 The "Stats" page provides a comprehensive overview of your performance. Track key metrics like your average score, total strikes, spares, clean games, and more. You can also see which pin counts you miss most often. Additionally, a special section shows stats for the currently selected session.
 
-<img src="src/assets/screenshots/statistics/overall.png" alt="App Screenshot" width="300"/> <img src="src/assets/screenshots/stats2.png" alt="App Screenshot" width="300"/>
+<img src="src/assets/screenshots/statistics/overall.png" alt="App Screenshot" width="300"/> <img src="src/assets/screenshots/statistics/spares.png" alt="App Screenshot" width="300"/> <img src="src/assets/screenshots/statistics/pins.png" alt="App Screenshot" width="300"/>
 
 ### Game History
 
@@ -43,7 +43,7 @@ Keep track of your bowling balls in the "Arsenal" section, accessible via the "M
 
 View and manage individual ball information. This includes specifics like core type, coverstock details, and factory finish, helping you understand your equipment better.
 
-<img src="src/assets/screenshots/equipment/ball-libraryz.png" alt="App Screenshot" width="300"/>
+<img src="src/assets/screenshots/equipment/ball-library.png" alt="App Screenshot" width="300"/>
 
 ### Pattern Library
 

@@ -21,5 +21,19 @@ export function seededRandom(seed: number): () => number {
   };
 }
 
-/** Output root for all generated screenshots (relative to repo root). */
-export const SCREENSHOT_ROOT = 'src/assets/screenshots';
+/**
+ * Output roots (relative to repo root). A shot's `target` decides which one it
+ * lands in: `'app'` images are bundled into the PWA (referenced by the install
+ * prompt + web manifest); `'docs'` images are feature documentation only and are
+ * NOT shipped, since Angular only copies `src/assets`.
+ */
+export const APP_SCREENSHOT_ROOT = 'src/assets/screenshots';
+export const DOCS_SCREENSHOT_ROOT = 'docs/features';
+
+/** Back-compat alias — the generated manifest.json still lives under assets. */
+export const SCREENSHOT_ROOT = APP_SCREENSHOT_ROOT;
+
+/** Where a shot's PNGs are written, based on its `target` (defaults to docs). */
+export function screenshotRoot(target: 'app' | 'docs' = 'docs'): string {
+  return target === 'app' ? APP_SCREENSHOT_ROOT : DOCS_SCREENSHOT_ROOT;
+}

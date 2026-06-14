@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { SCREENSHOT_ROOT } from './constants';
+import { SCREENSHOT_ROOT, screenshotRoot } from './constants';
 import { REGISTRY } from '../registry';
 import type { ManifestEntry } from './types';
 import { ALL_VIEWPORTS, VIEWPORTS } from './viewports';
@@ -21,7 +21,7 @@ export function buildManifest(): ManifestEntry[] {
       seed: shot.seed ?? 'rich',
       files: viewports.map((v) => ({
         viewport: v,
-        path: `${SCREENSHOT_ROOT}/${shot.feature}/${shot.name}${VIEWPORTS[v].suffix}.png`,
+        path: `${screenshotRoot(shot.target)}/${shot.feature}/${shot.name}${VIEWPORTS[v].suffix}.png`,
       })),
     };
   });

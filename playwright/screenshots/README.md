@@ -12,8 +12,17 @@ npm run update:screenshots:ui       # interactive Playwright UI (debug)
 npx playwright test -g "stats"      # regenerate just the stats shots
 ```
 
-Output is written **flat** into [`src/assets/screenshots/`](../../src/assets/screenshots)
-as `<name>.png` (mobile) and `<name>_wide.png` (desktop), plus a `manifest.json`.
+Each shot's `target` decides where it lands (`<feature>/<name>.png` for mobile,
+`<name>_wide.png` for desktop):
+
+- `target: 'app'` → [`src/assets/screenshots/`](../../src/assets/screenshots) —
+  bundled into the PWA; these are the ones the install prompt and web manifest
+  reference.
+- `target: 'docs'` (the **default**) → `docs/features/` — feature documentation
+  only, **not** shipped, since Angular only copies `src/assets`.
+
+A `manifest.json` (recording every file and its real path) is written alongside
+the app images.
 
 ## What gets generated & where it's used
 
@@ -109,6 +118,7 @@ and/or the install-prompt component), then run `npm run update:screenshots`.
 
 | field | purpose |
 |-------|---------|
+| `target` | `'app'` → `src/assets/screenshots` (bundled) · `'docs'` (default) → `docs/features` (not shipped) |
 | `seed` | `'rich'` (default) or `'empty'` |
 | `viewports` | `['mobile']`, `['desktop']`, or both (controls whether `_wide` is made) |
 | `prepare` | reach the desired state (open modal, switch tab, …) |

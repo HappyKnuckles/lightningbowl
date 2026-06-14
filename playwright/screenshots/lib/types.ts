@@ -32,6 +32,14 @@ export interface ShotDefinition {
   name: string;
   /** App route to navigate to, e.g. "/tabs/history". */
   route: string;
+  /**
+   * Output destination:
+   *  - 'app'  → src/assets/screenshots/<feature>/… (bundled into the PWA; what
+   *             the install prompt and web manifest reference)
+   *  - 'docs' → docs/features/<feature>/… (feature documentation, NOT shipped)
+   * Defaults to 'docs', so a new shot never silently bloats the app bundle.
+   */
+  target?: 'app' | 'docs';
   /** Short human description shown in the registry/manifest. */
   description?: string;
   /** Which viewports to render. Defaults to all. */

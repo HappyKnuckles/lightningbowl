@@ -28,7 +28,7 @@ export function seededRandom(seed: number): () => number {
  * NOT shipped, since Angular only copies `src/assets`.
  */
 export const APP_SCREENSHOT_ROOT = 'src/assets/screenshots';
-export const DOCS_SCREENSHOT_ROOT = 'docs/features';
+export const DOCS_SCREENSHOT_ROOT = 'docs/screenshots';
 
 /** Back-compat alias — the generated manifest.json still lives under assets. */
 export const SCREENSHOT_ROOT = APP_SCREENSHOT_ROOT;

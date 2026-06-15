@@ -155,10 +155,7 @@ ion-item {
 }
 
 .diff-popover {
-  --background: #020a06;
-
   text-align: center;
-
   --min-width: 110px;
   --max-width: fit-content;
 
@@ -193,7 +190,7 @@ ion-item {
     border-radius: var(--small-border-radius);
     min-height: 35px !important;
     height: 35px;
-                font-weight: 600;
+    font-weight: 600;
   }
 
   ion-grid {

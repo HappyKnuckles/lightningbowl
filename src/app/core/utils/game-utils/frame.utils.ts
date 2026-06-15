@@ -44,7 +44,7 @@ export function getThrowValue(frame: Frame | undefined, throwIndex: number): num
 
 export function getThrowValues(frame: Frame | undefined): number[] {
   if (!frame || !frame.throws) return [];
-  return frame.throws.map((t) => t.value);
+  return frame.throws.map((t: Throw) => t.value);
 }
 
 // Predicates
@@ -173,7 +173,7 @@ export function toCompletedFramesGame(game: Game): Game {
 export function cloneFrames(frames: Frame[]): Frame[] {
   return frames.map((frame) => ({
     ...frame,
-    throws: frame.throws.map((t) => ({ ...t })),
+    throws: frame.throws.map((t: Throw) => ({ ...t })),
   }));
 }
 

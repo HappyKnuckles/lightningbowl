@@ -32,7 +32,7 @@ export class StatRowComponent {
   vm = computed<StatRowVm>(() => {
     const current = this.currentStat();
     const prev = this.prevStat();
-    const difference = this.utilsService.calculateStatDifference(current, prev!);
+    const difference = this.utilsService.formatStatDifference(current, prev!);
 
     return {
       showDiff: difference !== '0',

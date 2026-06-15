@@ -1,4 +1,14 @@
 import { Game } from 'src/app/core/models/game.model';
+import { HighlightItemStats } from '../../models/stats.model';
+
+export type ItemSortMode = 'avg' | 'gameCount';
+export const byAvg = (a: HighlightItemStats, b: HighlightItemStats) => b.avg - a.avg || b.gameCount - a.gameCount;
+
+export const byGameCount = (a: HighlightItemStats, b: HighlightItemStats) => b.gameCount - a.gameCount || b.avg - a.avg;
+
+export function sortGenericItems(items: HighlightItemStats[], mode: ItemSortMode): HighlightItemStats[] {
+  return [...items].sort(mode === 'gameCount' ? byGameCount : byAvg);
+}
 
 export function sortGameHistoryByDate(gameHistory: Game[], ascending = false): Game[] {
   return gameHistory.sort((a: { date: number }, b: { date: number }) => {

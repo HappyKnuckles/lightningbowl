@@ -14,8 +14,9 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
-import { GenericItemStats } from 'src/app/core/models/stats.model';
+import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
 
 @Component({
   selector: 'app-stat-highlight-item',
@@ -25,27 +26,18 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
   styleUrl: './stat-highlight-item.component.scss',
 })
 export class StatHighlightItemComponent {
-  item = input.required<GenericItemStats>();
+  item = input.required<HighlightItemStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
   imageUrlBase = input<string>();
   emptyMessage = input<string>('No data saved.');
   roundImage = input<boolean>(true);
-  allItems = input<GenericItemStats[]>();
-
+  allItems = input<HighlightItemStats[]>();
+  sortMode = input<ItemSortMode>('gameCount');
   isModalOpen = signal(false);
-  sortMode = signal<'score' | 'plays'>('score');
-  sortedItems = computed(() => {
-    const items = this.allItems() ?? [];
-
-    switch (this.sortMode()) {
-      case 'plays':
-        return [...items].sort((a, b) => b.gameCount - a.gameCount);
-
-      case 'score':
-      default:
-        return [...items].sort((a, b) => b.avg - a.avg);
-    }
+  allItemsSorted = computed(() => {
+    const items = this.allItems();
+    return items && sortGenericItems(items, this.sortMode());
   });
   constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });

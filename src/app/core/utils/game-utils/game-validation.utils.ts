@@ -1,4 +1,4 @@
-import { Frame, Game } from 'src/app/core/models/game.model';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { getThrowValue } from './frame.utils';
 
 export function canRecordStrike(frameIndex: number, throwIndex: number, frames: Frame[]): boolean {
@@ -111,7 +111,7 @@ function isGameValidFromFrames(frames: Frame[]): boolean {
     const frame = frames[index];
     if (!frame || !frame.throws) return false;
 
-    const throws = frame.throws.map((t) => (typeof t.value === 'string' ? parseInt(t.value as string, 10) : t.value));
+    const throws = frame.throws.map((t: Throw) => (typeof t.value === 'string' ? parseInt(t.value as string, 10) : t.value));
 
     if (index < 9) {
       const first = throws[0];

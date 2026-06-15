@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { HighlightPatternStats } from 'src/app/core/models/stats.model';
+import { Frame, Game } from 'src/app/core/models/game.model';
+import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
+import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +11,7 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 export class PatternStatsCalculatorService {
   constructor(private patternsStore: PatternsStore) {}
 
-  private _calculateAllPatternStats(gameHistory: Game[]): Record<string, HighlightPatternStats> {
+  private _calculateAllPatternStats(gameHistory: Game[]): Record<string, HighlightItemStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);
     const tempStats: Record<
       string,
@@ -20,7 +22,7 @@ export class PatternStatsCalculatorService {
       const uniquePatternsInGame = new Set(game.patterns);
 
       let totalStrikesInGame = 0;
-      game.frames.forEach((frame: { throws: any[] }, index: number) => {
+      game.frames.forEach((frame: Frame, index: number) => {
         if (index < 9) {
           if (frame.throws[0]?.value === 10) {
             totalStrikesInGame++;
@@ -54,18 +56,18 @@ export class PatternStatsCalculatorService {
       });
     });
 
-    const finalStats: Record<string, HighlightPatternStats> = {};
+    const finalStats: Record<string, HighlightItemStats> = {};
     for (const patternName in tempStats) {
       const stats = tempStats[patternName];
       const patternImage = this.patternsStore.patternImageMap()[patternName] ?? '';
       const totalPossibleStrikes = stats.gameCount * 12;
       const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
       finalStats[patternName] = {
-        patternName: patternName,
-        patternImage: patternImage,
-        patternAvg: stats.gameCount > 0 ? Math.round(stats.totalScore / stats.gameCount) : 0,
-        patternHighestGame: stats.highestGame,
-        patternLowestGame: stats.lowestGame === 301 ? 0 : stats.lowestGame,
+        name: patternName,
+        image: patternImage,
+        avg: stats.gameCount > 0 ? Math.round(stats.totalScore / stats.gameCount) : 0,
+        highestGame: stats.highestGame,
+        lowestGame: stats.lowestGame === 301 ? 0 : stats.lowestGame,
         gameCount: stats.gameCount,
         cleanGameCount: stats.cleanGames,
         strikeRate: strikeRate,
@@ -74,53 +76,15 @@ export class PatternStatsCalculatorService {
     return finalStats;
   }
 
-  calculateAllPatternStats(gameHistory: Game[]): HighlightPatternStats[] {
+  calculateAllPatternStats(gameHistory: Game[]): HighlightItemStats[] {
     return Object.values(this._calculateAllPatternStats(gameHistory));
   }
 
-  calculateBestPatternStats(gameHistory: Game[]): HighlightPatternStats {
-    const allPatternStats = this._calculateAllPatternStats(gameHistory);
-    const patternNames = Object.keys(allPatternStats);
-    const defaultPattern: HighlightPatternStats = {
-      patternName: '',
-      patternImage: '',
-      patternAvg: 0,
-      patternHighestGame: 0,
-      patternLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (patternNames.length === 0) {
-      return defaultPattern;
-    }
-
-    return patternNames.reduce((best, currentPatternName) => {
-      return allPatternStats[currentPatternName].patternAvg > best.patternAvg ? allPatternStats[currentPatternName] : best;
-    }, defaultPattern);
+  calculateBestPatternStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllPatternStats(gameHistory), byAvg);
   }
 
-  calculateMostPlayedPattern(gameHistory: Game[]): HighlightPatternStats {
-    const allPatternStats = this._calculateAllPatternStats(gameHistory);
-    const patternNames = Object.keys(allPatternStats);
-    const defaultPattern: HighlightPatternStats = {
-      patternName: '',
-      patternImage: '',
-      patternAvg: 0,
-      patternHighestGame: 0,
-      patternLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (patternNames.length === 0) {
-      return defaultPattern;
-    }
-
-    return patternNames.reduce((mostPlayed, currentPatternName) => {
-      return allPatternStats[currentPatternName].gameCount > mostPlayed.gameCount ? allPatternStats[currentPatternName] : mostPlayed;
-    }, defaultPattern);
+  calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllPatternStats(gameHistory), byGameCount);
   }
 }

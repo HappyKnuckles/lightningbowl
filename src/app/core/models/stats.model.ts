@@ -19,7 +19,6 @@ export interface Stats {
   strikePercentage: number;
   sparePercentage: number;
   openPercentage: number;
-  spareConversionPercentage: number;
   averageFirstCount: number;
   averageScore: number;
   highGame: number;
@@ -134,32 +133,12 @@ export interface PrevStats {
   [key: string]: StatValue | undefined;
 }
 
-export interface GenericItemStats {
+export interface HighlightItemStats {
   name: string;
   image: string;
   avg: number;
   highestGame: number;
   lowestGame: number;
-  gameCount: number;
-}
-
-export interface HighlightBallStats {
-  ballName: string;
-  ballImage: string;
-  ballAvg: number;
-  ballHighestGame: number;
-  ballLowestGame: number;
-  gameCount: number;
-  strikeRate?: number;
-  cleanGameCount?: number;
-}
-
-export interface HighlightPatternStats {
-  patternName: string;
-  patternImage: string;
-  patternAvg: number;
-  patternHighestGame: number;
-  patternLowestGame: number;
   gameCount: number;
   strikeRate?: number;
   cleanGameCount?: number;

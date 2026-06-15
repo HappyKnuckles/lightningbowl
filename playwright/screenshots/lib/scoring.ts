@@ -151,5 +151,8 @@ export const sp = (leave: number[]): PinFrame => [not(leave), leave.slice()];
 /** Open: leave `leave` standing, then knock `convert` of them (default none). */
 export const op = (leave: number[], convert: number[] = []): PinFrame => [not(leave), convert.slice()];
 
+/** A lone first ball that leaves `leave` standing — an in-progress frame (one throw). */
+export const firstBall = (leave: number[]): PinFrame => [not(leave)];
+
 /** 10th frame: strike then two fill balls described as knocked-pin arrays. */
 export const tenth = (throws: number[][]): PinFrame => throws;

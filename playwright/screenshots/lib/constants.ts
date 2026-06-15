@@ -33,7 +33,24 @@ export const DOCS_SCREENSHOT_ROOT = 'docs/screenshots';
 /** Back-compat alias — the generated manifest.json still lives under assets. */
 export const SCREENSHOT_ROOT = APP_SCREENSHOT_ROOT;
 
-/** Where a shot's PNGs are written, based on its `target` (defaults to docs). */
+/**
+ * Staging dir for `app` shots, OUTSIDE the served `src/` tree. `ng serve`
+ * watches `src/assets`, so writing app PNGs there during a run triggers a
+ * rebuild (and, with live-reload on, a page reload) mid-capture. Instead we
+ * write app shots here and promote them into APP_SCREENSHOT_ROOT in
+ * global-teardown, once the dev server is no longer serving captures.
+ */
+export const APP_STAGING_ROOT = 'playwright/.shots';
+
+/** The FINAL, committed location a shot's PNGs end up in (used by the manifest). */
 export function screenshotRoot(target: 'app' | 'docs' = 'docs'): string {
   return target === 'app' ? APP_SCREENSHOT_ROOT : DOCS_SCREENSHOT_ROOT;
+}
+
+/**
+ * Where a shot is WRITTEN during the run. `docs` shots already live outside
+ * `src/`, so they're written in place; `app` shots are staged (see above).
+ */
+export function captureRoot(target: 'app' | 'docs' = 'docs'): string {
+  return target === 'app' ? APP_STAGING_ROOT : DOCS_SCREENSHOT_ROOT;
 }

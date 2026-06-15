@@ -1,6 +1,7 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import {
+  afterNextRender,
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
@@ -8,6 +9,8 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   effect,
   ElementRef,
+  inject,
+  Injector,
   OnInit,
   Signal,
   signal,
@@ -251,6 +254,7 @@ export class StatsPage implements OnInit, AfterViewInit {
   gameFilterConfigs = GAME_FILTER_CONFIGS;
   readonly currentFilters = this.gameFilterService.filters;
   readonly defaultFilters = this.gameFilterService.defaultFilters;
+  private readonly injector = inject(Injector);
 
   constructor(
     public loadingService: LoadingService,
@@ -267,7 +271,12 @@ export class StatsPage implements OnInit, AfterViewInit {
     addIcons({ filterOutline, calendarNumberOutline, calendarNumber });
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {
-        this.generateCharts(true);
+        // Generate after the next render so the `@if (filteredGames > 0)` block
+        // has actually created the <canvas> elements and the @ViewChild refs are
+        // populated. Running synchronously here races the view: when the data
+        // signal first flips, the effect can run before the canvases exist, the
+        // chart calls no-op on undefined refs, and the charts never draw.
+        afterNextRender(() => this.generateCharts(true), { injector: this.injector });
       }
     });
   }

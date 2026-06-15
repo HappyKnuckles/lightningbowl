@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { screenshotRoot } from './constants';
+import { captureRoot } from './constants';
 import { installMocks } from './mocks';
 import { applySeed } from './seed';
 import { getSeedBundle } from '../fixtures-data/seed-profiles';
@@ -26,7 +26,7 @@ export function resolveOutputPath(shot: ShotDefinition, viewport: ViewportName):
   if (!NAME_RE.test(shot.feature)) throw new Error(`Invalid feature folder "${shot.feature}" (shot ${shot.id}); use kebab-case.`);
   if (!NAME_RE.test(shot.name)) throw new Error(`Invalid screenshot name "${shot.name}" (shot ${shot.id}); use kebab-case.`);
   const suffix = VIEWPORTS[viewport].suffix;
-  return join(process.cwd(), screenshotRoot(shot.target), shot.feature, `${shot.name}${suffix}.png`);
+  return join(process.cwd(), captureRoot(shot.target), shot.feature, `${shot.name}${suffix}.png`);
 }
 
 /**

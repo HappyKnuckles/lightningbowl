@@ -28,7 +28,7 @@ This project is provided under a custom license. You are welcome to fork this re
 
 Log games effortlessly on the "Add" page. Score by tapping frames or flip to **pin-by-pin input** on a full pin deck, using a quick strike/spare toolbar with undo. You can even upload a photo of your scoresheet to enter scores automatically via OCR (currently compatible with West-Bowl’s scoring system), then tag each game with a league, pattern, ball and note.
 
-<img src="src/assets/screenshots/games/pin-input.png" alt="Pin-by-pin input" width="300"/>
+<img src="src/assets/screenshots/games/score-entry.png" alt="Pin-by-pin input" width="300"/>
 
 ### Series Play & Live Stats
 

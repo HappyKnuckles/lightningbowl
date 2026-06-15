@@ -75,6 +75,7 @@ resources/android/**/*
 # Playwright screenshot system — keep generated screenshots + manifest, drop run artifacts
 /playwright/.report
 /playwright/.artifacts
+/playwright/.shots
 /playwright/screenshots/fixtures-data/captured
 /test-results
 /playwright-report

@@ -50,7 +50,7 @@ export class PwaInstallPromptComponent implements OnInit {
   isIOS = false;
   images = [
     {
-      src: 'assets/screenshots/games/pin-input.png',
+      src: 'assets/screenshots/games/score-entry.png',
       alt: 'Pin-by-pin input',
       name: 'Track',
       id: 'pin-input-screen',

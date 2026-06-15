@@ -18,14 +18,16 @@ export default defineConfig({
   // The capture-fixtures helper is opt-in (npm run capture:fixtures) and should
   // not run as part of the normal screenshot pass.
   testIgnore: ['**/capture-fixtures.spec.ts'],
-  // Regenerate the manifest from the registry before every run.
+  // Setup prepares a staging dir; teardown promotes `app` shots into src/assets
+  // and writes the manifest (kept out of the run so ng serve doesn't rebuild).
   globalSetup: './playwright/screenshots/lib/global-setup.ts',
+  globalTeardown: './playwright/screenshots/lib/global-teardown.ts',
 
   // Screenshots must be reproducible, so no parallel non-determinism inside a
   // single shot. Multiple shots can still run concurrently against the dev
   // server; keep the worker count modest so `ng serve` is not overwhelmed.
   fullyParallel: true,
-  workers: process.env['CI'] ? 1 : 3,
+  workers: process.env['CI'] ? 1 : 6,
   // A flaky external dev-server hiccup should not fail the whole pass.
   retries: process.env['CI'] ? 1 : 0,
   timeout: 90_000,

@@ -1,6 +1,6 @@
 {
   "generatedFrom": "playwright/screenshots/registry.ts",
-  "count": 40,
+  "count": 39,
   "viewports": {
     "mobile": {
       "viewport": {
@@ -29,11 +29,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/games/new-game.png"
+          "path": "docs/screenshots/games/new-game.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/games/new-game_wide.png"
+          "path": "docs/screenshots/games/new-game_wide.png"
         }
       ]
     },
@@ -46,28 +46,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/games/score-entry.png"
+          "path": "src/assets/screenshots/games/score-entry.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/games/score-entry_wide.png"
-        }
-      ]
-    },
-    {
-      "id": "games.pin-input",
-      "feature": "games",
-      "page": "pin-input",
-      "description": "Pin-deck input mode",
-      "seed": "rich",
-      "files": [
-        {
-          "viewport": "mobile",
-          "path": "src/assets/screenshots/games/pin-input.png"
-        },
-        {
-          "viewport": "desktop",
-          "path": "src/assets/screenshots/games/pin-input_wide.png"
+          "path": "src/assets/screenshots/games/score-entry_wide.png"
         }
       ]
     },
@@ -80,11 +63,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/games/series.png"
+          "path": "docs/screenshots/games/series.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/games/series_wide.png"
+          "path": "docs/screenshots/games/series_wide.png"
         }
       ]
     },
@@ -97,11 +80,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/games/mode-select.png"
+          "path": "docs/screenshots/games/mode-select.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/games/mode-select_wide.png"
+          "path": "docs/screenshots/games/mode-select_wide.png"
         }
       ]
     },
@@ -114,11 +97,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/games/history.png"
+          "path": "docs/screenshots/games/history.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/games/history_wide.png"
+          "path": "docs/screenshots/games/history_wide.png"
         }
       ]
     },
@@ -216,11 +199,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/sessions.png"
+          "path": "docs/screenshots/statistics/sessions.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/sessions_wide.png"
+          "path": "docs/screenshots/statistics/sessions_wide.png"
         }
       ]
     },
@@ -233,11 +216,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/overall-scrolled.png"
+          "path": "docs/screenshots/statistics/overall-scrolled.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/overall-scrolled_wide.png"
+          "path": "docs/screenshots/statistics/overall-scrolled_wide.png"
         }
       ]
     },
@@ -250,11 +233,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/throws-scrolled.png"
+          "path": "docs/screenshots/statistics/throws-scrolled.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/throws-scrolled_wide.png"
+          "path": "docs/screenshots/statistics/throws-scrolled_wide.png"
         }
       ]
     },
@@ -267,11 +250,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/spares-scrolled.png"
+          "path": "docs/screenshots/statistics/spares-scrolled.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/spares-scrolled_wide.png"
+          "path": "docs/screenshots/statistics/spares-scrolled_wide.png"
         }
       ]
     },
@@ -284,11 +267,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/pins-scrolled.png"
+          "path": "docs/screenshots/statistics/pins-scrolled.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/pins-scrolled_wide.png"
+          "path": "docs/screenshots/statistics/pins-scrolled_wide.png"
         }
       ]
     },
@@ -301,11 +284,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/sessions-scrolled.png"
+          "path": "docs/screenshots/statistics/sessions-scrolled.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/sessions-scrolled_wide.png"
+          "path": "docs/screenshots/statistics/sessions-scrolled_wide.png"
         }
       ]
     },
@@ -318,11 +301,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/statistics/filter.png"
+          "path": "docs/screenshots/statistics/filter.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/statistics/filter_wide.png"
+          "path": "docs/screenshots/statistics/filter_wide.png"
         }
       ]
     },
@@ -352,11 +335,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/leagues/detail-overall.png"
+          "path": "docs/screenshots/leagues/detail-overall.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/leagues/detail-overall_wide.png"
+          "path": "docs/screenshots/leagues/detail-overall_wide.png"
         }
       ]
     },
@@ -369,11 +352,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/leagues/create.png"
+          "path": "docs/screenshots/leagues/create.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/leagues/create_wide.png"
+          "path": "docs/screenshots/leagues/create_wide.png"
         }
       ]
     },
@@ -386,11 +369,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/leagues/visibility-edit.png"
+          "path": "docs/screenshots/leagues/visibility-edit.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/leagues/visibility-edit_wide.png"
+          "path": "docs/screenshots/leagues/visibility-edit_wide.png"
         }
       ]
     },
@@ -420,11 +403,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/equipment/ball-filter.png"
+          "path": "docs/screenshots/equipment/ball-filter.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/equipment/ball-filter_wide.png"
+          "path": "docs/screenshots/equipment/ball-filter_wide.png"
         }
       ]
     },
@@ -437,11 +420,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/equipment/similar-balls.png"
+          "path": "docs/screenshots/equipment/similar-balls.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/equipment/similar-balls_wide.png"
+          "path": "docs/screenshots/equipment/similar-balls_wide.png"
         }
       ]
     },
@@ -471,11 +454,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/equipment/ball-details.png"
+          "path": "docs/screenshots/equipment/ball-details.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/equipment/ball-details_wide.png"
+          "path": "docs/screenshots/equipment/ball-details_wide.png"
         }
       ]
     },
@@ -488,11 +471,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/equipment/arsenal-add.png"
+          "path": "docs/screenshots/equipment/arsenal-add.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/equipment/arsenal-add_wide.png"
+          "path": "docs/screenshots/equipment/arsenal-add_wide.png"
         }
       ]
     },
@@ -522,11 +505,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/equipment/comparison-chart.png"
+          "path": "docs/screenshots/equipment/comparison-chart.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/equipment/comparison-chart_wide.png"
+          "path": "docs/screenshots/equipment/comparison-chart_wide.png"
         }
       ]
     },
@@ -556,11 +539,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/patterns/search.png"
+          "path": "docs/screenshots/patterns/search.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/patterns/search_wide.png"
+          "path": "docs/screenshots/patterns/search_wide.png"
         }
       ]
     },
@@ -573,11 +556,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/patterns/detail.png"
+          "path": "docs/screenshots/patterns/detail.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/patterns/detail_wide.png"
+          "path": "docs/screenshots/patterns/detail_wide.png"
         }
       ]
     },
@@ -590,11 +573,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/alley-map/overview.png"
+          "path": "docs/screenshots/alley-map/overview.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/alley-map/overview_wide.png"
+          "path": "docs/screenshots/alley-map/overview_wide.png"
         }
       ]
     },
@@ -607,11 +590,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/alley-map/selected.png"
+          "path": "docs/screenshots/alley-map/selected.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/alley-map/selected_wide.png"
+          "path": "docs/screenshots/alley-map/selected_wide.png"
         }
       ]
     },
@@ -624,11 +607,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/alley-map/search.png"
+          "path": "docs/screenshots/alley-map/search.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/alley-map/search_wide.png"
+          "path": "docs/screenshots/alley-map/search_wide.png"
         }
       ]
     },
@@ -641,11 +624,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/profile/settings.png"
+          "path": "docs/screenshots/profile/settings.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/profile/settings_wide.png"
+          "path": "docs/screenshots/profile/settings_wide.png"
         }
       ]
     },
@@ -658,11 +641,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/profile/cloud-sync.png"
+          "path": "docs/screenshots/profile/cloud-sync.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/profile/cloud-sync_wide.png"
+          "path": "docs/screenshots/profile/cloud-sync_wide.png"
         }
       ]
     },
@@ -675,11 +658,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/profile/theme.png"
+          "path": "docs/screenshots/profile/theme.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/profile/theme_wide.png"
+          "path": "docs/screenshots/profile/theme_wide.png"
         }
       ]
     },
@@ -692,11 +675,11 @@
       "files": [
         {
           "viewport": "mobile",
-          "path": "docs/features/minigame/play.png"
+          "path": "docs/screenshots/minigame/play.png"
         },
         {
           "viewport": "desktop",
-          "path": "docs/features/minigame/play_wide.png"
+          "path": "docs/screenshots/minigame/play_wide.png"
         }
       ]
     }

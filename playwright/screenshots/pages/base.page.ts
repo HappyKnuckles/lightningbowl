@@ -90,12 +90,15 @@ export class BasePage {
   }
 
   async waitForAlert(): Promise<void> {
-    await this.page.locator('ion-alert').waitFor({ state: 'visible', timeout: 10_000 });
+    // Scope to the *presented* alert: declarative `<ion-alert [isOpen]>` instances
+    // (e.g. add-game's "fill all inputs" error) stay in the DOM as `.overlay-hidden`,
+    // so a bare `ion-alert` locator matches two elements and trips strict mode.
+    await this.page.locator('ion-alert:not(.overlay-hidden)').first().waitFor({ state: 'visible', timeout: 10_000 });
     await settle(this.page, 300);
   }
 
   async clickAlertButton(text: string): Promise<void> {
-    await this.page.locator('ion-alert button', { hasText: text }).first().click();
+    await this.page.locator('ion-alert:not(.overlay-hidden) button', { hasText: text }).first().click();
     await settle(this.page, 400);
   }
 

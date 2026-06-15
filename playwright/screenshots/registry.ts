@@ -11,7 +11,8 @@
  * switch a tab, type a search, …) using the page objects in ./pages. Keep the
  * registry declarative — selectors belong in the page objects.
  */
-import { makeDraft } from './fixtures-data/drafts';
+import { makePinDraft } from './fixtures-data/drafts';
+import { firstBall, op, sp, X } from './lib/scoring';
 import type { ShotDefinition } from './lib/types';
 import { AddGamePage } from './pages/add-game.page';
 import { AlleyMapPage } from './pages/alley-map.page';
@@ -36,11 +37,7 @@ const R = {
   minigame: '/tabs/minigame',
 };
 
-// A complete, clean ~mark-every-frame game used to show a populated scorecard.
-const SCORE_ENTRY_DRAFT = makeDraft({
-  mode: 'Single',
-  frameSets: [[[10], [9, 1], [8, 2], [10], [9, 1], [8, 2], [10], [9, 1], [8, 2], [9, 1, 10]]],
-});
+const SCORE_ENTRY_DRAFT = makePinDraft([X(), sp([7, 10]), op([10]), X(), sp([2, 4, 5])], firstBall([10]));
 
 export const REGISTRY: ShotDefinition[] = [
   // ───────────────────────────── Games / score entry ─────────────────────
@@ -50,18 +47,10 @@ export const REGISTRY: ShotDefinition[] = [
     feature: 'games',
     name: 'score-entry',
     route: R.add,
+    target: 'app',
     description: 'Populated scorecard',
     extraLocal: { bowling_game_draft: SCORE_ENTRY_DRAFT },
     prepare: ({ page }) => new AddGamePage(page).resumeDraft(),
-  },
-  {
-    id: 'games.pin-input',
-    feature: 'games',
-    name: 'pin-input',
-    route: R.add,
-    target: 'app',
-    description: 'Pin-deck input mode',
-    prepare: ({ page }) => new AddGamePage(page).enablePinInput(),
   },
   {
     id: 'games.series',

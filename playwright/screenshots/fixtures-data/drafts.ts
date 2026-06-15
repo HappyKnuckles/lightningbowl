@@ -1,47 +1,40 @@
 /**
- * Builders for the `bowling_game_draft` localStorage entry the Add Game page
- * restores on load. Seeding a draft is the most robust way to screenshot a
- * filled scorecard without scripting dozens of fragile cell inputs.
+ * Builder for the `bowling_game_draft` localStorage entry the Add Game page
+ * restores on load.
  *
  * The timestamp is set far in the future so the draft never expires regardless
  * of the real wall-clock when the screenshots are generated.
  */
-import type { Game } from '../../../src/app/core/models/game.model';
-import { buildGame, type GameMeta } from '../lib/scoring';
+import { buildPinGame, type PinFrame } from '../lib/scoring';
 import { REFERENCE_NOW } from '../lib/constants';
 
 const NEVER_EXPIRES = Date.UTC(3000, 0, 1);
 
-export interface DraftInput {
-  mode: 'Single' | '3 Series' | '4 Series' | '5 Series' | '6 Series';
-  frameSets: number[][][];
-}
+/**
+ * An in-progress *pin-mode* game: the `played` frames are entered pin-by-pin
+ * (so each renders a mini pin-deck in the grid). `current` is the frame still
+ * being entered — pass a single first ball (e.g. `firstBall([10])`) so the last
+ * frame on the card shows one throw of input with the deck on the next ball.
+ * Omit `current` to park the deck on a fresh rack. Played + current must be
+ * fewer than 10 frames.
+ */
+export function makePinDraft(played: PinFrame[], current: PinFrame = []): string {
+  const frames: PinFrame[] = [...played];
+  if (current.length) frames.push(current);
+  while (frames.length < 10) frames.push([]);
 
-function emptyPinState(game: Game) {
-  return {
-    currentFrameIndex: game.frames.length - 1,
-    currentThrowIndex: Math.max(0, (game.frames.at(-1)?.throws.length ?? 1) - 1),
-    throwsData: [],
-  };
-}
-
-/** Serialised GameDraft ready to drop into localStorage. */
-export function makeDraft({ mode, frameSets }: DraftInput): string {
-  const games: Game[] = frameSets.map((frames, i) => {
-    const meta: GameMeta = { gameId: `draft-${i}`, date: REFERENCE_NOW, patterns: [] };
-    return buildGame(frames, meta);
-  });
+  const game = buildPinGame(frames, { gameId: 'draft-0', date: REFERENCE_NOW, patterns: [] });
 
   const draft = {
     timestamp: NEVER_EXPIRES,
-    games,
-    pinModeState: games.map(emptyPinState),
-    totalScores: games.map((g) => g.totalScore),
-    maxScores: games.map((g) => g.totalScore),
-    isPinInputMode: false,
-    selectedMode: mode,
+    games: [game],
+    pinModeState: [{ currentFrameIndex: played.length, currentThrowIndex: current.length, throwsData: game.frames.map((f) => f.throws) }],
+    totalScores: [game.totalScore],
+    maxScores: [game.totalScore],
+    isPinInputMode: true,
+    selectedMode: 'Single',
     gameIndex: 'Game 1',
-    segments: games.map((_, i) => `Game ${i + 1}`),
+    segments: ['Game 1'],
   };
 
   return JSON.stringify(draft);

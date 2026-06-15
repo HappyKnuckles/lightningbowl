@@ -41,7 +41,7 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshots/games/pin-input_wide.png",
+      "src": "assets/screenshots/games/score-entry_wide.png",
       "sizes": "2880x1800",
       "type": "image/png",
       "form_factor": "wide"
@@ -59,7 +59,7 @@
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/games/pin-input.png",
+      "src": "assets/screenshots/games/score-entry.png",
       "sizes": "1179x2556",
       "type": "image/png"
     },

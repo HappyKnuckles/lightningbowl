@@ -196,7 +196,15 @@ export async function waitForCharts(page: Page): Promise<void> {
           try {
             const ctx = c.getContext('2d');
             if (ctx) {
-              const data = ctx.getImageData(0, 0, Math.min(c.width, 96), Math.min(c.height, 96)).data;
+              // Sample a centred region: a chart's plot area (grid lines, bars,
+              // line series, radar web) sits in the middle, while the top-left
+              // corner is usually blank padding — sampling there reported "empty"
+              // for fully-drawn charts and stalled the wait until timeout.
+              const sw = Math.min(c.width, 200);
+              const sh = Math.min(c.height, 200);
+              const sx = Math.max(0, Math.floor((c.width - sw) / 2));
+              const sy = Math.max(0, Math.floor((c.height - sh) / 2));
+              const data = ctx.getImageData(sx, sy, sw, sh).data;
               let hash = 0;
               for (let p = 0; p < data.length; p += 53) {
                 hash = (hash * 31 + data[p]) | 0;

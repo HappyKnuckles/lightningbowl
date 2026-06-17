@@ -1,9 +1,14 @@
-@if (isAddPage) {
+@if (isAddPage()) {
   <ion-item>
-    <ion-select label="League/Tournament" [(ngModel)]="selectedLeague" (ionChange)="leagueChanged.emit(this.selectedLeague); onLeagueChange($event)">
+    @if (icon()) {
+      <ion-icon [name]="icon()" slot="start"></ion-icon>
+    }
+    <ion-select label="League/Tournament" [value]="selectedLeague()" (ionChange)="onLeagueChange($event)">
       <ion-select-option value="new">Add new</ion-select-option>
       <ion-select-option value="">None</ion-select-option>
-      <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
+      @for (league of leagues(); track league) {
+        <ion-select-option [value]="league">{{ league }}</ion-select-option>
+      }
     </ion-select>
   </ion-item>
 } @else {
@@ -14,10 +19,12 @@
       (ionChange)="onLeagueChange($event)"
       interface="action-sheet"
       placeholder="Edit leagues"
-      [(ngModel)]="selectedLeague">
+      [value]="selectedLeague()">
       <ion-select-option value="new">Add league</ion-select-option>
-      <ion-select-option value="edit" *ngIf="leagues().length !== 0">Edit league</ion-select-option>
-      <ion-select-option value="delete" *ngIf="leagues().length !== 0">Delete league</ion-select-option>
+      @if (leagues().length !== 0) {
+        <ion-select-option value="edit">Edit league</ion-select-option>
+        <ion-select-option value="delete">Delete league</ion-select-option>
+      }
     </ion-select>
   </ion-item>
 }
@@ -39,7 +46,9 @@
       <ion-item>
         <ion-icon name="trophy-outline" slot="start"></ion-icon>
         <ion-select label="Choose League" [(ngModel)]="leagueToChange">
-          <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
+          @for (league of leagues(); track league) {
+            <ion-select-option [value]="league">{{ league }}</ion-select-option>
+          }
         </ion-select>
       </ion-item>
       <ion-item>

@@ -368,7 +368,7 @@ export class AddGamePage implements OnInit {
         const isPractice = value === '' || value === 'New';
         this.gameComponents.forEach((grid, i) => {
           if (trackIndexes.includes(i)) {
-            grid.leagueSelector.selectedLeague = league as string;
+            grid.leagueSelector.selectedLeague.set(league as string);
             grid.checkbox.checked = isPractice;
             grid.checkbox.disabled = !isPractice;
           }
@@ -687,7 +687,7 @@ export class AddGamePage implements OnInit {
       this.gameComponents.forEach((grid, i) => {
         if (activeIndexes.includes(i)) {
           if (grid.leagueSelector) {
-            grid.leagueSelector.selectedLeague = sourceGame.league || '';
+            grid.leagueSelector.selectedLeague.set(sourceGame.league || '');
           }
           if (grid.checkbox) {
             grid.checkbox.checked = sourceGame.isPractice;

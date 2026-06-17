@@ -1,4 +1,4 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgIf } from '@angular/common';
 import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,8 +20,6 @@ import {
   IonLabel,
   IonList,
   IonModal,
-  IonSelect,
-  IonSelectOption,
   IonText,
   IonTextarea,
 } from '@ionic/angular/standalone';
@@ -49,7 +47,6 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { isGameValid } from 'src/app/core/utils/game-utils/game-validation.utils';
@@ -63,6 +60,7 @@ import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameComponent } from '../game/game.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
+import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { Ball } from 'src/app/core/models/ball.model';
 
@@ -94,10 +92,7 @@ interface MonthHeader {
     IonItemSliding,
     IonButton,
     IonIcon,
-    IonSelect,
-    IonSelectOption,
     NgIf,
-    NgFor,
     ReactiveFormsModule,
     FormsModule,
     DatePipe,
@@ -107,6 +102,7 @@ interface MonthHeader {
     GameReadonlyComponent,
     GenericTypeaheadComponent,
     BallSelectComponent,
+    LeagueSelectorComponent,
   ],
 })
 export class GameListComponent implements OnInit {
@@ -131,7 +127,6 @@ export class GameListComponent implements OnInit {
 
   private alertController = inject(AlertController);
   private toastService = inject(ToastService);
-  private leaguesStore = inject(LeaguesStore);
   private hapticService = inject(HapticService);
   private utilsService = inject(UtilsService);
   private router = inject(Router);
@@ -140,16 +135,6 @@ export class GameListComponent implements OnInit {
   private typeaheadConfigService = inject(TypeaheadConfigService);
 
   // Computed
-  leagues = computed(() => {
-    const savedLeagues = this.leaguesStore.leagues();
-    if (!this.games) return savedLeagues;
-    const leagueKeys = this.games().reduce((acc: string[], game: Game) => {
-      if (game.league && !acc.includes(game.league)) acc.push(game.league);
-      return acc;
-    }, []);
-    return [...new Set([...leagueKeys, ...savedLeagues])];
-  });
-
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
 
   showingGames = computed(() => {
@@ -406,6 +391,13 @@ export class GameListComponent implements OnInit {
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
     this.editService.propagateSeriesFields(game, league, patterns);
+  }
+
+  // LEAGUE
+  onEditLeagueChanged(game: Game, league: string): void {
+    console.log(league);
+    game.league = league;
+    this.updateSeries(game, league);
   }
 
   // HELPERS

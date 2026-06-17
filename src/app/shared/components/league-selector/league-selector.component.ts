@@ -51,6 +51,7 @@ export class LeagueSelectorComponent {
   isAddPage = input<boolean>(false);
   selectedLeague = model<string>('');
   icon = input<string>('');
+  leagues = input<string[]>([]);
   leagueChanged = output<string>();
 
   newLeague = '';
@@ -58,15 +59,19 @@ export class LeagueSelectorComponent {
   leagueToChange = '';
   isModalOpen = false;
 
-  leagues = computed(() => {
+  selectableLeagues = computed(() => {
     const savedLeagues = this.leaguesStore.leagues();
-    this.hiddenLeagueSelectionService.selectionState();
-    const savedJson = localStorage.getItem('leagueSelection');
-    if (!savedJson) {
-      return savedLeagues;
+    if (this.isAddPage()) {
+      this.hiddenLeagueSelectionService.selectionState();
+      const savedJson = localStorage.getItem('leagueSelection');
+      if (!savedJson) {
+        return savedLeagues;
+      }
+      const savedSelection: Record<string, boolean> = JSON.parse(savedJson);
+      return savedLeagues.filter((league) => savedSelection[league] !== false);
+    } else {
+      return this.leagues();
     }
-    const savedSelection: Record<string, boolean> = JSON.parse(savedJson);
-    return savedLeagues.filter((league) => savedSelection[league] !== false);
   });
   private analyticsService = inject(AnalyticsService);
   constructor(

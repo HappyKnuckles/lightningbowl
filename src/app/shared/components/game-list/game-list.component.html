@@ -83,6 +83,7 @@
                   class="league"
                   [isAddPage]="true"
                   icon="trophy-outline"
+                  [leagues]="leagues()"
                   [selectedLeague]="game.league ?? ''"
                   (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
                 <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">

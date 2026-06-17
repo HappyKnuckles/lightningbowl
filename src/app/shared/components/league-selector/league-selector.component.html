@@ -6,7 +6,7 @@
     <ion-select label="League/Tournament" [value]="selectedLeague()" (ionChange)="onLeagueChange($event)">
       <ion-select-option value="new">Add new</ion-select-option>
       <ion-select-option value="">None</ion-select-option>
-      @for (league of leagues(); track league) {
+      @for (league of selectableLeagues(); track league) {
         <ion-select-option [value]="league">{{ league }}</ion-select-option>
       }
     </ion-select>
@@ -21,7 +21,7 @@
       placeholder="Edit leagues"
       [value]="selectedLeague()">
       <ion-select-option value="new">Add league</ion-select-option>
-      @if (leagues().length !== 0) {
+      @if (selectableLeagues().length !== 0) {
         <ion-select-option value="edit">Edit league</ion-select-option>
         <ion-select-option value="delete">Delete league</ion-select-option>
       }
@@ -46,7 +46,7 @@
       <ion-item>
         <ion-icon name="trophy-outline" slot="start"></ion-icon>
         <ion-select label="Choose League" [(ngModel)]="leagueToChange">
-          @for (league of leagues(); track league) {
+          @for (league of selectableLeagues(); track league) {
             <ion-select-option [value]="league">{{ league }}</ion-select-option>
           }
         </ion-select>

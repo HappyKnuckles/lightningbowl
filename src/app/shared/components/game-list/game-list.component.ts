@@ -1,5 +1,5 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
-import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
+import { DatePipe, formatDate, NgFor, NgIf } from '@angular/common';
+import { Component, computed, inject, input, LOCALE_ID, OnInit, QueryList, signal, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -44,7 +44,6 @@ import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants'
 import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
-import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -57,14 +56,15 @@ import { UtilsService } from 'src/app/core/utils/utils.service';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
+import { Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { ShareService } from 'src/app/core/services/share/share.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
-import { GameComponent } from '../game/game.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
+import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { Ball } from 'src/app/core/models/ball.model';
 
 interface MonthHeader {
   name: string;
@@ -136,8 +136,9 @@ export class GameListComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private shareService = inject(GameShareService);
+  private shareService = inject(ShareService);
   private typeaheadConfigService = inject(TypeaheadConfigService);
+  private locale = inject(LOCALE_ID);
 
   // Computed
   leagues = computed(() => {
@@ -308,11 +309,38 @@ export class GameListComponent implements OnInit {
     if (!accordionIsOpen) this.openExpansionPanel(game.gameId);
 
     try {
-      await this.shareService.shareGame(game, scoreTemplate);
+      await this.shareService.share({
+        element: scoreTemplate,
+        fileName: `score_${game.gameId}`,
+        title: 'Game Score',
+        text: this.buildShareMessage(game),
+        pngOptions: { style: { margin: '0', overflow: 'visible' } },
+        successMessage: TOAST_MESSAGES.screenshotShareSuccess,
+        errorMessage: TOAST_MESSAGES.screenshotShareError,
+      });
     } finally {
       this.accordionGroup.value = previousValue;
       this.delayedClose.clear(game.gameId);
     }
+  }
+
+  private buildShareMessage(game: Game): string {
+    const formattedDate = formatDate(game.date, 'dd.MM.yy', this.locale);
+
+    const parts = [
+      game.totalScore === 300
+        ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
+        : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
+      this.formatBallsPart(game.balls),
+      game.patterns?.length ? `Patterns: ${game.patterns.join(', ')}` : null,
+    ];
+
+    return parts.filter((p): p is string => p !== null).join('\n');
+  }
+
+  private formatBallsPart(balls?: string[]): string | null {
+    if (!balls?.length) return null;
+    return balls.length === 1 ? `Bowled with: ${balls[0]}` : `Bowled with: ${balls.join(', ')}`;
   }
 
   // EDIT

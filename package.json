@@ -18,7 +18,11 @@
     "update:screenshots:mobile": "playwright test --config=playwright.config.ts --project=mobile",
     "update:screenshots:desktop": "playwright test --config=playwright.config.ts --project=desktop",
     "update:screenshots:ui": "playwright test --config=playwright.config.ts --ui",
-    "capture:fixtures": "playwright test --config=playwright.capture.config.ts playwright/screenshots/capture-fixtures.spec.ts --project=desktop"  
+    "capture:fixtures": "playwright test --config=playwright.capture.config.ts playwright/screenshots/capture-fixtures.spec.ts --project=desktop",
+    "e2e": "playwright test --config=playwright.e2e.config.ts",
+    "e2e:ui": "playwright test --config=playwright.e2e.config.ts --ui",
+    "e2e:headed": "playwright test --config=playwright.e2e.config.ts --headed",
+    "e2e:report": "playwright show-report playwright/.e2e-report"
   },
   "private": true,
   "dependencies": {

@@ -1,3 +1,4 @@
+import type { Locator } from '@playwright/test';
 import { settle } from '../lib/stabilize';
 import { BasePage } from './base.page';
 
@@ -26,6 +27,41 @@ export class AddGamePage extends BasePage {
   async selectMode(label: string): Promise<void> {
     await this.openModeSheet();
     await this.clickActionSheetButton(label);
+    await settle(this.page, 600);
+  }
+
+  /** The pin deck's "gutter" (−) quick-action button. */
+  private gutterButton(): Locator {
+    return this.page.locator('app-pin-input .quick-actions ion-button', { hasText: /^\s*-\s*$/ });
+  }
+
+  /**
+   * Play a complete, valid pin-mode game by guttering every ball (9 open frames
+   * of two balls + the 10th's two balls = 20 throws, totalling 0). Clicks until
+   * the deck reports the game complete.
+   *
+   * <ion-button> is a custom element, so Playwright's toBeDisabled()/isEnabled()
+   * ignore its `disabled` attribute; Ionic reflects it as aria-disabled, which we
+   * use to drive the loop. The final ball completes the game async (disabling the
+   * button mid-click), so the click race is swallowed.
+   */
+  async recordGutterGame(): Promise<void> {
+    const gutter = this.gutterButton();
+    const isComplete = async () => (await gutter.getAttribute('aria-disabled')) === 'true';
+    for (let i = 0; i < 24 && !(await isComplete()); i++) {
+      await gutter.click({ timeout: 2000 }).catch(() => undefined);
+      await settle(this.page, 150);
+    }
+  }
+
+  /** True once the active game is complete (the deck has locked input). */
+  async isGameComplete(): Promise<boolean> {
+    return (await this.gutterButton().getAttribute('aria-disabled')) === 'true';
+  }
+
+  /** Persist the current single game via the "Save Score" button. */
+  async saveSingleGame(): Promise<void> {
+    await this.active().locator('ion-button', { hasText: 'Save Score' }).click();
     await settle(this.page, 600);
   }
 }

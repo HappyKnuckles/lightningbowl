@@ -79,3 +79,7 @@ resources/android/**/*
 /playwright/screenshots/fixtures-data/captured
 /test-results
 /playwright-report
+
+# Playwright e2e suite — run artifacts
+/playwright/.e2e-report
+/playwright/.e2e-artifacts

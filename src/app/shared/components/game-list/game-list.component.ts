@@ -63,7 +63,6 @@ import { GameReadonlyComponent } from '../game-readonly/game-readonly.component'
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { Ball } from 'src/app/core/models/ball.model';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 
 interface MonthHeader {
   name: string;
@@ -125,7 +124,6 @@ export class GameListComponent implements OnInit {
   public ballsStore = inject(BallsStore);
   public settingsStore = inject(SettingsStore);
   public patternsStore = inject(PatternsStore);
-  private leaguesStore = inject(LeaguesStore);
 
   private alertController = inject(AlertController);
   private toastService = inject(ToastService);
@@ -138,13 +136,10 @@ export class GameListComponent implements OnInit {
 
   // Computed
   leagues = computed(() => {
-    const savedLeagues = this.leaguesStore.leagues();
-    if (!this.games) return savedLeagues;
-    const leagueKeys = this.games().reduce((acc: string[], game: Game) => {
+    return this.games().reduce((acc: string[], game: Game) => {
       if (game.league && !acc.includes(game.league)) acc.push(game.league);
       return acc;
     }, []);
-    return [...new Set([...leagueKeys, ...savedLeagues])];
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));

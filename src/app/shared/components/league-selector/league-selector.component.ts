@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, model, output } from '@angular/core';
+import { Component, computed, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AlertController, SelectChangeEventDetail } from '@ionic/angular';
 import {
@@ -54,24 +54,18 @@ export class LeagueSelectorComponent {
   leagues = input<string[]>([]);
   leagueChanged = output<string>();
 
-  newLeague = '';
+  newLeague = signal('');
   leaguesToDelete: string[] = [];
-  leagueToChange = '';
-  isModalOpen = false;
+  leagueToChange = signal('');
+  isModalOpen = signal(false);
 
   selectableLeagues = computed(() => {
     const savedLeagues = this.leaguesStore.leagues();
-    if (this.isAddPage()) {
-      this.hiddenLeagueSelectionService.selectionState();
-      const savedJson = localStorage.getItem('leagueSelection');
-      if (!savedJson) {
-        return savedLeagues;
-      }
-      const savedSelection: Record<string, boolean> = JSON.parse(savedJson);
-      return savedLeagues.filter((league) => savedSelection[league] !== false);
-    } else {
-      return this.leagues();
-    }
+    this.hiddenLeagueSelectionService.selectionState();
+    const savedJson = localStorage.getItem('leagueSelection');
+    const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
+    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
+    return [...new Set([...visibleLeagues, ...this.leagues()])];
   });
   private analyticsService = inject(AnalyticsService);
   constructor(
@@ -89,7 +83,7 @@ export class LeagueSelectorComponent {
     const previous = this.selectedLeague();
 
     if (value === 'edit') {
-      this.isModalOpen = true;
+      this.isModalOpen.set(true);
       return;
     }
     if (value === 'delete') {
@@ -110,16 +104,16 @@ export class LeagueSelectorComponent {
 
   cancel(): void {
     this.leaguesToDelete = [];
-    this.isModalOpen = false;
+    this.isModalOpen.set(false);
   }
 
   async editLeague(): Promise<void> {
     try {
-      await this.appFacade.editLeague(this.newLeague, this.leagueToChange);
-      this.newLeague = '';
-      this.leagueToChange = '';
+      await this.appFacade.editLeague(this.newLeague(), this.leagueToChange());
+      this.newLeague.set('');
+      this.leagueToChange.set('');
       this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
-      this.isModalOpen = false;
+      this.isModalOpen.set(false);
     } catch (error) {
       console.error(error);
       this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
@@ -132,7 +126,7 @@ export class LeagueSelectorComponent {
         await this.leaguesStore.deleteLeague(league);
       }
       this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'checkmark-outline');
-      this.isModalOpen = false;
+      this.isModalOpen.set(false);
     } catch (error) {
       console.error(error);
       this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);

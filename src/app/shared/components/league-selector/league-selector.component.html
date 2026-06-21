@@ -29,7 +29,7 @@
   </ion-item>
 }
 
-<ion-modal [isOpen]="isModalOpen" #modal>
+<ion-modal [isOpen]="isModalOpen()" #modal>
   <ng-template>
     <ion-header>
       <ion-toolbar>
@@ -38,14 +38,14 @@
         </ion-buttons>
         <ion-title>Edit league</ion-title>
         <ion-buttons slot="end">
-          <ion-button type="submit" (click)="editLeague()" [disabled]="newLeague === ''">Save</ion-button>
+          <ion-button type="submit" (click)="editLeague()" [disabled]="newLeague() === ''">Save</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-item>
         <ion-icon name="trophy-outline" slot="start"></ion-icon>
-        <ion-select label="Choose League" [(ngModel)]="leagueToChange">
+        <ion-select label="Choose League" [ngModel]="leagueToChange()" (ngModelChange)="leagueToChange.set($event)">
           @for (league of selectableLeagues(); track league) {
             <ion-select-option [value]="league">{{ league }}</ion-select-option>
           }
@@ -55,10 +55,10 @@
         <ion-icon name="create-outline" slot="start"></ion-icon>
         <ion-input
           label="Change league name"
-          [value]="leagueToChange"
-          [readonly]="leagueToChange === ''"
+          [value]="leagueToChange()"
+          [readonly]="leagueToChange() === ''"
           placeholder="League name"
-          (ionChange)="newLeague = $event.target.value!.toString()"></ion-input>
+          (ionChange)="newLeague.set($event.target.value!.toString())"></ion-input>
       </ion-item>
     </ion-content>
   </ng-template>

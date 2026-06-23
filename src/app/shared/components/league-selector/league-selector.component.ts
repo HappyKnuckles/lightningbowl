@@ -19,11 +19,13 @@ import { IonSelectCustomEvent } from '@ionic/core';
 import { addIcons } from 'ionicons';
 import { addOutline, createOutline, trophyOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { League } from 'src/app/core/models/league';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { LeagueFormComponent } from 'src/app/shared/components/league-form/league-form.component';
 
 @Component({
   selector: 'app-league-selector',
@@ -45,6 +47,7 @@ import { LeaguesStore } from 'src/app/core/stores/leagues.store';
     FormsModule,
     ReactiveFormsModule,
     IonSelectOption,
+    LeagueFormComponent,
   ],
 })
 export class LeagueSelectorComponent {
@@ -58,9 +61,10 @@ export class LeagueSelectorComponent {
   leaguesToDelete: string[] = [];
   leagueToChange = signal('');
   isModalOpen = signal(false);
+  isFormOpen = signal(false);
 
   selectableLeagues = computed(() => {
-    const savedLeagues = this.leaguesStore.leagues();
+    const savedLeagues = this.leaguesStore.leagueNames();
     this.hiddenLeagueSelectionService.selectionState();
     const savedJson = localStorage.getItem('leagueSelection');
     const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
@@ -92,14 +96,33 @@ export class LeagueSelectorComponent {
     }
 
     if (value === 'new') {
-      const created = await this.openAddAlert();
-      // Keep the previous selection when the user cancels instead of clearing it.
-      this.selectedLeague.set(created ?? previous);
+      // Snap the select back to the previous value and open the rich league form.
+      this.selectedLeague.set(previous);
+      this.isFormOpen.set(true);
+      return;
     } else {
       this.selectedLeague.set(value);
     }
 
     this.leagueChanged.emit(this.selectedLeague());
+  }
+
+  async onFormSaved(league: League): Promise<void> {
+    this.isFormOpen.set(false);
+    try {
+      const created = await this.leaguesStore.createLeague(league);
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
+      void this.analyticsService.trackLeagueCreated({ name: created.name });
+      this.selectedLeague.set(created.name);
+      this.leagueChanged.emit(created.name);
+    } catch (error) {
+      console.error('Error adding league:', error);
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
+    }
+  }
+
+  onFormCancelled(): void {
+    this.isFormOpen.set(false);
   }
 
   cancel(): void {
@@ -138,7 +161,7 @@ export class LeagueSelectorComponent {
       .create({
         header: 'Delete League',
         message: 'Select the leagues to delete',
-        inputs: this.leaguesStore.leagues().map((league) => ({
+        inputs: this.leaguesStore.leagueNames().map((league) => ({
           name: league,
           type: 'checkbox',
           label: league,
@@ -159,40 +182,5 @@ export class LeagueSelectorComponent {
         ],
       })
       .then((alert) => alert.present());
-  }
-
-  private async openAddAlert(): Promise<void> {
-    await this.alertController
-      .create({
-        header: 'Add League',
-        message: 'Enter the league name',
-        inputs: [{ name: 'league', type: 'text', placeholder: 'League name', cssClass: 'league-alert-input' }],
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-          },
-          {
-            text: 'Add',
-            handler: (data) => this.createLeague(data.league),
-          },
-        ],
-      })
-      .then((alert) => alert.present());
-  }
-
-  private async createLeague(name: string): Promise<string | null> {
-    const league = name?.trim();
-    if (!league) return null;
-    try {
-      await this.leaguesStore.addLeague(league);
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
-      this.analyticsService.trackLeagueCreated({ name: league });
-      return league;
-    } catch (error) {
-      console.error('Error adding league:', error);
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
-      return null;
-    }
   }
 }

@@ -58,7 +58,14 @@ export interface Game {
   isSeries?: boolean;
   seriesId?: string;
   note?: string;
+  /** Display name of the league this game belongs to (source of truth for grouping). */
   league?: string;
+  /** Relational link to a League aggregate (additive; set by migration / new games). */
+  leagueId?: string;
+  /** Relational link to the Season within the league. */
+  seasonId?: string;
+  /** Relational link to the WeeklySession within the season. */
+  sessionId?: string;
   patterns: string[];
   balls?: string[];
 }

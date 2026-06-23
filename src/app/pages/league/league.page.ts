@@ -1,12 +1,14 @@
-import { DecimalPipe, NgIf } from '@angular/common';
+import { DecimalPipe, NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
+  IonBadge,
   IonButton,
   IonButtons,
   IonCheckbox,
+  IonChip,
   IonContent,
   IonHeader,
   IonIcon,
@@ -16,6 +18,8 @@ import {
   IonItemSliding,
   IonLabel,
   IonModal,
+  IonNote,
+  IonProgressBar,
   IonRefresher,
   IonSegment,
   IonSegmentButton,
@@ -29,13 +33,17 @@ import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {
   addOutline,
+  cashOutline,
   cameraOutline,
+  calendarOutline,
   checkmarkOutline,
   chevronBack,
   chevronForward,
   createOutline,
   documentTextOutline,
+  ribbonOutline,
   shareOutline,
+  timeOutline,
   trashOutline,
   trophyOutline,
 } from 'ionicons/icons';
@@ -43,20 +51,25 @@ import { LEAGUE_STAT_DEFINITIONS, PIN_STAT_DEFINITIONS } from 'src/app/core/conf
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
+import { Achievement, FinanceSummary, League } from 'src/app/core/models/league';
 import { LeagueLeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
+import { AchievementService } from 'src/app/core/services/league/achievement.service';
+import { HandicapService } from 'src/app/core/services/league/handicap.service';
+import { LeagueFinanceService } from 'src/app/core/services/league/league-finance.service';
+import { SeasonService } from 'src/app/core/services/league/season.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { sortGameHistoryByDate, sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
+import { LeagueFormComponent } from 'src/app/shared/components/league-form/league-form.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
@@ -64,6 +77,22 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
 import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { environment } from 'src/environments/environment';
 import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
+
+/** A league summary card built from a League aggregate (or a game-derived group). */
+export interface LeagueCardVm {
+  name: string;
+  league: League | null;
+  eventType: string;
+  seasonName: string | null;
+  averageScore: number;
+  highGame: number;
+  totalGames: number;
+  active: boolean;
+  color: string | null;
+  countdownDays: number | null;
+  isPractice: boolean;
+  hasGames: boolean;
+}
 
 @Component({
   selector: 'app-league',
@@ -86,10 +115,15 @@ import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
     IonTitle,
     IonToolbar,
     IonCheckbox,
+    IonBadge,
+    IonChip,
+    IonNote,
+    IonProgressBar,
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
     NgIf,
+    NgTemplateOutlet,
     DecimalPipe,
     StatDisplayComponent,
     IonSegmentButton,
@@ -101,6 +135,7 @@ import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
     StatSpareComponent,
     StatPinLeaveComponent,
     BowlingRefresherComponent,
+    LeagueFormComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -109,8 +144,8 @@ export class LeaguePage {
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
   imagesUrl = environment.imagesUrl;
-  selectedSegment = 'Overall';
-  segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
+  selectedSegment = 'Dashboard';
+  segments: string[] = ['Dashboard', 'Overall', 'Spares', 'Pins', 'Finances', 'Games'];
   isEditMode: Record<string, boolean> = {};
 
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
@@ -172,9 +207,64 @@ export class LeaguePage {
   selectedLeague = signal<string | null>(null);
   isRefreshing = signal(false);
 
+  // League create/edit form state.
+  isFormOpen = signal(false);
+  editingLeague = signal<League | null>(null);
+
   readonly noLeaguesShown = computed(() => !Object.values(this.hiddenLeagueSelectionService.selectionState()).some((isVisible) => isVisible));
 
   readonly leagueSelectionState = this.hiddenLeagueSelectionService.selectionState;
+
+  /** Rich cards: League aggregates first, then any game-derived groups without one (e.g. Practice). */
+  readonly leagueCards = computed<LeagueCardVm[]>(() => {
+    const entities = this.leaguesStore.leagues();
+    const gamesByName = this.gamesByLeague();
+    const statsByName = this.statsByLeague();
+    const entityNames = new Set(entities.map((e) => e.name));
+    const cards: LeagueCardVm[] = [];
+
+    for (const entity of entities) {
+      cards.push(this.buildCard(entity.name, entity, gamesByName[entity.name] ?? [], statsByName[entity.name]));
+    }
+    for (const name of Object.keys(gamesByName)) {
+      if (!entityNames.has(name)) {
+        cards.push(this.buildCard(name, null, gamesByName[name], statsByName[name]));
+      }
+    }
+    return cards;
+  });
+
+  /** The aggregate behind the currently open detail view (null for game-only groups). */
+  readonly selectedEntity = computed<League | null>(() => {
+    const name = this.selectedLeague();
+    return name ? (this.leaguesStore.getByName(name) ?? null) : null;
+  });
+
+  readonly selectedFinance = computed<FinanceSummary | null>(() => {
+    const league = this.selectedEntity();
+    if (!league || !league.seasons.length) {
+      return null;
+    }
+    return this.financeService.summarizeSeasons(league.seasons);
+  });
+
+  readonly selectedAchievements = computed<Achievement[]>(() => {
+    const name = this.selectedLeague();
+    if (!name) {
+      return [];
+    }
+    return this.achievementService.deriveAchievements(this.gamesByLeague()[name] ?? []);
+  });
+
+  readonly selectedCountdown = computed<number | null>(() => {
+    const league = this.selectedEntity();
+    return league ? this.seasonService.countdownDays(league) : null;
+  });
+
+  readonly selectedSeasonProgress = computed(() => {
+    const league = this.selectedEntity();
+    return this.seasonService.seasonProgress(league ? this.seasonService.getActiveSeason(league) : undefined);
+  });
 
   private previousLeagueSelectionState: Record<string, boolean> = {};
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'session';
@@ -183,7 +273,6 @@ export class LeaguePage {
     public gamesStore: GamesStore,
     public ballsStore: BallsStore,
     public leaguesStore: LeaguesStore,
-    private appFacade: AppFacade,
     private hapticService: HapticService,
     private statService: GameStatsService,
     public loadingService: LoadingService,
@@ -192,6 +281,10 @@ export class LeaguePage {
     private chartService: ChartGenerationService,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
     private analyticsService: AnalyticsService,
+    private seasonService: SeasonService,
+    private financeService: LeagueFinanceService,
+    private handicapService: HandicapService,
+    private achievementService: AchievementService,
   ) {
     addIcons({
       addOutline,
@@ -204,9 +297,15 @@ export class LeaguePage {
       shareOutline,
       documentTextOutline,
       trophyOutline,
+      cashOutline,
+      calendarOutline,
+      ribbonOutline,
+      timeOutline,
     });
     effect(() => {
-      this.hiddenLeagueSelectionService.setAvailableLeagues(this.leagueKeys());
+      // Track visibility for every league name in play: aggregates + game-derived groups.
+      const names = [...new Set([...this.leaguesStore.leagueNames(), ...this.leagueKeys()])];
+      this.hiddenLeagueSelectionService.setAvailableLeagues(names);
     });
   }
 
@@ -215,7 +314,7 @@ export class LeaguePage {
     if (league) {
       this.destroyCharts(league);
     }
-    this.selectedSegment = 'Overall';
+    this.selectedSegment = 'Dashboard';
     this.selectedLeague.set(null);
   }
 
@@ -285,10 +384,10 @@ export class LeaguePage {
   }
 
   onSegmentChanged(league: string, event: SegmentCustomEvent): void {
-    this.selectedSegment = event.detail.value?.toString() || 'Overall';
+    this.selectedSegment = event.detail.value?.toString() || 'Dashboard';
     this.generateCharts(league);
     setTimeout(() => {
-      this.content.scrollToTop(300);
+      this.content?.scrollToTop(300);
     }, 300);
   }
 
@@ -302,66 +401,68 @@ export class LeaguePage {
     }
   }
 
-  async saveLeague(league: string): Promise<void> {
+  // ---- League create / edit via the rich form modal ----
+
+  openCreateForm(): void {
+    this.editingLeague.set(null);
+    this.isFormOpen.set(true);
+  }
+
+  openEditForm(card: LeagueCardVm): void {
+    if (!card.league) {
+      // Game-derived group (e.g. Practice) with no aggregate yet — create one seeded by name.
+      this.editingLeague.set(null);
+      this.isFormOpen.set(true);
+      return;
+    }
+    this.editingLeague.set(card.league);
+    this.isFormOpen.set(true);
+  }
+
+  async onFormSaved(league: League): Promise<void> {
+    this.isFormOpen.set(false);
+    const isEdit = !!this.editingLeague();
     try {
-      await this.leaguesStore.addLeague(league);
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
+      if (isEdit) {
+        await this.leaguesStore.updateLeague(league);
+        this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
+        void this.analyticsService.trackLeagueEdited();
+      } else {
+        await this.leaguesStore.createLeague(league);
+        this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
+        void this.analyticsService.trackLeagueCreated({ name: league.name });
+      }
     } catch (error) {
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
+      this.toastService.showToast(isEdit ? TOAST_MESSAGES.leagueEditError : TOAST_MESSAGES.leagueSaveError, 'bug', true);
       console.error('Error saving league:', error);
+    } finally {
+      this.editingLeague.set(null);
     }
   }
 
-  async addLeague() {
-    const alert = await this.alertController.create({
-      header: 'Add League',
-      message: 'Enter the league name',
-      inputs: [
-        {
-          name: 'league',
-          type: 'text',
-          placeholder: 'League name',
-          cssClass: 'league-alert-input',
-        },
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Add',
-          handler: async (data: { league: string }) => {
-            try {
-              await this.leaguesStore.addLeague(data.league);
-              this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
-              void this.analyticsService.trackLeagueCreated({ name: data.league });
-            } catch (error) {
-              this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
-              console.error('Error saving league:', error);
-            }
-          },
-        },
-      ],
-    });
-    await alert.present();
+  onFormCancelled(): void {
+    this.isFormOpen.set(false);
+    this.editingLeague.set(null);
   }
 
-  async deleteLeague(league: string): Promise<void> {
+  async deleteLeague(card: LeagueCardVm): Promise<void> {
     this.hapticService.vibrate(ImpactStyle.Heavy);
     const alert = await this.alertController.create({
       header: 'Confirm Deletion',
-      message: 'Are you sure you want to delete this league?',
+      message: card.hasGames
+        ? `Delete the league "${card.name}"? Your games stay in your history but lose their league link.`
+        : `Are you sure you want to delete "${card.name}"?`,
       buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
+        { text: 'Cancel', role: 'cancel' },
         {
           text: 'Delete',
           handler: async () => {
             try {
-              await this.leaguesStore.deleteLeague(league);
+              if (card.league) {
+                await this.leaguesStore.deleteLeague(card.league.id);
+              } else {
+                await this.leaguesStore.deleteLeague(card.name);
+              }
               this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'remove-outline');
             } catch (error) {
               this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);
@@ -375,39 +476,65 @@ export class LeaguePage {
     await alert.present();
   }
 
-  async editLeague(league: string): Promise<void> {
+  openLeague(card: LeagueCardVm): void {
+    this.selectedSegment = 'Dashboard';
+    this.selectedLeague.set(card.name);
+  }
+
+  async startNewSeason(): Promise<void> {
+    const league = this.selectedEntity();
+    if (!league) {
+      return;
+    }
+    const nextNumber = league.seasons.reduce((max, s) => Math.max(max, s.seasonNumber), 0) + 1;
     const alert = await this.alertController.create({
-      header: 'Edit League',
-      message: 'Enter the new league name',
-      inputs: [
-        {
-          name: 'league',
-          type: 'text',
-          value: league,
-          placeholder: 'League name',
-          cssClass: 'alert-input',
-        },
-      ],
+      header: 'Start New Season',
+      message: 'The current season is archived and a new active season begins (fees carry over).',
+      inputs: [{ name: 'name', type: 'text', value: `Season ${nextNumber}`, placeholder: 'Season name' }],
       buttons: [
+        { text: 'Cancel', role: 'cancel' },
         {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Edit',
-          handler: async (data: { league: string }) => {
+          text: 'Start',
+          handler: async (data: { name: string }) => {
             try {
-              await this.appFacade.editLeague(data.league, league);
-              this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
+              const updated = this.seasonService.startNewSeason(league, data.name);
+              await this.leaguesStore.updateLeague(updated);
+              this.toastService.showToast('New season started.', 'add');
             } catch (error) {
               this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
-              console.error('Error editing league:', error);
+              console.error('Error starting new season:', error);
             }
           },
         },
       ],
     });
     await alert.present();
+  }
+
+  handicapForLeague(league: League | null, average: number): number {
+    if (!league) {
+      return 0;
+    }
+    return this.handicapService.handicapForAverage(league.handicap, average);
+  }
+
+  private buildCard(name: string, league: League | null, games: Game[], stats: Stats | undefined): LeagueCardVm {
+    const isPractice = !league && name === 'Practice';
+    const activeSeason = league ? this.seasonService.getActiveSeason(league) : undefined;
+    return {
+      name,
+      league,
+      eventType: league?.eventType ?? (isPractice ? 'Practice' : 'League'),
+      seasonName: activeSeason?.seasonName ?? null,
+      averageScore: stats?.averageScore ?? 0,
+      highGame: stats?.highGame ?? 0,
+      totalGames: stats?.totalGames ?? games.length,
+      active: league?.active ?? true,
+      color: league?.color ?? null,
+      countdownDays: league ? this.seasonService.countdownDays(league) : null,
+      isPractice,
+      hasGames: games.length > 0,
+    };
   }
 
   private perLeague<R>(fn: (games: Game[]) => R): Signal<Record<string, R>> {

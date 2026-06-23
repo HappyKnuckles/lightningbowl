@@ -63,3 +63,178 @@
     touch-action: pinch-zoom pan-y;
   }
 }
+
+// ---- Rich league cards ----
+.league-accent {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 4px;
+  margin: 6px 12px 6px 0;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .title {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+}
+
+.event-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card-stats-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 2px;
+
+  .score {
+    font-size: 0.875rem;
+    color: lightgray;
+  }
+}
+
+.card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 4px;
+
+  .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--ion-color-medium, #8c8c8c);
+
+    ion-icon {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// ---- Detail dashboard ----
+.dash-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 20px 4px;
+
+  .dash-sub {
+    font-size: 0.85rem;
+    color: var(--ion-color-medium, #8c8c8c);
+  }
+}
+
+.countdown-card,
+.handicap-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ion-card-background, #141414);
+  border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  border-radius: var(--card-border-radius, 14px);
+  margin: 12px 20px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+
+  ion-icon {
+    font-size: 1.2rem;
+    color: var(--ion-color-primary, #3880ff);
+  }
+}
+
+.handicap-card {
+  justify-content: space-between;
+
+  .handicap-value {
+    font-weight: 700;
+    color: var(--ion-color-primary, #3880ff);
+  }
+}
+
+.progress-block {
+  margin: 12px 20px;
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--ion-color-medium, #8c8c8c);
+    margin-bottom: 6px;
+  }
+
+  ion-progress-bar {
+    border-radius: 6px;
+    height: 8px;
+  }
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 12px 20px;
+
+  .stat-cell {
+    background: var(--ion-card-background, #141414);
+    border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+    border-radius: var(--card-border-radius, 14px);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .stat-key {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ion-color-medium, #8c8c8c);
+    }
+
+    &.profit .stat-value {
+      color: var(--ion-color-success, #2dd36f);
+    }
+
+    &.loss .stat-value {
+      color: var(--ion-color-danger, #eb445a);
+    }
+  }
+}
+
+.season-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4px 16px 8px;
+}
+
+.achievement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 16px 12px;
+}
+
+.achievement-chip ion-icon {
+  color: var(--ion-color-warning, #ffc409);
+}
+
+.finance-hint {
+  display: block;
+  margin: 4px 20px 16px;
+  font-size: 0.78rem;
+  color: var(--ion-color-medium, #8c8c8c);
+}

@@ -18,7 +18,11 @@ const mockBallsStore = {
 
 const mockLeaguesStore = {
   leagues: jasmine.createSpy('leagues').and.returnValue([]),
+  leagueNames: jasmine.createSpy('leagueNames').and.returnValue([]),
+  getByName: jasmine.createSpy('getByName').and.returnValue(undefined),
   addLeague: jasmine.createSpy('addLeague').and.returnValue(Promise.resolve()),
+  createLeague: jasmine.createSpy('createLeague').and.returnValue(Promise.resolve()),
+  updateLeague: jasmine.createSpy('updateLeague').and.returnValue(Promise.resolve()),
   deleteLeague: jasmine.createSpy('deleteLeague').and.returnValue(Promise.resolve()),
 };
 

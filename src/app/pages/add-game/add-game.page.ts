@@ -41,6 +41,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -174,6 +175,7 @@ export class AddGamePage implements OnInit {
     private gameDraftService: GameDraftService,
     private gameImageImport: GameImageImportService,
     private gameStatsService: GameStatsService,
+    private leaguesStore: LeaguesStore,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, trophyOutline, documentTextOutline, add });
     effect(() => {
@@ -389,6 +391,45 @@ export class AddGamePage implements OnInit {
   }
   onLeagueChange(league: string, isModal = false) {
     this.updateSeriesProperty('league', league, isModal);
+    if (!isModal) {
+      this.applyLeagueSeriesMode(league);
+    }
+  }
+
+  /**
+   * When a saved league is selected, switch the series length to that league's configured
+   * games-per-night (e.g. a 4-game league sets the "4 Series" mode automatically).
+   */
+  private applyLeagueSeriesMode(league: string): void {
+    const entity = this.leaguesStore.getByName(league);
+    if (!entity) {
+      return;
+    }
+    const mode = this.seriesModeForGames(entity.numberOfGamesPerNight);
+    if (!mode || mode === this.selectedMode()) {
+      return;
+    }
+    this.selectedMode.set(mode);
+    this.propagateMetadataToSeries();
+    this.recalculateActiveGameScores();
+    this.updateSegments();
+  }
+
+  private seriesModeForGames(games: number): SeriesMode | null {
+    switch (games) {
+      case 1:
+        return SeriesMode.Single;
+      case 3:
+        return SeriesMode.Series3;
+      case 4:
+        return SeriesMode.Series4;
+      case 5:
+        return SeriesMode.Series5;
+      case 6:
+        return SeriesMode.Series6;
+      default:
+        return null; // 2 or 7+ have no matching series mode
+    }
   }
   onPatternChange(patterns: string[], isModal = false) {
     this.updateSeriesProperty('patterns', patterns, isModal);

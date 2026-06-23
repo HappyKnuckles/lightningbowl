@@ -2,7 +2,7 @@
   <ion-toolbar>
     @if (!isVisibilityEdit()) {
       <ion-buttons slot="end">
-        <ion-button type="button" class="action-sheet" fill="clear" (click)="addLeague()">
+        <ion-button type="button" class="action-sheet" fill="clear" (click)="openCreateForm()">
           <ion-icon slot="icon-only" name="add-outline"></ion-icon>
         </ion-button>
       </ion-buttons>
@@ -23,70 +23,54 @@
     <app-bowling-refresher [refreshing]="isRefreshing()"></app-bowling-refresher>
   </ion-refresher>
 
-  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
-    <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
+  <ng-container *ngIf="leagueCards().length <= 0 && !loadingService.isLoading(); else content">
+    <ion-text class="no-game-text"> No leagues yet — tap + to create one, or start playing games to see them here! </ion-text>
   </ng-container>
-
-  <ng-template #noLeagues>
-    <ng-container *ngIf="leagueKeys().length <= 0 && !loadingService.isLoading(); else content">
-      <ion-text class="no-game-text"> No leagues saved! </ion-text>
-    </ng-container>
-  </ng-template>
 
   <ng-template #content>
     @if (noLeaguesShown() && !isVisibilityEdit()) {
       <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
     } @else {
-      @for (league of leagueKeys(); track league) {
+      @for (card of leagueCards(); track card.name) {
         @if (isVisibilityEdit()) {
           @if (leagueSelectionState(); as selectionState) {
             <div class="sliding">
               <ion-item button (longPressed)="editVisibility()" [delay]="1000" appLongPress detail="false">
-                <ion-checkbox [checked]="selectionState[league]" (ionChange)="updateLeagueSelection(league, $event.detail.checked)">
+                <ion-checkbox [checked]="selectionState[card.name]" (ionChange)="updateLeagueSelection(card.name, $event.detail.checked)">
                   <ion-label class="game-info">
-                    <h2 class="title">{{ league }}</h2>
-                    <p class="score">Games: {{ gamesByLeague()[league].length || 0 }}</p>
-                    <p class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</p>
-                    <p class="score">High: {{ statsByLeague()[league].highGame }}</p>
+                    <h2 class="title">{{ card.name }}</h2>
+                    <p class="score">Games: {{ card.totalGames }}</p>
+                    <p class="score">Avg: {{ card.averageScore | number: "1.1-2" }}</p>
+                    <p class="score">High: {{ card.highGame }}</p>
                   </ion-label>
                 </ion-checkbox>
               </ion-item>
             </div>
           }
         } @else {
-          @if (leagueSelectionState()[league]) {
-            @if (league === "Practice") {
+          @if (leagueSelectionState()[card.name]) {
+            @if (card.isPractice) {
               <div class="sliding">
-                <ion-item button (click)="this.selectedLeague.set(league)" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
-                  <ion-label class="game-info">
-                    <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
-                  </ion-label>
+                <ion-item button (click)="openLeague(card)" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
+                  <ng-container *ngTemplateOutlet="cardBody; context: { card: card }"></ng-container>
                 </ion-item>
               </div>
             } @else {
               <ion-item-sliding class="sliding" #slidingItem>
-                <ion-item-options side="end" (ionSwipe)="deleteLeague(league); slidingItem.closeOpened()">
-                  <ion-item-option color="danger" expandable (click)="deleteLeague(league); slidingItem.closeOpened()">
+                <ion-item-options side="end" (ionSwipe)="deleteLeague(card); slidingItem.closeOpened()">
+                  <ion-item-option color="danger" expandable (click)="deleteLeague(card); slidingItem.closeOpened()">
                     <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
                   </ion-item-option>
                 </ion-item-options>
 
-                <ion-item-options side="start" (ionSwipe)="editLeague(league); slidingItem.closeOpened()">
-                  <ion-item-option expandable (click)="editLeague(league); slidingItem.closeOpened()">
+                <ion-item-options side="start" (ionSwipe)="openEditForm(card); slidingItem.closeOpened()">
+                  <ion-item-option expandable (click)="openEditForm(card); slidingItem.closeOpened()">
                     <ion-icon class="title" style="transform: translateY(-2px)" name="create-outline"></ion-icon>
                   </ion-item-option>
                 </ion-item-options>
 
-                <ion-item button (click)="this.selectedLeague.set(league)" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
-                  <ion-label class="game-info">
-                    <div class="title">{{ league }}</div>
-                    <div class="score">Games: {{ gamesByLeague()[league].length || 0 }}</div>
-                    <div class="score">Avg: {{ statsByLeague()[league].averageScore | number: "1.1-2" }}</div>
-                    <div class="score">High: {{ statsByLeague()[league].highGame }}</div>
-                  </ion-label>
+                <ion-item button (click)="openLeague(card)" (longPressed)="editVisibility()" [delay]="1000" appLongPress>
+                  <ng-container *ngTemplateOutlet="cardBody; context: { card: card }"></ng-container>
                 </ion-item>
               </ion-item-sliding>
             }
@@ -95,7 +79,39 @@
       }
     }
   </ng-template>
+
+  <!-- Shared rich card body -->
+  <ng-template #cardBody let-card="card">
+    @if (card.color) {
+      <span class="league-accent" [style.background]="card.color" slot="start"></span>
+    }
+    <ion-label class="game-info">
+      <div class="card-title-row">
+        <span class="title">{{ card.name }}</span>
+        <ion-badge class="event-badge">{{ card.eventType }}</ion-badge>
+        @if (!card.active) {
+          <ion-badge color="medium" class="event-badge">Inactive</ion-badge>
+        }
+      </div>
+      <div class="card-stats-row">
+        <span class="score">Avg: {{ card.averageScore | number: "1.1-2" }}</span>
+        <span class="score">High: {{ card.highGame }}</span>
+        <span class="score">Games: {{ card.totalGames }}</span>
+      </div>
+      <div class="card-meta-row">
+        @if (card.seasonName) {
+          <span class="meta"><ion-icon name="calendar-outline"></ion-icon> {{ card.seasonName }}</span>
+        }
+        @if (card.countdownDays !== null) {
+          <span class="meta"><ion-icon name="time-outline"></ion-icon> Next night in {{ card.countdownDays }}d</span>
+        }
+      </div>
+    </ion-label>
+  </ng-template>
 </ion-content>
+
+<!-- Create / edit league form -->
+<app-league-form [isOpen]="isFormOpen()" [league]="editingLeague()" (saved)="onFormSaved($event)" (cancelled)="onFormCancelled()"></app-league-form>
 
 <ion-modal [isOpen]="selectedLeague() !== null" (didPresent)="generateCharts(selectedLeague()!, true)" (didDismiss)="closeLeague()">
   <ng-template>
@@ -111,7 +127,7 @@
         </ion-toolbar>
 
         <ion-toolbar>
-          <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged(league, $event)">
+          <ion-segment scrollable="true" [value]="selectedSegment" (ionChange)="onSegmentChanged(league, $event)">
             @for (segment of segments; track segment) {
               <ion-segment-button [value]="segment" [contentId]="segment + '-' + league">
                 <ion-label class="segment-label">{{ segment }}</ion-label>
@@ -123,65 +139,204 @@
 
       <ion-content #modalContent>
         <ion-segment-view>
-          <ion-segment-content id="Overall-{{ league }}">
+          <ion-segment-content id="Dashboard-{{ league }}">
             <section class="tab">
-              <app-stat-display
-                [statDefinitions]="statDefinitions"
-                [title]="'Overall Stats'"
-                [currentStats]="statsByLeague()[league]"
-                [prevStats]="overallStats()">
-              </app-stat-display>
-              @for (highlight of leagueHighlights()[league]; track highlight.title) {
-                <app-stat-highlight-item
-                  [title]="highlight.title"
-                  [item]="highlight.item"
-                  [allItems]="highlight.allItems"
-                  [sortMode]="highlight.sortMode"
-                  [totalGames]="statsByLeague()[league].totalGames"
-                  [emptyMessage]="highlight.emptyMessage"
-                  [imageUrlBase]="highlight.imageUrlBase"
-                  [roundImage]="highlight.roundImage">
-                </app-stat-highlight-item>
+              @if (selectedEntity(); as entity) {
+                <div class="dash-header">
+                  <ion-badge class="event-badge">{{ entity.eventType }}</ion-badge>
+                  @if (entity.bowlingCenter) {
+                    <span class="dash-sub">{{ entity.bowlingCenter }}</span>
+                  }
+                  @if (entity.dayOfWeek) {
+                    <span class="dash-sub">{{ entity.dayOfWeek }}{{ entity.startTime ? " · " + entity.startTime : "" }}</span>
+                  }
+                </div>
+
+                @if (selectedCountdown() !== null) {
+                  <div class="countdown-card">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <span
+                      >Next league night in <strong>{{ selectedCountdown() }}</strong> day(s)</span
+                    >
+                  </div>
+                }
+
+                @if (selectedSeasonProgress(); as prog) {
+                  @if (prog.weeksScheduled > 0) {
+                    <div class="progress-block">
+                      <div class="progress-label">
+                        <span>Season progress</span>
+                        <span>{{ prog.weeksCompleted }} / {{ prog.weeksScheduled }} weeks</span>
+                      </div>
+                      <ion-progress-bar [value]="prog.fraction"></ion-progress-bar>
+                    </div>
+                  }
+                }
+
+                <div class="season-actions">
+                  <ion-button size="small" fill="outline" (click)="startNewSeason()">
+                    <ion-icon name="calendar-outline" slot="start"></ion-icon>
+                    Start New Season
+                  </ion-button>
+                </div>
               }
-              <h2 class="sec-heading"><span>Score Analysis</span><span class="divider-line"></span></h2>
-              <figure class="chart-card">
-                <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-              </figure>
+
+              <div class="stat-grid">
+                <div class="stat-cell">
+                  <span class="stat-value">{{ statsByLeague()[league]?.averageScore | number: "1.1-2" }}</span>
+                  <span class="stat-key">Average</span>
+                </div>
+                <div class="stat-cell">
+                  <span class="stat-value">{{ statsByLeague()[league]?.highGame || 0 }}</span>
+                  <span class="stat-key">High Game</span>
+                </div>
+                <div class="stat-cell">
+                  <span class="stat-value">{{ statsByLeague()[league]?.high3Series || 0 }}</span>
+                  <span class="stat-key">High Series</span>
+                </div>
+                <div class="stat-cell">
+                  <span class="stat-value">{{ statsByLeague()[league]?.totalGames || 0 }}</span>
+                  <span class="stat-key">Games</span>
+                </div>
+              </div>
+
+              @if (selectedEntity(); as entity) {
+                @if (entity.handicap.system === "percentOfBase") {
+                  <h2 class="sec-heading"><span>Handicap</span><span class="divider-line"></span></h2>
+                  <div class="handicap-card">
+                    <span>{{ entity.handicap.percentage }}% of {{ entity.handicap.baseScore }}</span>
+                    <span class="handicap-value">+{{ handicapForLeague(entity, statsByLeague()[league]?.averageScore || 0) }}</span>
+                  </div>
+                }
+              }
+
+              @if (selectedAchievements().length) {
+                <h2 class="sec-heading"><span>Achievements</span><span class="divider-line"></span></h2>
+                <div class="achievement-list">
+                  @for (ach of selectedAchievements(); track ach.type) {
+                    <ion-chip class="achievement-chip">
+                      <ion-icon name="ribbon-outline"></ion-icon>
+                      <ion-label>{{ ach.label }}: {{ ach.value }}</ion-label>
+                    </ion-chip>
+                  }
+                </div>
+              }
             </section>
+          </ion-segment-content>
+
+          <ion-segment-content id="Overall-{{ league }}">
+            @if (gamesByLeague()[league]?.length) {
+              <section class="tab">
+                <app-stat-display
+                  [statDefinitions]="statDefinitions"
+                  [title]="'Overall Stats'"
+                  [currentStats]="statsByLeague()[league]"
+                  [prevStats]="overallStats()">
+                </app-stat-display>
+                @for (highlight of leagueHighlights()[league]; track highlight.title) {
+                  <app-stat-highlight-item
+                    [title]="highlight.title"
+                    [item]="highlight.item"
+                    [allItems]="highlight.allItems"
+                    [sortMode]="highlight.sortMode"
+                    [totalGames]="statsByLeague()[league].totalGames"
+                    [emptyMessage]="highlight.emptyMessage"
+                    [imageUrlBase]="highlight.imageUrlBase"
+                    [roundImage]="highlight.roundImage">
+                  </app-stat-highlight-item>
+                }
+                <h2 class="sec-heading"><span>Score Analysis</span><span class="divider-line"></span></h2>
+                <figure class="chart-card">
+                  <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+                </figure>
+              </section>
+            } @else {
+              <ion-text class="no-game-text">No games yet for this league.</ion-text>
+            }
           </ion-segment-content>
 
           <ion-segment-content id="Spares-{{ league }}">
-            <section class="tab">
-              <app-stat-spare [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
-              </app-stat-spare>
-              <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
-              <figure class="chart-card">
-                <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-              </figure>
-            </section>
+            @if (gamesByLeague()[league]?.length) {
+              <section class="tab">
+                <app-stat-spare [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
+                </app-stat-spare>
+                <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
+                <figure class="chart-card">
+                  <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+                </figure>
+              </section>
+            } @else {
+              <ion-text class="no-game-text">No games yet for this league.</ion-text>
+            }
           </ion-segment-content>
 
           <ion-segment-content id="Pins-{{ league }}">
+            @if (gamesByLeague()[league]?.length) {
+              <section class="tab">
+                <app-stat-display
+                  [title]="'Pin Stats'"
+                  [statDefinitions]="PIN_STAT_DEFINITIONS"
+                  [currentStats]="statsByLeague()[league]"
+                  [prevStats]="overallStats()">
+                </app-stat-display>
+                <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-stat-pin-leave>
+                <app-stat-pin-leave
+                  [title]="'Most Common Leaves'"
+                  [leaveStats]="leaveStatsByLeague()[league].common"
+                  [allLeaves]="leaveStatsByLeague()[league].all">
+                </app-stat-pin-leave>
+              </section>
+            } @else {
+              <ion-text class="no-game-text">No games yet for this league.</ion-text>
+            }
+          </ion-segment-content>
+
+          <ion-segment-content id="Finances-{{ league }}">
             <section class="tab">
-              <app-stat-display
-                [title]="'Pin Stats'"
-                [statDefinitions]="PIN_STAT_DEFINITIONS"
-                [currentStats]="statsByLeague()[league]"
-                [prevStats]="overallStats()">
-              </app-stat-display>
-              <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-stat-pin-leave>
-              <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-stat-pin-leave>
-              <app-stat-pin-leave
-                [title]="'Most Common Leaves'"
-                [leaveStats]="leaveStatsByLeague()[league].common"
-                [allLeaves]="leaveStatsByLeague()[league].all">
-              </app-stat-pin-leave>
+              @if (selectedFinance(); as fin) {
+                <div class="stat-grid">
+                  <div class="stat-cell">
+                    <span class="stat-value">{{ fin.weeklyCost | number: "1.0-2" }}</span>
+                    <span class="stat-key">Weekly Cost</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-value">{{ fin.seasonCost | number: "1.0-2" }}</span>
+                    <span class="stat-key">Season Cost</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-value">{{ fin.totalWinnings | number: "1.0-2" }}</span>
+                    <span class="stat-key">Winnings</span>
+                  </div>
+                  <div class="stat-cell" [class.profit]="fin.profitLoss >= 0" [class.loss]="fin.profitLoss < 0">
+                    <span class="stat-value">{{ fin.profitLoss | number: "1.0-2" }}</span>
+                    <span class="stat-key">Profit / Loss</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-value">{{ fin.balance | number: "1.0-2" }}</span>
+                    <span class="stat-key">Balance Owed</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-value">{{ fin.costPerGame | number: "1.0-2" }}</span>
+                    <span class="stat-key">Cost / Game</span>
+                  </div>
+                </div>
+                <ion-note class="finance-hint"
+                  >Set weekly fees when you create or edit the league. Per-week payment tracking is coming soon.</ion-note
+                >
+              } @else {
+                <ion-text class="no-game-text">No financial data. Edit this league to add weekly fees.</ion-text>
+              }
             </section>
           </ion-segment-content>
 
           <ion-segment-content id="Games-{{ league }}">
-            <app-game-list [games]="gamesByLeague()[league]" [gameCount]="gamesByLeague()[league].length" [isLeaguePage]="true" [batchSize]="30">
-            </app-game-list>
+            @if (gamesByLeague()[league]?.length) {
+              <app-game-list [games]="gamesByLeague()[league]" [gameCount]="gamesByLeague()[league].length" [isLeaguePage]="true" [batchSize]="30">
+              </app-game-list>
+            } @else {
+              <ion-text class="no-game-text">No games yet for this league.</ion-text>
+            }
           </ion-segment-content>
         </ion-segment-view>
       </ion-content>

@@ -29,6 +29,8 @@
   </ion-item>
 }
 
+<app-league-form [isOpen]="isFormOpen()" [league]="null" (saved)="onFormSaved($event)" (cancelled)="onFormCancelled()"></app-league-form>
+
 <ion-modal [isOpen]="isModalOpen()" #modal>
   <ng-template>
     <ion-header>

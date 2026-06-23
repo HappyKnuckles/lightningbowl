@@ -1,0 +1,19 @@
+ion-list-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium, #7c7c7a);
+  margin-top: 8px;
+}
+
+.hint {
+  display: block;
+  padding: 4px 16px 8px;
+  font-size: 0.75rem;
+  color: var(--ion-color-medium, #7c7c7a);
+}
+
+ion-input[type="color"] {
+  max-width: 64px;
+}

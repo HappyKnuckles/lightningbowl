@@ -1,0 +1,210 @@
+<ion-modal [isOpen]="isOpen()" (didDismiss)="cancel()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button (click)="cancel()">Cancel</ion-button>
+        </ion-buttons>
+        <ion-title>{{ isEdit ? "Edit League" : "New League" }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button strong="true" [disabled]="!model.name.trim()" (click)="save()">Save</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding-bottom">
+      <ion-list>
+        <ion-list-header>Details</ion-list-header>
+        <ion-item>
+          <ion-input label="Name" labelPlacement="stacked" placeholder="e.g. Monday Night Classic" [(ngModel)]="model.name" required></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-select label="Event type" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="model.eventType">
+            @for (type of eventTypes; track type) {
+              <ion-select-option [value]="type">{{ type }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Bowling center" labelPlacement="stacked" placeholder="Center name" [(ngModel)]="model.bowlingCenter"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Lane pattern" labelPlacement="stacked" placeholder="e.g. House / Sport shot" [(ngModel)]="model.lanePattern"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-toggle [(ngModel)]="model.active">Active</ion-toggle>
+        </ion-item>
+      </ion-list>
+
+      <ion-list>
+        <ion-list-header>Schedule</ion-list-header>
+        <ion-item>
+          <ion-select label="Cadence" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="model.scheduleType">
+            @for (type of scheduleTypes; track type) {
+              <ion-select-option [value]="type">{{ type }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+        @if (model.scheduleType !== "custom") {
+          <ion-item>
+            <ion-select label="Day of week" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="model.dayOfWeek">
+              <ion-select-option [value]="''">—</ion-select-option>
+              @for (day of days; track day) {
+                <ion-select-option [value]="day">{{ day }}</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+        }
+        <ion-item>
+          <ion-input label="Start time" labelPlacement="stacked" type="time" [(ngModel)]="model.startTime"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Games per night"
+            labelPlacement="stacked"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            [(ngModel)]="model.numberOfGamesPerNight"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Weeks scheduled"
+            labelPlacement="stacked"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            [(ngModel)]="model.weeksScheduled"></ion-input>
+        </ion-item>
+        @if (model.scheduleType === "custom") {
+          <ion-note class="hint">Pick the specific league-night dates.</ion-note>
+          <ion-datetime presentation="date" [multiple]="true" [(ngModel)]="model.customDatesIso"></ion-datetime>
+        }
+      </ion-list>
+
+      <ion-list>
+        <ion-list-header>Format</ion-list-header>
+        <ion-item><ion-toggle [(ngModel)]="model.formatFlags.scratch">Scratch</ion-toggle></ion-item>
+        <ion-item><ion-toggle [(ngModel)]="model.formatFlags.team">Team</ion-toggle></ion-item>
+        <ion-item><ion-toggle [(ngModel)]="model.formatFlags.doubles">Doubles</ion-toggle></ion-item>
+        <ion-item><ion-toggle [(ngModel)]="model.formatFlags.singles">Singles</ion-toggle></ion-item>
+        <ion-item><ion-toggle [(ngModel)]="model.formatFlags.mixed">Mixed</ion-toggle></ion-item>
+        <ion-item>
+          <ion-select label="Sanctioning body" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="model.sanctioningBody">
+            @for (body of sanctioningBodies; track body) {
+              <ion-select-option [value]="body">{{ body }}</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+      </ion-list>
+
+      <ion-list>
+        <ion-list-header>Handicap</ion-list-header>
+        <ion-item>
+          <ion-select label="System" labelPlacement="stacked" interface="action-sheet" [(ngModel)]="model.handicapSystem">
+            <ion-select-option value="scratch">Scratch (no handicap)</ion-select-option>
+            <ion-select-option value="percentOfBase">Percent of base</ion-select-option>
+            <ion-select-option value="custom">Custom</ion-select-option>
+          </ion-select>
+        </ion-item>
+        @if (model.handicapSystem === "percentOfBase") {
+          <ion-item>
+            <ion-input
+              label="Percentage (%)"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="numeric"
+              [(ngModel)]="model.handicapPercentage"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              label="Base score"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="numeric"
+              [(ngModel)]="model.handicapBaseScore"></ion-input>
+          </ion-item>
+          <ion-note class="hint">e.g. 90% of 220</ion-note>
+        }
+      </ion-list>
+
+      <ion-list>
+        <ion-list-header>Weekly fees</ion-list-header>
+        <ion-item
+          ><ion-input label="Lineage" labelPlacement="stacked" type="number" inputmode="decimal" [(ngModel)]="model.fees.lineage"></ion-input
+        ></ion-item>
+        <ion-item
+          ><ion-input label="Prize fund" labelPlacement="stacked" type="number" inputmode="decimal" [(ngModel)]="model.fees.prizeFund"></ion-input
+        ></ion-item>
+        <ion-item
+          ><ion-input label="Secretary" labelPlacement="stacked" type="number" inputmode="decimal" [(ngModel)]="model.fees.secretary"></ion-input
+        ></ion-item>
+        <ion-item
+          ><ion-input
+            label="Sanction (per season)"
+            labelPlacement="stacked"
+            type="number"
+            inputmode="decimal"
+            [(ngModel)]="model.fees.sanction"></ion-input
+        ></ion-item>
+        <ion-item
+          ><ion-input label="Side pots" labelPlacement="stacked" type="number" inputmode="decimal" [(ngModel)]="model.fees.sidePots"></ion-input
+        ></ion-item>
+        <ion-item
+          ><ion-input label="Brackets" labelPlacement="stacked" type="number" inputmode="decimal" [(ngModel)]="model.fees.brackets"></ion-input
+        ></ion-item>
+      </ion-list>
+
+      @if (isTournament) {
+        <ion-list>
+          <ion-list-header>Tournament</ion-list-header>
+          <ion-item
+            ><ion-input
+              label="Entry fee"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="decimal"
+              [(ngModel)]="model.tournamentEntryFee"></ion-input
+          ></ion-item>
+          <ion-item
+            ><ion-input
+              label="Qualifying blocks"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="numeric"
+              [(ngModel)]="model.tournamentQualifyingBlocks"></ion-input
+          ></ion-item>
+          <ion-item
+            ><ion-input
+              label="Match-play rounds"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="numeric"
+              [(ngModel)]="model.tournamentMatchPlayRounds"></ion-input
+          ></ion-item>
+          <ion-item
+            ><ion-input
+              label="Stepladder finalists"
+              labelPlacement="stacked"
+              type="number"
+              inputmode="numeric"
+              [(ngModel)]="model.tournamentStepladderFinalists"></ion-input
+          ></ion-item>
+        </ion-list>
+      }
+
+      <ion-list>
+        <ion-list-header>Notes</ion-list-header>
+        <ion-item>
+          <ion-textarea label="Description" labelPlacement="stacked" autoGrow="true" [(ngModel)]="model.description"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-textarea label="Notes" labelPlacement="stacked" autoGrow="true" [(ngModel)]="model.notes"></ion-textarea>
+        </ion-item>
+        <ion-item>
+          <ion-input label="Accent color" labelPlacement="stacked" type="color" [(ngModel)]="model.color"></ion-input>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ng-template>
+</ion-modal>

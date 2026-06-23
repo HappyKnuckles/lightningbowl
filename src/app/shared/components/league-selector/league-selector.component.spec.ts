@@ -6,7 +6,9 @@ import { AppFacade } from 'src/app/core/stores/app.facade';
 
 const mockLeaguesStore = {
   leagues: jasmine.createSpy('leagues').and.returnValue([]),
+  leagueNames: jasmine.createSpy('leagueNames').and.returnValue([]),
   addLeague: jasmine.createSpy('addLeague').and.returnValue(Promise.resolve()),
+  deleteLeague: jasmine.createSpy('deleteLeague').and.returnValue(Promise.resolve()),
 };
 
 const mockAppFacade = {

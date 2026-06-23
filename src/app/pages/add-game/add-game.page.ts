@@ -366,11 +366,11 @@ export class AddGamePage implements OnInit {
 
       if (key === 'league') {
         const isPractice = value === '' || value === 'New';
-        this.gameComponents.forEach((grid, i) => {
+        this.gameComponents.forEach((game, i) => {
           if (trackIndexes.includes(i)) {
-            grid.leagueSelector.selectedLeague.set(league as string);
-            grid.checkbox.checked = isPractice;
-            grid.checkbox.disabled = !isPractice;
+            game.leagueSelector.selectedLeague.set(league as string);
+            game.checkbox.checked = isPractice;
+            game.checkbox.disabled = !isPractice;
           }
         });
       }

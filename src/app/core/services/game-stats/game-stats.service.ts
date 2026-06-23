@@ -28,101 +28,62 @@ export class GameStatsService {
     private statsPersistenceService: StatsPersistenceService,
   ) {}
 
-  get prevStats(): Signal<PrevStats> {
-    return this.statsPersistenceService.prevStats;
-  }
+  public readonly prevStats: Signal<PrevStats> = this.statsPersistenceService.prevStats;
 
-  #bestBallStats: Signal<HighlightItemStats> = computed(() => {
+  public readonly bestBallStats: Signal<HighlightItemStats> = computed(() => {
     return this.calculateBestBallStats(this.gameFilterService.filteredGames());
   });
-  get bestBallStats(): Signal<HighlightItemStats> {
-    return this.#bestBallStats;
-  }
 
-  #mostPlayedBallStats: Signal<HighlightItemStats> = computed(() => {
+  public readonly mostPlayedBallStats: Signal<HighlightItemStats> = computed(() => {
     return this.calculateMostPlayedBallStats(this.gameFilterService.filteredGames());
   });
-  get mostPlayedBallStats(): Signal<HighlightItemStats> {
-    return this.#mostPlayedBallStats;
-  }
 
-  #allBallStats: Signal<HighlightItemStats[]> = computed(() => {
+  public readonly allBallStats: Signal<HighlightItemStats[]> = computed(() => {
     return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
   });
-  get allBallStats(): Signal<HighlightItemStats[]> {
-    return this.#allBallStats;
-  }
 
-  #allPatternStats: Signal<HighlightItemStats[]> = computed(() => {
+  public readonly allPatternStats: Signal<HighlightItemStats[]> = computed(() => {
     return this.patternStatsCalculatorService.calculateAllPatternStats(this.gameFilterService.filteredGames());
   });
-  get allPatternStats(): Signal<HighlightItemStats[]> {
-    return this.#allPatternStats;
-  }
 
-  #bestPatternStats: Signal<HighlightItemStats> = computed(() => {
+  public readonly bestPatternStats: Signal<HighlightItemStats> = computed(() => {
     return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
   });
-  get bestPatternStats(): Signal<HighlightItemStats> {
-    return this.#bestPatternStats;
-  }
 
-  #mostPlayedPatternStats: Signal<HighlightItemStats> = computed(() => {
+  public readonly mostPlayedPatternStats: Signal<HighlightItemStats> = computed(() => {
     return this.patternStatsCalculatorService.calculateMostPlayedPatternStats(this.gameFilterService.filteredGames());
   });
-  get mostPlayedPatternStats(): Signal<HighlightItemStats> {
-    return this.#mostPlayedPatternStats;
-  }
 
-  #allLeaves: Signal<LeaveStats[]> = computed(() => {
+  public readonly allLeaves: Signal<LeaveStats[]> = computed(() => {
     return this.calculateAllLeaves(this.gameFilterService.filteredGames());
   });
 
-  get allLeaves(): Signal<LeaveStats[]> {
-    return this.#allLeaves;
-  }
-
-  #commonLeaves = computed(() => {
-    return this.calculateMostCommonLeaves(this.#allLeaves());
+  public readonly commonLeaves: Signal<LeaveStats[]> = computed(() => {
+    return this.calculateMostCommonLeaves(this.allLeaves());
   });
-  get commonLeaves(): Signal<LeaveStats[]> {
-    return this.#commonLeaves;
-  }
 
-  #bestLeaves = computed(() => {
-    return this.calculateBestSpares(this.#allLeaves());
+  public readonly bestLeaves: Signal<LeaveStats[]> = computed(() => {
+    return this.calculateBestSpares(this.allLeaves());
   });
-  get bestLeaves(): Signal<LeaveStats[]> {
-    return this.#bestLeaves;
-  }
 
-  #worstLeaves = computed(() => {
-    return this.calculateWorstSpares(this.#allLeaves());
+  public readonly worstLeaves: Signal<LeaveStats[]> = computed(() => {
+    return this.calculateWorstSpares(this.allLeaves());
   });
-  get worstLeaves(): Signal<LeaveStats[]> {
-    return this.#worstLeaves;
-  }
 
-  #currentStats: Signal<Stats> = computed(() => {
+  public readonly currentStats: Signal<Stats> = computed(() => {
     const games = this.gameFilterService.filteredGames();
     return this.calculateBowlingStats(games) as Stats;
   });
-  get currentStats(): Signal<Stats> {
-    return this.#currentStats;
-  }
 
-  #overallStats: Signal<Stats> = computed(() => {
+  public readonly overallStats: Signal<Stats> = computed(() => {
     const games = this.gamesStore.games();
     return this.calculateBowlingStats(games) as Stats;
   });
-  get overallStats(): Signal<Stats> {
-    return this.#overallStats;
-  }
 
-  get seriesStats(): SeriesStats {
-    this.seriesStatsCalculatorService.calculateSeriesStats(this.gamesStore.games());
-    return this.seriesStatsCalculatorService.seriesStats;
-  }
+  public readonly seriesStats: Signal<SeriesStats> = computed(() => {
+    const games = this.gamesStore.games();
+    return this.seriesStatsCalculatorService.calculateSeriesStats(games);
+  });
 
   calculateBowlingStats(gameHistory: Game[]): Stats {
     const seriesStats = this.seriesStatsCalculatorService.calculateSeriesStats(gameHistory);
@@ -183,10 +144,6 @@ export class GameStatsService {
 
   calculateBestBallStats(gameHistory: Game[]): HighlightItemStats {
     return this.ballStatsCalculatorService.calculateBestBallStats(gameHistory);
-  }
-
-  calculateMostPlayedBall(gameHistory: Game[]): HighlightItemStats {
-    return this.ballStatsCalculatorService.calculateMostPlayedBallStats(gameHistory);
   }
 
   calculateAllBallStats(gameHistory: Game[]): HighlightItemStats[] {

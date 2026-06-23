@@ -42,19 +42,13 @@ export class GameFilterService {
     }, 0);
   });
 
-  #filteredGames = computed(() => {
+  readonly filteredGames = computed(() => {
     const games = this.gamesStore.games();
     const filters = this.filters();
     return this.filterGames(games, filters);
   });
-  get filteredGames() {
-    return this.#filteredGames;
-  }
 
-  #filters = signal<GameFilter>({ ...this.defaultFilters });
-  get filters() {
-    return this.#filters;
-  }
+  readonly filters = signal<GameFilter>({ ...this.defaultFilters });
 
   constructor(
     private utilsService: UtilsService,

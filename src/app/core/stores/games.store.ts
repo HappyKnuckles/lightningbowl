@@ -7,12 +7,8 @@ import { sortGameHistoryByDate } from '../utils/sort-utils/sort.utils';
 
 @Injectable({ providedIn: 'root' })
 export class GamesStore {
-  #games = signal<Game[]>([]);
+  readonly games = signal<Game[]>([]);
   #firstGameDate: number | null = null;
-
-  get games() {
-    return this.#games;
-  }
 
   constructor(
     private storageRepository: StorageRepository,
@@ -62,7 +58,7 @@ export class GamesStore {
       }
 
       sortGameHistoryByDate(gameHistory, false);
-      this.#games.set(gameHistory);
+      this.games.set(gameHistory);
       this.updateFirstGameDate(this.games());
 
       return gameHistory;
@@ -78,9 +74,9 @@ export class GamesStore {
     try {
       const key = StorageKeys.game(gameData.gameId);
       await this.storageRepository.set(key, gameData);
-      const previousGame = this.#games().find((game) => game.gameId === gameData.gameId);
+      const previousGame = this.games().find((game) => game.gameId === gameData.gameId);
       let updatedGames: Game[] = [];
-      this.#games.update((games) => {
+      this.games.update((games) => {
         const index = games.findIndex((game) => game.gameId === gameData.gameId);
         if (index !== -1) {
           updatedGames = games.map((game, i) => (i === index ? gameData : game));
@@ -128,9 +124,9 @@ export class GamesStore {
     try {
       const key = StorageKeys.game(gameId);
       await this.storageRepository.remove(key);
-      const deletedGame = this.#games().find((game) => game.gameId === gameId);
+      const deletedGame = this.games().find((game) => game.gameId === gameId);
       let updatedGames: Game[] = [];
-      this.#games.update((games) => {
+      this.games.update((games) => {
         const newGames = games.filter((g) => g.gameId !== gameId);
         updatedGames = [...newGames];
         return updatedGames;
@@ -143,11 +139,11 @@ export class GamesStore {
   }
 
   updateGamesInMemory(updater: (games: Game[]) => Game[]): void {
-    this.#games.update(updater);
+    this.games.update(updater);
   }
 
   clearGames(): void {
-    this.#games.set([]);
+    this.games.set([]);
     this.updateFirstGameDate([]);
   }
 

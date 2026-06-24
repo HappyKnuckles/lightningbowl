@@ -1,6 +1,4 @@
 import { FeeStructure, Payment, Winning, createEmptyFeeStructure } from './finance.model';
-import { Standing } from './standing.model';
-import { Team } from './team.model';
 import { WeeklySession } from './weekly-session.model';
 
 /**
@@ -26,8 +24,6 @@ export interface Season {
   sessions: WeeklySession[];
   payments: Payment[];
   winnings: Winning[];
-  teams: Team[];
-  standings: Standing[];
 }
 
 export function createSeason(id: string, seasonNumber: number, seasonName: string, partial: Partial<Season> = {}): Season {
@@ -45,8 +41,6 @@ export function createSeason(id: string, seasonNumber: number, seasonName: strin
     sessions: [],
     payments: [],
     winnings: [],
-    teams: [],
-    standings: [],
     ...partial,
   };
 }

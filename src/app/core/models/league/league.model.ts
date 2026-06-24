@@ -1,5 +1,4 @@
 import { generateId } from 'src/app/core/utils/id-utils/id.utils';
-import { Achievement } from './achievement.model';
 import { HandicapConfig, createDefaultHandicapConfig } from './handicap.model';
 import { Season } from './season.model';
 import { TournamentConfig } from './tournament.model';
@@ -7,9 +6,9 @@ import { TournamentConfig } from './tournament.model';
 /** The current persisted schema version for a League aggregate. Bump on breaking changes. */
 export const LEAGUE_SCHEMA_VERSION = 1;
 
-export type LeagueEventType = 'League' | 'Tournament' | 'PracticeSeries' | 'SportShotLeague' | 'YouthLeague' | 'SeniorLeague';
+export type LeagueEventType = 'League' | 'Tournament';
 
-export const LEAGUE_EVENT_TYPES: LeagueEventType[] = ['League', 'Tournament', 'PracticeSeries', 'SportShotLeague', 'YouthLeague', 'SeniorLeague'];
+export const LEAGUE_EVENT_TYPES: LeagueEventType[] = ['League', 'Tournament'];
 
 export type SanctioningBody = 'USBC' | 'DKB' | 'None';
 
@@ -74,7 +73,6 @@ export interface League {
   seasons: Season[];
   /** Present when eventType === 'Tournament'. */
   tournament?: TournamentConfig;
-  achievements?: Achievement[];
   createdAt: number;
   updatedAt: number;
   schemaVersion: number;
@@ -102,7 +100,6 @@ export function createLeague(name: string, partial: Partial<League> = {}): Leagu
     sanctioningBody: 'None',
     handicap: createDefaultHandicapConfig(),
     seasons: [],
-    achievements: [],
     createdAt: now,
     updatedAt: now,
     schemaVersion: LEAGUE_SCHEMA_VERSION,

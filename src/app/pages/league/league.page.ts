@@ -8,7 +8,6 @@ import {
   IonButton,
   IonButtons,
   IonCheckbox,
-  IonChip,
   IonContent,
   IonHeader,
   IonIcon,
@@ -51,12 +50,11 @@ import { LEAGUE_STAT_DEFINITIONS, PIN_STAT_DEFINITIONS } from 'src/app/core/conf
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { Achievement, FinanceSummary, League } from 'src/app/core/models/league';
+import { FinanceSummary, League } from 'src/app/core/models/league';
 import { LeagueLeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { AchievementService } from 'src/app/core/services/league/achievement.service';
 import { HandicapService } from 'src/app/core/services/league/handicap.service';
 import { LeagueFinanceService } from 'src/app/core/services/league/league-finance.service';
 import { SeasonService } from 'src/app/core/services/league/season.service';
@@ -116,7 +114,6 @@ export interface LeagueCardVm {
     IonToolbar,
     IonCheckbox,
     IonBadge,
-    IonChip,
     IonNote,
     IonProgressBar,
     FormsModule,
@@ -144,8 +141,8 @@ export class LeaguePage {
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
   imagesUrl = environment.imagesUrl;
-  selectedSegment = 'Dashboard';
-  segments: string[] = ['Dashboard', 'Overall', 'Spares', 'Pins', 'Finances', 'Games'];
+  selectedSegment = 'Overall';
+  segments: string[] = ['Overall', 'Spares', 'Pins', 'Finances', 'Games'];
   isEditMode: Record<string, boolean> = {};
 
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
@@ -224,7 +221,12 @@ export class LeaguePage {
     const cards: LeagueCardVm[] = [];
 
     for (const entity of entities) {
-      cards.push(this.buildCard(entity.name, entity, gamesByName[entity.name] ?? [], statsByName[entity.name]));
+      const games = gamesByName[entity.name] ?? [];
+      // Hide leagues/tournaments that have no games played yet.
+      if (games.length === 0) {
+        continue;
+      }
+      cards.push(this.buildCard(entity.name, entity, games, statsByName[entity.name]));
     }
     for (const name of Object.keys(gamesByName)) {
       if (!entityNames.has(name)) {
@@ -246,19 +248,6 @@ export class LeaguePage {
       return null;
     }
     return this.financeService.summarizeSeasons(league.seasons);
-  });
-
-  readonly selectedAchievements = computed<Achievement[]>(() => {
-    const name = this.selectedLeague();
-    if (!name) {
-      return [];
-    }
-    return this.achievementService.deriveAchievements(this.gamesByLeague()[name] ?? []);
-  });
-
-  readonly selectedCountdown = computed<number | null>(() => {
-    const league = this.selectedEntity();
-    return league ? this.seasonService.countdownDays(league) : null;
   });
 
   readonly selectedSeasonProgress = computed(() => {
@@ -284,7 +273,6 @@ export class LeaguePage {
     private seasonService: SeasonService,
     private financeService: LeagueFinanceService,
     private handicapService: HandicapService,
-    private achievementService: AchievementService,
   ) {
     addIcons({
       addOutline,
@@ -314,7 +302,7 @@ export class LeaguePage {
     if (league) {
       this.destroyCharts(league);
     }
-    this.selectedSegment = 'Dashboard';
+    this.selectedSegment = 'Overall';
     this.selectedLeague.set(null);
   }
 
@@ -384,7 +372,7 @@ export class LeaguePage {
   }
 
   onSegmentChanged(league: string, event: SegmentCustomEvent): void {
-    this.selectedSegment = event.detail.value?.toString() || 'Dashboard';
+    this.selectedSegment = event.detail.value?.toString() || 'Overall';
     this.generateCharts(league);
     setTimeout(() => {
       this.content?.scrollToTop(300);
@@ -477,7 +465,7 @@ export class LeaguePage {
   }
 
   openLeague(card: LeagueCardVm): void {
-    this.selectedSegment = 'Dashboard';
+    this.selectedSegment = 'Overall';
     this.selectedLeague.set(card.name);
   }
 

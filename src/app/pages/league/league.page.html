@@ -122,8 +122,19 @@
             <ion-button color="medium" (click)="selectedLeague.set(null)">
               <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
             </ion-button>
+            @if (selectedEntity(); as entity) {
+              <ion-badge class="event-badge">{{ entity.eventType }}</ion-badge>
+            }
           </ion-buttons>
           <ion-title>{{ league }}</ion-title>
+          @if (selectedEntity()) {
+            <ion-buttons slot="end">
+              <ion-button color="medium" (click)="startNewSeason()">
+                <ion-icon name="calendar-outline" slot="start"></ion-icon>
+                New Season
+              </ion-button>
+            </ion-buttons>
+          }
         </ion-toolbar>
 
         <ion-toolbar>
@@ -135,98 +146,27 @@
             }
           </ion-segment>
         </ion-toolbar>
+        @if (selectedSeasonProgress(); as prog) {
+          @if (prog.weeksScheduled > 0) {
+            <ion-progress-bar [value]="prog.fraction"></ion-progress-bar>
+          }
+        }
       </ion-header>
 
       <ion-content #modalContent>
         <ion-segment-view>
-          <ion-segment-content id="Dashboard-{{ league }}">
-            <section class="tab">
-              @if (selectedEntity(); as entity) {
-                <div class="dash-header">
-                  <ion-badge class="event-badge">{{ entity.eventType }}</ion-badge>
-                  @if (entity.bowlingCenter) {
-                    <span class="dash-sub">{{ entity.bowlingCenter }}</span>
-                  }
-                  @if (entity.dayOfWeek) {
-                    <span class="dash-sub">{{ entity.dayOfWeek }}{{ entity.startTime ? " · " + entity.startTime : "" }}</span>
-                  }
-                </div>
-
-                @if (selectedCountdown() !== null) {
-                  <div class="countdown-card">
-                    <ion-icon name="time-outline"></ion-icon>
-                    <span
-                      >Next league night in <strong>{{ selectedCountdown() }}</strong> day(s)</span
-                    >
-                  </div>
-                }
-
-                @if (selectedSeasonProgress(); as prog) {
-                  @if (prog.weeksScheduled > 0) {
-                    <div class="progress-block">
-                      <div class="progress-label">
-                        <span>Season progress</span>
-                        <span>{{ prog.weeksCompleted }} / {{ prog.weeksScheduled }} weeks</span>
-                      </div>
-                      <ion-progress-bar [value]="prog.fraction"></ion-progress-bar>
-                    </div>
-                  }
-                }
-
-                <div class="season-actions">
-                  <ion-button size="small" fill="outline" (click)="startNewSeason()">
-                    <ion-icon name="calendar-outline" slot="start"></ion-icon>
-                    Start New Season
-                  </ion-button>
-                </div>
-              }
-
-              <div class="stat-grid">
-                <div class="stat-cell">
-                  <span class="stat-value">{{ statsByLeague()[league]?.averageScore | number: "1.1-2" }}</span>
-                  <span class="stat-key">Average</span>
-                </div>
-                <div class="stat-cell">
-                  <span class="stat-value">{{ statsByLeague()[league]?.highGame || 0 }}</span>
-                  <span class="stat-key">High Game</span>
-                </div>
-                <div class="stat-cell">
-                  <span class="stat-value">{{ statsByLeague()[league]?.high3Series || 0 }}</span>
-                  <span class="stat-key">High Series</span>
-                </div>
-                <div class="stat-cell">
-                  <span class="stat-value">{{ statsByLeague()[league]?.totalGames || 0 }}</span>
-                  <span class="stat-key">Games</span>
-                </div>
-              </div>
-
-              @if (selectedEntity(); as entity) {
-                @if (entity.handicap.system === "percentOfBase") {
-                  <h2 class="sec-heading"><span>Handicap</span><span class="divider-line"></span></h2>
-                  <div class="handicap-card">
-                    <span>{{ entity.handicap.percentage }}% of {{ entity.handicap.baseScore }}</span>
-                    <span class="handicap-value">+{{ handicapForLeague(entity, statsByLeague()[league]?.averageScore || 0) }}</span>
-                  </div>
-                }
-              }
-
-              @if (selectedAchievements().length) {
-                <h2 class="sec-heading"><span>Achievements</span><span class="divider-line"></span></h2>
-                <div class="achievement-list">
-                  @for (ach of selectedAchievements(); track ach.type) {
-                    <ion-chip class="achievement-chip">
-                      <ion-icon name="ribbon-outline"></ion-icon>
-                      <ion-label>{{ ach.label }}: {{ ach.value }}</ion-label>
-                    </ion-chip>
-                  }
-                </div>
-              }
-            </section>
-          </ion-segment-content>
-
           <ion-segment-content id="Overall-{{ league }}">
             @if (gamesByLeague()[league]?.length) {
               <section class="tab">
+                @if (selectedEntity(); as entity) {
+                  @if (entity.handicap.system === "percentOfBase") {
+                    <h2 class="sec-heading"><span>Handicap</span><span class="divider-line"></span></h2>
+                    <div class="handicap-card">
+                      <span>{{ entity.handicap.percentage }}% of {{ entity.handicap.baseScore }}</span>
+                      <span class="handicap-value">+{{ handicapForLeague(entity, statsByLeague()[league]?.averageScore || 0) }}</span>
+                    </div>
+                  }
+                }
                 <app-stat-display
                   [statDefinitions]="statDefinitions"
                   [title]="'Overall Stats'"

@@ -120,21 +120,7 @@
   }
 }
 
-// ---- Detail dashboard ----
-.dash-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 16px 20px 4px;
-
-  .dash-sub {
-    font-size: 0.85rem;
-    color: var(--ion-color-medium, #8c8c8c);
-  }
-}
-
-.countdown-card,
+// ---- Detail handicap ----
 .handicap-card {
   display: flex;
   align-items: center;
@@ -158,23 +144,6 @@
   .handicap-value {
     font-weight: 700;
     color: var(--ion-color-primary, #3880ff);
-  }
-}
-
-.progress-block {
-  margin: 12px 20px;
-
-  .progress-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: var(--ion-color-medium, #8c8c8c);
-    margin-bottom: 6px;
-  }
-
-  ion-progress-bar {
-    border-radius: 6px;
-    height: 8px;
   }
 }
 
@@ -213,23 +182,6 @@
       color: var(--ion-color-danger, #eb445a);
     }
   }
-}
-
-.season-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin: 4px 16px 8px;
-}
-
-.achievement-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 16px 12px;
-}
-
-.achievement-chip ion-icon {
-  color: var(--ion-color-warning, #ffc409);
 }
 
 .finance-hint {

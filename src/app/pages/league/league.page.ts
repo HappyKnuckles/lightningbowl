@@ -20,6 +20,8 @@ import {
   IonNote,
   IonProgressBar,
   IonRefresher,
+  IonSelect,
+  IonSelectOption,
   IonSegment,
   IonSegmentButton,
   IonSegmentContent,
@@ -50,13 +52,14 @@ import { LEAGUE_STAT_DEFINITIONS, PIN_STAT_DEFINITIONS } from 'src/app/core/conf
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
 import { Game } from 'src/app/core/models/game.model';
-import { FinanceSummary, League } from 'src/app/core/models/league';
+import { FinanceSummary, League, Season } from 'src/app/core/models/league';
 import { LeagueLeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { HandicapService } from 'src/app/core/services/league/handicap.service';
 import { LeagueFinanceService } from 'src/app/core/services/league/league-finance.service';
+import { LeagueStatsService } from 'src/app/core/services/league/league-stats.service';
 import { SeasonService } from 'src/app/core/services/league/season.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
@@ -116,6 +119,8 @@ export interface LeagueCardVm {
     IonBadge,
     IonNote,
     IonProgressBar,
+    IonSelect,
+    IonSelectOption,
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
@@ -159,7 +164,6 @@ export class LeaguePage {
     return this.statService.calculateBowlingStats(games);
   });
 
-  gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
   mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBallStats(games));
@@ -202,6 +206,8 @@ export class LeaguePage {
 
   isVisibilityEdit = signal(false);
   selectedLeague = signal<string | null>(null);
+  /** Season filter for the open league detail; null = all seasons (career). */
+  selectedSeasonId = signal<string | null>(null);
   isRefreshing = signal(false);
 
   // League create/edit form state.
@@ -242,17 +248,71 @@ export class LeaguePage {
     return name ? (this.leaguesStore.getByName(name) ?? null) : null;
   });
 
+  /** Seasons of the open league, newest first. Empty for game-only groups. */
+  readonly availableSeasons = computed<Season[]>(() => {
+    const league = this.selectedEntity();
+    return league ? [...league.seasons].sort((a, b) => b.seasonNumber - a.seasonNumber) : [];
+  });
+
+  /** Games for the open league, narrowed to the selected season (null = all seasons / career). */
+  readonly viewGames = computed<Game[]>(() => {
+    const name = this.selectedLeague();
+    if (!name) {
+      return [];
+    }
+    const all = this.gamesByLeague()[name] ?? [];
+    const seasonId = this.selectedSeasonId();
+    if (!seasonId) {
+      return all;
+    }
+    const season = this.selectedEntity()?.seasons.find((s) => s.id === seasonId);
+    return season ? this.leagueStatsService.gamesForSeason(season, all) : all;
+  });
+
+  readonly viewStats = computed<Stats>(() => this.statService.calculateBowlingStats(this.viewGames()));
+
+  readonly viewReverseGames = computed<Game[]>(() => sortGameHistoryByDate([...this.viewGames()], true));
+
+  readonly viewLeaveStats = computed<LeagueLeaveStats>(() => {
+    const all = this.statService.calculateAllLeaves(this.viewGames());
+    return {
+      all,
+      common: this.statService.calculateMostCommonLeaves(all),
+      best: this.statService.calculateBestSpares(all),
+      worst: this.statService.calculateWorstSpares(all),
+    };
+  });
+
+  readonly viewHighlights = computed(() => {
+    const games = this.viewGames();
+    return buildHighlights({
+      mostPlayedBall: this.statService.calculateMostPlayedBallStats(games),
+      bestBall: this.statService.calculateBestBallStats(games),
+      allBalls: this.statService.calculateAllBallStats(games),
+      mostPlayedPattern: this.statService.calculateMostPlayedPatternStats(games),
+      bestPattern: this.statService.calculateBestPatternStats(games),
+      allPatterns: this.statService.calculateAllPatternStats(games),
+    });
+  });
+
   readonly selectedFinance = computed<FinanceSummary | null>(() => {
     const league = this.selectedEntity();
     if (!league || !league.seasons.length) {
       return null;
     }
-    return this.financeService.summarizeSeasons(league.seasons);
+    const seasonId = this.selectedSeasonId();
+    const seasons = seasonId ? league.seasons.filter((s) => s.id === seasonId) : league.seasons;
+    return this.financeService.summarizeSeasons(seasons);
   });
 
   readonly selectedSeasonProgress = computed(() => {
     const league = this.selectedEntity();
-    return this.seasonService.seasonProgress(league ? this.seasonService.getActiveSeason(league) : undefined);
+    if (!league) {
+      return this.seasonService.seasonProgress(undefined);
+    }
+    const seasonId = this.selectedSeasonId();
+    const season = seasonId ? league.seasons.find((s) => s.id === seasonId) : this.seasonService.getActiveSeason(league);
+    return this.seasonService.seasonProgress(season);
   });
 
   private previousLeagueSelectionState: Record<string, boolean> = {};
@@ -273,6 +333,7 @@ export class LeaguePage {
     private seasonService: SeasonService,
     private financeService: LeagueFinanceService,
     private handicapService: HandicapService,
+    private leagueStatsService: LeagueStatsService,
   ) {
     addIcons({
       addOutline,
@@ -303,7 +364,16 @@ export class LeaguePage {
       this.destroyCharts(league);
     }
     this.selectedSegment = 'Overall';
+    this.selectedSeasonId.set(null);
     this.selectedLeague.set(null);
+  }
+
+  onSeasonChange(event: CustomEvent): void {
+    this.selectedSeasonId.set((event.detail as { value: string | null }).value ?? null);
+    const league = this.selectedLeague();
+    if (league) {
+      this.generateCharts(league, true);
+    }
   }
 
   updateLeagueSelection(league: string, checked: boolean) {
@@ -466,6 +536,7 @@ export class LeaguePage {
 
   openLeague(card: LeagueCardVm): void {
     this.selectedSegment = 'Overall';
+    this.selectedSeasonId.set(null);
     this.selectedLeague.set(card.name);
   }
 
@@ -535,7 +606,7 @@ export class LeaguePage {
 
       this.scoreChartInstances[league] = this.chartService.generateScoreChart(
         this.scoreChart,
-        this.gamesByLeagueReverse()[league],
+        this.viewReverseGames(),
         this.scoreChartInstances[league]!,
         this.chartViewMode,
         () => this.toggleChartView(league),
@@ -551,12 +622,7 @@ export class LeaguePage {
     try {
       if (!this.pinChart) return;
 
-      this.pinChartInstances[league] = this.chartService.generatePinChart(
-        this.pinChart,
-        this.statsByLeague()[league],
-        this.pinChartInstances[league]!,
-        isReload,
-      );
+      this.pinChartInstances[league] = this.chartService.generatePinChart(this.pinChart, this.viewStats(), this.pinChartInstances[league]!, isReload);
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);

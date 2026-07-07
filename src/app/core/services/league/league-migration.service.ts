@@ -8,7 +8,7 @@ import { LeagueRepository } from './league.repository';
 import { SeasonService } from './season.service';
 
 /** Bump when the migration logic must re-run against already-migrated installs. */
-export const LEAGUE_MIGRATION_VERSION = 1;
+export const LEAGUE_MIGRATION_VERSION = 2;
 
 export interface MigrationResult {
   ran: boolean;
@@ -16,13 +16,25 @@ export interface MigrationResult {
   gamesStamped: number;
 }
 
+interface SeasonStamp {
+  leagueId: string;
+  seasonId: string;
+  sessionId: string;
+}
+
 /**
  * One-time, idempotent migration from legacy string-leagues to rich League aggregates.
  *
+ * Every game that pre-dates the migration is folded into its league's Season 1 ("Imported
+ * Season") as a weekly session and stamped with `leagueId`/`seasonId`/`sessionId`. This
+ * holds even when the aggregate already exists (e.g. a league created through the form, or
+ * an earlier migration that ran before those games were added) — such leagues are
+ * reconciled rather than skipped.
+ *
  * Idempotency is guaranteed two ways:
  *  1. A persisted version marker — once at the current version, `run()` is a no-op.
- *  2. Even if the marker were lost, leagues are only created for names that don't already
- *     have an aggregate, and games are only stamped when their ids are missing/changed.
+ *  2. Even without the marker, leagues are only created when missing and a game is only
+ *     (re)stamped/folded when it isn't already assigned to one of its league's seasons.
  *
  * Legacy `league_<name>` keys are intentionally left in place (no deletion = no data loss).
  * Stats are never recomputed/stored, so nothing can be lost in translation.
@@ -52,50 +64,87 @@ export class LeagueMigrationService {
   async migrate(): Promise<MigrationResult> {
     const games = this.gamesStore.games();
     const existing = await this.leagueRepository.loadAll();
-    const byName = new Map(existing.map((l) => [l.name.toLowerCase(), l]));
+    const byName = new Map(existing.map((l) => [l.name.toLowerCase(), this.clone(l)]));
 
     // Collect every league name in play: legacy keys + names referenced by games.
     const legacyNames = await this.leagueRepository.loadLegacyLeagueNames();
     const gameLeagueNames = games.map((g) => g.league).filter((n): n is string => !!n && n !== 'New');
     const allNames = [...new Set([...legacyNames, ...gameLeagueNames])];
 
-    const created: League[] = [];
-    // gameId -> relational ids to stamp.
-    const stamp = new Map<string, { leagueId: string; seasonId: string; sessionId: string }>();
+    const toSave: League[] = [];
+    const stamp = new Map<string, SeasonStamp>();
+    let leaguesCreated = 0;
 
     for (const name of allNames) {
-      if (byName.has(name.toLowerCase())) {
-        continue; // already migrated
+      const key = name.toLowerCase();
+      let league = byName.get(key);
+      let dirty = false;
+
+      if (!league) {
+        league = createLeague(name, { legacyName: name });
+        byName.set(key, league);
+        leaguesCreated += 1;
+        dirty = true;
       }
+
       const leagueGames = games.filter((g) => g.league === name);
-      const league = createLeague(name, { legacyName: name });
-
-      if (leagueGames.length) {
-        const season = this.seasonService.createSeasonFromGames(1, `${name} — Imported Season`, leagueGames, league.numberOfGamesPerNight);
-        league.seasons = [season];
-        league.startDate = season.startDate;
-        league.endDate = season.endDate;
-        for (const session of season.sessions) {
-          for (const gameId of session.gameIds) {
-            stamp.set(gameId, { leagueId: league.id, seasonId: season.id, sessionId: session.id });
-          }
-        }
+      if (this.reconcileSeasons(league, leagueGames, stamp)) {
+        dirty = true;
       }
 
-      created.push(league);
-      byName.set(name.toLowerCase(), league);
+      if (dirty) {
+        toSave.push(league);
+      }
     }
 
-    if (created.length) {
-      await this.leagueRepository.saveMany(created);
+    if (toSave.length) {
+      await this.leagueRepository.saveMany(toSave);
     }
 
     const gamesStamped = await this.stampGames(games, stamp);
 
-    return { ran: true, leaguesCreated: created.length, gamesStamped };
+    return { ran: true, leaguesCreated, gamesStamped };
   }
 
-  private async stampGames(games: Game[], stamp: Map<string, { leagueId: string; seasonId: string; sessionId: string }>): Promise<number> {
+  /**
+   * Ensures all of a league's games belong to a season. Leagues with no season yet get an
+   * "Imported Season" built from every game; otherwise each game not already assigned to a
+   * season is folded into the season whose date window contains it (Season 1 for legacy
+   * data). Mutates `league` and fills `stamp`. Returns whether anything changed.
+   */
+  private reconcileSeasons(league: League, leagueGames: Game[], stamp: Map<string, SeasonStamp>): boolean {
+    if (!leagueGames.length) {
+      return false;
+    }
+
+    if (!league.seasons.length) {
+      const season = this.seasonService.createSeasonFromGames(1, `${league.name} — Imported Season`, leagueGames, league.numberOfGamesPerNight);
+      league.seasons = [season];
+      league.startDate = league.startDate ?? season.startDate;
+      league.endDate = season.endDate;
+      for (const session of season.sessions) {
+        for (const gameId of session.gameIds) {
+          stamp.set(gameId, { leagueId: league.id, seasonId: season.id, sessionId: session.id });
+        }
+      }
+      return true;
+    }
+
+    const seasonIds = new Set(league.seasons.map((s) => s.id));
+    let changed = false;
+    for (const game of leagueGames) {
+      if (game.seasonId && seasonIds.has(game.seasonId)) {
+        continue; // already assigned to one of this league's seasons
+      }
+      const season = this.seasonService.seasonForDate(league, game.date) ?? league.seasons[0];
+      const sessionId = this.seasonService.foldGameIntoSeason(season, game, league.numberOfGamesPerNight);
+      stamp.set(game.gameId, { leagueId: league.id, seasonId: season.id, sessionId });
+      changed = true;
+    }
+    return changed;
+  }
+
+  private async stampGames(games: Game[], stamp: Map<string, SeasonStamp>): Promise<number> {
     const updated: Game[] = [];
     for (const game of games) {
       const ids = stamp.get(game.gameId);
@@ -107,5 +156,9 @@ export class LeagueMigrationService {
       await this.gamesStore.saveGamesToLocalStorage(updated);
     }
     return updated.length;
+  }
+
+  private clone<T>(value: T): T {
+    return typeof structuredClone === 'function' ? structuredClone(value) : (JSON.parse(JSON.stringify(value)) as T);
   }
 }

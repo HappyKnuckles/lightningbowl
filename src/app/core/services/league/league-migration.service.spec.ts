@@ -1,5 +1,5 @@
 import { Game } from 'src/app/core/models/game.model';
-import { League } from 'src/app/core/models/league';
+import { League, createLeague, createSeason } from 'src/app/core/models/league';
 import { LeagueMigrationService } from './league-migration.service';
 import { SeasonService } from './season.service';
 
@@ -125,5 +125,23 @@ describe('LeagueMigrationService', () => {
 
     expect(result.leaguesCreated).toBe(1);
     expect([...repo.store.values()][0].name).toBe('Orphan League');
+  });
+
+  it('folds games into the existing Season 1 of a league created before its games (no new league)', async () => {
+    const existing = createLeague('Monday');
+    existing.seasons = [createSeason('s1', 1, 'Season 1', { active: true })];
+    repo.store.set(existing.id, existing);
+
+    gamesStore._games = [game({ gameId: 'a', date: 1 * ONE_DAY, league: 'Monday' }), game({ gameId: 'b', date: 8 * ONE_DAY, league: 'Monday' })];
+    repo.legacy = [];
+
+    const result = await service.migrate();
+
+    expect(result.leaguesCreated).toBe(0); // aggregate already existed
+    expect(result.gamesStamped).toBe(2);
+
+    const saved = repo.store.get(existing.id)!;
+    expect(saved.seasons[0].sessions.length).toBe(2); // both nights folded into Season 1
+    expect(gamesStore._games.every((g) => g.seasonId === 's1')).toBeTrue();
   });
 });

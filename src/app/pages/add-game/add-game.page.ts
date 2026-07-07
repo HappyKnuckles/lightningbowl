@@ -39,9 +39,11 @@ import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.se
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
+import { SeasonService } from 'src/app/core/services/league/season.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { createSeason } from 'src/app/core/models/league';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -176,6 +178,7 @@ export class AddGamePage implements OnInit {
     private gameImageImport: GameImageImportService,
     private gameStatsService: GameStatsService,
     private leaguesStore: LeaguesStore,
+    private seasonService: SeasonService,
   ) {
     addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, trophyOutline, documentTextOutline, add });
     effect(() => {
@@ -631,6 +634,10 @@ export class AddGamePage implements OnInit {
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
       }
 
+      // Fold the games into their league's active season (stamps league/season/session ids
+      // and records the weekly session) before persisting them.
+      await this.linkGamesToSeasons(gamesToPersist);
+
       if (gamesToPersist.length > 0) {
         await this.gamesStore.saveGamesToLocalStorage(gamesToPersist);
       }
@@ -655,6 +662,56 @@ export class AddGamePage implements OnInit {
       await this.analyticsService.trackError('game_save_error', error instanceof Error ? error.message : String(error));
     }
     return false;
+  }
+
+  /**
+   * Links saved games to their League aggregate and current active Season: each game is
+   * folded into the league's active season as a weekly session (so a 3-game night shares
+   * one session), the games are stamped with league/season/session ids, and the updated
+   * league is persisted. No-op for practice / unselected / unknown leagues. Never throws
+   * out — a failure here must not block saving the games themselves.
+   */
+  private async linkGamesToSeasons(games: Game[]): Promise<void> {
+    const byLeagueName = new Map<string, Game[]>();
+    for (const game of games) {
+      if (game.isPractice || !game.league || game.league === 'New') {
+        continue;
+      }
+      const bucket = byLeagueName.get(game.league);
+      if (bucket) {
+        bucket.push(game);
+      } else {
+        byLeagueName.set(game.league, [game]);
+      }
+    }
+
+    for (const [name, leagueGames] of byLeagueName) {
+      try {
+        const stored = this.leaguesStore.getByName(name);
+        if (!stored) {
+          continue;
+        }
+        const league = this.clone(stored);
+        let season = this.seasonService.getActiveSeason(league);
+        if (!season) {
+          season = createSeason(`sea_${Date.now()}`, 1, `${league.name} — Season 1`, { active: true });
+          league.seasons.push(season);
+        }
+        for (const game of leagueGames) {
+          const sessionId = this.seasonService.foldGameIntoSeason(season, game, league.numberOfGamesPerNight);
+          game.leagueId = league.id;
+          game.seasonId = season.id;
+          game.sessionId = sessionId;
+        }
+        await this.leaguesStore.updateLeague(league);
+      } catch (error) {
+        console.error(`Failed to link games to league "${name}":`, error);
+      }
+    }
+  }
+
+  private clone<T>(value: T): T {
+    return typeof structuredClone === 'function' ? structuredClone(value) : (JSON.parse(JSON.stringify(value)) as T);
   }
 
   // PRIVATE HELPERS - GAME STATE

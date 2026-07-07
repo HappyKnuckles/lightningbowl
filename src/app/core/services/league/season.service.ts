@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Game } from 'src/app/core/models/game.model';
 import { DAYS_OF_WEEK, League, Season, WeeklySession, createEmptyFeeStructure, createSeason } from 'src/app/core/models/league';
 import { generateId } from 'src/app/core/utils/id-utils/id.utils';
-import { groupGamesIntoSessions } from 'src/app/core/utils/sort-utils/sort.utils';
+import { groupGamesIntoSessions, startOfLocalDay } from 'src/app/core/utils/sort-utils/sort.utils';
 
 const ONE_DAY = 86_400_000;
 
@@ -48,8 +48,52 @@ export class SeasonService {
     });
   }
 
+  /**
+   * Folds a single game into the right weekly session of a season (mutates the season):
+   * the session for that calendar day, or a new one if there isn't one yet. Sessions are
+   * re-sorted and re-numbered chronologically and `weeksCompleted` is kept in sync.
+   * Idempotent — adding the same game twice is a no-op. Returns the session id used.
+   */
+  foldGameIntoSeason(season: Season, game: Game, numberOfGamesPerNight = 3): string {
+    const day = startOfLocalDay(game.date);
+    let session = season.sessions.find((s) => startOfLocalDay(s.date) === day);
+    if (!session) {
+      session = {
+        id: generateId('ws'),
+        weekNumber: season.sessions.length + 1,
+        date: day,
+        gamesScheduled: numberOfGamesPerNight,
+        gamesBowled: 0,
+        attendance: 'present',
+        gameIds: [],
+      };
+      season.sessions.push(session);
+    }
+    if (!session.gameIds.includes(game.gameId)) {
+      session.gameIds.push(game.gameId);
+      session.gamesBowled = session.gameIds.length;
+    }
+    season.sessions.sort((a, b) => a.date - b.date);
+    season.sessions.forEach((s, i) => (s.weekNumber = i + 1));
+
+    season.weeksCompleted = season.sessions.length;
+    if (season.weeksScheduled < season.sessions.length) {
+      season.weeksScheduled = season.sessions.length;
+    }
+    const dates = season.sessions.map((s) => s.date);
+    season.startDate = season.startDate ?? Math.min(...dates);
+    season.endDate = Math.max(season.endDate ?? 0, ...dates);
+    return session.id;
+  }
+
   getActiveSeason(league: League): Season | undefined {
     return league.seasons.find((s) => s.active) ?? league.seasons[league.seasons.length - 1];
+  }
+
+  /** The season whose date window contains `date`, else the active / most-recent season. */
+  seasonForDate(league: League, date: number): Season | undefined {
+    const match = league.seasons.find((s) => (s.startDate == null || date >= s.startDate) && (s.endDate == null || date <= s.endDate));
+    return match ?? this.getActiveSeason(league);
   }
 
   getCurrentSeason(league: League): Season | undefined {

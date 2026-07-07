@@ -137,6 +137,23 @@
           }
         </ion-toolbar>
 
+        @if (availableSeasons().length > 1) {
+          <ion-toolbar>
+            <ion-select
+              class="season-select"
+              [value]="selectedSeasonId()"
+              interface="popover"
+              label="Season"
+              labelPlacement="start"
+              (ionChange)="onSeasonChange($event)">
+              <ion-select-option [value]="null">All seasons</ion-select-option>
+              @for (s of availableSeasons(); track s.id) {
+                <ion-select-option [value]="s.id">{{ s.seasonName }}{{ s.active ? " · active" : "" }}</ion-select-option>
+              }
+            </ion-select>
+          </ion-toolbar>
+        }
+
         <ion-toolbar>
           <ion-segment scrollable="true" [value]="selectedSegment" (ionChange)="onSegmentChanged(league, $event)">
             @for (segment of segments; track segment) {
@@ -156,30 +173,30 @@
       <ion-content #modalContent>
         <ion-segment-view>
           <ion-segment-content id="Overall-{{ league }}">
-            @if (gamesByLeague()[league]?.length) {
+            @if (viewGames().length) {
               <section class="tab">
                 @if (selectedEntity(); as entity) {
                   @if (entity.handicap.system === "percentOfBase") {
                     <h2 class="sec-heading"><span>Handicap</span><span class="divider-line"></span></h2>
                     <div class="handicap-card">
                       <span>{{ entity.handicap.percentage }}% of {{ entity.handicap.baseScore }}</span>
-                      <span class="handicap-value">+{{ handicapForLeague(entity, statsByLeague()[league]?.averageScore || 0) }}</span>
+                      <span class="handicap-value">+{{ handicapForLeague(entity, viewStats().averageScore || 0) }}</span>
                     </div>
                   }
                 }
                 <app-stat-display
                   [statDefinitions]="statDefinitions"
                   [title]="'Overall Stats'"
-                  [currentStats]="statsByLeague()[league]"
+                  [currentStats]="viewStats()"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                @for (highlight of leagueHighlights()[league]; track highlight.title) {
+                @for (highlight of viewHighlights(); track highlight.title) {
                   <app-stat-highlight-item
                     [title]="highlight.title"
                     [item]="highlight.item"
                     [allItems]="highlight.allItems"
                     [sortMode]="highlight.sortMode"
-                    [totalGames]="statsByLeague()[league].totalGames"
+                    [totalGames]="viewStats().totalGames"
                     [emptyMessage]="highlight.emptyMessage"
                     [imageUrlBase]="highlight.imageUrlBase"
                     [roundImage]="highlight.roundImage">
@@ -196,10 +213,9 @@
           </ion-segment-content>
 
           <ion-segment-content id="Spares-{{ league }}">
-            @if (gamesByLeague()[league]?.length) {
+            @if (viewGames().length) {
               <section class="tab">
-                <app-stat-spare [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="statsByLeague()[league]" id="league-spareStats">
-                </app-stat-spare>
+                <app-stat-spare [title]="'Spare Stats'" [prevStats]="overallStats()" [stats]="viewStats()" id="league-spareStats"> </app-stat-spare>
                 <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
                 <figure class="chart-card">
                   <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
@@ -211,20 +227,17 @@
           </ion-segment-content>
 
           <ion-segment-content id="Pins-{{ league }}">
-            @if (gamesByLeague()[league]?.length) {
+            @if (viewGames().length) {
               <section class="tab">
                 <app-stat-display
                   [title]="'Pin Stats'"
                   [statDefinitions]="PIN_STAT_DEFINITIONS"
-                  [currentStats]="statsByLeague()[league]"
+                  [currentStats]="viewStats()"
                   [prevStats]="overallStats()">
                 </app-stat-display>
-                <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="leaveStatsByLeague()[league].best"></app-stat-pin-leave>
-                <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="leaveStatsByLeague()[league].worst"></app-stat-pin-leave>
-                <app-stat-pin-leave
-                  [title]="'Most Common Leaves'"
-                  [leaveStats]="leaveStatsByLeague()[league].common"
-                  [allLeaves]="leaveStatsByLeague()[league].all">
+                <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="viewLeaveStats().best"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="viewLeaveStats().worst"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="viewLeaveStats().common" [allLeaves]="viewLeaveStats().all">
                 </app-stat-pin-leave>
               </section>
             } @else {
@@ -271,9 +284,8 @@
           </ion-segment-content>
 
           <ion-segment-content id="Games-{{ league }}">
-            @if (gamesByLeague()[league]?.length) {
-              <app-game-list [games]="gamesByLeague()[league]" [gameCount]="gamesByLeague()[league].length" [isLeaguePage]="true" [batchSize]="30">
-              </app-game-list>
+            @if (viewGames().length) {
+              <app-game-list [games]="viewGames()" [gameCount]="viewGames().length" [isLeaguePage]="true" [batchSize]="30"> </app-game-list>
             } @else {
               <ion-text class="no-game-text">No games yet for this league.</ion-text>
             }

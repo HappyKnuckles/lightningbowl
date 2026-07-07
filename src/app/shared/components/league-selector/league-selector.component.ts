@@ -1,24 +1,27 @@
-import { Component, computed, inject, input, model, output, signal } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { AlertController, SelectChangeEventDetail } from '@ionic/angular';
+import { Component, computed, inject, input, model, OnInit, output, signal } from '@angular/core';
+import { AlertController } from '@ionic/angular';
 import {
   IonButton,
   IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
-  IonInput,
   IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
+  IonLabel,
+  IonList,
   IonModal,
-  IonSelect,
-  IonSelectOption,
+  IonSearchbar,
+  IonText,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
-import { IonSelectCustomEvent } from '@ionic/core';
 import { addIcons } from 'ionicons';
-import { addOutline, createOutline, trophyOutline } from 'ionicons/icons';
+import { addOutline, checkmarkOutline, createOutline, trashOutline, trophyOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -31,43 +34,38 @@ import { LeaguesStore } from 'src/app/core/stores/leagues.store';
   styleUrls: ['./league-selector.component.scss'],
   standalone: true,
   imports: [
-    IonContent,
-    IonTitle,
-    IonHeader,
+    IonButton,
     IonButtons,
-    IonToolbar,
-    IonModal,
+    IonContent,
+    IonHeader,
     IonIcon,
     IonItem,
-    IonButton,
-    IonInput,
-    IonSelect,
-    FormsModule,
-    ReactiveFormsModule,
-    IonSelectOption,
+    IonItemOption,
+    IonItemOptions,
+    IonItemSliding,
+    IonLabel,
+    IonList,
+    IonModal,
+    IonSearchbar,
+    IonText,
+    IonTitle,
+    IonToolbar,
+    SearchBlurDirective,
   ],
 })
-export class LeagueSelectorComponent {
+export class LeagueSelectorComponent implements OnInit {
   isAddPage = input<boolean>(false);
   selectedLeague = model<string>('');
   icon = input<string>('');
   leagues = input<string[]>([]);
   leagueChanged = output<string>();
 
-  newLeague = signal('');
-  leaguesToDelete: string[] = [];
-  leagueToChange = signal('');
-  isModalOpen = signal(false);
+  isPickerOpen = signal(false);
+  searchTerm = signal('');
+  presentingElement!: HTMLElement | null;
 
-  selectableLeagues = computed(() => {
-    const savedLeagues = this.leaguesStore.leagues();
-    this.hiddenLeagueSelectionService.selectionState();
-    const savedJson = localStorage.getItem('leagueSelection');
-    const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
-    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
-    return [...new Set([...visibleLeagues, ...this.leagues()])];
-  });
   private analyticsService = inject(AnalyticsService);
+
   constructor(
     public leaguesStore: LeaguesStore,
     private appFacade: AppFacade,
@@ -75,124 +73,146 @@ export class LeagueSelectorComponent {
     private alertController: AlertController,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
   ) {
-    addIcons({ trophyOutline, addOutline, createOutline });
+    addIcons({ trophyOutline, addOutline, checkmarkOutline, createOutline, trashOutline });
   }
 
-  async onLeagueChange(event: IonSelectCustomEvent<SelectChangeEventDetail>): Promise<void> {
-    const value = event.detail.value;
-    const previous = this.selectedLeague();
+  ngOnInit(): void {
+    this.presentingElement = document.querySelector('.ion-page');
+  }
 
-    if (value === 'edit') {
-      this.isModalOpen.set(true);
-      return;
-    }
-    if (value === 'delete') {
-      await this.openDeleteAlert();
-      return;
-    }
+  availableLeagues = computed(() => {
+    const savedLeagues = this.leaguesStore.leagues();
+    // The settings variant manages the league list, so it must show every league, including hidden ones.
+    if (!this.isAddPage()) return savedLeagues;
+    this.hiddenLeagueSelectionService.selectionState();
+    const savedJson = localStorage.getItem('leagueSelection');
+    const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
+    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
+    return [...new Set([...visibleLeagues, ...this.leagues()])];
+  });
 
-    if (value === 'new') {
-      const created = await this.openAddAlert();
-      // Keep the previous selection when the user cancels instead of clearing it.
-      this.selectedLeague.set(created ?? previous);
+  filteredLeagues = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const leagues = this.availableLeagues();
+    return term ? leagues.filter((league) => league.toLowerCase().includes(term)) : leagues;
+  });
+
+  creatableName = computed(() => {
+    const name = this.searchTerm().trim();
+    if (!name) return '';
+    const exists = this.leaguesStore.leagues().some((league) => league.toLowerCase() === name.toLowerCase());
+    return exists ? '' : name;
+  });
+
+  openPicker(): void {
+    this.searchTerm.set('');
+    this.isPickerOpen.set(true);
+  }
+
+  closePicker(): void {
+    this.isPickerOpen.set(false);
+  }
+
+  onSearchInput(event: CustomEvent): void {
+    this.searchTerm.set(event.detail.value ?? '');
+  }
+
+  onLeagueTap(league: string): void {
+    if (this.isAddPage()) {
+      this.selectLeague(league);
     } else {
-      this.selectedLeague.set(value);
-    }
-
-    this.leagueChanged.emit(this.selectedLeague());
-  }
-
-  cancel(): void {
-    this.leaguesToDelete = [];
-    this.isModalOpen.set(false);
-  }
-
-  async editLeague(): Promise<void> {
-    try {
-      await this.appFacade.editLeague(this.newLeague(), this.leagueToChange());
-      this.newLeague.set('');
-      this.leagueToChange.set('');
-      this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
-      this.isModalOpen.set(false);
-    } catch (error) {
-      console.error(error);
-      this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
+      void this.openEditAlert(league);
     }
   }
 
-  private async deleteLeague(): Promise<void> {
+  async createLeague(): Promise<void> {
+    const name = this.creatableName();
+    if (!name) return;
     try {
-      for (const league of this.leaguesToDelete) {
-        await this.leaguesStore.deleteLeague(league);
-      }
-      this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'checkmark-outline');
-      this.isModalOpen.set(false);
-    } catch (error) {
-      console.error(error);
-      this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);
-    }
-  }
-
-  private async openDeleteAlert(): Promise<void> {
-    await this.alertController
-      .create({
-        header: 'Delete League',
-        message: 'Select the leagues to delete',
-        inputs: this.leaguesStore.leagues().map((league) => ({
-          name: league,
-          type: 'checkbox',
-          label: league,
-          value: league,
-        })),
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-          },
-          {
-            text: 'Delete',
-            handler: async (data: string[]) => {
-              this.leaguesToDelete = data;
-              await this.deleteLeague();
-            },
-          },
-        ],
-      })
-      .then((alert) => alert.present());
-  }
-
-  private async openAddAlert(): Promise<void> {
-    await this.alertController
-      .create({
-        header: 'Add League',
-        message: 'Enter the league name',
-        inputs: [{ name: 'league', type: 'text', placeholder: 'League name', cssClass: 'league-alert-input' }],
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-          },
-          {
-            text: 'Add',
-            handler: (data) => this.createLeague(data.league),
-          },
-        ],
-      })
-      .then((alert) => alert.present());
-  }
-
-  private async createLeague(name: string): Promise<string | null> {
-    const league = name?.trim();
-    if (!league) return null;
-    try {
-      await this.leaguesStore.addLeague(league);
+      await this.leaguesStore.addLeague(name);
       this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
-      this.analyticsService.trackLeagueCreated({ name: league });
-      return league;
+      void this.analyticsService.trackLeagueCreated({ name });
+      if (this.isAddPage()) {
+        this.selectLeague(name);
+      } else {
+        this.searchTerm.set('');
+      }
     } catch (error) {
       console.error('Error adding league:', error);
       this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
-      return null;
+    }
+  }
+
+  async openEditAlert(league: string): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Edit League',
+      message: 'Enter the new league name',
+      inputs: [{ name: 'league', type: 'text', value: league, placeholder: 'League name', cssClass: 'league-alert-input' }],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Save',
+          handler: async (data: { league: string }) => {
+            const newName = data.league?.trim();
+            if (!newName || newName === league) return;
+            try {
+              await this.appFacade.editLeague(newName, league);
+              this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
+              if (league === this.selectedLeague()) {
+                this.applySelection(newName);
+              }
+            } catch (error) {
+              console.error('Error editing league:', error);
+              this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  async openDeleteAlert(league: string): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Confirm Deletion',
+      message: `Are you sure you want to delete "${league}"?`,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Delete',
+          handler: async () => {
+            try {
+              await this.leaguesStore.deleteLeague(league);
+              this.toastService.showToast(TOAST_MESSAGES.leagueDeleteSuccess, 'remove-outline');
+              if (league === this.selectedLeague()) {
+                this.applySelection('');
+              }
+            } catch (error) {
+              console.error('Error deleting league:', error);
+              this.toastService.showToast(TOAST_MESSAGES.leagueDeleteError, 'bug', true);
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private selectLeague(league: string): void {
+    this.isPickerOpen.set(false);
+    this.applySelection(league);
+  }
+
+  private applySelection(league: string): void {
+    if (league !== this.selectedLeague()) {
+      this.selectedLeague.set(league);
+      this.leagueChanged.emit(league);
     }
   }
 }

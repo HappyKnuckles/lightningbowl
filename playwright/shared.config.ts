@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { VIEWPORTS } from './screenshots/lib/viewports';
 
 const isCI = !!process.env['CI'];
 
@@ -21,6 +22,23 @@ export const sharedUse = {
   navigationTimeout: 30_000,
   trace: 'retain-on-failure' as const,
   video: 'off' as const,
+};
+
+/**
+ * Context overrides that make Chromium present as a phone: iPhone 15 Pro
+ * viewport, touch, and an iOS user agent so Ionic renders in `ios` mode — the
+ * exact environment the screenshot system's `mobile` project captures in.
+ * deviceScaleFactor is deliberately NOT set: the screenshot config adds @3x for
+ * crisp PNGs, while the functional e2e suite keeps the default (behaviour is
+ * identical, rendering is cheaper).
+ */
+export const mobileUse = {
+  ...devices['Desktop Chrome'],
+  viewport: VIEWPORTS.mobile.viewport,
+  isMobile: true,
+  hasTouch: true,
+  userAgent:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
 };
 
 export const sharedConfig = {

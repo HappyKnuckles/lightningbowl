@@ -1,4 +1,4 @@
-import { defineConfig, devices, isCI, env, sharedConfig, sharedUse, makeWebServer } from './playwright/shared.config';
+import { defineConfig, devices, isCI, env, sharedConfig, sharedUse, mobileUse, makeWebServer } from './playwright/shared.config';
 import { VIEWPORTS } from './playwright/screenshots/lib/viewports';
 
 /**
@@ -17,7 +17,7 @@ export default defineConfig({
   globalTeardown: './playwright/screenshots/lib/global-teardown.ts',
   workers: isCI ? 1 : 6,
   retries: isCI ? 1 : 0,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright/.report' }]],
+  reporter: [[isCI ? 'github' : 'list'], ['html', { open: 'never', outputFolder: 'playwright/.report' }]],
   outputDir: 'playwright/.artifacts',
 
   use: {
@@ -29,15 +29,7 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile',
-      use: {
-        ...devices['Desktop Chrome'],
-        viewport: VIEWPORTS.mobile.viewport,
-        deviceScaleFactor: VIEWPORTS.mobile.deviceScaleFactor,
-        isMobile: true,
-        hasTouch: true,
-        userAgent:
-          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-      },
+      use: { ...mobileUse, deviceScaleFactor: VIEWPORTS.mobile.deviceScaleFactor },
     },
     {
       name: 'desktop',

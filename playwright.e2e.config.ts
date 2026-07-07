@@ -1,10 +1,11 @@
-import { defineConfig, devices, isCI, env, sharedConfig, sharedUse, makeWebServer } from './playwright/shared.config';
+import { defineConfig, devices, isCI, env, sharedConfig, sharedUse, mobileUse, makeWebServer } from './playwright/shared.config';
 
 /**
  * FUNCTIONAL end-to-end suite. Separate from the screenshot generator: no
- * globalSetup/teardown promoting PNGs into src/assets, no per-viewport projects,
- * no manifest. Specs only drive the app and assert behaviour, but REUSE the
- * screenshot system's infrastructure via the `app` fixture.
+ * globalSetup/teardown promoting PNGs into src/assets, no manifest. Specs only
+ * drive the app and assert behaviour — at a desktop size and at the same phone
+ * size the screenshots use — and REUSE the screenshot system's infrastructure
+ * via the `app` fixture.
  *
  *   npm run e2e         # headless
  *   npm run e2e:ui      # interactive
@@ -15,7 +16,7 @@ export default defineConfig({
   testDir: './playwright/e2e',
   workers: isCI ? 1 : 4,
   retries: isCI ? 2 : 0,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright/.e2e-report' }]],
+  reporter: [[isCI ? 'github' : 'list'], ['html', { open: 'never', outputFolder: 'playwright/.e2e-report' }]],
   outputDir: 'playwright/.e2e-artifacts',
 
   use: {
@@ -28,6 +29,10 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
+    },
+    {
+      name: 'mobile',
+      use: { ...mobileUse },
     },
   ],
 

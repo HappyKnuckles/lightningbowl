@@ -3,8 +3,8 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
-import { Game } from 'src/app/core/models/game.model';
-import { HighlightBallStats, HighlightPatternStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
+import { Game, Throw } from 'src/app/core/models/game.model';
+import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -396,7 +396,7 @@ export class ExcelService {
         const framePins: string[] = ['', '', ''];
 
         if (frame) {
-          const pins = frame.throws.map((t: any) => t.pinsLeftStanding?.join(',') || '');
+          const pins = frame.throws.map((t: Throw) => t.pinsLeftStanding?.join(',') || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
@@ -517,7 +517,7 @@ export class ExcelService {
       ['Spares per Game', formatFixed(stats.averageSparesPerGame)],
       ['Total Opens', stats.totalSparesMissed.toString()],
       ['Opens per Game', formatFixed(stats.averageOpensPerGame)],
-      ['Spare Conversion %', formatPercent(stats.spareConversionPercentage)],
+      ['Spare Conversion %', formatPercent(stats.overallSpareRate)],
       ['Mark %', formatPercent(stats.markPercentage)],
       ['Strike %', formatPercent(stats.strikePercentage)],
       ['Spare %', formatPercent(stats.sparePercentage)],
@@ -611,18 +611,18 @@ export class ExcelService {
     return { overall, spares, throwStats, strike, special, playFrequency, series, pinStats };
   }
 
-  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: HighlightBallStats[]): void {
+  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Ball Stats');
     const headers = ['Ball', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
     const rows = [...allBallStats]
-      .sort((a, b) => b.ballAvg - a.ballAvg)
+      .sort((a, b) => b.avg - a.avg)
       .map((ball) => ({
-        Ball: ball.ballName,
+        Ball: ball.name,
         Games: ball.gameCount,
-        Avg: ball.ballAvg.toFixed(2),
-        High: ball.ballHighestGame,
-        Low: ball.ballLowestGame,
+        Avg: ball.avg.toFixed(2),
+        High: ball.highestGame,
+        Low: ball.lowestGame,
         'Strike Rate %': ball.strikeRate !== undefined ? `${ball.strikeRate.toFixed(2)}%` : '',
         'Clean Games': ball.cleanGameCount ?? '',
       }));
@@ -631,18 +631,18 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: HighlightPatternStats[]): void {
+  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Pattern Stats');
     const headers = ['Pattern', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
     const rows = [...allPatternStats]
-      .sort((a, b) => b.patternAvg - a.patternAvg)
+      .sort((a, b) => b.avg - a.avg)
       .map((pattern) => ({
-        Pattern: pattern.patternName,
+        Pattern: pattern.name,
         Games: pattern.gameCount,
-        Avg: pattern.patternAvg.toFixed(2),
-        High: pattern.patternHighestGame,
-        Low: pattern.patternLowestGame,
+        Avg: pattern.avg.toFixed(2),
+        High: pattern.highestGame,
+        Low: pattern.lowestGame,
         'Strike Rate %': pattern.strikeRate !== undefined ? `${pattern.strikeRate.toFixed(2)}%` : '',
         'Clean Games': pattern.cleanGameCount ?? '',
       }));

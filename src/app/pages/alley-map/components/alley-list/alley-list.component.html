@@ -1,0 +1,61 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title
+      >Nearby alleys <ion-badge>{{ alleys().length }}</ion-badge></ion-title
+    >
+  </ion-toolbar>
+</ion-header>
+<ion-content [fullscreen]="true">
+  <ion-list lines="full" class="alley-list">
+    @for (alley of alleys(); track alley.id) {
+      <ion-item button detail="true" (click)="alleySelected.emit(alley)">
+        <ion-label>
+          <h2>
+            {{ alley.name }}
+            @if (isFavorite(alley)) {
+              <ion-icon name="heart" class="favorite-icon" aria-label="Favorite"></ion-icon>
+            }
+          </h2>
+          @if (alley.address) {
+            <p>{{ alley.address }}</p>
+          }
+          <p class="meta-line">
+            @switch (openState(alley)) {
+              @case ("open") {
+                <span class="open-label">Open now</span>
+              }
+              @case ("closed") {
+                <span class="closed-label">Closed</span>
+              }
+            }
+            @if (alley.laneCount) {
+              <span>{{ alley.laneCount }} lanes</span>
+            }
+          </p>
+        </ion-label>
+        <ion-note slot="end" class="distance-note">{{ alley.distanceMeters | distance }}</ion-note>
+      </ion-item>
+    } @empty {
+      <div class="empty-list ion-text-center">
+        <p>No alleys match the current filters.</p>
+      </div>
+    }
+
+    @if (recents().length > 0) {
+      <div class="recents-header">
+        <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+        Recently viewed
+      </div>
+      @for (alley of recents(); track alley.id) {
+        <ion-item button detail="true" (click)="alleySelected.emit(alley)">
+          <ion-label>
+            <h2>{{ alley.name }}</h2>
+            @if (alley.address) {
+              <p>{{ alley.address }}</p>
+            }
+          </ion-label>
+        </ion-item>
+      }
+    }
+  </ion-list>
+</ion-content>

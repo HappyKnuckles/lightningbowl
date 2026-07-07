@@ -422,6 +422,15 @@ export class GameListComponent implements OnInit {
     return balls.length > 0 ? balls.join(', ') : 'None';
   }
 
+  getBallIds(names: string[] | undefined): string[] {
+    if (!names) return [];
+
+    return this.ballsStore
+      .allBalls()
+      .filter((ball) => names.includes(ball.ball_name))
+      .map((ball) => ball.ball_id);
+  }
+
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {
     const failed = await this.ballsStore.saveBallsToArsenal(balls);
     const saved = balls.filter((b) => !failed.includes(b));

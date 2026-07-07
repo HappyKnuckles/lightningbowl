@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
 import { isMakeableSplit, isSplit } from '../../../utils/game-utils/pin.utils';
 
@@ -57,6 +57,15 @@ export class OverallStatsCalculatorService {
       if (len >= 3 && len <= 11) streakCounts[len]++;
     };
 
+    // Pocket hit = head pin down AND at least one of the 2/3 pins down.
+    // Empty array (a strike) returns true, which is correct.
+    const isPocketHit = (pinsLeft: number[]): boolean => {
+      const pin1Down = !pinsLeft.includes(1);
+      const pin2Down = !pinsLeft.includes(2);
+      const pin3Down = !pinsLeft.includes(3);
+      return pin1Down && (pin2Down || pin3Down);
+    };
+
     gameHistory.forEach((game) => {
       let strikesInThisGame = 0;
       let isAllSpares = true;
@@ -67,7 +76,7 @@ export class OverallStatsCalculatorService {
 
       if (game.totalScore === 200) {
         const firstFrame = game.frames[0];
-        const firstThrows = firstFrame.throws.map((t: any) => parseInt(t.value, 10));
+        const firstThrows = firstFrame.throws.map((t: Throw) => t.value);
         const firstIsStrike = firstThrows[0] === 10;
         const firstIsSpare = !firstIsStrike && firstThrows.length > 1 && firstThrows[0] + firstThrows[1] === 10;
 
@@ -80,8 +89,8 @@ export class OverallStatsCalculatorService {
         }
       }
 
-      const gameDay = new Date(game.date).toDateString();
-      distinctDays.add(gameDay);
+      const gameDate = new Date(game.date).toDateString();
+      distinctDays.add(gameDate);
       const t = new Date(game.date).getTime();
       if (minT === null || t < minT) minT = t;
       if (maxT === null || t > maxT) maxT = t;
@@ -91,7 +100,6 @@ export class OverallStatsCalculatorService {
       if (game.isClean) cleanGameCount++;
       if (game.isPerfect) perfectGameCount++;
 
-      const gameDate = new Date(game.date).toDateString();
       if (gameDate !== previousGameDate) {
         recordStrikeStreak(currentStrikeStreak);
         longestOpenStreak = Math.max(longestOpenStreak, currentOpenStreak);
@@ -101,8 +109,8 @@ export class OverallStatsCalculatorService {
         previousWasStrike = false;
       }
 
-      game.frames.forEach((frame: { throws: any[] }, idx: number) => {
-        const throws = frame.throws.map((t: any) => parseInt(t.value, 10));
+      game.frames.forEach((frame: Frame, idx: number) => {
+        const throws = frame.throws.map((t: Throw) => t.value);
         firstThrowCount += throws[0] || 0;
         const throw1 = throws[0];
         const throw2 = throws.length > 1 ? throws[1] : undefined;
@@ -221,26 +229,35 @@ export class OverallStatsCalculatorService {
 
         // Pocket hit tracking (only for pin mode games with pin data)
         if (game.isPinMode && frame.throws) {
-          // Check for pocket hit on first throw (not 10th frame bonus balls)
+          // Frames 1-9: the lead-off ball is the only fresh-rack ball
           if (frame.throws[0] && idx < 9) {
             totalFirstBalls++;
+            if (frame.throws[0].pinsLeftStanding && isPocketHit(frame.throws[0].pinsLeftStanding)) {
+              pocketHits++;
+            }
+          }
 
-            // Pocket hit is when pin 1 is knocked down AND either pin 2 or 3 is knocked down
-            if (frame.throws[0].pinsLeftStanding) {
-              const pinsLeft = frame.throws[0].pinsLeftStanding;
-              const pin1Down = !pinsLeft.includes(1);
-              const pin2Down = !pinsLeft.includes(2);
-              const pin3Down = !pinsLeft.includes(3);
+          // 10th frame: ball 1 is always fresh; ball 2 is fresh after a strike;
+          // ball 3 is fresh after a double. Check the pocket on each fresh-rack ball.
+          if (idx === 9) {
+            totalFirstBalls++;
+            if (frame.throws[0]?.pinsLeftStanding && isPocketHit(frame.throws[0].pinsLeftStanding)) {
+              pocketHits++;
+            }
 
-              if (pin1Down && (pin2Down || pin3Down)) {
+            if (isStrike) {
+              totalFirstBalls++;
+              if (frame.throws[1]?.pinsLeftStanding && isPocketHit(frame.throws[1].pinsLeftStanding)) {
                 pocketHits++;
               }
             }
-          }
-          if (idx === 9) {
-            totalFirstBalls++;
-            if (isStrike) totalFirstBalls++;
-            if (isSecondStrike) totalFirstBalls++;
+
+            if (isSecondStrike) {
+              totalFirstBalls++;
+              if (frame.throws[2]?.pinsLeftStanding && isPocketHit(frame.throws[2].pinsLeftStanding)) {
+                pocketHits++;
+              }
+            }
           }
         }
 
@@ -326,10 +343,9 @@ export class OverallStatsCalculatorService {
     const strikePercentage = (totalStrikes / totalFirstThrowCount) * 100 || 0;
     const sparePercentage = (totalSparesConverted / totalFirstThrowCount) * 100 || 0;
     const openPercentage = (totalSparesMissed / totalFirstThrowCount) * 100 || 0;
-    const averageFirstCount = firstThrowCount / totalFirstThrowCount;
+    const averageFirstCount = firstThrowCount / totalFirstThrowCount || 0;
     const spareRates = pinCounts.map((c, i) => this.getRate(c, missedCounts[i]));
     const overallSpareRate = this.getRate(totalSparesConverted, totalSparesMissed);
-    const spareConversionPercentage = (totalSparesConverted / (totalSparesConverted + totalSparesMissed)) * 100;
     const overallMissedRate = totalSparesMissed > 0 ? 100 - overallSpareRate : 0;
     // TODO maybe use totalframes here
     const markPercentage = ((totalFirstThrowCount - totalSparesMissed) / totalFirstThrowCount) * 100 || 0;
@@ -389,7 +405,6 @@ export class OverallStatsCalculatorService {
       overallSpareRate,
       totalPins,
       overallMissedRate,
-      spareConversionPercentage,
       longestStrikeStreak,
       longestOpenStreak,
       dutch200Count,
@@ -443,7 +458,6 @@ export class OverallStatsCalculatorService {
       makeableSplitPercentage,
     };
   }
-
   calculateGamesForTargetAverage(targetAvg: number, stats: Stats, steps = 15): { score: number; gamesNeeded: number }[] {
     const N0 = stats.totalGames;
     const A0 = stats.averageScore;

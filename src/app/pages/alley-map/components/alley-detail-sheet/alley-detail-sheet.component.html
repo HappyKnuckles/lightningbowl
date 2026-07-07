@@ -1,0 +1,91 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>{{ alley().name }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="clear"
+        (click)="toggleFavorite()"
+        [attr.aria-label]="isFavorite() ? 'Remove from favorites' : 'Add to favorites'"
+        [attr.aria-pressed]="isFavorite()">
+        <ion-icon slot="icon-only" [name]="isFavorite() ? 'heart' : 'heart-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content [fullscreen]="true">
+  <div class="sheet-content">
+    <div class="meta-row">
+      @switch (openState()) {
+        @case ("open") {
+          <span class="status-badge open">Open now</span>
+        }
+        @case ("closed") {
+          <span class="status-badge closed">Closed</span>
+        }
+      }
+      @if (alley().distanceMeters !== undefined) {
+        <span class="meta-item">{{ alley().distanceMeters | distance }} away</span>
+      }
+      @if (alley().laneCount) {
+        <span class="meta-item">{{ alley().laneCount }} lanes</span>
+      }
+    </div>
+
+    <div class="action-row" role="group" aria-label="Quick actions">
+      <ion-button class="action-button" (click)="navigate()">
+        <ion-icon slot="start" name="navigate-outline"></ion-icon>
+        Navigate
+      </ion-button>
+      <ion-button class="action-button" fill="outline" [disabled]="!alley().phone" (click)="call()">
+        <ion-icon slot="start" name="call-outline"></ion-icon>
+        Call
+      </ion-button>
+      <ion-button class="action-button" fill="outline" [disabled]="!alley().website" (click)="openWebsite()">
+        <ion-icon slot="start" name="globe-outline"></ion-icon>
+        Website
+      </ion-button>
+      <ion-button class="action-button" fill="outline" (click)="share()">
+        <ion-icon slot="start" name="share-social-outline"></ion-icon>
+        Share
+      </ion-button>
+    </div>
+
+    <ion-list lines="none" class="detail-list">
+      @if (alley().address) {
+        <ion-item button detail="false" (click)="navigate()">
+          <ion-icon slot="start" name="location-outline" aria-hidden="true"></ion-icon>
+          <ion-label class="ion-text-wrap">{{ alley().address }}</ion-label>
+        </ion-item>
+      }
+      @if (hoursLines().length > 0) {
+        <ion-item>
+          <ion-icon slot="start" name="time-outline" aria-hidden="true"></ion-icon>
+          <ion-label class="ion-text-wrap">
+            @for (line of hoursLines(); track line) {
+              <p>{{ line }}</p>
+            }
+          </ion-label>
+        </ion-item>
+      } @else {
+        <ion-item>
+          <ion-icon slot="start" name="time-outline" aria-hidden="true"></ion-icon>
+          <ion-label color="medium">Opening hours not available</ion-label>
+        </ion-item>
+      }
+      @if (alley().phone) {
+        <ion-item button detail="false" (click)="call()">
+          <ion-icon slot="start" name="call-outline" aria-hidden="true"></ion-icon>
+          <ion-label>{{ alley().phone }}</ion-label>
+        </ion-item>
+      }
+      @if (alley().website) {
+        <ion-item button detail="false" (click)="openWebsite()">
+          <ion-icon slot="start" name="globe-outline" aria-hidden="true"></ion-icon>
+          <ion-label class="ion-text-wrap">{{ alley().website }}</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+
+    <ion-note class="data-note">Data from OpenStreetMap — details may be incomplete.</ion-note>
+  </div>
+</ion-content>

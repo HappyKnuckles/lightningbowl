@@ -131,24 +131,18 @@
                 [currentStats]="statsByLeague()[league]"
                 [prevStats]="overallStats()">
               </app-stat-display>
-              <app-stat-ball
-                [title]="'Most used ball'"
-                [bestBall]="mostPlayedBallsByLeague()[league]"
-                [totalGames]="statsByLeague()[league].totalGames"></app-stat-ball>
-              <app-stat-ball
-                [title]="'Best ball'"
-                [bestBall]="bestBallsByLeague()[league]"
-                [totalGames]="statsByLeague()[league].totalGames"></app-stat-ball>
-              <app-stat-pattern
-                [title]="'Most played pattern'"
-                [bestPattern]="mostPlayedPatternsByLeague()[league]"
-                [totalGames]="statsByLeague()[league].totalGames"
-                [allPatterns]="allPatternsByLeague()[league]"></app-stat-pattern>
-              <app-stat-pattern
-                [title]="'Best pattern'"
-                [bestPattern]="bestPatternsByLeague()[league]"
-                [totalGames]="statsByLeague()[league].totalGames"
-                [allPatterns]="allPatternsByLeague()[league]"></app-stat-pattern>
+              @for (highlight of leagueHighlights()[league]; track highlight.title) {
+                <app-stat-highlight-item
+                  [title]="highlight.title"
+                  [item]="highlight.item"
+                  [allItems]="highlight.allItems"
+                  [sortMode]="highlight.sortMode"
+                  [totalGames]="statsByLeague()[league].totalGames"
+                  [emptyMessage]="highlight.emptyMessage"
+                  [imageUrlBase]="highlight.imageUrlBase"
+                  [roundImage]="highlight.roundImage">
+                </app-stat-highlight-item>
+              }
               <h2 class="sec-heading"><span>Score Analysis</span><span class="divider-line"></span></h2>
               <figure class="chart-card">
                 <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>

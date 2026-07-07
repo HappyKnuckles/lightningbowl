@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
-import { HighlightBallStats } from 'src/app/core/models/stats.model';
+import { Frame, Game } from 'src/app/core/models/game.model';
+import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
+import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -9,57 +11,19 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 export class BallStatsCalculatorService {
   constructor(private ballsStore: BallsStore) {}
 
-  calculateAllBallStats(gameHistory: Game[]): HighlightBallStats[] {
+  calculateAllBallStats(gameHistory: Game[]): HighlightItemStats[] {
     return Object.values(this._calculateAllBallStats(gameHistory));
   }
 
-  calculateBestBallStats(gameHistory: Game[]): HighlightBallStats {
-    const allBallStats = this._calculateAllBallStats(gameHistory);
-    const ballNames = Object.keys(allBallStats);
-    const defaultBall: HighlightBallStats = {
-      ballName: '',
-      ballImage: '',
-      ballAvg: 0,
-      ballHighestGame: 0,
-      ballLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (ballNames.length === 0) {
-      return defaultBall;
-    }
-
-    return ballNames.reduce((best, currentBallName) => {
-      return allBallStats[currentBallName].ballAvg > best.ballAvg ? allBallStats[currentBallName] : best;
-    }, defaultBall);
+  calculateBestBallStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllBallStats(gameHistory), byAvg);
   }
 
-  calculateMostPlayedBall(gameHistory: Game[]): HighlightBallStats {
-    const allBallStats = this._calculateAllBallStats(gameHistory);
-    const ballNames = Object.keys(allBallStats);
-    const defaultBall: HighlightBallStats = {
-      ballName: '',
-      ballImage: '',
-      ballAvg: 0,
-      ballHighestGame: 0,
-      ballLowestGame: 0,
-      gameCount: 0,
-      cleanGameCount: 0,
-      strikeRate: 0,
-    };
-
-    if (ballNames.length === 0) {
-      return defaultBall;
-    }
-
-    return ballNames.reduce((mostPlayed, currentBallName) => {
-      return allBallStats[currentBallName].gameCount > mostPlayed.gameCount ? allBallStats[currentBallName] : mostPlayed;
-    }, defaultBall);
+  calculateMostPlayedBallStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllBallStats(gameHistory), byGameCount);
   }
 
-  private _calculateAllBallStats(gameHistory: Game[]): Record<string, HighlightBallStats> {
+  private _calculateAllBallStats(gameHistory: Game[]): Record<string, HighlightItemStats> {
     const gamesWithBalls = gameHistory.filter((game) => game.balls && game.balls.length > 0);
     const tempStats: Record<
       string,
@@ -70,7 +34,7 @@ export class BallStatsCalculatorService {
       const uniqueBallsInGame = new Set(game.balls);
 
       let totalStrikesInGame = 0;
-      game.frames.forEach((frame: { throws: any[] }, index: number) => {
+      game.frames.forEach((frame: Frame, index: number) => {
         if (index < 9) {
           if (frame.throws[0]?.value === 10) {
             totalStrikesInGame++;
@@ -104,7 +68,7 @@ export class BallStatsCalculatorService {
       });
     });
 
-    const finalStats: Record<string, HighlightBallStats> = {};
+    const finalStats: Record<string, HighlightItemStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
       const ballImage = this.ballsStore.allBalls().find((b) => b.ball_name === ballName)?.ball_image || '';
@@ -112,11 +76,11 @@ export class BallStatsCalculatorService {
       const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
 
       finalStats[ballName] = {
-        ballName: ballName,
-        ballImage: ballImage,
-        ballAvg: stats.gameCount > 0 ? Math.round(stats.totalScore / stats.gameCount) : 0,
-        ballHighestGame: stats.highestGame,
-        ballLowestGame: stats.lowestGame === 301 ? 0 : stats.lowestGame,
+        name: ballName,
+        image: ballImage,
+        avg: stats.gameCount > 0 ? Math.round(stats.totalScore / stats.gameCount) : 0,
+        highestGame: stats.highestGame,
+        lowestGame: stats.lowestGame === 301 ? 0 : stats.lowestGame,
         gameCount: stats.gameCount,
         cleanGameCount: stats.cleanGames,
         strikeRate: strikeRate,

@@ -166,7 +166,7 @@
                 <app-generic-typeahead
                   [items]="ballsStore.allBalls()"
                   [config]="ballTypeaheadConfig"
-                  [prevSelectedItems]="[]"
+                  [prevSelectedItems]="getBallIds(currentGame().balls)"
                   (selectedItemsChange)="onBallAdd($event)">
                 </app-generic-typeahead>
               </ng-template>

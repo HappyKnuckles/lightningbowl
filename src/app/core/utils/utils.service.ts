@@ -66,17 +66,28 @@ export class UtilsService {
     return isNaN(parsed) ? '' : parsed;
   }
 
-  calculateStatDifference(currentValue: number, previousValue: number): string {
-    if (previousValue === undefined) {
+  calculateStatDelta(
+    currentValue: number,
+    previousValue: number | undefined,
+  ): {
+    delta: number;
+    percent: number | null;
+  } {
+    if (previousValue == null) {
+      return { delta: 0, percent: null };
+    }
+    const delta = Number((currentValue - previousValue).toFixed(2));
+    const percent = previousValue === 0 ? null : Number(((delta / previousValue) * 100).toFixed(2));
+    return { delta, percent };
+  }
+
+  formatStatDifference(currentValue: number, previousValue: number | undefined): string {
+    const { delta, percent } = this.calculateStatDelta(currentValue, previousValue);
+    if (delta === 0) {
       return '0';
     }
-    const difference = (currentValue - previousValue).toFixed(2);
-    if (Number(difference) === 0) {
-      return '0';
-    }
-    const percentageChange = previousValue === 0 ? '' : ((Number(difference) / previousValue) * 100).toFixed(2);
-    const differenceWithSign = Number(difference) > 0 ? `+${difference}` : difference;
-    return previousValue === 0 ? `${differenceWithSign}` : `${differenceWithSign} (${percentageChange}%)`;
+    const sign = delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
+    return percent === null ? sign : `${sign} (${percent.toFixed(2)}%)`;
   }
 
   getArrowIcon(currentValue: number, previousValue?: number): string {

@@ -54,7 +54,7 @@
   }
 </article>
 
-@if (allItems()?.length) {
+@if (allItemsSorted()?.length) {
   <ion-modal [isOpen]="isModalOpen()" (ionModalDidDismiss)="closeModal()">
     <ng-template>
       <ion-header [translucent]="true">
@@ -69,7 +69,7 @@
       </ion-header>
       <ion-content>
         <ion-list style="background: none">
-          @for (listItem of allItems(); track listItem.name) {
+          @for (listItem of allItemsSorted(); track listItem.name) {
             <article class="item-card modal-card">
               <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
               </ion-img>

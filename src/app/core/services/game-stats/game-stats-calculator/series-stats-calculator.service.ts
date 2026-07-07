@@ -1,7 +1,7 @@
 // src/app/core/services/series-stats/series-stats.service.ts
 
 import { Injectable } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from '../../../models/stats.model';
 
 @Injectable({
@@ -29,7 +29,6 @@ export class SeriesStatsCalculatorService {
     strikePercentage: 0,
     sparePercentage: 0,
     openPercentage: 0,
-    spareConversionPercentage: 0,
     averageFirstCount: 0,
     averageScore: 0,
     highGame: 0,
@@ -84,7 +83,7 @@ export class SeriesStatsCalculatorService {
       let seriesOpens = 0;
 
       seriesGames.forEach((game) => {
-        game.frames.forEach((frame: { throws: any; frameIndex: number }) => {
+        game.frames.forEach((frame: Frame) => {
           const throws = frame.throws;
 
           // Count strikes
@@ -94,7 +93,7 @@ export class SeriesStatsCalculatorService {
 
           // Count spares
           // Assuming frame.throws includes all throws including fill balls in the 10th
-          const frameThrows = frame.throws.map((t: any) => t.value);
+          const frameThrows = frame.throws.map((t: Throw) => t.value);
           const isStrike = frameThrows[0] === 10;
           let isSpare = false;
 
@@ -201,7 +200,6 @@ export class SeriesStatsCalculatorService {
       strikePercentage: 0,
       sparePercentage: 0,
       openPercentage: 0,
-      spareConversionPercentage: 0,
       averageFirstCount: 0,
       averageScore: 0,
       highGame: 0,
@@ -240,7 +238,6 @@ export class SeriesStatsCalculatorService {
       strikePercentage: 0,
       sparePercentage: 0,
       openPercentage: 0,
-      spareConversionPercentage: 0,
       averageFirstCount: 0,
       averageScore: 0,
       highGame: 0,

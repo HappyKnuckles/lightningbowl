@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LeaveStats } from 'src/app/core/models/stats.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Frame, Game } from 'src/app/core/models/game.model';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +11,7 @@ export class PinStatsCalculatorService {
     const leaveMap = new Map<string, { pins: number[]; occurrences: number; pickups: number }>();
 
     pinModeGames.forEach((game) => {
-      game.frames.forEach((frame, idx: number) => {
+      game.frames.forEach((frame: Frame, idx: number) => {
         if (frame.throws && frame.throws.length > 0) {
           const firstThrow = frame.throws[0];
 

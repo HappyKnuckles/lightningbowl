@@ -684,14 +684,14 @@ export class AddGamePage implements OnInit {
     );
 
     setTimeout(() => {
-      this.gameComponents.forEach((grid, i) => {
+      this.gameComponents.forEach((component, i) => {
         if (activeIndexes.includes(i)) {
-          if (grid.leagueSelector) {
-            grid.leagueSelector.selectedLeague.set(sourceGame.league || '');
+          if (component.leagueSelector) {
+            component.leagueSelector.selectedLeague.set(sourceGame.league || '');
           }
-          if (grid.checkbox) {
-            grid.checkbox.checked = sourceGame.isPractice;
-            grid.checkbox.disabled = !sourceGame.isPractice;
+          if (component.checkbox) {
+            component.checkbox.checked = sourceGame.isPractice;
+            component.checkbox.disabled = !sourceGame.isPractice;
           }
         }
       });

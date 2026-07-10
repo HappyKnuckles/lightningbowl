@@ -64,6 +64,8 @@ export class LeagueSelectorComponent implements OnInit {
   searchTerm = signal('');
   presentingElement!: HTMLElement | null;
 
+  private recentLeagues = signal<string[]>(this.readRecentLeagues());
+
   private analyticsService = inject(AnalyticsService);
 
   constructor(
@@ -83,12 +85,12 @@ export class LeagueSelectorComponent implements OnInit {
   availableLeagues = computed(() => {
     const savedLeagues = this.leaguesStore.leagues();
     // The settings variant manages the league list, so it must show every league, including hidden ones.
-    if (!this.isAddPage()) return savedLeagues;
+    if (!this.isAddPage()) return this.sortByRecency(savedLeagues);
     this.hiddenLeagueSelectionService.selectionState();
     const savedJson = localStorage.getItem('leagueSelection');
     const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
     const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
-    return [...new Set([...visibleLeagues, ...this.leagues()])];
+    return this.sortByRecency([...new Set([...visibleLeagues, ...this.leagues()])]);
   });
 
   filteredLeagues = computed(() => {
@@ -105,6 +107,8 @@ export class LeagueSelectorComponent implements OnInit {
   });
 
   openPicker(): void {
+    // Other selector instances (e.g. game-list rows) may have updated the recency since this one was created.
+    this.recentLeagues.set(this.readRecentLeagues());
     this.searchTerm.set('');
     this.isPickerOpen.set(true);
   }
@@ -210,9 +214,27 @@ export class LeagueSelectorComponent implements OnInit {
   }
 
   private applySelection(league: string): void {
+    this.touchRecency(league);
     if (league !== this.selectedLeague()) {
       this.selectedLeague.set(league);
       this.leagueChanged.emit(league);
     }
+  }
+
+  private sortByRecency(leagues: string[]): string[] {
+    const rank = new Map(this.recentLeagues().map((league, index) => [league, index]));
+    return [...leagues].sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity));
+  }
+
+  private touchRecency(league: string): void {
+    if (!league) return;
+    const updated = [league, ...this.recentLeagues().filter((recent) => recent !== league)].slice(0, 10);
+    this.recentLeagues.set(updated);
+    localStorage.setItem('leagueRecency', JSON.stringify(updated));
+  }
+
+  private readRecentLeagues(): string[] {
+    const savedJson = localStorage.getItem('leagueRecency');
+    return savedJson ? JSON.parse(savedJson) : [];
   }
 }

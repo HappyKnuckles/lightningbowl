@@ -12,21 +12,9 @@ import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 export class BallsStore {
   readonly url = BOWWWL_URL;
 
-  #arsenal = signal<Ball[]>([]);
-  #allBalls = signal<Ball[]>([]);
-  #isUsingCache = signal<boolean>(false);
-
-  get arsenal() {
-    return this.#arsenal;
-  }
-
-  get allBalls() {
-    return this.#allBalls;
-  }
-
-  get isUsingCache() {
-    return this.#isUsingCache;
-  }
+  readonly arsenal = signal<Ball[]>([]);
+  readonly allBalls = signal<Ball[]>([]);
+  readonly isUsingCache = signal<boolean>(false);
 
   constructor(
     private storageRepository: StorageRepository,
@@ -40,7 +28,7 @@ export class BallsStore {
     try {
       const arsenal = await this.storageRepository.loadByPrefix<Ball>(STORAGE_PREFIX.arsenal);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
-      this.#arsenal.set(sortedArsenal);
+      this.arsenal.set(sortedArsenal);
     } catch (error) {
       console.error('Error loading arsenal:', error);
       throw error;
@@ -56,8 +44,8 @@ export class BallsStore {
         const isCacheValid = await this.cacheService.isValid(cacheKey);
 
         if (cachedBalls && (isCacheValid || this.networkService.isOffline)) {
-          this.#allBalls.set(cachedBalls);
-          this.#isUsingCache.set(true);
+          this.allBalls.set(cachedBalls);
+          this.isUsingCache.set(true);
           if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
             this.refreshBallsInBackground(updated, weight, cacheKey);
           }
@@ -71,16 +59,16 @@ export class BallsStore {
       }
 
       const response = await this.ballService.loadAllBalls(updated, weight);
-      this.#allBalls.set(response);
-      this.#isUsingCache.set(false);
+      this.allBalls.set(response);
+      this.isUsingCache.set(false);
       await this.cacheService.set(cacheKey, response);
     } catch (error) {
       console.error('Failed to load all balls:', error);
 
       const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
       if (cachedBalls) {
-        this.#allBalls.set(cachedBalls);
-        this.#isUsingCache.set(true);
+        this.allBalls.set(cachedBalls);
+        this.isUsingCache.set(true);
       } else {
         throw error;
       }
@@ -93,7 +81,7 @@ export class BallsStore {
       const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
       await this.storageRepository.remove(oldKey);
       await this.storageRepository.set(newKey, newBall);
-      this.#arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
     } catch (error) {
       console.error('Error updating ball in arsenal:', error);
       throw error;
@@ -122,7 +110,7 @@ export class BallsStore {
     );
 
     if (saved.length) {
-      this.#arsenal.update((existing) => {
+      this.arsenal.update((existing) => {
         const merged = [...existing];
         for (const ball of saved) {
           const isUnique = !merged.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
@@ -141,7 +129,7 @@ export class BallsStore {
       const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
       await this.storageRepository.remove(`${STORAGE_PREFIX.arsenal}_${ball.ball_id}`);
       await this.storageRepository.remove(key);
-      this.#arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
+      this.arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
     } catch (error) {
       console.error('Error removing ball from arsenal:', error);
       throw error;
@@ -149,14 +137,14 @@ export class BallsStore {
   }
 
   clearArsenal(): void {
-    this.#arsenal.set([]);
+    this.arsenal.set([]);
   }
 
   private async refreshBallsInBackground(updated?: string, weight?: number, cacheKey?: string): Promise<void> {
     try {
       const response = await this.ballService.loadAllBalls(updated, weight);
-      this.#allBalls.set(response);
-      this.#isUsingCache.set(false);
+      this.allBalls.set(response);
+      this.isUsingCache.set(false);
       if (cacheKey) {
         await this.cacheService.set(cacheKey, response);
       }

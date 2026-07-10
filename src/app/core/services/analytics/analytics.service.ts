@@ -58,10 +58,8 @@ export class AnalyticsService {
   private navigationStartTime?: number;
   private currentRoute?: string;
 
-  #analyticsEnabled = signal<boolean>(true);
-  get analyticsEnabled() {
-    return this.#analyticsEnabled.asReadonly();
-  }
+  readonly #analyticsEnabled = signal<boolean>(true);
+  readonly analyticsEnabled = this.#analyticsEnabled.asReadonly();
 
   // Only track in production
   private get isProduction(): boolean {

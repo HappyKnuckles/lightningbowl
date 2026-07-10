@@ -130,7 +130,7 @@ export class LeaguePage {
   gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
-  mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBall(games));
+  mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBallStats(games));
   allBallsByLeague = this.perLeague((games) => this.statService.calculateAllBallStats(games));
   bestPatternsByLeague = this.perLeague((games) => this.statService.calculateBestPatternStats(games));
   mostPlayedPatternsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedPatternStats(games));

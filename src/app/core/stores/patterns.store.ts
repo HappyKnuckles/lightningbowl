@@ -6,21 +6,9 @@ import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 
 @Injectable({ providedIn: 'root' })
 export class PatternsStore {
-  #allPatterns = signal<Partial<Pattern>[]>([]);
-  #patternImageMap = signal<Record<string, string>>({});
-  #isUsingCache = signal<boolean>(false);
-
-  get allPatterns() {
-    return this.#allPatterns;
-  }
-
-  get isUsingCache() {
-    return this.#isUsingCache;
-  }
-
-  get patternImageMap() {
-    return this.#patternImageMap;
-  }
+  readonly allPatterns = signal<Partial<Pattern>[]>([]);
+  readonly patternImageMap = signal<Record<string, string>>({});
+  readonly isUsingCache = signal<boolean>(false);
 
   constructor(
     private patternService: PatternService,
@@ -37,8 +25,8 @@ export class PatternsStore {
         const isCacheValid = await this.cacheService.isValid(cacheKey);
 
         if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
-          this.#allPatterns.set(cachedPatterns);
-          this.#isUsingCache.set(true);
+          this.allPatterns.set(cachedPatterns);
+          this.isUsingCache.set(true);
           if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
             this.refreshPatternsInBackground(cacheKey);
           }
@@ -52,16 +40,16 @@ export class PatternsStore {
       }
 
       const response = await this.patternService.getAllPatternsStripped();
-      this.#allPatterns.set(response);
-      this.#isUsingCache.set(false);
+      this.allPatterns.set(response);
+      this.isUsingCache.set(false);
       await this.cacheService.set(cacheKey, response);
     } catch (error) {
       console.error('Error fetching patterns:', error);
 
       const cachedPatterns = await this.cacheService.get<Pattern[]>(cacheKey);
       if (cachedPatterns) {
-        this.#allPatterns.set(cachedPatterns);
-        this.#isUsingCache.set(true);
+        this.allPatterns.set(cachedPatterns);
+        this.isUsingCache.set(true);
       }
     }
   }
@@ -76,7 +64,7 @@ export class PatternsStore {
         const arePatternsValid = await this.cacheService.isValid('all_patterns');
 
         if (cached && (isCacheValid || this.networkService.isOffline) && (arePatternsValid || this.networkService.isOffline)) {
-          this.#patternImageMap.set(cached);
+          this.patternImageMap.set(cached);
           if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
             this.refreshPatternImageMapInBackground(cacheKey);
           }
@@ -96,13 +84,13 @@ export class PatternsStore {
           imageMap[pattern.title] = pattern.chart_standard;
         }
       }
-      this.#patternImageMap.set(imageMap);
+      this.patternImageMap.set(imageMap);
       await this.cacheService.set(cacheKey, imageMap);
     } catch (error) {
       console.error('Error loading pattern image map:', error);
       const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
       if (cached) {
-        this.#patternImageMap.set(cached);
+        this.patternImageMap.set(cached);
       }
     }
   }
@@ -110,8 +98,8 @@ export class PatternsStore {
   private async refreshPatternsInBackground(cacheKey?: string): Promise<void> {
     try {
       const response = await this.patternService.getAllPatternsStripped();
-      this.#allPatterns.set(response);
-      this.#isUsingCache.set(false);
+      this.allPatterns.set(response);
+      this.isUsingCache.set(false);
       if (cacheKey) {
         await this.cacheService.set(cacheKey, response);
       }
@@ -131,7 +119,7 @@ export class PatternsStore {
           imageMap[pattern.title] = pattern.chart_standard;
         }
       }
-      this.#patternImageMap.set(imageMap);
+      this.patternImageMap.set(imageMap);
       await this.cacheService.set(cacheKey, imageMap);
     } catch (error) {
       console.error('Background refresh failed for pattern image map:', error);

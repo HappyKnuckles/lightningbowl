@@ -43,19 +43,13 @@ export class BallFilterService {
     }, 0);
   });
 
-  #filters = signal<BallFilter>(this.loadInitialFilters());
-  get filters() {
-    return this.#filters;
-  }
+  readonly filters = signal<BallFilter>(this.loadInitialFilters());
 
-  #filteredBalls = computed(() => {
+  readonly filteredBalls = computed(() => {
     const balls = this.ballsStore.allBalls();
     const filters = this.filters();
     return this.filterBalls(balls, filters);
   });
-  get filteredBalls() {
-    return this.#filteredBalls;
-  }
 
   constructor(
     private utilsService: UtilsService,

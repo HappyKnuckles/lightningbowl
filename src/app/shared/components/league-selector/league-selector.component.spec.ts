@@ -28,7 +28,7 @@ describe('LeagueSelectorComponent', () => {
 
     fixture = TestBed.createComponent(LeagueSelectorComponent);
     component = fixture.componentInstance;
-    component.isAddPage = false;
+    fixture.componentRef.setInput('isAddPage', false);
     fixture.detectChanges();
   });
 

@@ -366,11 +366,11 @@ export class AddGamePage implements OnInit {
 
       if (key === 'league') {
         const isPractice = value === '' || value === 'New';
-        this.gameComponents.forEach((grid, i) => {
+        this.gameComponents.forEach((game, i) => {
           if (trackIndexes.includes(i)) {
-            grid.leagueSelector.selectedLeague = league as string;
-            grid.checkbox.checked = isPractice;
-            grid.checkbox.disabled = !isPractice;
+            game.leagueSelector.selectedLeague.set(league as string);
+            game.checkbox.checked = isPractice;
+            game.checkbox.disabled = !isPractice;
           }
         });
       }
@@ -684,14 +684,14 @@ export class AddGamePage implements OnInit {
     );
 
     setTimeout(() => {
-      this.gameComponents.forEach((grid, i) => {
+      this.gameComponents.forEach((component, i) => {
         if (activeIndexes.includes(i)) {
-          if (grid.leagueSelector) {
-            grid.leagueSelector.selectedLeague = sourceGame.league || '';
+          if (component.leagueSelector) {
+            component.leagueSelector.selectedLeague.set(sourceGame.league || '');
           }
-          if (grid.checkbox) {
-            grid.checkbox.checked = sourceGame.isPractice;
-            grid.checkbox.disabled = !sourceGame.isPractice;
+          if (component.checkbox) {
+            component.checkbox.checked = sourceGame.isPractice;
+            component.checkbox.disabled = !sourceGame.isPractice;
           }
         }
       });

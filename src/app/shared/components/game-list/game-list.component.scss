@@ -64,6 +64,10 @@ ion-item-divider {
       --background: var(--ion-card-background);
     }
 
+    ::ng-deep app-league-selector.league ion-item {
+      --background: var(--ion-card-background);
+    }
+
     .game-info {
       display: flex;
       flex-direction: column;

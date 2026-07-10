@@ -79,18 +79,13 @@
                 }
                 <app-game-readonly *ngIf="!editService.isEditMode(game.gameId)" [game]="game"></app-game-readonly>
               } @else {
-                <ion-item class="league" [disabled]="leagues().length === 0">
-                  <ion-icon name="trophy-outline" slot="start"></ion-icon>
-                  <ion-select
-                    name="league"
-                    [(ngModel)]="game.league"
-                    (ngModelChange)="updateSeries(game, game.league)"
-                    label="League/Tournament"
-                    [value]="game.league">
-                    <ion-select-option [value]="''">None</ion-select-option>
-                    <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
+                <app-league-selector
+                  class="league"
+                  [isAddPage]="true"
+                  icon="trophy-outline"
+                  [leagues]="leagues()"
+                  [selectedLeague]="game.league ?? ''"
+                  (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
                 <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
                   <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
                   <ion-label>Balls</ion-label>

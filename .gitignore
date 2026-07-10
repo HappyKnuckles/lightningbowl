@@ -71,3 +71,15 @@ Thumbs.db
 
 resources/ios/**/*
 resources/android/**/*
+
+# Playwright screenshot system — keep generated screenshots + manifest, drop run artifacts
+/playwright/.report
+/playwright/.artifacts
+/playwright/.shots
+/playwright/screenshots/fixtures-data/captured
+/test-results
+/playwright-report
+
+# Playwright e2e suite — run artifacts
+/playwright/.e2e-report
+/playwright/.e2e-artifacts

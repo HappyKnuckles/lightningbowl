@@ -1,0 +1,687 @@
+{
+  "generatedFrom": "playwright/screenshots/registry.ts",
+  "count": 39,
+  "viewports": {
+    "mobile": {
+      "viewport": {
+        "width": 393,
+        "height": 852
+      },
+      "deviceScaleFactor": 3,
+      "suffix": ""
+    },
+    "desktop": {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "deviceScaleFactor": 2,
+      "suffix": "_wide"
+    }
+  },
+  "shots": [
+    {
+      "id": "games.new-game",
+      "feature": "games",
+      "page": "new-game",
+      "description": "Fresh single-game score board",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/games/new-game.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/games/new-game_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "games.score-entry",
+      "feature": "games",
+      "page": "score-entry",
+      "description": "Populated scorecard",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/games/score-entry.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/games/score-entry_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "games.series",
+      "feature": "games",
+      "page": "series",
+      "description": "3-game series mode",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/games/series.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/games/series_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "games.mode-select",
+      "feature": "games",
+      "page": "mode-select",
+      "description": "Series mode action sheet",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/games/mode-select.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/games/mode-select_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "games.history",
+      "feature": "games",
+      "page": "history",
+      "description": "Game history list",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/games/history.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/games/history_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "games.game-details",
+      "feature": "games",
+      "page": "game-details",
+      "description": "Expanded game scorecard",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/games/game-details.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/games/game-details_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.overall",
+      "feature": "statistics",
+      "page": "overall",
+      "description": "Overall stats + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/overall.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/overall_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.throws",
+      "feature": "statistics",
+      "page": "throws",
+      "description": "Throw stats + distribution",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/throws.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/throws_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.spares",
+      "feature": "statistics",
+      "page": "spares",
+      "description": "Spare conversion + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/spares.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/spares_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.pins",
+      "feature": "statistics",
+      "page": "pins",
+      "description": "Pin leaves + diagrams",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/statistics/pins.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/statistics/pins_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.sessions",
+      "feature": "statistics",
+      "page": "sessions",
+      "description": "Per-session stats + date picker",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/sessions.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/sessions_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.overall.scrolled",
+      "feature": "statistics",
+      "page": "overall-scrolled",
+      "description": "Overall stats + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/overall-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/overall-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.throws.scrolled",
+      "feature": "statistics",
+      "page": "throws-scrolled",
+      "description": "Throw stats + distribution",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/throws-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/throws-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.spares.scrolled",
+      "feature": "statistics",
+      "page": "spares-scrolled",
+      "description": "Spare conversion + charts",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/spares-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/spares-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.pins.scrolled",
+      "feature": "statistics",
+      "page": "pins-scrolled",
+      "description": "Pin leaves + diagrams",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/pins-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/pins-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.sessions.scrolled",
+      "feature": "statistics",
+      "page": "sessions-scrolled",
+      "description": "Per-session stats + date picker",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/sessions-scrolled.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/sessions-scrolled_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "stats.filter",
+      "feature": "statistics",
+      "page": "filter",
+      "description": "Stats filter modal",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/statistics/filter.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/statistics/filter_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "leagues.list",
+      "feature": "leagues",
+      "page": "list",
+      "description": "League list with stats",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/leagues/list.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/leagues/list_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "leagues.detail-overall",
+      "feature": "leagues",
+      "page": "detail-overall",
+      "description": "League detail — overall",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/leagues/detail-overall.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/leagues/detail-overall_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "leagues.create",
+      "feature": "leagues",
+      "page": "create",
+      "description": "Create league dialog",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/leagues/create.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/leagues/create_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "leagues.visibility-edit",
+      "feature": "leagues",
+      "page": "visibility-edit",
+      "description": "League visibility checkboxes",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/leagues/visibility-edit.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/leagues/visibility-edit_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.ball-library",
+      "feature": "equipment",
+      "page": "ball-library",
+      "description": "Ball library grid",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/equipment/ball-library.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/equipment/ball-library_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.ball-filter",
+      "feature": "equipment",
+      "page": "ball-filter",
+      "description": "Ball filter modal",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/equipment/ball-filter.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/equipment/ball-filter_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.similar-balls",
+      "feature": "equipment",
+      "page": "similar-balls",
+      "description": "Similar-movement bottom sheet",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/equipment/similar-balls.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/equipment/similar-balls_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.arsenal",
+      "feature": "equipment",
+      "page": "arsenal",
+      "description": "Arsenal list",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/equipment/arsenal.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/equipment/arsenal_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.ball-details",
+      "feature": "equipment",
+      "page": "ball-details",
+      "description": "Ball detail modal (core/coverstock)",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/equipment/ball-details.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/equipment/ball-details_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.arsenal-add",
+      "feature": "equipment",
+      "page": "arsenal-add",
+      "description": "Add-ball typeahead",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/equipment/arsenal-add.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/equipment/arsenal-add_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.comparison",
+      "feature": "equipment",
+      "page": "comparison",
+      "description": "Ball comparison cards + radar",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/equipment/comparison.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/equipment/comparison_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "equipment.comparison-chart",
+      "feature": "equipment",
+      "page": "comparison-chart",
+      "description": "Ball comparison distribution chart",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/equipment/comparison-chart.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/equipment/comparison-chart_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "patterns.library",
+      "feature": "patterns",
+      "page": "library",
+      "description": "Oil pattern library",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "src/assets/screenshots/patterns/library.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "src/assets/screenshots/patterns/library_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "patterns.search",
+      "feature": "patterns",
+      "page": "search",
+      "description": "Pattern search results",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/patterns/search.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/patterns/search_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "patterns.detail",
+      "feature": "patterns",
+      "page": "detail",
+      "description": "Pattern detail modal",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/patterns/detail.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/patterns/detail_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "alley-map.overview",
+      "feature": "alley-map",
+      "page": "overview",
+      "description": "Map with alley markers",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/alley-map/overview.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/alley-map/overview_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "alley-map.selected",
+      "feature": "alley-map",
+      "page": "selected",
+      "description": "Selected alley popup",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/alley-map/selected.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/alley-map/selected_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "alley-map.search",
+      "feature": "alley-map",
+      "page": "search",
+      "description": "Map search recenter",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/alley-map/search.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/alley-map/search_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "profile.settings",
+      "feature": "profile",
+      "page": "settings",
+      "description": "Settings list",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/profile/settings.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/profile/settings_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "profile.cloud-sync",
+      "feature": "profile",
+      "page": "cloud-sync",
+      "description": "Cloud sync modal",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/profile/cloud-sync.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/profile/cloud-sync_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "profile.theme",
+      "feature": "profile",
+      "page": "theme",
+      "description": "Color theme picker",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/profile/theme.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/profile/theme_wide.png"
+        }
+      ]
+    },
+    {
+      "id": "minigame.play",
+      "feature": "minigame",
+      "page": "play",
+      "description": "Bowling minigame canvas",
+      "seed": "rich",
+      "files": [
+        {
+          "viewport": "mobile",
+          "path": "docs/screenshots/minigame/play.png"
+        },
+        {
+          "viewport": "desktop",
+          "path": "docs/screenshots/minigame/play_wide.png"
+        }
+      ]
+    }
+  ]
+}

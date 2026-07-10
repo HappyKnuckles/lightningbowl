@@ -1,7 +1,6 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -11,7 +10,7 @@ import {
   OnInit,
   Signal,
   signal,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -133,8 +132,8 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatsPage implements OnInit, AfterViewInit {
-  @ViewChild(IonContent) content!: IonContent;
+export class StatsPage implements OnInit {
+  readonly content = viewChild.required<IonContent>(IonContent);
   isRefreshing = signal(false);
   OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
   SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
@@ -148,7 +147,6 @@ export class StatsPage implements OnInit, AfterViewInit {
   imagesUrl = environment.imagesUrl;
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
-
     this.gamesStore.games().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
@@ -157,10 +155,12 @@ export class StatsPage implements OnInit, AfterViewInit {
 
     return Array.from(dateSet).sort((a, b) => b - a);
   });
+
   _selectedDate = signal<number | null>(null);
   selectedDate = computed(() => {
     return this._selectedDate() !== null ? this._selectedDate()! : this.uniqueSortedDates()[0];
   });
+
   gamesForSelectedSession = computed(() => {
     const selDate = this.selectedDate();
     const allGames = this.gamesStore.games();
@@ -168,16 +168,11 @@ export class StatsPage implements OnInit, AfterViewInit {
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
 
-  sessionStats: Signal<Stats> = computed(() => {
-    return this.statsService.calculateBowlingStats(this.gamesForSelectedSession());
-  });
-
+  sessionStats: Signal<Stats> = computed(() => this.statsService.calculateBowlingStats(this.gamesForSelectedSession()));
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
-
   sessionBestBallStats = computed(() => this.statsService.calculateBestBallStats(this.gamesForSelectedSession()));
   sessionMostPlayedBallStats = computed(() => this.statsService.calculateMostPlayedBallStats(this.gamesForSelectedSession()));
   sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
-
   sessionBestPatternStats = computed(() => this.statsService.calculateBestPatternStats(this.gamesForSelectedSession()));
   sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
@@ -270,13 +265,14 @@ export class StatsPage implements OnInit, AfterViewInit {
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Sessions'];
 
-  // Viewchilds and Instances
-  @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
-  @ViewChild('averageScoreChart', { static: false }) averageScoreChart?: ElementRef;
-  @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
-  @ViewChild('throwChart', { static: false }) throwChart?: ElementRef;
-  @ViewChild('scoreDistributionChart', { static: false }) scoreDistributionChart?: ElementRef;
-  @ViewChild('spareDistributionChart', { static: false }) spareDistributionChart?: ElementRef;
+  // ViewChild signal queries — undefined when the @if block is not rendered
+  readonly scoreChart = viewChild<ElementRef>('scoreChart');
+  readonly averageScoreChart = viewChild<ElementRef>('averageScoreChart');
+  readonly pinChart = viewChild<ElementRef>('pinChart');
+  readonly throwChart = viewChild<ElementRef>('throwChart');
+  readonly scoreDistributionChart = viewChild<ElementRef>('scoreDistributionChart');
+  readonly spareDistributionChart = viewChild<ElementRef>('spareDistributionChart');
+
   private spareDistributionChartInstance: Chart | null = null;
   private scoreDistributionChartInstance: Chart | null = null;
   private pinChartInstance: Chart | null = null;
@@ -301,6 +297,7 @@ export class StatsPage implements OnInit, AfterViewInit {
     private toastService: ToastService,
   ) {
     addIcons({ filterOutline, calendarNumberOutline, calendarNumber });
+
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {
         this.generateCharts(true);
@@ -317,10 +314,6 @@ export class StatsPage implements OnInit, AfterViewInit {
     } finally {
       this.loadingService.setLoading(false);
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.generateCharts(true);
   }
 
   async openFilterModal(): Promise<void> {
@@ -352,11 +345,12 @@ export class StatsPage implements OnInit, AfterViewInit {
       this.isRefreshing.set(false);
     }
   }
+
   onSegmentChanged(event: SegmentCustomEvent): void {
     this.selectedSegment = event.detail.value?.toString() || 'Overall';
     this.generateCharts();
     setTimeout(() => {
-      this.content.scrollToTop(300);
+      this.content().scrollToTop(300);
     }, 300);
   }
 
@@ -374,26 +368,8 @@ export class StatsPage implements OnInit, AfterViewInit {
       }
     }
   }
-  private generateScoreChart(isReload?: boolean): void {
-    try {
-      if (!this.scoreChart) {
-        return;
-      }
 
-      this.scoreChartInstance = this.chartService.generateScoreChart(
-        this.scoreChart,
-        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
-        this.scoreChartInstance!,
-        this.chartViewMode,
-        () => this.toggleChartView(),
-        isReload,
-      );
-    } catch (error) {
-      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
-      console.error('Error generating score chart:', error);
-    }
-  }
-  private toggleChartView() {
+  private toggleChartView(): void {
     if (this.chartViewMode === 'game') {
       this.chartViewMode = 'session';
     } else if (this.chartViewMode === 'session') {
@@ -405,11 +381,10 @@ export class StatsPage implements OnInit, AfterViewInit {
     } else {
       this.chartViewMode = 'game';
     }
-
     this.generateScoreChart(true);
   }
 
-  private toggleAverageChartView() {
+  private toggleAverageChartView(): void {
     if (this.averageChartViewMode === 'session') {
       this.averageChartViewMode = 'weekly';
     } else if (this.averageChartViewMode === 'weekly') {
@@ -419,18 +394,35 @@ export class StatsPage implements OnInit, AfterViewInit {
     } else {
       this.averageChartViewMode = 'session';
     }
-
     this.generateAverageScoreChart(true);
+  }
+
+  private generateScoreChart(isReload?: boolean): void {
+    try {
+      const canvas = this.scoreChart();
+      if (!canvas) return;
+
+      this.scoreChartInstance = this.chartService.generateScoreChart(
+        canvas,
+        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        this.scoreChartInstance!,
+        this.chartViewMode,
+        () => this.toggleChartView(),
+        isReload,
+      );
+    } catch (error) {
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
+      console.error('Error generating score chart:', error);
+    }
   }
 
   private generateAverageScoreChart(isReload?: boolean): void {
     try {
-      if (!this.averageScoreChart) {
-        return;
-      }
+      const canvas = this.averageScoreChart();
+      if (!canvas) return;
 
       this.averageScoreChartInstance = this.chartService.generateAverageScoreChart(
-        this.averageScoreChart,
+        canvas,
         sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
         this.averageScoreChartInstance!,
         this.averageChartViewMode,
@@ -445,12 +437,11 @@ export class StatsPage implements OnInit, AfterViewInit {
 
   private generateScoreDistributionChart(isReload?: boolean): void {
     try {
-      if (!this.scoreDistributionChart) {
-        return;
-      }
+      const canvas = this.scoreDistributionChart();
+      if (!canvas) return;
 
       this.scoreDistributionChartInstance = this.chartService.generateScoreDistributionChart(
-        this.scoreDistributionChart,
+        canvas,
         sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
         this.scoreDistributionChartInstance!,
         isReload,
@@ -463,12 +454,11 @@ export class StatsPage implements OnInit, AfterViewInit {
 
   private generateSpareDistributionChart(isReload?: boolean): void {
     try {
-      if (!this.spareDistributionChart) {
-        return;
-      }
+      const canvas = this.spareDistributionChart();
+      if (!canvas) return;
 
       this.spareDistributionChartInstance = this.chartService.generateSpareDistributionChart(
-        this.spareDistributionChart,
+        canvas,
         this.statsService.currentStats(),
         this.spareDistributionChartInstance!,
         isReload,
@@ -481,11 +471,10 @@ export class StatsPage implements OnInit, AfterViewInit {
 
   private generatePinChart(isReload?: boolean): void {
     try {
-      if (!this.pinChart) {
-        return;
-      }
+      const canvas = this.pinChart();
+      if (!canvas) return;
 
-      this.pinChartInstance = this.chartService.generatePinChart(this.pinChart, this.statsService.currentStats(), this.pinChartInstance!, isReload);
+      this.pinChartInstance = this.chartService.generatePinChart(canvas, this.statsService.currentStats(), this.pinChartInstance!, isReload);
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);
@@ -494,16 +483,10 @@ export class StatsPage implements OnInit, AfterViewInit {
 
   private generateThrowChart(isReload?: boolean): void {
     try {
-      if (!this.throwChart) {
-        return;
-      }
+      const canvas = this.throwChart();
+      if (!canvas) return;
 
-      this.throwChartInstance = this.chartService.generateThrowChart(
-        this.throwChart,
-        this.statsService.currentStats(),
-        this.throwChartInstance!,
-        isReload,
-      );
+      this.throwChartInstance = this.chartService.generateThrowChart(canvas, this.statsService.currentStats(), this.throwChartInstance!, isReload);
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating throw chart:', error);

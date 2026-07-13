@@ -6,6 +6,8 @@ export const TOAST_MESSAGES = {
   gameSaveError: 'Error saving game.',
   gameDeleteSuccess: 'Game deleted successfully.',
   gameDeleteError: 'Error deleting game.',
+  seriesDeleteSuccess: 'Series deleted successfully.',
+  seriesDeleteError: 'Error deleting series.',
   gameUpdateSuccess: 'Game updated successfully.',
   gameUpdateError: 'Error updating game.',
   gameLoadSuccess: 'Games loaded successfully.',

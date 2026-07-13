@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { IonButton, IonIcon } from '@ionic/angular/standalone';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
+import { ThrowBall } from 'src/app/core/models/game.model';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -22,9 +27,11 @@ const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonButton, IonIcon],
+  imports: [IonButton, IonIcon, IonModal, BallSelectComponent],
 })
 export class PinInputComponent {
+  ballsStore = inject(BallsStore);
+
   pinsLeftStanding = input<number[]>(PINS);
   canStrike = input<boolean>(false);
   canSpare = input<boolean>(false);
@@ -33,10 +40,32 @@ export class PinInputComponent {
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
+  selectedBall = input<ThrowBall | undefined>(undefined);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
   statsClick = output<void>();
+  ballSelected = output<ThrowBall | undefined>();
+
+  readonly isBallModalOpen = signal(false);
+  enterAnimation = alertEnterAnimation;
+  leaveAnimation = alertLeaveAnimation;
+
+  /** Current ThrowBall as a key string array used by BallSelectComponent */
+  readonly selectedBallKeys = computed<string[]>(() => {
+    const ball = this.selectedBall();
+    return ball ? [getThrowBallKey(ball)] : [];
+  });
+
+  /** Arsenal thumbnail of the currently selected ball, if available */
+  readonly selectedBallThumbnail = computed<string | undefined>(() => {
+    const ball = this.selectedBall();
+    if (!ball) return undefined;
+    const arsenalBall = this.ballsStore.arsenal().find((b) => b.ball_name === ball.name && (!ball.weight || b.core_weight === ball.weight));
+    return arsenalBall?.thumbnail_image;
+  });
+
+  readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));
 
   readonly hasSelection = computed(() => this.selectedPins().length > 0);
   readonly selectedPins = signal<number[]>([]);
@@ -63,7 +92,35 @@ export class PinInputComponent {
   });
 
   constructor() {
-    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline });
+    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline, bowlingBallOutline });
+  }
+
+  openBallSelector(): void {
+    if (this.ballsStore.arsenal().length === 0) {
+      return;
+    }
+    this.isBallModalOpen.set(true);
+  }
+
+  closeBallSelector(): void {
+    this.isBallModalOpen.set(false);
+  }
+
+  onBallSelection(selectedKeys: string[]): void {
+    const key = selectedKeys.length > 0 ? selectedKeys[0] : undefined;
+    if (!key) {
+      this.ballSelected.emit(undefined);
+    } else {
+      // Look up the ball in the arsenal to get proper name + weight
+      const arsenalBall = this.ballsStore.arsenal().find((b) => b.ball_name + b.core_weight === key);
+      if (arsenalBall) {
+        this.ballSelected.emit({ name: arsenalBall.ball_name, weight: arsenalBall.core_weight });
+      } else {
+        // Fallback: store the key as the name with no weight (edge case)
+        this.ballSelected.emit({ name: key });
+      }
+    }
+    this.isBallModalOpen.set(false);
   }
 
   togglePin(pinNumber: number): void {

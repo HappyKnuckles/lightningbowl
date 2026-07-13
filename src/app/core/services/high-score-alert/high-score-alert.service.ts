@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Game } from '../../models/game.model';
+import { getGameBallNames } from '../../utils/game-utils/ball.utils';
 
 export interface GameDetails {
   league?: string;
@@ -132,10 +133,11 @@ export class HighScoreAlertService {
    * Get formatted game details for display
    */
   private getGameDetails(game: Game): GameDetails {
+    const balls = getGameBallNames(game);
     return {
       league: game.league || undefined,
       patterns: game.patterns && game.patterns.length > 0 ? game.patterns : undefined,
-      balls: game.balls && game.balls.length > 0 ? game.balls : undefined,
+      balls: balls.length > 0 ? balls : undefined,
       date: new Date(game.date).toLocaleDateString(),
     };
   }

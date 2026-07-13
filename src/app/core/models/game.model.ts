@@ -1,4 +1,12 @@
 /**
+ * Minimized ball reference stored per throw
+ */
+export interface ThrowBall {
+  name: string;
+  weight?: string;
+}
+
+/**
  * Represents a single throw/ball in a bowling frame
  */
 export interface Throw {
@@ -7,6 +15,7 @@ export interface Throw {
   isSplit?: boolean;
   pinsLeftStanding?: number[];
   pinsKnockedDown?: number[];
+  ball?: ThrowBall;
 }
 
 /**

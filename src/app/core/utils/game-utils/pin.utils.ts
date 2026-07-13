@@ -1,5 +1,6 @@
 import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
+import { getCarryOverThrowBall } from './ball.utils';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];
@@ -167,12 +168,18 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
   );
 
   frame.throws[throwIndex] = {
+    ...frame.throws[throwIndex],
     value,
     throwIndex: throwIndex + 1,
     pinsLeftStanding: pinsStandingAfter,
     pinsKnockedDown: validPinsHit,
     isSplit: isSplitThrow,
   };
+
+  // Carry the ball over from earlier throws of the same kind when none was explicitly selected
+  if (!frame.throws[throwIndex].ball) {
+    frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);
+  }
 
   cleanupSubsequentThrows(frame, frameIndex, throwIndex, value, pinsStandingAfter);
 

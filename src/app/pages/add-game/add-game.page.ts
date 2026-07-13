@@ -28,7 +28,7 @@ import { addIcons } from 'ionicons';
 import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, trophyOutline } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import { Frame, Game, GameDraft, PinModeState, ThrowBall } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -41,6 +41,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { setThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -383,6 +384,23 @@ export class AddGamePage implements OnInit {
   }
   onBallsChange(balls: string[], index = 0, isModal = false) {
     this.updateSingleGameProperty('balls', balls, index, isModal);
+  }
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, index = 0, isModal = false) {
+    const { frameIndex, throwIndex, ball } = event;
+    if (isModal) {
+      const frames = cloneFrames(this.gameData.frames);
+      setThrowBall(frames, frameIndex, throwIndex, ball);
+      this.gameData = { ...this.gameData, frames };
+    } else {
+      this.games.update((games) =>
+        games.map((g, i) => {
+          if (i !== index) return g;
+          const frames = cloneFrames(g.frames);
+          setThrowBall(frames, frameIndex, throwIndex, ball);
+          return { ...g, frames };
+        }),
+      );
+    }
   }
   onIsPracticeChange(isPractice: boolean, index = 0, isModal = false) {
     this.updateSingleGameProperty('isPractice', isPractice, index, isModal);

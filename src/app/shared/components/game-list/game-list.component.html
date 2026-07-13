@@ -65,10 +65,10 @@
                     <ion-text>{{ game.pattern }}</ion-text>
                   </ion-item>
                 } -->
-                @if (game.balls && game.balls.length > 0) {
-                  <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(game.balls)">
+                @if (getSelectedBallsText(game) !== "None") {
+                  <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(getGameBalls(game))">
                     <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                    <ion-text>{{ game.balls.join(", ") }}</ion-text>
+                    <ion-text>{{ getSelectedBallsText(game) }}</ion-text>
                   </ion-item>
                 }
                 @if (game.note) {
@@ -86,34 +86,36 @@
                   [leagues]="leagues()"
                   [selectedLeague]="game.league ?? ''"
                   (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
-                <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
-                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                  <ion-label>Balls</ion-label>
-                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
-                </ion-item>
+                @if (!game.isPinMode) {
+                  <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
+                    <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                    <ion-label>Balls</ion-label>
+                    <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
+                  </ion-item>
 
-                @if (ballsStore.arsenal().length > 0) {
-                  <ion-modal
-                    [enterAnimation]="enterAnimation"
-                    [leaveAnimation]="leaveAnimation"
-                    #modal
-                    trigger="ball-selector-{{ game.gameId }}"
-                    class="ball-modal">
-                    <ng-template>
-                      <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
-                    </ng-template>
-                  </ion-modal>
-                } @else {
-                  <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
-                    <ng-template>
-                      <app-generic-typeahead
-                        [items]="ballsStore.allBalls()"
-                        [config]="ballTypeaheadConfig"
-                        [prevSelectedItems]="getBallIds(game.balls)"
-                        (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
-                      </app-generic-typeahead>
-                    </ng-template>
-                  </ion-modal>
+                  @if (ballsStore.arsenal().length > 0) {
+                    <ion-modal
+                      [enterAnimation]="enterAnimation"
+                      [leaveAnimation]="leaveAnimation"
+                      #modal
+                      trigger="ball-selector-{{ game.gameId }}"
+                      class="ball-modal">
+                      <ng-template>
+                        <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
+                      </ng-template>
+                    </ion-modal>
+                  } @else {
+                    <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
+                      <ng-template>
+                        <app-generic-typeahead
+                          [items]="ballsStore.allBalls()"
+                          [config]="ballTypeaheadConfig"
+                          [prevSelectedItems]="getBallIds(game.balls)"
+                          (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                        </app-generic-typeahead>
+                      </ng-template>
+                    </ion-modal>
+                  }
                 }
                 <ion-item class="pattern" button [id]="'selectPatternHistory' + $index">
                   <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
@@ -146,6 +148,7 @@
                   [canSpare]="canRecordSpare(game)"
                   [canUndo]="canUndoForPinMode(game)"
                   (throwInput)="onEditThrowInput($event, game)"
+                  (throwBallChanged)="onThrowBallChange($event, game)"
                   (scoreCellClick)="onScoreCellClick(game, $event.frameIndex, $event.throwIndex)"
                   (pinThrowConfirmed)="onPinThrowConfirmed($event, game)"
                   (pinUndoRequested)="handlePinUndoRequested(game)"></app-game>

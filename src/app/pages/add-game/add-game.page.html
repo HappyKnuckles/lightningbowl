@@ -87,6 +87,7 @@
         (toolbarStateChanged)="onToolbarStateChange($event)"
         (noteChanged)="onNoteChange($event, i)"
         (ballsChanged)="onBallsChange($event, i)"
+        (throwBallChanged)="onThrowBallChange($event, i)"
         (inputFocused)="onInputFocused($event, i)"
         (seriesStatsClick)="onSeriesStatsClick()"
         [statsEnabled]="hasLiveStats()">
@@ -187,6 +188,7 @@
         (isPracticeChanged)="onIsPracticeChange($event, 0, true)"
         (noteChanged)="onNoteChange($event, 0, true)"
         (ballsChanged)="onBallsChange($event, 0, true)"
+        (throwBallChanged)="onThrowBallChange($event, 0, true)"
         (patternChanged)="onPatternChange($event, true)"
         [patternModalId]="gameData.gameId">
       </app-game>

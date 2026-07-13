@@ -1,8 +1,12 @@
 import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
 import { NgIf } from '@angular/common';
-import { IonCol, IonGrid, IonRow } from '@ionic/angular/standalone';
+import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { bowlingBallOutline } from 'ionicons/icons';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { formatThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
@@ -11,6 +15,9 @@ interface ReadonlyThrowVm {
   isSplit: boolean;
   pinShow: boolean;
   pinPins: number[];
+  hasBall: boolean;
+  ballThumb: string | undefined;
+  ballLabel: string;
 }
 
 interface ReadonlyFrameVm {
@@ -26,14 +33,19 @@ interface ReadonlyFrameVm {
   selector: 'app-game-readonly',
   templateUrl: './game-readonly.component.html',
   styleUrls: ['./game-readonly.component.scss'],
-  imports: [NgIf, IonGrid, IonRow, IonCol, PinDeckComponent],
+  imports: [NgIf, IonGrid, IonRow, IonCol, IonIcon, PinDeckComponent],
 })
 export class GameReadonlyComponent {
   readonly game = input.required<Game>();
   readonly pinScale = input<number>(0.3);
 
+  private ballsStore = inject(BallsStore);
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   @ViewChild('captureRoot') private captureRoot?: ElementRef<HTMLElement>;
+
+  constructor() {
+    addIcons({ bowlingBallOutline });
+  }
 
   /** Element the share service should rasterize. */
   get captureElement(): HTMLElement {
@@ -46,6 +58,13 @@ export class GameReadonlyComponent {
     const game = this.game();
     const frames = game?.frames ?? [];
     const scores = game?.frameScores ?? [];
+    const arsenal = this.ballsStore.arsenal();
+
+    const resolveThumb = (ball: ThrowBall | undefined): string | undefined => {
+      if (!ball?.name) return undefined;
+      const arsenalBall = arsenal.find((b) => b.ball_name === ball.name && (!ball.weight || b.core_weight === ball.weight));
+      return arsenalBall ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined;
+    };
 
     return Array.from({ length: 10 }, (_, frameIndex) => {
       const frame = frames[frameIndex];
@@ -55,12 +74,18 @@ export class GameReadonlyComponent {
       const v1 = getThrowValue(frame, 1);
       const v2 = getThrowValue(frame, 2);
 
-      const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => ({
-        display: formatThrowDisplay(frame, throwIndex, isTenth),
-        isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
-        pinShow,
-        pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
-      });
+      const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => {
+        const ball = frame?.throws?.[throwIndex]?.ball;
+        return {
+          display: formatThrowDisplay(frame, throwIndex, isTenth),
+          isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
+          pinShow,
+          pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
+          hasBall: !!ball?.name,
+          ballThumb: resolveThumb(ball),
+          ballLabel: formatThrowBall(ball),
+        };
+      };
 
       return {
         frameNumber: frameIndex + 1,

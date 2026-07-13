@@ -33,7 +33,7 @@ import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -44,6 +44,7 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { getCarryOverThrowBall, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
@@ -126,6 +127,7 @@ export class GameComponent implements OnInit {
   patternChanged = output<string[]>();
   noteChanged = output<string>();
   ballsChanged = output<string[]>();
+  throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
 
@@ -184,8 +186,16 @@ export class GameComponent implements OnInit {
     });
   });
 
-  ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
+  ballsText = computed(() => getGameBallNames(this.currentGame(), this.ballsStore.arsenal()).join(', '));
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
+
+  /** Ball for the throw the pin input is currently on, falling back to the carried-over ball */
+  currentThrowBall = computed<ThrowBall | undefined>(() => {
+    const frames = this.game()?.frames ?? [];
+    const frameIndex = this.currentFrameIndex();
+    const throwIndex = this.currentThrowIndex();
+    return frames[frameIndex]?.throws?.[throwIndex]?.ball ?? getCarryOverThrowBall(frames, frameIndex, throwIndex);
+  });
 
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
@@ -226,6 +236,14 @@ export class GameComponent implements OnInit {
 
   onPinUndoRequested(): void {
     this.pinUndoRequested.emit();
+  }
+
+  onPinBallSelected(ball: ThrowBall | undefined): void {
+    this.throwBallChanged.emit({
+      frameIndex: this.currentFrameIndex(),
+      throwIndex: this.currentThrowIndex(),
+      ball,
+    });
   }
 
   onScoreCellClicked(frameIndex: number, throwIndex: number): void {

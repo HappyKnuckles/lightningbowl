@@ -115,7 +115,7 @@ export function calculateIsClean(frames: Frame[]): boolean {
 
 // Mutators (operate on Frame[] / Frame in place)
 
-/** Set a throw value in a frame (mutates). Handles throwIndex assignment. */
+/** Set a throw value in a frame (mutates). Handles throwIndex assignment. Preserves other throw data (e.g. ball). */
 export function setThrowInFrame(frame: Frame, throwIndex: number, value: number): void {
   if (!frame.throws) frame.throws = [];
 
@@ -123,7 +123,11 @@ export function setThrowInFrame(frame: Frame, throwIndex: number, value: number)
     frame.throws.push(createThrow(0, frame.throws.length + 1));
   }
 
-  frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  frame.throws[throwIndex] = {
+    ...frame.throws[throwIndex],
+    value,
+    throwIndex: throwIndex + 1,
+  };
 }
 
 /** Remove a throw at an index (mutates). */
@@ -136,14 +140,11 @@ export function removeThrowFromFrame(frame: Frame, throwIndex: number): void {
   }
 }
 
-/** Record a throw within a frames array (mutates). */
+/** Record a throw within a frames array (mutates). Preserves other throw data (e.g. ball). */
 export function recordThrow(frames: Frame[], frameIndex: number, throwIndex: number, value: number): void {
   const frame = frames[frameIndex];
   if (!frame) return;
-  while (frame.throws.length <= throwIndex) {
-    frame.throws.push(createThrow(0, frame.throws.length + 1));
-  }
-  frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  setThrowInFrame(frame, throwIndex, value);
 }
 
 /** Remove a throw within a frames array (mutates). */

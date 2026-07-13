@@ -86,6 +86,7 @@ export class GameDataTransformerService {
               isSplit: t.isSplit,
               pinsLeftStanding: t.pinsLeftStanding,
               pinsKnockedDown: t.pinsKnockedDown,
+              ball: t.ball,
             }),
           ),
         };

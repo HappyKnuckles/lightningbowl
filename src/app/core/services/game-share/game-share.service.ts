@@ -5,6 +5,7 @@ import { Share } from '@capacitor/share';
 import { toPng } from 'html-to-image';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
+import { getGameBallNames } from '../../utils/game-utils/ball.utils';
 import { LoadingService } from '../loader/loading.service';
 import { ToastService } from '../toast/toast.service';
 
@@ -59,7 +60,7 @@ export class GameShareService {
       game.totalScore === 300
         ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
         : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
-      this.formatBallsPart(game.balls),
+      this.formatBallsPart(getGameBallNames(game)),
       game.patterns?.length ? `Patterns: ${game.patterns.join(', ')}` : null,
     ];
 

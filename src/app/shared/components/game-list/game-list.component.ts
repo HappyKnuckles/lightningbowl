@@ -39,7 +39,8 @@ import {
 } from 'ionicons/icons';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import { getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -396,6 +397,10 @@ export class GameListComponent implements OnInit {
     game.balls = selectedBalls;
   }
 
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
+    this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
+  }
+
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
     this.editService.propagateSeriesFields(game, league, patterns);
   }
@@ -415,8 +420,12 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
+  getGameBalls(game: Game): string[] {
+    return getGameBallNames(game, this.ballsStore.arsenal());
+  }
+
   getSelectedBallsText(game: Game): string {
-    const balls = game.balls || [];
+    const balls = this.getGameBalls(game);
     return balls.length > 0 ? balls.join(', ') : 'None';
   }
 

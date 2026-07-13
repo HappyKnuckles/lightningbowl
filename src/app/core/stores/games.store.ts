@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
@@ -20,6 +20,12 @@ export class GamesStore {
     try {
       const gameHistory = await this.storageRepository.loadByPrefix<Game>(STORAGE_PREFIX.game);
       let needsUpdate = false;
+
+      // Legacy migration: support games stored before ThrowBall was introduced
+      // (where throw.ball was a plain string)
+      interface LegacyThrow {
+        ball?: string | ThrowBall;
+      }
 
       gameHistory.forEach((game) => {
         const legacyGame = game as Game & { pattern?: string };
@@ -51,6 +57,43 @@ export class GamesStore {
             needsUpdate = true;
           }
         }
+
+        // Check for old string-format balls or new ThrowBall objects
+        const hasThrowLevelBalls = (game.frames || []).some((frame) =>
+          (frame.throws || []).some((throwData) => {
+            const ball = (throwData as LegacyThrow).ball;
+            return (typeof ball === 'string' && ball.trim().length > 0) || (typeof ball === 'object' && ball !== null && ball.name);
+          }),
+        );
+
+        // Seed per-throw balls from the legacy game-level selection
+        if (!hasThrowLevelBalls && game.balls && game.balls.length > 0) {
+          const fallbackBallName = game.balls[0];
+          (game.frames || []).forEach((frame) => {
+            (frame.throws || []).forEach((throwData) => {
+              if (!throwData.ball) {
+                throwData.ball = { name: fallbackBallName };
+                needsUpdate = true;
+              }
+            });
+          });
+        }
+
+        // Migrate legacy string ball data to ThrowBall objects
+        (game.frames || []).forEach((frame) => {
+          (frame.throws || []).forEach((throwData) => {
+            const rawBall = (throwData as LegacyThrow).ball;
+            if (typeof rawBall === 'string') {
+              const trimmed = rawBall.trim();
+              if (trimmed.length === 0) {
+                delete throwData.ball;
+              } else {
+                throwData.ball = { name: trimmed };
+              }
+              needsUpdate = true;
+            }
+          });
+        });
       });
 
       if (needsUpdate) {

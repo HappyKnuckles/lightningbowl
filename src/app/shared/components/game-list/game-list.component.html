@@ -11,7 +11,9 @@
           </ion-item-divider>
         }
         @case ("single") {
-          <ng-container *ngTemplateOutlet="gameCard; context: { game: row.game, inSeries: false }"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="gameCard; context: { game: row.game, inSeries: false, title: row.title, meta: row.meta, numberTag: row.numberTag }">
+          </ng-container>
         }
         @case ("series") {
           @let lead = row.games[0];
@@ -33,15 +35,12 @@
                 <div class="series-header">
                   <div class="series-info">
                     <div class="series-title-row">
-                      <span class="series-date">{{ lead.date | date: "MM.dd.yyyy" }}</span>
-                      <span class="series-label">{{ row.count }}-Series</span>
+                      <span class="series-date">
+                        <span>{{ lead.date | date: "MM.dd.yyyy" }}</span>
+                        <span>#{{ row.firstNumber }}–{{ row.lastNumber }}</span>
+                      </span>
+                      <span class="series-label">{{ lead.league || "Practice" }}</span>
                     </div>
-                    @if (lead.league && !isLeaguePage()) {
-                      <p class="series-meta">
-                        <ion-icon name="trophy-outline"></ion-icon>
-                        <span>{{ lead.league }}</span>
-                      </p>
-                    }
                     @if (lead.patterns && lead.patterns.length > 0) {
                       <p class="series-meta">
                         <ion-icon src="assets/svg/lane.svg"></ion-icon>
@@ -50,6 +49,7 @@
                     }
                   </div>
                   <div class="series-score">
+                    <div class="series-games">{{ row.count }}-Series</div>
                     <div class="series-total">{{ row.total }}</div>
                     <div class="score-bar">
                       <div
@@ -92,8 +92,10 @@
                 </div>
               </div>
             }
-            @for (game of row.games; track game.gameId) {
-              <ng-container *ngTemplateOutlet="gameCard; context: { game: game, inSeries: true }"></ng-container>
+            @for (game of row.games; track game.gameId; let idx = $index) {
+              <ng-container
+                *ngTemplateOutlet="gameCard; context: { game: game, inSeries: true, title: 'Game ' + (idx + 1), meta: '', numberTag: '' }">
+              </ng-container>
             }
           </div>
         }
@@ -105,7 +107,7 @@
   <ion-infinite-scroll-content loadingText="Loading more games..." loadingSpinner="bubbles"></ion-infinite-scroll-content>
 </ion-infinite-scroll>
 
-<ng-template appGameCard #gameCard let-game="game" let-inSeries="inSeries">
+<ng-template appGameCard #gameCard let-game="game" let-inSeries="inSeries" let-title="title" let-meta="meta" let-numberTag="numberTag">
   <ion-item-sliding class="sliding" #slidingItem>
     <ion-item-options side="end" (ionSwipe)="deleteGame(game.gameId); slidingItem.closeOpened()">
       <ion-item-option color="danger" expandable (click)="deleteGame(game.gameId); slidingItem.closeOpened()">
@@ -135,15 +137,14 @@
       <ion-accordion #accordionRef [value]="game.gameId" [id]="game.gameId">
         <ion-item slot="header" lines="none" class="expansion-header">
           <ion-label class="game-info">
-            <p *ngIf="!inSeries">{{ game.date | date: "MM.dd.yyyy" }}</p>
-            <h2 class="title">Game {{ gameNumberMap().get(game.gameId) }}</h2>
-            <p class="score" *ngIf="!inSeries && game.league && !isLeaguePage()">
-              <ion-icon name="trophy-outline"></ion-icon>
-              <span>{{ game.league }}</span>
+            <p *ngIf="!inSeries" class="game-date">
+              <span>{{ game.date | date: "MM.dd.yyyy" }}</span>
+              <span *ngIf="numberTag">{{ numberTag }}</span>
             </p>
-            <p class="score" *ngIf="!inSeries && game.patterns && game.patterns.length > 0">
+            <h2 class="title">{{ title }}</h2>
+            <p class="score" *ngIf="meta">
               <ion-icon src="assets/svg/lane.svg"></ion-icon>
-              <span>{{ game.patterns.join(", ") }}</span>
+              <span>{{ meta }}</span>
             </p>
           </ion-label>
           <div slot="end" class="score-badge">

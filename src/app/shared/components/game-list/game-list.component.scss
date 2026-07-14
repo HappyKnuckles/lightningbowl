@@ -103,6 +103,11 @@ ion-item-divider {
         font-size: 1.125rem;
       }
 
+      .game-date {
+        display: flex;
+        gap: 0.5rem;
+      }
+
       .score {
         font-size: 0.75rem;
         color: var(--ion-color-step-750);
@@ -210,6 +215,7 @@ ion-item-divider {
     .series-info {
       flex: 1;
       min-width: 0;
+      align-self: flex-start;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -225,6 +231,8 @@ ion-item-divider {
         }
 
         .series-date {
+          display: flex;
+          gap: 0.5rem;
           color: var(--ion-color-step-400);
         }
       }
@@ -254,11 +262,18 @@ ion-item-divider {
       display: flex;
       flex-direction: column;
       align-items: stretch;
+      align-self: stretch;
       min-width: 80px;
       margin-inline-end: 28px;
 
+      .series-games {
+        text-align: right;
+        color: var(--ion-color-step-400);
+      }
+
       .series-total {
         text-align: right;
+        margin-top: auto;
         margin-bottom: 3px;
         font-size: 1.125rem;
         font-weight: 800;
@@ -267,6 +282,7 @@ ion-item-divider {
 
       .series-avg {
         margin-top: 2px;
+        margin-bottom: auto;
         text-align: right;
         font-size: 0.75rem;
         color: var(--ion-color-step-750);

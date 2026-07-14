@@ -76,6 +76,9 @@ interface SingleRow {
   kind: 'single';
   id: string;
   game: Game;
+  title: string;
+  meta: string;
+  numberTag: string;
 }
 
 interface SeriesRow {
@@ -85,6 +88,8 @@ interface SeriesRow {
   count: number;
   total: number;
   avg: number;
+  firstNumber: number;
+  lastNumber: number;
 }
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;
@@ -191,6 +196,8 @@ export class GameListComponent implements OnInit {
   // seriesId) with their combined total and average.
   displayRows = computed<DisplayRow[]>(() => {
     const games = this.showingGames();
+    const numbers = this.gameNumberMap();
+    const onLeaguePage = this.isLeaguePage();
     const rows: DisplayRow[] = [];
 
     const getMonthKey = (timestamp: number) => {
@@ -225,15 +232,33 @@ export class GameListComponent implements OnInit {
         while (j < games.length && games[j].seriesId === game.seriesId) j++;
 
         if (j - i > 1) {
-          const run = games.slice(i, j);
+          // Chronological inside the series block (#1 first), unlike the newest-first outer list.
+          const run = games.slice(i, j).reverse();
           const total = run.reduce((sum, g) => sum + g.totalScore, 0);
-          rows.push({ kind: 'series', id: `series-${run[0].gameId}`, games: run, count: run.length, total, avg: Math.round(total / run.length) });
+          rows.push({
+            kind: 'series',
+            id: `series-${run[0].gameId}`,
+            games: run,
+            count: run.length,
+            total,
+            avg: Math.round(total / run.length),
+            firstNumber: numbers.get(run[0].gameId) ?? 0,
+            lastNumber: numbers.get(run[run.length - 1].gameId) ?? 0,
+          });
           i = j;
           continue;
         }
       }
 
-      rows.push({ kind: 'single', id: game.gameId, game });
+      const number = numbers.get(game.gameId) ?? 0;
+      rows.push({
+        kind: 'single',
+        id: game.gameId,
+        game,
+        title: onLeaguePage ? `Game ${number}` : game.league || 'Practice',
+        meta: game.patterns && game.patterns.length > 0 ? game.patterns.join(', ') : '',
+        numberTag: onLeaguePage ? '' : `#${number}`,
+      });
       i++;
     }
 

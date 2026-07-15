@@ -21,6 +21,29 @@ export function formatThrowBall(ball: ThrowBall | undefined): string {
   return ball.weight ? `${ball.name} ${ball.weight}lbs` : ball.name;
 }
 
+/**
+ * Find the arsenal entry a ThrowBall refers to, tolerating the different name formats
+ * a stored ball can have: plain name, "Name{weight}" key, or "Name {weight}lbs" display string.
+ */
+export function findBallInArsenal<T extends Pick<Ball, 'ball_name' | 'core_weight'>>(ball: ThrowBall | undefined, arsenal: T[]): T | undefined {
+  if (!ball?.name) return undefined;
+
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/lbs?|#/g, '');
+
+  const name = normalize(ball.name);
+  const key = normalize(getThrowBallKey(ball));
+
+  return arsenal.find((b) => {
+    const byName = normalize(b.ball_name);
+    const byKey = normalize(b.ball_name + b.core_weight);
+    return byKey === key || byName === key || byKey === name || byName === name;
+  });
+}
+
 // Game-level accessors
 
 /**
@@ -83,30 +106,14 @@ export function getGameBallNames(game: Game, arsenal?: Pick<Ball, 'ball_name' | 
 // Carry-over logic
 
 /**
- * Determine whether a throw is played against a fresh rack (a "first ball" throw)
- * or against leftover pins (a "second ball" / spare attempt).
- * In the 10th frame a strike or spare resets the rack, so the following throw counts as a first ball again.
- */
-export function isFirstBallThrow(frames: Frame[], frameIndex: number, throwIndex: number): boolean {
-  if (throwIndex === 0) return true;
-  if (frameIndex !== 9) return false;
-
-  const throws = frames[frameIndex]?.throws ?? [];
-  const firstVal = throws[0]?.value;
-  const secondVal = throws[1]?.value;
-
-  if (throwIndex === 1) return firstVal === 10;
-  if (firstVal === 10) return secondVal === 10;
-  return firstVal !== undefined && secondVal !== undefined && firstVal + secondVal === 10;
-}
-
-/**
- * Ball carried over from earlier throws: the last ball used on a throw of the same kind
- * (first ball vs. spare ball), falling back to the last ball used at all.
+ * Ball carried over from earlier throws, strictly by throw index: the last ball used
+ * on a first throw defaults the next first throw, the last ball used on a second/third
+ * throw defaults the next second/third throw. Falls back to the last ball used at all
+ * when that throw index never had a ball yet.
  * Only throws before the given position (in play order) are considered.
  */
 export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throwIndex: number): ThrowBall | undefined {
-  const wantFirstBall = isFirstBallThrow(frames, frameIndex, throwIndex);
+  const wantFirstThrow = throwIndex === 0;
   let sameKindBall: ThrowBall | undefined;
   let latestBall: ThrowBall | undefined;
 
@@ -117,7 +124,7 @@ export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throw
       const ball = throws[t]?.ball;
       if (!ball?.name) continue;
       latestBall = ball;
-      if (isFirstBallThrow(frames, f, t) === wantFirstBall) {
+      if ((t === 0) === wantFirstThrow) {
         sameKindBall = ball;
       }
     }

@@ -4,9 +4,9 @@ import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline } from 'ionicons/icons';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
-import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import { Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { formatThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getCarryOverThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
@@ -60,12 +60,6 @@ export class GameReadonlyComponent {
     const scores = game?.frameScores ?? [];
     const arsenal = this.ballsStore.arsenal();
 
-    const resolveThumb = (ball: ThrowBall | undefined): string | undefined => {
-      if (!ball?.name) return undefined;
-      const arsenalBall = arsenal.find((b) => b.ball_name === ball.name && (!ball.weight || b.core_weight === ball.weight));
-      return arsenalBall ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined;
-    };
-
     return Array.from({ length: 10 }, (_, frameIndex) => {
       const frame = frames[frameIndex];
       const isTenth = frameIndex === 9;
@@ -75,14 +69,17 @@ export class GameReadonlyComponent {
       const v2 = getThrowValue(frame, 2);
 
       const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => {
-        const ball = frame?.throws?.[throwIndex]?.ball;
+        const thrown = getThrowValue(frame, throwIndex) !== undefined;
+        // Same rule as during input: a throw without an explicit ball inherits the carried-over one
+        const ball = thrown ? (frame?.throws?.[throwIndex]?.ball ?? getCarryOverThrowBall(frames, frameIndex, throwIndex)) : undefined;
+        const arsenalBall = findBallInArsenal(ball, arsenal);
         return {
           display: formatThrowDisplay(frame, throwIndex, isTenth),
           isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
           pinShow,
           pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
           hasBall: !!ball?.name,
-          ballThumb: resolveThumb(ball),
+          ballThumb: arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined,
           ballLabel: formatThrowBall(ball),
         };
       };

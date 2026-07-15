@@ -5,7 +5,7 @@ import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline
 import { PINS } from 'src/app/core/constants/app.constants';
 import { ThrowBall } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 
@@ -59,10 +59,8 @@ export class PinInputComponent {
 
   /** Arsenal thumbnail of the currently selected ball, if available */
   readonly selectedBallThumbnail = computed<string | undefined>(() => {
-    const ball = this.selectedBall();
-    if (!ball) return undefined;
-    const arsenalBall = this.ballsStore.arsenal().find((b) => b.ball_name === ball.name && (!ball.weight || b.core_weight === ball.weight));
-    return arsenalBall?.thumbnail_image;
+    const arsenalBall = findBallInArsenal(this.selectedBall(), this.ballsStore.arsenal());
+    return arsenalBall?.thumbnail_image || undefined;
   });
 
   readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));

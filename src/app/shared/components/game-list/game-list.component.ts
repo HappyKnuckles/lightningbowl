@@ -420,8 +420,17 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
+  // Resolved per game object; called from the template on every CD pass, so the
+  // frames scan must not repeat. Edits replace the game object, invalidating naturally.
+  private ballNamesCache = new WeakMap<Game, string[]>();
+
   getGameBalls(game: Game): string[] {
-    return getGameBallNames(game, this.ballsStore.arsenal());
+    let names = this.ballNamesCache.get(game);
+    if (!names) {
+      names = getGameBallNames(game, this.ballsStore.arsenal());
+      this.ballNamesCache.set(game, names);
+    }
+    return names;
   }
 
   getSelectedBallsText(game: Game): string {

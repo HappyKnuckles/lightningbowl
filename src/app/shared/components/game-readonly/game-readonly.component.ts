@@ -4,9 +4,9 @@ import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline } from 'ionicons/icons';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBallInArsenal, formatThrowBall, getCarryOverThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
@@ -60,6 +60,45 @@ export class GameReadonlyComponent {
     const scores = game?.frameScores ?? [];
     const arsenal = this.ballsStore.arsenal();
 
+    // One pass over all throws: resolve each throw's effective ball (its stored
+    // ball, else the carried-over one — same by-index rule as during input) and
+    // count how many distinct balls the game used. A game bowled with a single
+    // ball skips the per-throw indicators; the header already names it.
+    const ballByThrow: (ThrowBall | undefined)[][] = [];
+    const distinctBalls = new Set<string>();
+    let lastFirst: ThrowBall | undefined;
+    let lastOther: ThrowBall | undefined;
+    let lastAny: ThrowBall | undefined;
+
+    for (let f = 0; f < Math.min(frames.length, 10); f++) {
+      ballByThrow.push(
+        (frames[f]?.throws ?? []).map((t, throwIndex) => {
+          const stored = t?.ball?.name ? t.ball : undefined;
+          const effective = stored ?? (throwIndex === 0 ? lastFirst : lastOther) ?? lastAny;
+          if (stored) {
+            distinctBalls.add(getThrowBallKey(stored));
+            lastAny = stored;
+            if (throwIndex === 0) lastFirst = stored;
+            else lastOther = stored;
+          }
+          return effective;
+        }),
+      );
+    }
+
+    const showBalls = distinctBalls.size > 1;
+
+    // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
+    const thumbCache = new Map<string, string | undefined>();
+    const resolveThumb = (ball: ThrowBall): string | undefined => {
+      const key = getThrowBallKey(ball);
+      if (!thumbCache.has(key)) {
+        const arsenalBall = findBallInArsenal(ball, arsenal);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+      }
+      return thumbCache.get(key);
+    };
+
     return Array.from({ length: 10 }, (_, frameIndex) => {
       const frame = frames[frameIndex];
       const isTenth = frameIndex === 9;
@@ -69,17 +108,14 @@ export class GameReadonlyComponent {
       const v2 = getThrowValue(frame, 2);
 
       const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => {
-        const thrown = getThrowValue(frame, throwIndex) !== undefined;
-        // Same rule as during input: a throw without an explicit ball inherits the carried-over one
-        const ball = thrown ? (frame?.throws?.[throwIndex]?.ball ?? getCarryOverThrowBall(frames, frameIndex, throwIndex)) : undefined;
-        const arsenalBall = findBallInArsenal(ball, arsenal);
+        const ball = showBalls ? ballByThrow[frameIndex]?.[throwIndex] : undefined;
         return {
           display: formatThrowDisplay(frame, throwIndex, isTenth),
           isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,
           pinShow,
           pinPins: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
-          hasBall: !!ball?.name,
-          ballThumb: arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined,
+          hasBall: !!ball,
+          ballThumb: ball ? resolveThumb(ball) : undefined,
           ballLabel: formatThrowBall(ball),
         };
       };

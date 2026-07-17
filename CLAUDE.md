@@ -70,6 +70,7 @@ src/app/
 - Services live in `core/services/<name>/<name>.service.ts`; pure logic goes in `core/utils/` as free functions (e.g. [frame.utils.ts](src/app/core/utils/game-utils/frame.utils.ts)).
 - Tests: Jasmine specs colocated with source; `TestBed` with mock providers built from `jasmine.createSpy` object literals; set signal inputs via `fixture.componentRef.setInput(...)` ([league-selector.component.spec.ts](src/app/shared/components/league-selector/league-selector.component.spec.ts)).
 - User feedback via `ToastService.showToast(TOAST_MESSAGES.x, icon)` with messages from [toast-messages.constants.ts](src/app/core/constants/toast-messages.constants.ts) — don't inline toast strings.
+- Spacing: margins and paddings are always multiples of 4px (4, 8, 12, 16, …).
 - Prettier: 150 print width, 2 spaces, LF. `no-console` allows only `warn`/`error`.
 
 ## Content & writing guidelines

@@ -36,6 +36,7 @@ import { Subject } from 'rxjs';
 import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -49,9 +50,11 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
+import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 
@@ -90,6 +93,8 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     BallListComponent,
     GenericFilterActiveComponent,
     SearchBlurDirective,
+    SearchHistoryDirective,
+    SearchSuggestionsComponent,
     SortHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,6 +114,12 @@ export class BallsPage implements OnInit {
   movementBalls = signal<Ball[]>([]);
   searchSubject = new Subject<string>();
   searchTerm = signal('');
+  searchSuggestions = computed(() =>
+    buildSearchSuggestions(
+      this.ballsStore.allBalls().map((ball) => ball.ball_name),
+      this.searchTerm(),
+    ),
+  );
   favoritesFirst = signal(false);
   currentPage = 0;
   isPageLoading = signal(false);
@@ -256,6 +267,10 @@ export class BallsPage implements OnInit {
     const query = event.detail.value!.toLowerCase();
     this.searchSubject.next(query);
     this.analyticsService.trackBallSearch(query);
+  }
+
+  onSearchSuggestionSelected(term: string): void {
+    this.searchSubject.next(term);
   }
 
   async removeFromArsenal(ball: Ball): Promise<void> {

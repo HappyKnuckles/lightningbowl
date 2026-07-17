@@ -179,7 +179,7 @@
           <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
             <ng-template>
               <app-generic-typeahead
-                [items]="patternsStore.allPatterns()"
+                [items]="rankedPatterns()"
                 [config]="patternTypeaheadConfig"
                 [prevSelectedItems]="currentGame().patterns || []"
                 (selectedItemsChange)="onPatternChanged($event)">

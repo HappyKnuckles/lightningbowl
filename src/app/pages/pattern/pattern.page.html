@@ -18,11 +18,22 @@
   <ion-toolbar>
     <ion-searchbar
       appSearchBlur
+      appSearchHistory
+      historyKey="patterns"
+      #search="appSearchHistory"
+      [value]="searchTerm()"
       (ionInput)="searchPatterns($event)"
       placeholder="Search for a pattern"
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
   </ion-toolbar>
+  <app-search-suggestions
+    historyKey="patterns"
+    [searchTerm]="searchTerm()"
+    [suggestions]="searchSuggestions()"
+    [open]="search.focused()"
+    (suggestionSelected)="search.recordSelection($event); onSearchSuggestionSelected($event)">
+  </app-search-suggestions>
 </ion-header>
 
 <ion-content [fullscreen]="true">

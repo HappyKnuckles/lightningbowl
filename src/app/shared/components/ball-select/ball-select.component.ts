@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, input, output, signal, OnInit } from '@angular/core';
 import {
   IonButtons,
   IonFooter,
@@ -14,6 +14,8 @@ import {
   IonItem,
 } from '@ionic/angular/standalone';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
 @Component({
   selector: 'app-ball-select',
@@ -23,10 +25,17 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 })
 export class BallSelectComponent implements OnInit {
   ballsStore = inject(BallsStore);
+  #gamesStore = inject(GamesStore);
 
   selectedBalls = input.required<string[] | undefined>();
 
   ballSelect = output<string[]>();
+
+  /** Arsenal sorted by how often each ball was thrown, most used first. */
+  rankedArsenal = computed(() => {
+    const usage = countBallUsage(this.#gamesStore.games());
+    return rankByUsage(this.ballsStore.arsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
+  });
 
   #tempSelectedBalls = signal<string[]>([]);
 

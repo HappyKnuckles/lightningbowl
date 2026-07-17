@@ -234,11 +234,11 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   private reorderItemsForSelected(): void {
     if (this.selectedItems.length === 0) return;
 
+    // Pin the selected items themselves so they stay visible even when the current search doesn't match them
     const selectedIdentifiers = this.selectedItems.map((item) => this.getItemIdentifier(item));
-    const selectedItemObjects = this.filteredItems().filter((item) => selectedIdentifiers.includes(this.getItemIdentifier(item)));
     const unselectedItems = this.filteredItems().filter((item) => !selectedIdentifiers.includes(this.getItemIdentifier(item)));
 
-    this.filteredItems.set([...selectedItemObjects, ...unselectedItems]);
+    this.filteredItems.set([...this.selectedItems, ...unselectedItems]);
   }
 
   ngOnDestroy(): void {

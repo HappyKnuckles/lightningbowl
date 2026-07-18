@@ -14,8 +14,8 @@ describe('StatRowComponent', () => {
     component = fixture.componentInstance;
 
     // Provide default input values
-    component.label = 'Test Stat';
-    component.currentStat = 100;
+    fixture.componentRef.setInput('label', 'Test Stat');
+    fixture.componentRef.setInput('currentStat', 100);
 
     fixture.detectChanges();
   }));

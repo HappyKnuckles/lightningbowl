@@ -50,7 +50,7 @@ describe('GameListComponent', () => {
 
     fixture = TestBed.createComponent(GameListComponent);
     component = fixture.componentInstance;
-    component.games = [];
+    fixture.componentRef.setInput('games', []);
     fixture.detectChanges();
   }));
 

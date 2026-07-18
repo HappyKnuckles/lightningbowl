@@ -57,19 +57,19 @@ describe('LeaguePage', () => {
     mockGamesStore.games.and.returnValue([{ league: 'League A' } as any]);
 
     const mostPlayedPattern = {
-      patternName: 'Pattern Most Played',
-      patternImage: '',
-      patternAvg: 200,
-      patternHighestGame: 250,
-      patternLowestGame: 180,
+      name: 'Pattern Most Played',
+      image: '',
+      avg: 200,
+      highestGame: 250,
+      lowestGame: 180,
       gameCount: 5,
     };
     const bestPattern = {
-      patternName: 'Pattern Best',
-      patternImage: '',
-      patternAvg: 215,
-      patternHighestGame: 270,
-      patternLowestGame: 190,
+      name: 'Pattern Best',
+      image: '',
+      avg: 215,
+      highestGame: 270,
+      lowestGame: 190,
       gameCount: 3,
     };
 

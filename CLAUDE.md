@@ -78,6 +78,7 @@ src/app/
 - Toast message pattern: `"<Thing> saved successfully."` / `"Error saving <thing>."` — plain, sentence case, trailing period.
 - Domain vocabulary: frames, throws, strikes/spares, clean games, series (3/4/5/6 games), leagues, arsenal (personal ball collection), ball core/coverstock/factory finish, oil patterns, pin leaves.
 - 5 color themes as classes on `:root`: `red`, `blue`, `gray`, `lila`, `green` ([variables.scss](src/theme/variables.scss)); `ThemeChangerService` defaults to `Gray`. Style with Ionic CSS variables (`--ion-color-primary`, …) so components work in every theme.
+- Font sizes come from a fixed eighth-rem ladder: `0.625 / 0.75 / 0.875 / 1 / 1.125 / 1.375 / 1.5rem` (0.875rem is the standard small-text size). Never invent in-between values (0.7, 0.8, 0.95rem…) — pick the nearest step. A few legacy strays exist in older SCSS; don't copy them and don't mass-fix them unasked.
 - Commit messages: short, lowercase, no type prefix (`fix sorting with patterns (#631)`, `added custom loading animation (#632)`); PR-linked issues in parentheses. Branches: `<issue-number>-<kebab-description>`.
 
 ## Do / Don't for AI edits

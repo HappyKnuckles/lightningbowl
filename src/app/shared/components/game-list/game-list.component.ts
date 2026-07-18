@@ -1,4 +1,4 @@
-import { DatePipe, NgIf } from '@angular/common';
+import { DatePipe, NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -54,20 +54,45 @@ import { UtilsService } from 'src/app/core/utils/utils.service';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
+import { Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
-import { GameComponent } from '../game/game.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
-import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
+import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { Ball } from 'src/app/core/models/ball.model';
+import { GameCardTemplateDirective } from './game-card-template.directive';
+import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 
-interface MonthHeader {
+interface MonthRow {
+  kind: 'month';
+  id: string;
   name: string;
   count: number;
 }
+
+interface SingleRow {
+  kind: 'single';
+  id: string;
+  game: Game;
+  title: string;
+  meta: string;
+  numberTag: string;
+}
+
+interface SeriesRow {
+  kind: 'series';
+  id: string;
+  games: Game[];
+  count: number;
+  total: number;
+  avg: number;
+  firstNumber: number;
+  lastNumber: number;
+}
+
+type DisplayRow = MonthRow | SingleRow | SeriesRow;
 
 @Component({
   selector: 'app-game-list',
@@ -93,11 +118,13 @@ interface MonthHeader {
     IonButton,
     IonIcon,
     NgIf,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     FormsModule,
     DatePipe,
     LongPressDirective,
     AccordionDelayedCloseDirective,
+    GameCardTemplateDirective,
     GameComponent,
     GameReadonlyComponent,
     GenericTypeaheadComponent,
@@ -115,7 +142,6 @@ export class GameListComponent implements OnInit {
   // Inputs
   games = input.required<Game[]>();
   isLeaguePage = input<boolean>(false);
-  gameCount = input<number | undefined>(undefined);
   batchSize = input<number>(100);
 
   // Services
@@ -145,7 +171,16 @@ export class GameListComponent implements OnInit {
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
 
   showingGames = computed(() => {
-    return this.sortedGames().slice(0, this.loadedCount());
+    const games = this.sortedGames();
+    let end = Math.min(this.loadedCount(), games.length);
+
+    // Never cut a series at the pagination boundary — extend to the end of its run.
+    const boundarySeriesId = end > 0 ? games[end - 1].seriesId : undefined;
+    if (boundarySeriesId) {
+      while (end < games.length && games[end].seriesId === boundarySeriesId) end++;
+    }
+
+    return games.slice(0, end);
   });
 
   gameNumberMap = computed(() => {
@@ -156,51 +191,90 @@ export class GameListComponent implements OnInit {
     return map;
   });
 
-  monthHeaders = computed(() => {
+  // One pass over the (date-sorted) visible games producing the rows the template renders:
+  // month dividers, standalone games, and multi-game series (adjacent games sharing a
+  // seriesId) with their combined total and average.
+  displayRows = computed<DisplayRow[]>(() => {
     const games = this.showingGames();
-    const headers = new Map<number, MonthHeader>();
-
-    if (games.length === 0) return headers;
+    const numbers = this.gameNumberMap();
+    const onLeaguePage = this.isLeaguePage();
+    const rows: DisplayRow[] = [];
 
     const getMonthKey = (timestamp: number) => {
       const d = new Date(timestamp);
       return `${d.getFullYear()}-${d.getMonth()}`;
     };
 
-    const formatName = (timestamp: number) => {
-      const date = new Date(timestamp);
-      return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    };
-
-    const counts = new Map<string, number>();
+    const monthCounts = new Map<string, number>();
     for (const game of games) {
       const key = getMonthKey(game.date);
-      counts.set(key, (counts.get(key) || 0) + 1);
+      monthCounts.set(key, (monthCounts.get(key) || 0) + 1);
     }
 
-    const firstKey = getMonthKey(games[0].date);
-    headers.set(0, {
-      name: formatName(games[0].date),
-      count: counts.get(firstKey) || 0,
-    });
+    let currentMonthKey = '';
+    let i = 0;
+    while (i < games.length) {
+      const game = games[i];
 
-    for (let i = 1; i < games.length; i++) {
-      const currentKey = getMonthKey(games[i].date);
-      const prevKey = getMonthKey(games[i - 1].date);
-
-      if (currentKey !== prevKey) {
-        headers.set(i, {
-          name: formatName(games[i].date),
-          count: counts.get(currentKey) || 0,
+      const monthKey = getMonthKey(game.date);
+      if (monthKey !== currentMonthKey) {
+        currentMonthKey = monthKey;
+        rows.push({
+          kind: 'month',
+          id: `month-${monthKey}`,
+          name: new Date(game.date).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+          count: monthCounts.get(monthKey) || 0,
         });
       }
+
+      if (game.seriesId) {
+        let j = i;
+        while (j < games.length && games[j].seriesId === game.seriesId) j++;
+
+        if (j - i > 1) {
+          // Chronological inside the series block (#1 first), unlike the newest-first outer list.
+          const run = games.slice(i, j).reverse();
+          const total = run.reduce((sum, g) => sum + g.totalScore, 0);
+          rows.push({
+            kind: 'series',
+            id: `series-${run[0].gameId}`,
+            games: run,
+            count: run.length,
+            total,
+            avg: Math.round(total / run.length),
+            firstNumber: numbers.get(run[0].gameId) ?? 0,
+            lastNumber: numbers.get(run[run.length - 1].gameId) ?? 0,
+          });
+          i = j;
+          continue;
+        }
+      }
+
+      const number = numbers.get(game.gameId) ?? 0;
+      rows.push({
+        kind: 'single',
+        id: game.gameId,
+        game,
+        title: onLeaguePage ? `Game ${number}` : game.league || 'Practice',
+        meta: game.patterns && game.patterns.length > 0 ? game.patterns.join(', ') : '',
+        numberTag: onLeaguePage ? '' : `#${number}`,
+      });
+      i++;
     }
 
-    return headers;
+    return rows;
   });
+
   // Pagination state
   public loadedCount = signal(0);
   public presentingElement?: HTMLElement;
+
+  // Series header editing (league/patterns preview in memory, persist on Save)
+  editingSeriesId = signal<string | null>(null);
+  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[] }>();
+
+  // Accordion open state per game before editing started, restored when editing ends
+  private editAccordionWasOpen = new Map<string, boolean>();
 
   // Config
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
@@ -240,9 +314,22 @@ export class GameListComponent implements OnInit {
   }
 
   // ACCORDION
-  openExpansionPanel(accordionId?: string): void {
-    const el = this.accordionGroup;
-    el.value = el.value === accordionId ? undefined : accordionId;
+  private isAccordionOpen(accordionId: string): boolean {
+    const value = this.accordionGroup.value;
+    return Array.isArray(value) ? value.includes(accordionId) : value === accordionId;
+  }
+
+  private openAccordion(accordionId: string): void {
+    if (this.isAccordionOpen(accordionId)) return;
+    const value = this.accordionGroup.value;
+    const open = Array.isArray(value) ? value : value ? [value] : [];
+    this.accordionGroup.value = [...open, accordionId];
+  }
+
+  private closeAccordion(accordionId: string): void {
+    const value = this.accordionGroup.value;
+    const open = Array.isArray(value) ? value : value ? [value] : [];
+    this.accordionGroup.value = open.filter((id) => id !== accordionId);
   }
 
   // NAVIGATION
@@ -277,6 +364,34 @@ export class GameListComponent implements OnInit {
     await alert.present();
   }
 
+  async deleteSeries(row: SeriesRow): Promise<void> {
+    this.hapticService.vibrate(ImpactStyle.Heavy);
+    const seriesId = row.games[0].seriesId;
+    const seriesGames = this.gamesStore.games().filter((g) => g.seriesId === seriesId);
+    const alert = await this.alertController.create({
+      header: 'Confirm Deletion',
+      message: `Are you sure you want to delete this series and its ${seriesGames.length} games?`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Delete',
+          handler: async () => {
+            try {
+              for (const game of seriesGames) {
+                await this.gamesStore.deleteGame(game.gameId);
+              }
+              this.toastService.showToast(TOAST_MESSAGES.seriesDeleteSuccess, 'remove-outline');
+            } catch (error) {
+              console.error('Error deleting series:', error);
+              this.toastService.showToast(TOAST_MESSAGES.seriesDeleteError, 'bug', true);
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
   // SHARE
   async takeScreenshotAndShare(game: Game): Promise<void> {
     this.delayedClose.markVisible(game.gameId);
@@ -296,8 +411,7 @@ export class GameListComponent implements OnInit {
     }
 
     const previousValue = this.accordionGroup.value;
-    const accordionIsOpen = this.accordionGroup.value?.includes(game.gameId) ?? false;
-    if (!accordionIsOpen) this.openExpansionPanel(game.gameId);
+    if (!this.isAccordionOpen(game.gameId)) this.openAccordion(game.gameId);
 
     try {
       await this.shareService.shareGame(game, scoreTemplate);
@@ -310,8 +424,9 @@ export class GameListComponent implements OnInit {
   // EDIT
   saveOriginalStateAndEnableEdit(game: Game): void {
     if (!this.editService.isEditMode(game.gameId)) {
+      this.editAccordionWasOpen.set(game.gameId, this.isAccordionOpen(game.gameId));
       this.editService.startEdit(game);
-      this.openExpansionPanel(game.gameId);
+      this.openAccordion(game.gameId);
       this.delayedClose.markVisible(game.gameId);
     } else {
       this.cancelEdit(game);
@@ -320,18 +435,25 @@ export class GameListComponent implements OnInit {
 
   cancelEdit(game: Game): void {
     this.editService.cancelEdit(game);
-    const wasOpen = this.delayedClose.isVisible(game.gameId);
-    this.openExpansionPanel(wasOpen ? game.gameId : undefined);
-    this.delayedClose.clear(game.gameId);
+    this.restoreAccordionAfterEdit(game.gameId);
   }
 
   async saveEdit(game: Game): Promise<void> {
     const success = await this.editService.saveEdit(game);
     if (!success) return;
 
-    const wasOpen = this.delayedClose.isVisible(game.gameId);
-    this.openExpansionPanel(wasOpen ? game.gameId : undefined);
-    this.delayedClose.clear(game.gameId);
+    this.restoreAccordionAfterEdit(game.gameId);
+  }
+
+  // Editing always opens the accordion; afterwards it returns to its pre-edit state.
+  private restoreAccordionAfterEdit(gameId: string): void {
+    const wasOpen = this.editAccordionWasOpen.get(gameId) ?? false;
+    this.editAccordionWasOpen.delete(gameId);
+
+    if (!wasOpen) {
+      this.closeAccordion(gameId);
+      this.delayedClose.clear(gameId);
+    }
   }
 
   // EDIT INPUT
@@ -398,6 +520,46 @@ export class GameListComponent implements OnInit {
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
     this.editService.propagateSeriesFields(game, league, patterns);
+  }
+
+  // SERIES HEADER EDIT
+  toggleSeriesEdit(row: SeriesRow): void {
+    const openId = this.editingSeriesId();
+    if (openId === row.id) {
+      this.cancelSeriesEdit(row);
+      return;
+    }
+    if (openId) this.revertSeriesEdit(openId);
+
+    const lead = row.games[0];
+    this.seriesEditSnapshots.set(row.id, { game: lead, league: lead.league ?? '', patterns: [...lead.patterns] });
+    this.editingSeriesId.set(row.id);
+  }
+
+  cancelSeriesEdit(row: SeriesRow): void {
+    this.revertSeriesEdit(row.id);
+    this.editingSeriesId.set(null);
+  }
+
+  async saveSeriesEdit(row: SeriesRow): Promise<void> {
+    const lead = row.games[0];
+    await this.editService.saveSeriesFields(lead, lead.league ?? '', lead.patterns);
+    this.seriesEditSnapshots.delete(row.id);
+    this.editingSeriesId.set(null);
+  }
+
+  onSeriesLeagueChanged(row: SeriesRow, league: string): void {
+    this.editService.propagateSeriesFields(row.games[0], league);
+  }
+
+  onSeriesPatternsChanged(row: SeriesRow, patterns: string[]): void {
+    this.editService.propagateSeriesFields(row.games[0], undefined, patterns);
+  }
+
+  private revertSeriesEdit(rowId: string): void {
+    const snapshot = this.seriesEditSnapshots.get(rowId);
+    if (snapshot) this.editService.propagateSeriesFields(snapshot.game, snapshot.league, snapshot.patterns);
+    this.seriesEditSnapshots.delete(rowId);
   }
 
   // LEAGUE

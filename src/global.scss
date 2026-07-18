@@ -224,6 +224,7 @@ ion-item {
       &::after {
         content: "";
         position: absolute;
+        z-index: -1;
         width: 17px;
         height: 25px;
         border-radius: 50%;

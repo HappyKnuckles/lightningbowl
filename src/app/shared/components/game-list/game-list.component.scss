@@ -43,6 +43,25 @@ ion-item-divider {
   }
 }
 
+// Shared by the game card's score badge and the series header's total.
+.score-bar {
+  height: 3px;
+  // maybe delete if bar as big as number
+  width: 60%;
+  margin-left: auto;
+  background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  border-radius: var(--card-border-radius, 14px);
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-secondary));
+  background-size: calc(10000% / var(--fill, 100)) 100%;
+  background-position: left;
+  transition: width 0.9s cubic-bezier(0.4, 0, 0.1, 1);
+}
+
 .sliding {
   margin: 0 16px 12px;
   border-radius: var(--card-border-radius, 14px);
@@ -64,8 +83,15 @@ ion-item-divider {
       --background: var(--ion-card-background);
     }
 
-    ::ng-deep app-league-selector.league ion-item {
-      --background: var(--ion-card-background);
+    .content {
+      ion-item.arsenal,
+      ion-item.pattern,
+      ion-item.note,
+      ::ng-deep app-league-selector ion-item {
+        --min-height: 40px;
+        font-size: 0.875rem;
+              --background: var(--ion-card-background);
+      }
     }
 
     .game-info {
@@ -75,6 +101,11 @@ ion-item-divider {
       .title {
         font-weight: 600;
         font-size: 1.125rem;
+      }
+
+      .game-date {
+        display: flex;
+        gap: 0.5rem;
       }
 
       .score {
@@ -133,40 +164,152 @@ ion-item-divider {
     //   color: transparent;
     // }
 
-    .score-bar {
-      height: 3px;
-      // maybe delete if bar as big as number
-      width: 60%;
-      margin-left: auto;
-      background: var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-      border-radius: var(--card-border-radius, 14px);
-      overflow: hidden;
-    }
-
-    .score-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-secondary));
-      background-size: calc(10000% / var(--fill, 100)) 100%;
-      background-position: left;
-      transition: width 0.9s cubic-bezier(0.4, 0, 0.1, 1);
-    }
-
     .note {
       --inner-border-width: 0;
     }
   }
+}
 
-  .action-row {
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 8px;
+
+  ion-button {
+    min-width: 96px;
+    height: 32px;
+
+    // --background: var(--ion-color-dark);
+    // color: #fff;
+  }
+}
+
+// SERIES GROUPING
+.series-container {
+  margin: 0 16px 12px 14px;
+  background: var(--ion-card-background);
+  border: 1px solid var(--ion-border-color, #2b2828);
+  border-left: 3px solid var(--ion-color-primary);
+  border-radius: var(--card-border-radius, 14px);
+  overflow: hidden;
+
+  .series-sliding ion-item {
+    --background: var(--ion-card-background);
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-start: 0;
+    --inner-padding-end: 0;
+    --min-height: 0;
+  }
+
+  .series-header {
+    flex: 1;
     display: flex;
-    justify-content: space-between;
-    margin: 4px 8px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    padding-inline: 14px 20px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--ion-border-color, #2b2828);
 
-    ion-button {
-      min-width: 96px;
-      height: 32px;
+    .series-info {
+      flex: 1;
+      min-width: 0;
+      align-self: flex-start;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
 
-      // --background: var(--ion-color-dark);
-      // color: #fff;
+      .series-title-row {
+        display: flex;
+        flex-direction: column;
+
+        .series-label {
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          font-size: 1.125rem;
+        }
+
+        .series-date {
+          display: flex;
+          gap: 0.5rem;
+          color: var(--ion-color-step-400);
+        }
+      }
+
+      .series-meta {
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+        margin: 0;
+        color: var(--ion-color-step-750);
+        font-size: 0.75rem;
+
+        ion-icon {
+          flex-shrink: 0;
+          margin-top: 1px;
+          font-size: 0.75rem;
+        }
+
+        span {
+          min-width: 0;
+          flex: 1;
+        }
+      }
+    }
+
+    .series-score {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      align-self: stretch;
+      min-width: 80px;
+      margin-inline-end: 28px;
+
+      .series-games {
+        text-align: right;
+        color: var(--ion-color-step-400);
+      }
+
+      .series-total {
+        text-align: right;
+        margin-top: auto;
+        margin-bottom: 3px;
+        font-size: 1.125rem;
+        font-weight: 800;
+        color: var(--ion-color-primary);
+      }
+
+      .series-avg {
+        margin-top: 2px;
+        margin-bottom: auto;
+        text-align: right;
+        font-size: 0.75rem;
+        color: var(--ion-color-step-750);
+      }
+    }
+  }
+
+  .series-edit-fields {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--ion-border-color, #2b2828);
+
+    ion-item,
+    ::ng-deep app-league-selector.series-league ion-item {
+      --background: var(--ion-card-background);
+      --min-height: 40px;
+      font-size: 0.875rem;
+    }
+  }
+
+  .sliding {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--ion-border-color, #2b2828);
     }
   }
 }

@@ -60,10 +60,10 @@ import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/
 
 const enum SeriesMode {
   Single = 'Single',
-  Series3 = '3 Series',
-  Series4 = '4 Series',
-  Series5 = '5 Series',
-  Series6 = '6 Series',
+  Series3 = '3-Series',
+  Series4 = '4-Series',
+  Series5 = '5-Series',
+  Series6 = '6-Series',
 }
 
 defineCustomElements(window);

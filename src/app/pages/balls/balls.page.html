@@ -36,6 +36,7 @@
       historyKey="balls"
       #search="appSearchHistory"
       [value]="searchTerm()"
+      [disabled]="searchDisabled()"
       (ionInput)="searchBalls($event)"
       placeholder="Search for a ball"
       showCancelButton="focus"

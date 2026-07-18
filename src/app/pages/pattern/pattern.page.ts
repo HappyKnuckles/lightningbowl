@@ -113,6 +113,7 @@ export class PatternPage implements OnInit {
       this.searchTerm(),
     ),
   );
+  searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
   selectedPattern = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({

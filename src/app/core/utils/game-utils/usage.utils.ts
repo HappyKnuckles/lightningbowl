@@ -7,7 +7,6 @@ export interface UsageStats {
 
 /**
  * Count how often each ball was thrown across all games, keyed like ThrowBall keys ("Name{weight}").
- * Uses per-throw ball data when available, falling back to game.balls (stored in the same key format) for legacy games.
  */
 export function countBallUsage(games: readonly Game[]): Map<string, UsageStats> {
   const usage = new Map<string, UsageStats>();

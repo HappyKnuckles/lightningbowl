@@ -46,7 +46,6 @@ export class SearchHistoryService {
   async #load(context: string, history: WritableSignal<string[]>): Promise<void> {
     try {
       const stored = await this.storageRepository.get<string[]>(StorageKeys.searchHistory(context));
-      // Only apply stored entries if nothing was added while loading.
       if (stored?.length && history().length === 0) {
         history.set(stored);
       }

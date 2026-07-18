@@ -120,6 +120,7 @@ export class BallsPage implements OnInit {
       this.searchTerm(),
     ),
   );
+  searchDisabled = computed(() => this.ballsStore.allBalls().length === 0);
   favoritesFirst = signal(false);
   currentPage = 0;
   isPageLoading = signal(false);

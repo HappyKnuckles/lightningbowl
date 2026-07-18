@@ -42,8 +42,10 @@ import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
@@ -187,6 +189,12 @@ export class GameComponent implements OnInit {
   ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
+  /** Patterns sorted by how often they were played, most used first. */
+  rankedPatterns = computed(() => {
+    const usage = countPatternUsage(this.gamesStore.games());
+    return rankByUsage(this.patternsStore.allPatterns(), usage, (pattern) => pattern.title ?? '');
+  });
+
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
@@ -206,6 +214,7 @@ export class GameComponent implements OnInit {
     public settingsStore: SettingsStore,
     public patternsStore: PatternsStore,
     public ballsStore: BallsStore,
+    private gamesStore: GamesStore,
     private hapticService: HapticService,
     private patternService: PatternService,
     private toastService: ToastService,

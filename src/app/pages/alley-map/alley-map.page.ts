@@ -19,6 +19,7 @@ import { addIcons } from 'ionicons';
 import { bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline } from 'ionicons/icons';
 import * as L from 'leaflet';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';
 import { Alley, AlleyFilters, AlleySearchOrigin, DEFAULT_ALLEY_FILTERS } from 'src/app/core/models/alley.model';
 import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
 import { AlleyService } from 'src/app/core/services/alley/alley.service';
@@ -26,6 +27,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { getOpenState } from 'src/app/core/utils/opening-hours.util';
+import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { AlleyDetailSheetComponent } from './components/alley-detail-sheet/alley-detail-sheet.component';
 import { AlleyListComponent } from './components/alley-list/alley-list.component';
 
@@ -48,6 +50,8 @@ const DEFAULT_ZOOM = 12;
     IonTitle,
     IonToolbar,
     SearchBlurDirective,
+    SearchHistoryDirective,
+    SearchSuggestionsComponent,
     AlleyDetailSheetComponent,
     AlleyListComponent,
   ],
@@ -64,6 +68,7 @@ export class AlleyMapPage implements OnInit, OnDestroy {
   networkService = inject(NetworkService);
 
   alleys = signal<Alley[]>([]);
+  searchTerm = signal('');
   filters = signal<AlleyFilters>({ ...DEFAULT_ALLEY_FILTERS });
   selectedAlley = signal<Alley | null>(null);
   isLoading = signal(false);
@@ -120,8 +125,20 @@ export class AlleyMapPage implements OnInit, OnDestroy {
     this.map?.remove();
   }
 
-  async onSearch(event: SearchbarCustomEvent): Promise<void> {
-    const query = event.detail.value?.trim();
+  async onSearch(query: string): Promise<void> {
+    await this.runPlaceSearch(query);
+  }
+
+  onSearchInput(event: SearchbarCustomEvent): void {
+    this.searchTerm.set(event.detail.value ?? '');
+  }
+
+  onSearchSuggestionSelected(term: string): void {
+    this.searchTerm.set(term);
+    void this.runPlaceSearch(term);
+  }
+
+  private async runPlaceSearch(query: string | undefined): Promise<void> {
     if (!query) {
       // Only jump back when clearing an active place search, not on a blur of an empty bar.
       if (this.searchOrigin().source === 'search') {

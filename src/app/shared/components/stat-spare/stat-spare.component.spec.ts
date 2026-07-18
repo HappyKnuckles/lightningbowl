@@ -14,7 +14,7 @@ describe('SpareDisplayComponent', () => {
     fixture = TestBed.createComponent(StatSpareComponent);
     component = fixture.componentInstance;
 
-    component.stats = {
+    fixture.componentRef.setInput('stats', {
       totalGames: 0,
       totalPins: 0,
       perfectGameCount: 0,
@@ -39,7 +39,7 @@ describe('SpareDisplayComponent', () => {
       spareRates: [],
       overallSpareRate: 0,
       overallMissedRate: 0,
-    };
+    });
     fixture.detectChanges();
   }));
 

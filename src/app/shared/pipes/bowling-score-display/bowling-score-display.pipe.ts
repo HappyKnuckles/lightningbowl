@@ -1,6 +1,7 @@
 // bowling-score-display.pipe.ts
 import { Pipe, PipeTransform } from '@angular/core';
-import { Frame, getThrowValue } from 'src/app/core/models/game.model';
+import { Frame } from 'src/app/core/models/game.model';
+import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 
 @Pipe({
   name: 'bowlingScoreDisplay',

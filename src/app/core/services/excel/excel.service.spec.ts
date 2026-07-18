@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { SortUtilsService } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { HapticService } from '../haptic/haptic.service';
@@ -47,12 +46,6 @@ describe('ExcelService', () => {
           useValue: leaguesStoreSpy,
         },
         {
-          provide: SortUtilsService,
-          useValue: {
-            sortGameHistoryByDate: jasmine.createSpy('sortGameHistoryByDate').and.returnValue([]),
-          },
-        },
-        {
           provide: GameFilterService,
           useValue: {
             setDefaultFilters: jasmine.createSpy('setDefaultFilters'),
@@ -81,7 +74,7 @@ describe('ExcelService', () => {
     mockBallsStore.allBalls.and.returnValue([]);
     mockBallsStore.arsenal.and.returnValue([]);
     mockLeaguesStore.addLeague.and.returnValue(Promise.resolve());
-    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve());
+    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.and.returnValue(Promise.resolve());
 
     const testData = [
@@ -157,7 +150,7 @@ describe('ExcelService', () => {
     mockBallsStore.allBalls.and.returnValue([]);
     mockBallsStore.arsenal.and.returnValue([]);
     mockLeaguesStore.addLeague.and.returnValue(Promise.resolve());
-    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve());
+    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.and.returnValue(Promise.resolve());
 
     const testData = [

@@ -216,7 +216,6 @@ export class GameEditService {
   }
 
   // Applies league/patterns to every game of a series and persists immediately
-  // (used by the series header editing, which has no save/cancel flow).
   async saveSeriesFields(game: Game, league?: string, patterns?: string[]): Promise<void> {
     if (!game.isSeries) return;
 

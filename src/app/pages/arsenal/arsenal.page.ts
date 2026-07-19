@@ -104,7 +104,7 @@ export class ArsenalPage implements OnInit {
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore
       .allBalls()
-      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+      .filter((ball) => !this.ballsStore.activeArsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
   selectedSegment = model('arsenal');
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
@@ -142,7 +142,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.ballsStore.arsenal(),
+        this.ballsStore.activeArsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -187,7 +187,7 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.ballsStore.arsenal();
+    const arsenal = [...this.ballsStore.activeArsenal()];
     const [movedItem] = arsenal.splice(event.detail.from, 1);
     arsenal.splice(event.detail.to, 0, movedItem);
 
@@ -271,7 +271,7 @@ export class ArsenalPage implements OnInit {
       }
 
       const alreadyInArsenal = this.ballsStore
-        .arsenal()
+        .activeArsenal()
         .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
       if (alreadyInArsenal) {
         selectEl.value = ball.core_weight;

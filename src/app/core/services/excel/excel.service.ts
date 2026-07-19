@@ -233,7 +233,7 @@ export class ExcelService {
 
       for (const ball of ballMap.values()) {
         const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+        if (ballToAdd !== undefined && !this.ballsStore.activeArsenal().some((b) => b.ball_name === ball)) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }

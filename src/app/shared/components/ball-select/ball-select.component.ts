@@ -34,7 +34,7 @@ export class BallSelectComponent implements OnInit {
   /** Arsenal sorted by how often each ball was thrown, most used first. */
   rankedArsenal = computed(() => {
     const usage = countBallUsage(this.#gamesStore.games());
-    return rankByUsage(this.ballsStore.arsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
+    return rankByUsage(this.ballsStore.activeArsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
   });
 
   #tempSelectedBalls = signal<string[]>([]);

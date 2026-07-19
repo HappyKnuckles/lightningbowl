@@ -44,6 +44,7 @@ export class GameDataTransformerService {
         totalScore: game.totalScore,
         isSeries: seriesConfig?.isSeries ?? game.isSeries,
         seriesId: seriesConfig?.seriesId ?? game.seriesId,
+        bowlerId: game.bowlerId,
         note: game.note,
         isPractice: game.isPractice,
         isPinMode: game.isPinMode ?? false,

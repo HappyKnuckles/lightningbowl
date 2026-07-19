@@ -25,7 +25,17 @@ import {
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
-import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, trophyOutline } from 'ionicons/icons';
+import {
+  add,
+  bowlingBall,
+  bowlingBallOutline,
+  cameraOutline,
+  chevronDown,
+  chevronUp,
+  documentTextOutline,
+  personCircleOutline,
+  trophyOutline,
+} from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
@@ -40,7 +50,9 @@ import { GameDataTransformerService } from 'src/app/core/services/game-transform
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { filterGamesByBowlers } from 'src/app/core/utils/bowler-utils/bowler.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -170,12 +182,23 @@ export class AddGamePage implements OnInit {
     private utilsService: UtilsService,
     private highScroreAlertService: HighScoreAlertService,
     private gamesStore: GamesStore,
+    public bowlersStore: BowlersStore,
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameImageImport: GameImageImportService,
     private gameStatsService: GameStatsService,
   ) {
-    addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, trophyOutline, documentTextOutline, add });
+    addIcons({
+      cameraOutline,
+      bowlingBallOutline,
+      bowlingBall,
+      chevronDown,
+      chevronUp,
+      trophyOutline,
+      documentTextOutline,
+      add,
+      personCircleOutline,
+    });
     effect(() => {
       const games = this.games();
       const pinModeState = this.pinModeState();
@@ -460,6 +483,21 @@ export class AddGamePage implements OnInit {
     }
   }
 
+  async presentBowlerSheet(): Promise<void> {
+    this.hapticService.vibrate(ImpactStyle.Light);
+    const buttons: { text: string; handler?: () => void; role?: string }[] = this.bowlersStore.bowlers().map((bowler) => ({
+      text: bowler.name + (bowler.bowlerId === this.bowlersStore.activeBowlerId() ? ' ✓' : ''),
+      handler: () => this.bowlersStore.setActiveBowler(bowler.bowlerId),
+    }));
+    buttons.push({ text: 'Cancel', role: 'cancel' });
+
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Who is bowling?',
+      buttons,
+    });
+    await actionSheet.present();
+  }
+
   async presentActionSheet(): Promise<void> {
     const buttons: { text: string; handler?: () => void; role?: string }[] = [];
     this.hapticService.vibrate(ImpactStyle.Medium);
@@ -585,8 +623,8 @@ export class AddGamePage implements OnInit {
           return false;
         }
         game.date = baseDate + i;
-        // Apply isPinMode to the game before saving
-        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
+        // Apply isPinMode and the owning bowler to the game before saving
+        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode, bowlerId: this.bowlersStore.activeBowlerId() };
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
       }
 
@@ -598,7 +636,8 @@ export class AddGamePage implements OnInit {
 
       if (savedGames.length > 0) {
         savedGames.forEach((gameData) => this.analyticsService.trackGameSaved({ score: gameData.totalScore }));
-        const allGames = this.gamesStore.games();
+        // High score alerts only compare against the owning bowler's games.
+        const allGames = filterGamesByBowlers(this.gamesStore.games(), [this.bowlersStore.activeBowlerId()], this.bowlersStore.defaultBowlerId());
         if (savedGames.length === 1) {
           await this.highScroreAlertService.checkAndDisplayHighScoreAlerts(savedGames[0], allGames);
         } else {

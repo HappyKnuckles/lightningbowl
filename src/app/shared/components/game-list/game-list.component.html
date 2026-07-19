@@ -193,7 +193,7 @@
               <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
             </ion-item>
 
-            @if (ballsStore.arsenal().length > 0) {
+            @if (ballsStore.activeArsenal().length > 0) {
               <ion-modal
                 [enterAnimation]="enterAnimation"
                 [leaveAnimation]="leaveAnimation"

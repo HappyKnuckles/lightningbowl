@@ -50,6 +50,7 @@ import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-c
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { UserService } from 'src/app/core/services/user/user.service';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { BowlerManagerComponent } from 'src/app/shared/components/bowler-manager/bowler-manager.component';
 import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
@@ -88,6 +89,7 @@ import { environment } from 'src/environments/environment';
     DatePipe,
     FormsModule,
     ReactiveFormsModule,
+    BowlerManagerComponent,
     LeagueSelectorComponent,
     SpareNamesComponent,
   ],

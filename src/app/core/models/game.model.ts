@@ -57,6 +57,7 @@ export interface Game {
   isPinMode: boolean;
   isSeries?: boolean;
   seriesId?: string;
+  bowlerId?: string;
   note?: string;
   league?: string;
   patterns: string[];

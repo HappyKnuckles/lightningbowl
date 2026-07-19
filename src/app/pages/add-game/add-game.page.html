@@ -11,6 +11,12 @@
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
+      @if (bowlersStore.hasMultipleBowlers()) {
+        <ion-button fill="clear" class="bowler-button" (click)="presentBowlerSheet()">
+          <ion-icon slot="start" name="person-circle-outline"></ion-icon>
+          {{ bowlersStore.activeBowler()?.name }}
+        </ion-button>
+      }
       <ion-button fill="clear" (click)="togglePinInputMode()">
         <ion-icon slot="icon-only" [name]="isPinInputMode ? 'bowling-ball' : 'bowling-ball-outline'"></ion-icon>
       </ion-button>

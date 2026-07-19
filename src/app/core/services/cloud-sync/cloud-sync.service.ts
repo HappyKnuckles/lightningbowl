@@ -4,7 +4,7 @@ import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';
 import { StorageRepository } from '../storage/storage.repository';
 import { ToastService } from '../toast/toast.service';
-import { CloudSyncApiService } from './cloud-sync-api.service';
+import { CloudAuthRequiredError, CloudSyncApiService } from './cloud-sync-api.service';
 
 const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
 
@@ -160,8 +160,9 @@ export class CloudSyncService {
     try {
       return await this.cloudSyncApiService.getAccessToken(provider);
     } catch (error) {
-      // If not authenticated, clear local state
-      if (error instanceof Error && error.message.includes('Not authenticated')) {
+      // Only a definitive auth rejection clears local state; transient
+      // failures keep the connection so the next sync can retry.
+      if (error instanceof CloudAuthRequiredError) {
         await this.updateSettings({ connectedProvider: undefined, enabled: false });
         this.#syncStatus.update((s) => ({ ...s, isAuthenticated: false }));
       }
@@ -282,6 +283,10 @@ export class CloudSyncService {
       : settings.nextSyncDate !== undefined && settings.nextSyncDate <= now;
 
     if (!shouldSync) {
+      // No sync due — still ping the backend so its sliding session cookie
+      // is renewed on every app start and revoked connections are detected
+      // early instead of at the next scheduled sync.
+      void this.keepSessionAlive(settings.connectedProvider);
       return;
     }
 
@@ -290,6 +295,18 @@ export class CloudSyncService {
       await this.syncNow();
     } catch (error) {
       console.error('Automatic sync on startup failed:', error);
+    }
+  }
+
+  private async keepSessionAlive(provider: CloudProvider): Promise<void> {
+    try {
+      await this.getAccessToken(provider);
+    } catch (error) {
+      // Auth rejections already cleared local state in getAccessToken;
+      // transient failures are ignored — the next sync will retry.
+      if (error instanceof CloudAuthRequiredError) {
+        this.toastService.showToast('Cloud sync connection expired. Please reconnect.', 'bug-outline', true);
+      }
     }
   }
 

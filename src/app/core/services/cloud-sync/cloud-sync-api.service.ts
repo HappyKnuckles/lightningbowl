@@ -3,6 +3,19 @@ import { environment } from 'src/environments/environment';
 import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
 
 /**
+ * The OAuth backend definitively rejected the session or refresh token —
+ * the user must go through the OAuth flow again. Transient failures
+ * (network, 5xx/503) intentionally do NOT use this type, so callers can
+ * keep the stored connection and simply retry later.
+ */
+export class CloudAuthRequiredError extends Error {
+  constructor() {
+    super('Not authenticated. Please reconnect your cloud provider.');
+    this.name = 'CloudAuthRequiredError';
+  }
+}
+
+/**
  * Service responsible for all cloud provider API interactions (OAuth, uploads).
  */
 @Injectable({
@@ -22,15 +35,23 @@ export class CloudSyncApiService {
    * Fetch a fresh access token from the OAuth backend
    */
   async getAccessToken(provider: CloudProvider): Promise<string> {
-    const response = await fetch(`${environment.authBackendUrl}/${provider}/access-token`, {
-      credentials: 'include',
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${environment.authBackendUrl}/${provider}/access-token`, {
+        credentials: 'include',
+      });
+    } catch {
+      throw new Error('Could not reach the sync service. Please check your connection and try again.');
+    }
 
     if (!response.ok) {
+      // Only 401/404 mean the connection itself is gone; anything else
+      // (500/503) is a temporary backend/provider problem and must not
+      // invalidate the stored connection.
       if (response.status === 401 || response.status === 404) {
-        throw new Error('Not authenticated. Please reconnect your cloud provider.');
+        throw new CloudAuthRequiredError();
       }
-      throw new Error('Failed to retrieve access token');
+      throw new Error('Sync service is temporarily unavailable. Please try again later.');
     }
 
     const data = await response.json();

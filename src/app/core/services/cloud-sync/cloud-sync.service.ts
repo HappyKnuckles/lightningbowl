@@ -51,6 +51,10 @@ export class CloudSyncService {
   private async loadSettings(): Promise<void> {
     const savedSettings = await this.storageRepository.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
     if (savedSettings) {
+      if (savedSettings.lastSyncDate && !savedSettings.lastSyncProvider) {
+        savedSettings.lastSyncProvider = savedSettings.connectedProvider ?? savedSettings.provider;
+      }
+
       this.#settings.set(savedSettings);
       this.#syncStatus.update((status) => ({
         ...status,
@@ -68,7 +72,7 @@ export class CloudSyncService {
     // If frequency is being updated, recalculate nextSyncDate
     if (settings.frequency !== undefined) {
       const now = Date.now();
-      const fromDate = currentSettings.lastSyncDate || now;
+      const fromDate = updatedSettings.lastSyncDate || now;
       const calculatedNextSync = this.calculateNextSyncDate(settings.frequency, fromDate);
 
       // If the calculated next sync is in the past, sync now
@@ -126,23 +130,29 @@ export class CloudSyncService {
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
     if (status === 'success') {
       const providerEnum = provider as CloudProvider;
-      const now = Date.now();
-      const nextSync = this.calculateNextSyncDate(SyncFrequency.WEEKLY, now);
+      const currentSettings = this.#settings();
+      // Reconnecting to the provider the saved lastSyncDate belongs to
+      // (e.g. after the session went stale) keeps the sync history;
+      // connecting to a different provider starts fresh.
+      const isReconnect = currentSettings.lastSyncDate !== undefined && currentSettings.lastSyncProvider === providerEnum;
 
       await this.updateSettings({
         provider: providerEnum,
         connectedProvider: providerEnum,
         enabled: true,
-        frequency: SyncFrequency.WEEKLY,
-        nextSyncDate: nextSync,
+        frequency: isReconnect ? currentSettings.frequency : SyncFrequency.WEEKLY,
+        ...(isReconnect ? {} : { lastSyncDate: undefined, lastSyncProvider: undefined }),
       });
 
+      // updateSettings recalculated nextSyncDate (and may have synced
+      // immediately if the reconnect was overdue), so read the result back.
+      const updatedSettings = this.#settings();
       this.#syncStatus.update((s) => ({
         ...s,
         isAuthenticated: true,
         error: undefined,
-        lastSync: undefined,
-        nextSync: new Date(nextSync),
+        lastSync: updatedSettings.lastSyncDate ? new Date(updatedSettings.lastSyncDate) : undefined,
+        nextSync: updatedSettings.nextSyncDate ? new Date(updatedSettings.nextSyncDate) : undefined,
       }));
 
       this.toastService.showToast(`${this.cloudSyncApiService.getProviderDisplayName(providerEnum)} connected successfully!`, 'checkmark-circle');
@@ -185,6 +195,7 @@ export class CloudSyncService {
           enabled: false,
           connectedProvider: undefined,
           lastSyncDate: undefined,
+          lastSyncProvider: undefined,
           nextSyncDate: undefined,
           folderId: undefined,
         });
@@ -243,6 +254,7 @@ export class CloudSyncService {
 
       await this.updateSettings({
         lastSyncDate: now,
+        lastSyncProvider: settings.connectedProvider,
         nextSyncDate: nextSync,
       });
 

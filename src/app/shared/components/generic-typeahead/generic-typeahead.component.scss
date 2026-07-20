@@ -19,6 +19,11 @@
   border-left-color: green;
 }
 
+// Options without a secondary value (e.g. the All/None filter entries) shouldn't reserve a blank line
+ion-label p:empty {
+  display: none;
+}
+
 .typeahead-img-rect {
   width: 80px;
   height: 40px;

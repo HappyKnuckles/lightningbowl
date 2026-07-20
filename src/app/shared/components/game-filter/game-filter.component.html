@@ -110,48 +110,55 @@
         >Only clean games</ion-toggle
       >
     </ion-item>
-    <ion-item>
-      <ion-select
-        name="league"
-        [ngModel]="gameFilterService.filters().leagues"
-        label="League"
-        multiple="true"
-        (ionChange)="updateFilter('leagues', $event.detail.value)">
-        <ion-select-option value="all">All</ion-select-option>
-        <ion-select-option value="">None</ion-select-option>
-        <ion-select-option *ngFor="let league of leagues" [value]="league">{{ league }}</ion-select-option>
-      </ion-select>
+    <ion-item id="league-filter" class="filter-selector" button detail="true" detailIcon="chevron-expand-outline">
+      <ion-label>League</ion-label>
+      <span class="selected-values">{{ getSelectedFilterText(gameFilterService.filters().leagues) }}</span>
     </ion-item>
+    <ion-modal [presentingElement]="presentingElement" class="typeahead-modal" trigger="league-filter">
+      <ng-template>
+        <app-generic-typeahead
+          [items]="leagueOptions()"
+          [config]="leagueTypeaheadConfig"
+          [prevSelectedItems]="gameFilterService.filters().leagues"
+          (selectedItemsChange)="updateFilter('leagues', $event)">
+        </app-generic-typeahead>
+      </ng-template>
+    </ion-modal>
     <ion-item
       id="ball-filter"
-      class="ball-selector"
+      class="filter-selector"
       button
       detail="true"
       detailIcon="chevron-expand-outline"
       [disabled]="ballsStore.arsenal().length === 0">
       <ion-label>Balls</ion-label>
-      <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
+      <span class="selected-values">{{ getSelectedBallsText() }}</span>
     </ion-item>
-    <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal trigger="ball-filter" class="ball-modal">
+    <ion-modal [presentingElement]="presentingElement" class="typeahead-modal" trigger="ball-filter">
       <ng-template>
-        <app-ball-select
-          (ballSelect)="updateFilter('balls', $event); modal.dismiss()"
-          [selectedBalls]="gameFilterService.filters().balls"></app-ball-select>
+        <app-generic-typeahead
+          [items]="arsenalOptions()"
+          [config]="arsenalTypeaheadConfig"
+          [prevSelectedItems]="gameFilterService.filters().balls"
+          (selectedItemsChange)="updateFilter('balls', $event)">
+        </app-generic-typeahead>
       </ng-template>
     </ion-modal>
 
-    <ion-item>
-      <ion-select
-        name="patterns"
-        [ngModel]="gameFilterService.filters().patterns"
-        label="Patterns"
-        multiple="true"
-        (ionChange)="updateFilter('patterns', $event.detail.value)">
-        <ion-select-option value="all">All</ion-select-option>
-        <ion-select-option value="">None</ion-select-option>
-        <ion-select-option *ngFor="let pattern of patterns()" [value]="pattern">{{ pattern }}</ion-select-option>
-      </ion-select>
+    <ion-item id="pattern-filter" class="filter-selector" button detail="true" detailIcon="chevron-expand-outline">
+      <ion-label>Patterns</ion-label>
+      <span class="selected-values">{{ getSelectedFilterText(gameFilterService.filters().patterns) }}</span>
     </ion-item>
+    <ion-modal [presentingElement]="presentingElement" class="typeahead-modal" trigger="pattern-filter">
+      <ng-template>
+        <app-generic-typeahead
+          [items]="patternOptions()"
+          [config]="patternTypeaheadConfig"
+          [prevSelectedItems]="gameFilterService.filters().patterns"
+          (selectedItemsChange)="updateFilter('patterns', $event)">
+        </app-generic-typeahead>
+      </ng-template>
+    </ion-modal>
   </ion-list>
 </ion-content>
 <ion-footer>

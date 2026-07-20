@@ -24,6 +24,11 @@ export interface Ball {
   position?: number;
 }
 
+/** Arsenal ball enriched for selection lists with its "<name> <weight>lbs" label. */
+export interface ArsenalBall extends Ball {
+  ball_label: string;
+}
+
 export interface Core {
   core_name: string;
   brand: string;

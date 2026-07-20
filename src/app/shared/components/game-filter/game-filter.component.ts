@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, Input, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -23,16 +22,20 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
+import { PatternFilterOption } from 'src/app/core/configs/typeahead/game-filter.config';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
+import { TypeaheadOption } from 'src/app/core/models/typeahead-config.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { rankArsenalForSelection } from 'src/app/core/utils/game-utils/usage.utils';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
-import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 
 @Component({
   selector: 'app-game-filter',
@@ -57,9 +60,8 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
     IonSelect,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
     IonSelectOption,
-    BallSelectComponent,
+    GenericTypeaheadComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -67,7 +69,7 @@ export class GameFilterComponent implements OnInit {
   @Input() filteredGames!: Game[];
   defaultFilters = this.gameFilterService.defaultFilters;
   highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
-  leagues: string[] = [];
+  leagues = computed<string[]>(() => Object.keys(sortGamesByLeagues(this.gamesStore.games(), false)));
   patterns = computed<string[]>(() => {
     return this.gamesStore
       .games()
@@ -75,16 +77,29 @@ export class GameFilterComponent implements OnInit {
       .flat()
       .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index);
   });
-  enterAnimation = alertEnterAnimation;
-  leaveAnimation = alertLeaveAnimation;
+  leagueOptions = computed<TypeaheadOption[]>(() => this.toFilterOptions(this.leagues()));
+  patternOptions = computed<PatternFilterOption[]>(() => {
+    const byTitle = new Map(this.patternsStore.allPatterns().map((pattern) => [pattern.title, pattern]));
+    return this.toFilterOptions(this.patterns()).map((option) => {
+      const pattern = byTitle.get(option.value);
+      return { ...option, category: pattern?.category, ratio: pattern?.ratio };
+    });
+  });
+  arsenalOptions = computed(() => rankArsenalForSelection(this.ballsStore.arsenal(), this.gamesStore.games()));
+  leagueTypeaheadConfig = this.typeaheadConfigService.leagueFilter;
+  patternTypeaheadConfig = this.typeaheadConfigService.patternFilter;
+  arsenalTypeaheadConfig = this.typeaheadConfigService.arsenalBall;
+  presentingElement!: HTMLElement | null;
 
   constructor(
     private modalCtrl: ModalController,
     public gameFilterService: GameFilterService,
     public gamesStore: GamesStore,
     public ballsStore: BallsStore,
+    public patternsStore: PatternsStore,
     private utilsService: UtilsService,
     private analyticsService: AnalyticsService,
+    private typeaheadConfigService: TypeaheadConfigService,
   ) {
     addIcons({ chevronExpandOutline });
   }
@@ -98,7 +113,7 @@ export class GameFilterComponent implements OnInit {
       }));
     }
     this.getHighlightedDates();
-    this.getLeagues();
+    this.presentingElement = document.querySelector('.ion-page');
   }
 
   getSelectedBallsText(): string {
@@ -107,6 +122,13 @@ export class GameFilterComponent implements OnInit {
       return 'All';
     }
     return balls.length > 0 ? balls.join(', ') : 'All';
+  }
+
+  getSelectedFilterText(values: string[] | undefined): string {
+    if (!values?.length || values.includes('all')) {
+      return 'All';
+    }
+    return values.map((value) => (value === '' ? 'None' : value)).join(', ');
   }
 
   startDateChange(event: CustomEvent): void {
@@ -197,9 +219,8 @@ export class GameFilterComponent implements OnInit {
     return this.modalCtrl.dismiss('confirm');
   }
 
-  private getLeagues(): void {
-    const gamesByLeague = sortGamesByLeagues(this.gamesStore.games(), false);
-    this.leagues = Object.keys(gamesByLeague);
+  private toFilterOptions(values: string[]): TypeaheadOption[] {
+    return [{ value: 'all', name: 'All' }, { value: '', name: 'None' }, ...values.map((value) => ({ value, name: value }))];
   }
 
   private getHighlightedDates(): void {

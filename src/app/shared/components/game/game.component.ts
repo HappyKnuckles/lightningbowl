@@ -32,7 +32,7 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
-import { Ball } from 'src/app/core/models/ball.model';
+import { ArsenalBall, Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
@@ -45,10 +45,8 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
+import { countPatternUsage, rankArsenalForSelection, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
-import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
@@ -93,7 +91,6 @@ interface FrameView {
     IonModal,
     GenericTypeaheadComponent,
     IonLabel,
-    BallSelectComponent,
     PinInputComponent,
     PinDeckComponent,
     IonAccordion,
@@ -195,12 +192,14 @@ export class GameComponent implements OnInit {
     return rankByUsage(this.patternsStore.allPatterns(), usage, (pattern) => pattern.title ?? '');
   });
 
+  /** Arsenal sorted by how often each ball was thrown, most used first. */
+  arsenalOptions = computed(() => rankArsenalForSelection(this.ballsStore.arsenal(), this.gamesStore.games()));
+
   // --- Local UI State ---
-  enterAnimation = alertEnterAnimation;
-  leaveAnimation = alertLeaveAnimation;
   presentingElement!: HTMLElement | null;
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
+  arsenalTypeaheadConfig: TypeaheadConfig<ArsenalBall> = this.typeaheadConfigService.arsenalBall;
 
   showButtonToolbar = false;
   keyboardOffset = 0;
@@ -323,8 +322,7 @@ export class GameComponent implements OnInit {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  onBallSelect(selectedBalls: string[], modal: IonModal) {
-    modal.dismiss();
+  onBallSelect(selectedBalls: string[]) {
     this.ballsChanged.emit(selectedBalls);
   }
   onNoteChange(note: string) {

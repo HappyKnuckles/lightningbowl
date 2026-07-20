@@ -201,24 +201,24 @@
             </ion-item>
 
             @if (ballsStore.arsenal().length > 0) {
-              <ion-modal
-                [enterAnimation]="enterAnimation"
-                [leaveAnimation]="leaveAnimation"
-                #modal
-                trigger="ball-selector-{{ game.gameId }}"
-                class="ball-modal">
+              <ion-modal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
                 <ng-template>
-                  <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
+                  <app-generic-typeahead
+                    [items]="arsenalOptions()"
+                    [config]="arsenalTypeaheadConfig"
+                    [prevSelectedItems]="game.balls || []"
+                    (selectedItemsChange)="onBallSelect($event, game)">
+                  </app-generic-typeahead>
                 </ng-template>
               </ion-modal>
             } @else {
-              <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
+              <ion-modal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
                 <ng-template>
                   <app-generic-typeahead
                     [items]="ballsStore.allBalls()"
                     [config]="ballTypeaheadConfig"
                     [prevSelectedItems]="getBallIds(game.balls)"
-                    (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                    (selectedItemsChange)="onBallAdd($event, game)">
                   </app-generic-typeahead>
                 </ng-template>
               </ion-modal>

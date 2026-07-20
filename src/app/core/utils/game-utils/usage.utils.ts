@@ -1,3 +1,4 @@
+import { ArsenalBall, Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 
 export interface UsageStats {
@@ -45,6 +46,22 @@ export function rankByUsage<T>(items: readonly T[], usage: Map<string, UsageStat
     }
     return (usageB?.lastUsed ?? 0) - (usageA?.lastUsed ?? 0);
   });
+}
+
+/**
+ * Arsenal sorted by how often each ball was thrown, most used first, labelled for selection lists.
+ * Games reference balls by name only, so a ball owned at several weights collapses to one entry.
+ */
+export function rankArsenalForSelection(arsenal: readonly Ball[], games: readonly Game[]): ArsenalBall[] {
+  const usage = countBallUsage(games);
+  const seen = new Set<string>();
+  return rankByUsage(arsenal, usage, (ball) => ball.ball_name + ball.core_weight)
+    .filter((ball) => {
+      if (seen.has(ball.ball_name)) return false;
+      seen.add(ball.ball_name);
+      return true;
+    })
+    .map((ball) => ({ ...ball, ball_label: `${ball.ball_name} ${ball.core_weight}lbs` }));
 }
 
 function bump(usage: Map<string, UsageStats>, key: string, date: number): void {

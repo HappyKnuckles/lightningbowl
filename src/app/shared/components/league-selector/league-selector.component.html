@@ -7,7 +7,7 @@
     <span class="ion-text-right">{{ selectedLeague() || "None" }}</span>
   </ion-item>
 } @else {
-  <ion-item class="league-selector" button (click)="openPicker()">
+  <ion-item button (click)="openPicker()">
     <ion-icon name="trophy-outline" slot="start"></ion-icon>
     <ion-label>Leagues/Tournaments</ion-label>
   </ion-item>

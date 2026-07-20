@@ -12,24 +12,30 @@
 <ion-content>
   <ion-list style="padding-top: 10px" lines="full">
     <ion-item>
-      <ion-input
-        class="ion-text-center"
-        [ngModel]="gameFilterService.filters().minScore"
-        name="minScore"
-        clearOnEdit="true"
-        inputmode="numeric"
-        label="Score range"
-        (ionChange)="updateNumericFilter('minScore', $event.detail.value)"></ion-input>
-      <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
-      <ion-input
-        label="-"
-        class="ion-text-center"
-        style="width: 60%"
-        [ngModel]="gameFilterService.filters().maxScore"
-        name="maxScore"
-        clearOnEdit="true"
-        inputmode="numeric"
-        (ionChange)="updateNumericFilter('maxScore', $event.detail.value)"></ion-input>
+      <ion-label>Score range</ion-label>
+      <div class="range-group" slot="end">
+        <ion-input
+          class="range-input"
+          [ngModel]="gameFilterService.filters().minScore"
+          name="minScore"
+          inputmode="numeric"
+          maxlength="3"
+          placeholder="0"
+          clearOnEdit="true"
+          aria-label="Minimum score"
+          (ionChange)="updateNumericFilter('minScore', $event.detail.value)"></ion-input>
+        <span class="range-separator">-</span>
+        <ion-input
+          class="range-input"
+          [ngModel]="gameFilterService.filters().maxScore"
+          name="maxScore"
+          inputmode="numeric"
+          maxlength="3"
+          placeholder="300"
+          clearOnEdit="true"
+          aria-label="Maximum score"
+          (ionChange)="updateNumericFilter('maxScore', $event.detail.value)"></ion-input>
+      </div>
     </ion-item>
     <ion-item>
       <ion-select name="timeRange" label="Time Range" (ionChange)="startDateChange($event)" [ngModel]="gameFilterService.filters().timeRange">
@@ -44,10 +50,12 @@
     </ion-item>
     @defer {
       <ion-item>
-        <ion-label style="flex: 2">Advanced time range</ion-label>
-        <ion-datetime-button datetime="datetime-min"></ion-datetime-button>
-        <ion-label class="ion-text-center" style="margin: 0">-</ion-label>
-        <ion-datetime-button datetime="datetime-max"></ion-datetime-button>
+        <ion-label>Advanced time range</ion-label>
+        <div class="range-group" slot="end">
+          <ion-datetime-button datetime="datetime-min"></ion-datetime-button>
+          <span class="range-separator">-</span>
+          <ion-datetime-button datetime="datetime-max"></ion-datetime-button>
+        </div>
       </ion-item>
     }
 

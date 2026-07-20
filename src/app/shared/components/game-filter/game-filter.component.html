@@ -110,6 +110,21 @@
         >Only clean games</ion-toggle
       >
     </ion-item>
+    @if (bowlersStore.hasMultipleBowlers()) {
+      <ion-item>
+        <ion-select
+          name="bowlers"
+          [ngModel]="gameFilterService.filters().bowlers"
+          label="Bowlers"
+          multiple="true"
+          (ionChange)="updateFilter('bowlers', $event.detail.value)">
+          <ion-select-option value="all">All</ion-select-option>
+          @for (bowler of bowlersStore.bowlers(); track bowler.bowlerId) {
+            <ion-select-option [value]="bowler.name">{{ bowler.name }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+    }
     <ion-item>
       <ion-select
         name="league"

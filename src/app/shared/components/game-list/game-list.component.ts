@@ -33,6 +33,7 @@ import {
   filterOutline,
   gridOutline,
   layersOutline,
+  personCircleOutline,
   shareOutline,
   trashOutline,
   trophyOutline,
@@ -46,9 +47,11 @@ import { GameShareService } from 'src/app/core/services/game-share/game-share.se
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { getGameBowlerId } from 'src/app/core/utils/bowler-utils/bowler.utils';
 import { isGameValid } from 'src/app/core/utils/game-utils/game-validation.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 
@@ -150,6 +153,28 @@ export class GameListComponent implements OnInit {
   public ballsStore = inject(BallsStore);
   public settingsStore = inject(SettingsStore);
   public patternsStore = inject(PatternsStore);
+  public bowlersStore = inject(BowlersStore);
+
+  // Label rows with the owning bowler only when the list actually mixes bowlers.
+  readonly showBowlerNames = computed(() => {
+    if (!this.bowlersStore.hasMultipleBowlers()) {
+      return false;
+    }
+    const defaultId = this.bowlersStore.defaultBowlerId();
+    const owners = new Set(this.games().map((game) => getGameBowlerId(game, defaultId)));
+    return owners.size > 1;
+  });
+
+  // gameId -> owning bowler's name, so the template never calls a method per row.
+  readonly bowlerNameByGameId = computed<Record<string, string>>(() => {
+    const defaultId = this.bowlersStore.defaultBowlerId();
+    const namesById = new Map(this.bowlersStore.bowlers().map((bowler) => [bowler.bowlerId, bowler.name]));
+    const map: Record<string, string> = {};
+    for (const game of this.games()) {
+      map[game.gameId] = namesById.get(getGameBowlerId(game, defaultId)) ?? '';
+    }
+    return map;
+  });
 
   private alertController = inject(AlertController);
   private toastService = inject(ToastService);
@@ -296,6 +321,7 @@ export class GameListComponent implements OnInit {
       cloudDownloadOutline,
       filterOutline,
       layersOutline,
+      personCircleOutline,
     });
   }
 
@@ -566,6 +592,40 @@ export class GameListComponent implements OnInit {
   onEditLeagueChanged(game: Game, league: string): void {
     game.league = league;
     this.updateSeries(game, league);
+  }
+
+  // Lets a saved game (or whole series) be reassigned to another bowler.
+  async openBowlerEdit(game: Game): Promise<void> {
+    const currentBowlerId = game.bowlerId ?? this.bowlersStore.defaultBowlerId();
+    const alert = await this.alertController.create({
+      header: 'Bowler',
+      inputs: this.bowlersStore.bowlers().map((bowler) => ({
+        name: 'bowler',
+        type: 'radio' as const,
+        label: bowler.name,
+        value: bowler.bowlerId,
+        checked: bowler.bowlerId === currentBowlerId,
+      })),
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Select',
+          handler: (bowlerId: string) => {
+            if (bowlerId) {
+              this.onEditBowlerChanged(game, bowlerId);
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private onEditBowlerChanged(game: Game, bowlerId: string): void {
+    game.bowlerId = bowlerId;
+    // Go through the store so the derived name signals update; a series moves as a whole.
+    const matches = (g: Game) => (game.isSeries && game.seriesId ? g.seriesId === game.seriesId : g.gameId === game.gameId);
+    this.gamesStore.updateGamesInMemory((games) => games.map((g) => (matches(g) ? { ...g, bowlerId } : g)));
   }
 
   // HELPERS

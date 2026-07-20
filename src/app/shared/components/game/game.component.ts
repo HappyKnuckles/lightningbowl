@@ -107,6 +107,8 @@ export class GameComponent implements OnInit {
   showMetadata = input<boolean>(true);
   patternModalId = input.required<string>();
   game = input.required<Game>();
+  /** Owner of this game track; empty means the active bowler (multiplayer sessions pass each track's bowler). */
+  bowlerId = input<string>('');
   maxScore = input<number | undefined>(undefined);
   strikeDisabled = input<boolean>(true);
   spareDisabled = input<boolean>(true);
@@ -147,6 +149,7 @@ export class GameComponent implements OnInit {
 
   // --- Computed State ---
   currentGame: Signal<Game> = computed(() => this.game() || createEmptyGame());
+  readonly trackArsenal = computed(() => (this.bowlerId() ? this.ballsStore.arsenalForBowler(this.bowlerId()) : this.ballsStore.activeArsenal()));
 
   frameVms: Signal<FrameView[]> = computed(() => {
     const frames = this.game()?.frames ?? [];

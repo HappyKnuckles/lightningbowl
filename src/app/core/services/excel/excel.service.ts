@@ -7,6 +7,7 @@ import { Game, Throw } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { isSplit } from '../../utils/game-utils/pin.utils';
@@ -26,6 +27,7 @@ export class ExcelService {
     private gamesStore: GamesStore,
     private ballsStore: BallsStore,
     private leaguesStore: LeaguesStore,
+    private bowlersStore: BowlersStore,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
   ) {}
@@ -110,10 +112,26 @@ export class ExcelService {
     try {
       const gameData: Game[] = [];
       const leagueMap = new Set<string>();
+      const leagueOwners = new Map<string, Set<string>>();
       const ballMap = new Set<string>();
+      // Bowler column: match by name, create unknown bowlers, empty -> active bowler.
+      const bowlerIdByName = new Map(this.bowlersStore.bowlers().map((bowler) => [bowler.name.toLowerCase(), bowler.bowlerId]));
 
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
+
+        let bowlerId = this.bowlersStore.activeBowlerId();
+        const bowlerName = ((row['Bowler'] as string) ?? '').toString().trim();
+        if (bowlerName) {
+          const existingId = bowlerIdByName.get(bowlerName.toLowerCase());
+          if (existingId) {
+            bowlerId = existingId;
+          } else {
+            const created = await this.bowlersStore.addBowler(bowlerName);
+            bowlerIdByName.set(bowlerName.toLowerCase(), created.bowlerId);
+            bowlerId = created.bowlerId;
+          }
+        }
         const frames = [];
         const isPinMode = (row['isPinMode'] as string)?.trim().toLowerCase() === 'true';
 
@@ -212,10 +230,15 @@ export class ExcelService {
               : [],
           balls: (row['Balls'] as string)?.trim() ? (row['Balls'] as string).split(', ') : [],
           note: row['Notes'] as string,
+          bowlerId,
         };
 
         if (game.league !== undefined && game.league !== '') {
           leagueMap.add(game.league);
+          if (!leagueOwners.has(game.league)) {
+            leagueOwners.set(game.league, new Set());
+          }
+          leagueOwners.get(game.league)!.add(bowlerId);
         }
 
         if (game.balls) {
@@ -228,12 +251,15 @@ export class ExcelService {
       }
 
       for (const league of leagueMap.values()) {
-        await this.leaguesStore.addLeague(league);
+        const owners = leagueOwners.get(league);
+        for (const owner of owners?.size ? owners : [this.bowlersStore.activeBowlerId()]) {
+          await this.leaguesStore.addLeague(league, owner);
+        }
       }
 
       for (const ball of ballMap.values()) {
         const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+        if (ballToAdd !== undefined && !this.ballsStore.activeArsenal().some((b) => b.ball_name === ball)) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
@@ -360,6 +386,7 @@ export class ExcelService {
     const finalStaticHeaders = [
       'Frame Scores',
       'League',
+      'Bowler',
       'Practice',
       'Clean',
       'Perfect',
@@ -417,6 +444,7 @@ export class ExcelService {
         game.totalScore.toString(),
         game.frameScores.map((s) => s.toString()).join(', '),
         game.league || '',
+        this.bowlersStore.getBowlerName(game.bowlerId),
         game.isPractice ? 'true' : 'false',
         game.isClean ? 'true' : 'false',
         game.isPerfect ? 'true' : 'false',
@@ -446,6 +474,7 @@ export class ExcelService {
       'Total Score': 'Final game score (sum of all frames).',
       'Frame Scores': 'Comma-separated cumulative frame totals. Example: 20, 40, 59, ...',
       League: 'League name for this game. Leave empty if not a league game.',
+      Bowler: 'Bowler this game belongs to. Leave empty for the currently active bowler; unknown names create a new bowler.',
       Practice: 'Boolean value: true or false. Use true for practice games.',
       Clean: 'Boolean value: true or false. True means no open frames in the game.',
       Perfect: 'Boolean value: true or false. True means a 300 game.',

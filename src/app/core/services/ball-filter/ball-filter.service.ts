@@ -79,7 +79,7 @@ export class BallFilterService {
         filters.maxRg >= parseFloat(ball.core_rg) &&
         filters.minDiff <= parseFloat(ball.core_diff) &&
         filters.maxDiff >= parseFloat(ball.core_diff) &&
-        (!filters.inArsenal || this.ballsStore.arsenal().some((arsenalBall) => arsenalBall.ball_id === ball.ball_id))
+        (!filters.inArsenal || this.ballsStore.activeArsenal().some((arsenalBall) => arsenalBall.ball_id === ball.ball_id))
       );
     });
     return filteredBalls;

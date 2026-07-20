@@ -23,7 +23,7 @@
     <app-bowling-refresher [refreshing]="isRefreshing()"></app-bowling-refresher>
   </ion-refresher>
 
-  <ng-container *ngIf="gamesStore.games().length <= 0 && !loadingService.isLoading(); else noLeagues">
+  <ng-container *ngIf="activeBowlerGames().length <= 0 && !loadingService.isLoading(); else noLeagues">
     <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
   </ng-container>
 

@@ -11,17 +11,23 @@
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
+      @if (bowlersStore.hasMultipleBowlers()) {
+        <ion-button fill="clear" class="bowler-button" (click)="presentBowlerSheet()">
+          <ion-icon slot="start" name="person-circle-outline"></ion-icon>
+          {{ isMultiplayer() ? effectiveSessionBowlerIds().length + " Bowlers" : bowlersStore.activeBowler()?.name }}
+        </ion-button>
+      }
       <ion-button fill="clear" (click)="togglePinInputMode()">
         <ion-icon slot="icon-only" [name]="isPinInputMode ? 'bowling-ball' : 'bowling-ball-outline'"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 
-  @if (selectedMode() !== "Single") {
+  @if (hasSegments()) {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
-        <ion-segment-button *ngFor="let segment of segments" [value]="segment" [contentId]="segment">
-          <ion-label class="segment-label">{{ segment }}</ion-label>
+        <ion-segment-button *ngFor="let segment of segments; let i = index" [value]="segment" [contentId]="segment">
+          <ion-label class="segment-label">{{ segmentLabel(i) }}</ion-label>
         </ion-segment-button>
       </ion-segment>
     </ion-toolbar>
@@ -63,6 +69,7 @@
       <app-game
         #gameRef
         [game]="games()[i]"
+        [bowlerId]="trackBowlerId(i)"
         [strikeDisabled]="toolbarDisabledState.strikeDisabled"
         [spareDisabled]="toolbarDisabledState.spareDisabled"
         [maxScore]="maxScores()[i]"
@@ -76,7 +83,7 @@
         [isGameComplete]="isGameComplete(i)"
         [patternModalId]="i.toString()"
         [ballSelectorId]="'modal-ball-selector' + i"
-        [showStatsButton]="selectedMode() !== 'Single'"
+        [showStatsButton]="gamesPerBowler() > 1"
         (throwInput)="handleThrowInput($event, i)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
@@ -88,21 +95,21 @@
         (noteChanged)="onNoteChange($event, i)"
         (ballsChanged)="onBallsChange($event, i)"
         (inputFocused)="onInputFocused($event, i)"
-        (seriesStatsClick)="onSeriesStatsClick()"
-        [statsEnabled]="hasLiveStats()">
+        (seriesStatsClick)="onSeriesStatsClick(i)"
+        [statsEnabled]="liveStatsEnabledByTrack()[i]">
       </app-game>
 
-      <ion-grid *ngIf="selectedMode() !== 'Single'">
+      <ion-grid *ngIf="hasSegments()">
         <ion-row class="button-row">
           <ion-col>
-            <ion-button (click)="clearFrames(i)">Clear Score {{ i + 1 }}</ion-button>
+            <ion-button (click)="clearFrames(i)">Clear {{ isMultiplayer() ? segmentLabel(i) : "Score " + (i + 1) }}</ion-button>
           </ion-col>
         </ion-row>
       </ion-grid>
     </ion-segment-content>
   </ion-segment-view>
 
-  <ion-grid *ngIf="selectedMode() === 'Single'">
+  <ion-grid *ngIf="!hasSegments()">
     <ion-row class="button-row">
       <ion-col>
         <ion-button (click)="clearFrames()">Clear Score</ion-button>
@@ -113,8 +120,8 @@
     </ion-row>
   </ion-grid>
 
-  <ion-grid *ngIf="selectedMode() !== 'Single'">
-    <ion-row>
+  <ion-grid *ngIf="hasSegments()">
+    <ion-row *ngIf="!isMultiplayer()">
       <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
       <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>
     </ion-row>
@@ -123,7 +130,7 @@
         <ion-button (click)="clearFrames()">Clear All</ion-button>
       </ion-col>
       <ion-col>
-        <ion-button (click)="calculateScore()">Save Series</ion-button>
+        <ion-button (click)="calculateScore()">{{ isMultiplayer() ? "Save All" : "Save Series" }}</ion-button>
       </ion-col>
     </ion-row>
   </ion-grid>
@@ -149,7 +156,7 @@
         </p>
 
         @if (series.stats; as stats) {
-          <app-stat-display [currentStats]="stats" [prevStats]="allStats()" [statDefinitions]="liveStatDefinitions"></app-stat-display>
+          <app-stat-display [currentStats]="stats" [prevStats]="liveStatsBaseline()!" [statDefinitions]="liveStatDefinitions"></app-stat-display>
           <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-stat-pin-leave>
           <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-stat-pin-leave>
           <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="series.leaves.common" [allLeaves]="series.allLeaves"></app-stat-pin-leave>

@@ -28,6 +28,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
@@ -83,6 +84,7 @@ export class GameFilterComponent implements OnInit {
     public gameFilterService: GameFilterService,
     public gamesStore: GamesStore,
     public ballsStore: BallsStore,
+    public bowlersStore: BowlersStore,
     private utilsService: UtilsService,
     private analyticsService: AnalyticsService,
   ) {

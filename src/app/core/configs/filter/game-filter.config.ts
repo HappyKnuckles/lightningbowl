@@ -27,6 +27,11 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     type: 'boolean',
   },
   {
+    key: 'bowlers',
+    label: 'Bowlers',
+    type: 'array',
+  },
+  {
     key: 'leagues',
     label: 'Leagues',
     type: 'array',

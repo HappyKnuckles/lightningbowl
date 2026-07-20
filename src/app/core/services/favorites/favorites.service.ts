@@ -1,8 +1,17 @@
-import { inject, Injectable, signal, Signal } from '@angular/core';
+import { computed, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
+import { BowlersStore } from '../../stores/bowlers.store';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
+
+/**
+ * Sentinel bucket for favorites saved before multi-bowler support; resolved as
+ * the default bowler's favorites until first written back.
+ */
+const LEGACY_BUCKET = '';
+
+type FavoritesByBowler<T> = Record<string, T[]>;
 
 @Injectable({
   providedIn: 'root',
@@ -10,10 +19,19 @@ import { PatternService } from '../pattern/pattern.service';
 export class FavoritesService {
   private patternService = inject(PatternService);
   private ballService = inject(BallService);
-  private _favoritePatterns = signal<Map<string, Pattern>>(new Map());
-  private _favoriteBalls = signal<Map<string, Ball>>(new Map());
-  readonly favoritePatterns: Signal<Map<string, Pattern>> = this._favoritePatterns;
-  readonly favoriteBalls: Signal<Map<string, Ball>> = this._favoriteBalls;
+  private bowlersStore = inject(BowlersStore);
+
+  private _patternsByBowler = signal<FavoritesByBowler<Pattern>>({});
+  private _ballsByBowler = signal<FavoritesByBowler<Ball>>({});
+
+  // Favorites of the active bowler.
+  readonly favoritePatterns: Signal<Map<string, Pattern>> = computed(() => {
+    return new Map(this.resolveBucket(this._patternsByBowler()).map((pattern) => [pattern.url, pattern]));
+  });
+
+  readonly favoriteBalls: Signal<Map<string, Ball>> = computed(() => {
+    return new Map(this.resolveBucket(this._ballsByBowler()).map((ball) => [`${ball.ball_id}-${ball.core_weight}`, ball]));
+  });
 
   constructor() {
     const patternUrlsToMigrate = this.loadPatternsFromStorage();
@@ -28,96 +46,116 @@ export class FavoritesService {
 
   // Pattern methods
   isFavorite(patternUrl: string): boolean {
-    return this._favoritePatterns().has(patternUrl);
+    return this.favoritePatterns().has(patternUrl);
   }
 
   toggleFavorite(pattern: Pattern): boolean {
-    const currentFavorites = new Map(this._favoritePatterns());
-    let isFavorited: boolean;
-
-    if (currentFavorites.has(pattern.url)) {
-      currentFavorites.delete(pattern.url);
-      isFavorited = false;
+    const isFavorited = !this.isFavorite(pattern.url);
+    if (isFavorited) {
+      this.addFavorite(pattern);
     } else {
-      currentFavorites.set(pattern.url, pattern);
-      isFavorited = true;
+      this.removeFavorite(pattern.url);
     }
-
-    this._favoritePatterns.set(currentFavorites);
-    this.saveFavoritesToStorage();
-
     return isFavorited;
   }
 
   addFavorite(pattern: Pattern): void {
-    const currentFavorites = new Map(this._favoritePatterns());
-    currentFavorites.set(pattern.url, pattern);
-    this._favoritePatterns.set(currentFavorites);
+    this.updateActiveBucket(this._patternsByBowler, (patterns) => [...patterns.filter((p) => p.url !== pattern.url), pattern]);
     this.saveFavoritesToStorage();
   }
 
   removeFavorite(patternUrl: string): void {
-    const currentFavorites = new Map(this._favoritePatterns());
-    currentFavorites.delete(patternUrl);
-    this._favoritePatterns.set(currentFavorites);
+    this.updateActiveBucket(this._patternsByBowler, (patterns) => patterns.filter((p) => p.url !== patternUrl));
     this.saveFavoritesToStorage();
   }
 
   getFavoritePatternUrls(): string[] {
-    return Array.from(this._favoritePatterns().keys());
+    return Array.from(this.favoritePatterns().keys());
   }
 
   getFavoritePatterns(): Pattern[] {
-    return Array.from(this._favoritePatterns().values());
+    return Array.from(this.favoritePatterns().values());
   }
 
   // Ball methods
   isBallFavorite(ballId: string, coreWeight: string): boolean {
-    const ballKey = `${ballId}-${coreWeight}`;
-    return this._favoriteBalls().has(ballKey);
+    return this.favoriteBalls().has(`${ballId}-${coreWeight}`);
   }
 
   toggleBallFavorite(ball: Ball): boolean {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
-    const currentFavorites = new Map(this._favoriteBalls());
-    let isFavorited: boolean;
-
-    if (currentFavorites.has(ballKey)) {
-      currentFavorites.delete(ballKey);
-      isFavorited = false;
+    const isFavorited = !this.isBallFavorite(ball.ball_id, ball.core_weight);
+    if (isFavorited) {
+      this.addBallFavorite(ball);
     } else {
-      currentFavorites.set(ballKey, ball);
-      isFavorited = true;
+      this.removeBallFavorite(ball.ball_id, ball.core_weight);
     }
-
-    this._favoriteBalls.set(currentFavorites);
-    this.saveFavoritesToStorage();
-
     return isFavorited;
   }
 
   addBallFavorite(ball: Ball): void {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
-    const currentFavorites = new Map(this._favoriteBalls());
-    currentFavorites.set(ballKey, ball);
-    this._favoriteBalls.set(currentFavorites);
+    const key = `${ball.ball_id}-${ball.core_weight}`;
+    this.updateActiveBucket(this._ballsByBowler, (balls) => [...balls.filter((b) => `${b.ball_id}-${b.core_weight}` !== key), ball]);
     this.saveFavoritesToStorage();
   }
 
   removeBallFavorite(ballId: string, coreWeight: string): void {
-    const ballKey = `${ballId}-${coreWeight}`;
-    const currentFavorites = new Map(this._favoriteBalls());
-    currentFavorites.delete(ballKey);
-    this._favoriteBalls.set(currentFavorites);
+    const key = `${ballId}-${coreWeight}`;
+    this.updateActiveBucket(this._ballsByBowler, (balls) => balls.filter((b) => `${b.ball_id}-${b.core_weight}` !== key));
     this.saveFavoritesToStorage();
   }
 
   getFavoriteBallKeys(): string[] {
-    return Array.from(this._favoriteBalls().keys());
+    return Array.from(this.favoriteBalls().keys());
   }
 
   getFavoriteBalls(): Ball[] {
-    return Array.from(this._favoriteBalls().values());
+    return Array.from(this.favoriteBalls().values());
+  }
+
+  /** Drops (or reassigns) a deleted bowler's favorites. */
+  removeBowler(bowlerId: string, reassignToBowlerId?: string): void {
+    const strip = <T>(byBowler: FavoritesByBowler<T>): FavoritesByBowler<T> => {
+      if (!(bowlerId in byBowler)) {
+        return byBowler;
+      }
+      const { [bowlerId]: removed, ...rest } = byBowler;
+      if (reassignToBowlerId) {
+        const existing = rest[reassignToBowlerId] ?? [];
+        rest[reassignToBowlerId] = [...existing, ...removed];
+      }
+      return rest;
+    };
+    this._patternsByBowler.update((byBowler) => strip(byBowler));
+    this._ballsByBowler.update((byBowler) => strip(byBowler));
+    this.saveFavoritesToStorage();
+  }
+
+  /** Returns the active bowler's list, falling back to the legacy bucket for the default bowler. */
+  private resolveBucket<T>(byBowler: FavoritesByBowler<T>): T[] {
+    const activeId = this.bowlersStore.activeBowlerId();
+    if (byBowler[activeId]) {
+      return byBowler[activeId];
+    }
+    if (activeId && activeId === this.bowlersStore.defaultBowlerId()) {
+      return byBowler[LEGACY_BUCKET] ?? [];
+    }
+    return [];
+  }
+
+  private updateActiveBucket<T>(target: WritableSignal<FavoritesByBowler<T>>, updater: (items: T[]) => T[]): void {
+    const activeId = this.bowlersStore.activeBowlerId();
+    if (!activeId) {
+      return;
+    }
+    target.update((byBowler) => {
+      const current = byBowler[activeId] ?? (activeId === this.bowlersStore.defaultBowlerId() ? (byBowler[LEGACY_BUCKET] ?? []) : []);
+      const next: FavoritesByBowler<T> = { ...byBowler, [activeId]: updater(current) };
+      // The legacy bucket is folded into the default bowler's entry on first write.
+      if (activeId === this.bowlersStore.defaultBowlerId()) {
+        delete next[LEGACY_BUCKET];
+      }
+      return next;
+    });
   }
 
   private loadPatternsFromStorage(): string[] {
@@ -127,15 +165,16 @@ export class FavoritesService {
     if (!savedPatterns) return [];
 
     try {
-      const parsed: unknown[] = JSON.parse(savedPatterns);
+      const parsed: unknown = JSON.parse(savedPatterns);
       if (Array.isArray(parsed) && parsed.length > 0) {
         if (typeof parsed[0] === 'string') {
           // Old format — return URLs for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Pattern>((parsed as Pattern[]).map((p) => [p.url, p]));
-          this._favoritePatterns.set(map);
+          this._patternsByBowler.set({ [LEGACY_BUCKET]: parsed as Pattern[] });
         }
+      } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        this._patternsByBowler.set(parsed as FavoritesByBowler<Pattern>);
       }
     } catch (error) {
       console.warn('Failed to parse saved favorite patterns:', error);
@@ -150,15 +189,16 @@ export class FavoritesService {
     if (!savedBalls) return [];
 
     try {
-      const parsed: unknown[] = JSON.parse(savedBalls);
+      const parsed: unknown = JSON.parse(savedBalls);
       if (Array.isArray(parsed) && parsed.length > 0) {
         if (typeof parsed[0] === 'string') {
           // Old format — return keys for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Ball>((parsed as Ball[]).map((b) => [`${b.ball_id}-${b.core_weight}`, b]));
-          this._favoriteBalls.set(map);
+          this._ballsByBowler.set({ [LEGACY_BUCKET]: parsed as Ball[] });
         }
+      } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        this._ballsByBowler.set(parsed as FavoritesByBowler<Ball>);
       }
     } catch (error) {
       console.warn('Failed to parse saved favorite balls:', error);
@@ -169,7 +209,7 @@ export class FavoritesService {
   private async migrateOldPatternFavorites(urls: string[]): Promise<void> {
     const results = await Promise.all(urls.map((url) => this.patternService.getPatternData(url)));
     const valid = results.filter((p) => !!p.url);
-    this._favoritePatterns.set(new Map(valid.map((p) => [p.url, p])));
+    this._patternsByBowler.set({ [LEGACY_BUCKET]: valid });
     this.saveFavoritesToStorage();
   }
 
@@ -198,18 +238,15 @@ export class FavoritesService {
     }
 
     if (matched.length > 0) {
-      this._favoriteBalls.set(new Map(matched.map((b) => [`${b.ball_id}-${b.core_weight}`, b])));
+      this._ballsByBowler.set({ [LEGACY_BUCKET]: matched });
       this.saveFavoritesToStorage();
     }
   }
 
   private saveFavoritesToStorage(): void {
     if (typeof localStorage !== 'undefined') {
-      const patternsArray = Array.from(this._favoritePatterns().values());
-      localStorage.setItem('favoritePatterns', JSON.stringify(patternsArray));
-
-      const ballsArray = Array.from(this._favoriteBalls().values());
-      localStorage.setItem('favoriteBalls', JSON.stringify(ballsArray));
+      localStorage.setItem('favoritePatterns', JSON.stringify(this._patternsByBowler()));
+      localStorage.setItem('favoriteBalls', JSON.stringify(this._ballsByBowler()));
     }
   }
 }

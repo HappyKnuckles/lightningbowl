@@ -1,15 +1,25 @@
-import { Injectable, Signal, signal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Alley } from '../../models/alley.model';
+import { BowlersStore } from '../../stores/bowlers.store';
 
 const FAVORITES_KEY = 'favoriteAlleys';
 const RECENTS_KEY = 'recentAlleys';
 const MAX_RECENTS = 10;
 
+/** Bucket for favorites saved before multi-bowler support (default bowler's). */
+const LEGACY_BUCKET = '';
+
 @Injectable({ providedIn: 'root' })
 export class AlleyFavoritesService {
-  private _favorites = signal<Map<string, Alley>>(new Map());
+  private bowlersStore = inject(BowlersStore);
+  private _favoritesByBowler = signal<Record<string, Alley[]>>({});
+  // Recents are a device-level convenience and stay shared between bowlers.
   private _recents = signal<Alley[]>([]);
-  readonly favorites: Signal<Map<string, Alley>> = this._favorites;
+
+  // Favorite alleys of the active bowler.
+  readonly favorites: Signal<Map<string, Alley>> = computed(() => {
+    return new Map(this.resolveBucket().map((alley) => [alley.id, alley]));
+  });
   readonly recents: Signal<Alley[]> = this._recents;
 
   constructor() {
@@ -17,21 +27,25 @@ export class AlleyFavoritesService {
   }
 
   isFavorite(alleyId: string): boolean {
-    return this._favorites().has(alleyId);
+    return this.favorites().has(alleyId);
   }
 
   toggleFavorite(alley: Alley): boolean {
-    const favorites = new Map(this._favorites());
-    let isFavorited: boolean;
-    if (favorites.has(alley.id)) {
-      favorites.delete(alley.id);
-      isFavorited = false;
-    } else {
-      favorites.set(alley.id, alley);
-      isFavorited = true;
+    const activeId = this.bowlersStore.activeBowlerId();
+    if (!activeId) {
+      return false;
     }
-    this._favorites.set(favorites);
-    this.save(FAVORITES_KEY, Array.from(favorites.values()));
+    const isFavorited = !this.isFavorite(alley.id);
+    this._favoritesByBowler.update((byBowler) => {
+      const current = byBowler[activeId] ?? (activeId === this.bowlersStore.defaultBowlerId() ? (byBowler[LEGACY_BUCKET] ?? []) : []);
+      const updated = isFavorited ? [...current, alley] : current.filter((a) => a.id !== alley.id);
+      const next = { ...byBowler, [activeId]: updated };
+      if (activeId === this.bowlersStore.defaultBowlerId()) {
+        delete next[LEGACY_BUCKET];
+      }
+      return next;
+    });
+    this.persistFavorites();
     return isFavorited;
   }
 
@@ -41,17 +55,64 @@ export class AlleyFavoritesService {
     this.save(RECENTS_KEY, recents);
   }
 
+  /** Drops (or reassigns) a deleted bowler's favorite alleys. */
+  removeBowler(bowlerId: string, reassignToBowlerId?: string): void {
+    this._favoritesByBowler.update((byBowler) => {
+      if (!(bowlerId in byBowler)) {
+        return byBowler;
+      }
+      const { [bowlerId]: removed, ...rest } = byBowler;
+      if (reassignToBowlerId) {
+        const existing = rest[reassignToBowlerId] ?? [];
+        const merged = [...existing];
+        for (const alley of removed) {
+          if (!merged.some((a) => a.id === alley.id)) {
+            merged.push(alley);
+          }
+        }
+        rest[reassignToBowlerId] = merged;
+      }
+      return rest;
+    });
+    this.persistFavorites();
+  }
+
+  private resolveBucket(): Alley[] {
+    const byBowler = this._favoritesByBowler();
+    const activeId = this.bowlersStore.activeBowlerId();
+    if (byBowler[activeId]) {
+      return byBowler[activeId];
+    }
+    if (activeId && activeId === this.bowlersStore.defaultBowlerId()) {
+      return byBowler[LEGACY_BUCKET] ?? [];
+    }
+    return [];
+  }
+
   private loadFromStorage(): void {
     if (typeof localStorage === 'undefined') {
       return;
     }
     try {
-      const favorites: Alley[] = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]');
-      this._favorites.set(new Map(favorites.map((a) => [a.id, a])));
+      const favorites: unknown = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? '[]');
+      if (Array.isArray(favorites)) {
+        // Legacy format: a flat list belonging to the default bowler.
+        if (favorites.length > 0) {
+          this._favoritesByBowler.set({ [LEGACY_BUCKET]: favorites as Alley[] });
+        }
+      } else if (favorites && typeof favorites === 'object') {
+        this._favoritesByBowler.set(favorites as Record<string, Alley[]>);
+      }
       const recents: Alley[] = JSON.parse(localStorage.getItem(RECENTS_KEY) ?? '[]');
       this._recents.set(recents);
     } catch (error) {
       console.warn('Failed to parse saved alleys:', error);
+    }
+  }
+
+  private persistFavorites(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(this._favoritesByBowler()));
     }
   }
 

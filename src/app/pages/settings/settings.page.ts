@@ -37,7 +37,6 @@ import {
   colorPaletteOutline,
   logoGithub,
   mailOutline,
-  personCircleOutline,
   refreshCircleOutline,
   sendOutline,
 } from 'ionicons/icons';
@@ -48,8 +47,8 @@ import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.se
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { BowlerManagerComponent } from 'src/app/shared/components/bowler-manager/bowler-manager.component';
 import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
 import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
@@ -88,6 +87,7 @@ import { environment } from 'src/environments/environment';
     DatePipe,
     FormsModule,
     ReactiveFormsModule,
+    BowlerManagerComponent,
     LeagueSelectorComponent,
     SpareNamesComponent,
   ],
@@ -111,7 +111,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
   feedbackMessage = '';
   updateAvailable = false;
   constructor(
-    public userService: UserService,
     private toastService: ToastService,
     private loadingService: LoadingService,
     private themeService: ThemeChangerService,
@@ -123,7 +122,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
     private route: ActivatedRoute,
   ) {
     addIcons({
-      personCircleOutline,
       colorPaletteOutline,
       logoGithub,
       mailOutline,
@@ -182,13 +180,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
     });
 
     await modal.present();
-  }
-
-  changeName(event: InputCustomEvent): void {
-    const username = event.detail.value;
-    if (username) {
-      this.userService.setUsername(username);
-    }
   }
 
   savePinInputMode(pinMode: string): void {

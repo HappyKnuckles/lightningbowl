@@ -6,18 +6,8 @@
 
 <ion-content [fullscreen]="true">
   <ion-list>
-    <ion-item>
-      <ion-icon name="person-circle-outline" slot="start"></ion-icon>
-      <ion-input
-        class="ion-text-right"
-        label="Your name"
-        type="text"
-        [value]="userService.username()"
-        placeholder="{{ userService.username() }}"
-        (ionChange)="changeName($event)"
-        style="margin-right: 21px">
-      </ion-input>
-    </ion-item>
+    <app-bowler-manager></app-bowler-manager>
+
     <ion-item>
       <ion-icon name="color-palette-outline" slot="start"></ion-icon>
       <ion-select

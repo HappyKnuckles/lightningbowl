@@ -28,13 +28,16 @@ export class BallSelectComponent implements OnInit {
   #gamesStore = inject(GamesStore);
 
   selectedBalls = input.required<string[] | undefined>();
+  /** Owner whose arsenal to offer; empty means the active bowler. */
+  bowlerId = input<string>('');
 
   ballSelect = output<string[]>();
 
   /** Arsenal sorted by how often each ball was thrown, most used first. */
   rankedArsenal = computed(() => {
     const usage = countBallUsage(this.#gamesStore.games());
-    return rankByUsage(this.ballsStore.arsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
+    const arsenal = this.bowlerId() ? this.ballsStore.arsenalForBowler(this.bowlerId()) : this.ballsStore.activeArsenal();
+    return rankByUsage(arsenal, usage, (ball) => ball.ball_name + ball.core_weight);
   });
 
   #tempSelectedBalls = signal<string[]>([]);

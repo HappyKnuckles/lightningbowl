@@ -9,7 +9,8 @@ import { filter } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { LoadingService } from './core/services/loader/loading.service';
 import { ToastService } from './core/services/toast/toast.service';
-import { UserService } from './core/services/user/user.service';
+import { AppFacade } from './core/stores/app.facade';
+import { BowlersStore } from './core/stores/bowlers.store';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ThemeChangerService } from './core/services/theme-changer/theme-changer.service';
 import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
@@ -34,7 +35,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private alertController: AlertController,
     private toastService: ToastService,
     public loadingService: LoadingService,
-    private userService: UserService,
+    private bowlersStore: BowlersStore,
+    private appFacade: AppFacade,
     private swUpdate: SwUpdate,
     private themeService: ThemeChangerService,
     private http: HttpClient,
@@ -165,7 +167,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private async greetUser(): Promise<void> {
     if (environment.production) {
-      if (!this.userService.username()) {
+      const activeName = this.bowlersStore.activeBowler()?.name ?? '';
+      // 'Me' is the migration placeholder for installs that never set a name.
+      if (!activeName || activeName === 'Me') {
         await this.showEnterNameAlert();
       } else {
         // Check if we should show the greeting based on last greeting time
@@ -186,7 +190,7 @@ export class AppComponent implements OnInit, OnDestroy {
         }
 
         if (shouldShowGreeting) {
-          this.presentGreetingAlert(this.userService.username());
+          this.presentGreetingAlert(activeName);
         }
       }
     }
@@ -209,9 +213,11 @@ export class AppComponent implements OnInit, OnDestroy {
           text: 'Confirm',
           handler: (data) => {
             const newName = data.username.trim();
-            if (newName !== '') {
-              this.userService.setUsername(newName);
-              this.toastService.showToast(`Name updated to ${this.userService.username()}`, 'reload-outline');
+            const activeBowler = this.bowlersStore.activeBowler();
+            if (newName !== '' && activeBowler) {
+              void this.appFacade.renameBowler(activeBowler, newName).then(() => {
+                this.toastService.showToast(`Name updated to ${newName}`, 'reload-outline');
+              });
             }
           },
         },

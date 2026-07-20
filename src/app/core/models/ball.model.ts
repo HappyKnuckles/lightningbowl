@@ -22,6 +22,7 @@ export interface Ball {
   thumbnail_image: string;
   us_int: string;
   position?: number;
+  bowlerIds?: string[];
 }
 
 export interface Core {

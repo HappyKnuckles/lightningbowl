@@ -138,6 +138,22 @@ export class GamesStore {
     }
   }
 
+  async deleteGames(gameIds: string[]): Promise<void> {
+    try {
+      const idSet = new Set(gameIds);
+      await Promise.all(gameIds.map((gameId) => this.storageRepository.remove(StorageKeys.game(gameId))));
+      let updatedGames: Game[] = [];
+      this.games.update((games) => {
+        updatedGames = games.filter((game) => !idSet.has(game.gameId));
+        return updatedGames;
+      });
+      this.updateFirstGameDate(updatedGames);
+    } catch (error) {
+      console.error('Error deleting games:', error);
+      throw error;
+    }
+  }
+
   updateGamesInMemory(updater: (games: Game[]) => Game[]): void {
     this.games.update(updater);
   }

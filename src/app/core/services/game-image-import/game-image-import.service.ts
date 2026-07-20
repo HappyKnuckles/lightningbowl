@@ -7,7 +7,7 @@ import { GameDataTransformerService } from 'src/app/core/services/game-transform
 import { ImageProcesserService } from 'src/app/core/services/image-processer/image-processer.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { Game } from '../../models/game.model';
 import { numberArraysToFrames } from '../../utils/game-utils/frame.utils';
 import { parseBowlingScores } from '../../utils/game-utils/score-input.utils';
@@ -22,8 +22,8 @@ export class GameImageImportService {
   private transformGameService = inject(GameDataTransformerService);
   private loadingService = inject(LoadingService);
   private toastService = inject(ToastService);
-  private userService = inject(UserService);
   private analyticsService = inject(AnalyticsService);
+  private bowlersStore = inject(BowlersStore);
 
   /**
    * Full flow: shows experimental warning (if not recently dismissed),
@@ -148,7 +148,8 @@ export class GameImageImportService {
 
   private parseBowlingScores(input: string): Game | null {
     try {
-      const { frames, frameScores, totalScore } = parseBowlingScores(input, this.userService.username());
+      // The OCR parser finds the score row belonging to the active bowler's name.
+      const { frames, frameScores, totalScore } = parseBowlingScores(input, this.bowlersStore.activeBowler()?.name ?? '');
       const framesAsFrameArray = numberArraysToFrames(frames);
 
       const parsedGame: Game = {
@@ -163,6 +164,7 @@ export class GameImageImportService {
         isPerfect: false,
         patterns: [],
         balls: [],
+        bowlerId: this.bowlersStore.activeBowlerId(),
       };
 
       return this.transformGameService.transformGameData(parsedGame);

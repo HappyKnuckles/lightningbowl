@@ -1,11 +1,8 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button type="button" class="action-sheet" slot="start" fill="clear" (click)="handleImageUpload()">
-        <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
-      </ion-button>
+      <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
-    <input type="file" id="upload" class="ion-hide" accept="image/*" />
     <ion-title (click)="presentActionSheet()" style="cursor: pointer">
       New {{ selectedMode() === "Single" ? "Game" : selectedMode() }}
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
@@ -155,41 +152,6 @@
           <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="series.leaves.common" [allLeaves]="series.allLeaves"></app-stat-pin-leave>
         }
       }
-    </ion-content>
-  </ng-template>
-</ion-modal>
-
-<!-- Modal for OCR -->
-<ion-modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false" #modal>
-  <ng-template>
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start" style="padding: 4px">
-          <ion-button color="medium" (click)="modal.dismiss()">
-            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-        <ion-title>Your game</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="confirm(modal)" [strong]="true" [disabled]="!isGameValid(gameData)">Save</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content>
-      <h2 class="ion-text-center">Edit wrong game data</h2>
-      <app-game
-        #modalGrid
-        [ballSelectorId]="gameData.gameId + '-modal-ball-selector'"
-        [game]="gameData"
-        [isPinInputMode]="false"
-        (throwInput)="handleThrowInput($event, 0, true)"
-        (leagueChanged)="onLeagueChange($event, true)"
-        (isPracticeChanged)="onIsPracticeChange($event, 0, true)"
-        (noteChanged)="onNoteChange($event, 0, true)"
-        (ballsChanged)="onBallsChange($event, 0, true)"
-        (patternChanged)="onPatternChange($event, true)"
-        [patternModalId]="gameData.gameId">
-      </app-game>
     </ion-content>
   </ng-template>
 </ion-modal>

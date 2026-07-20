@@ -25,6 +25,7 @@ import {
   IonSkeletonText,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
@@ -89,6 +90,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     CommonModule,
     FormsModule,

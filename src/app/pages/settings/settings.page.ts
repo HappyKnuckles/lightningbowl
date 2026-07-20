@@ -25,6 +25,7 @@ import {
   IonSelectOption,
   IonTextarea,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -48,11 +49,9 @@ import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.se
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ThemeChangerService } from 'src/app/core/services/theme-changer/theme-changer.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { UserService } from 'src/app/core/services/user/user.service';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { CloudSyncSettingsComponent } from 'src/app/shared/components/cloud-sync-settings/cloud-sync-settings.component';
 import { GithubIssuesModalComponent } from 'src/app/shared/components/github-issues-modal/github-issues-modal.component';
-import { LeagueSelectorComponent } from 'src/app/shared/components/league-selector/league-selector.component';
 import { SpareNamesComponent } from 'src/app/shared/components/spare-names/spare-names.component';
 import { environment } from 'src/environments/environment';
 
@@ -77,6 +76,7 @@ import { environment } from 'src/environments/environment';
     IonIcon,
     IonInput,
     IonContent,
+    IonMenuButton,
     IonToolbar,
     IonHeader,
     IonSelect,
@@ -88,7 +88,6 @@ import { environment } from 'src/environments/environment';
     DatePipe,
     FormsModule,
     ReactiveFormsModule,
-    LeagueSelectorComponent,
     SpareNamesComponent,
   ],
 })
@@ -111,7 +110,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
   feedbackMessage = '';
   updateAvailable = false;
   constructor(
-    public userService: UserService,
     private toastService: ToastService,
     private loadingService: LoadingService,
     private themeService: ThemeChangerService,
@@ -182,13 +180,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
     });
 
     await modal.present();
-  }
-
-  changeName(event: InputCustomEvent): void {
-    const username = event.detail.value;
-    if (username) {
-      this.userService.setUsername(username);
-    }
   }
 
   savePinInputMode(pinMode: string): void {

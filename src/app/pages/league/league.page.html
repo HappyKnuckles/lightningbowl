@@ -1,6 +1,9 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     @if (!isVisibilityEdit()) {
+      <ion-buttons slot="start">
+        <ion-menu-button menu="main-menu"></ion-menu-button>
+      </ion-buttons>
       <ion-buttons slot="end">
         <ion-button type="button" class="action-sheet" fill="clear" (click)="addLeague()">
           <ion-icon slot="icon-only" name="add-outline"></ion-icon>

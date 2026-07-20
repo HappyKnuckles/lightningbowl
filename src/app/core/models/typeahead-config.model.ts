@@ -10,6 +10,12 @@ export interface TypeaheadSearchKey {
   weight: number;
 }
 
+/** Simple option for typeaheads over plain string values (e.g. filter selections). */
+export interface TypeaheadOption {
+  value: string;
+  name: string;
+}
+
 export interface TypeaheadConfig<T> {
   title: string;
   searchPlaceholder: string;

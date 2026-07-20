@@ -1,4 +1,4 @@
-import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
+import { ArsenalBall, Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from '../../models/typeahead-config.model';
 import { BOWWWL_URL } from '../../constants/app.constants';
 
@@ -51,6 +51,26 @@ export const BALL_COVERSTOCK_TYPEAHEAD_CONFIG: TypeaheadConfig<Coverstock> = {
   identifierKey: 'id',
   valueKey: 'coverstock_name',
   searchMode: 'local',
+};
+
+export const ARSENAL_BALL_TYPEAHEAD_CONFIG: TypeaheadConfig<ArsenalBall> = {
+  title: 'Balls',
+  searchPlaceholder: 'Search for a ball',
+  loadingText: 'Loading more balls...',
+  noDataText: 'No balls found!',
+  displayFields: [
+    { key: 'brand_name', isSecondary: true },
+    { key: 'ball_label', isPrimary: true },
+  ],
+  searchKeys: [
+    { name: 'ball_name', weight: 1 },
+    { name: 'brand_name', weight: 0.7 },
+  ],
+  identifierKey: 'ball_name',
+  valueKey: 'ball_name',
+  searchMode: 'local',
+  showImages: true,
+  imageUrlGenerator: (ball: ArsenalBall) => BOWWWL_URL + ball.thumbnail_image,
 };
 
 export const BALL_TYPEAHEAD_CONFIG: TypeaheadConfig<Ball> = {

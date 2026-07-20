@@ -13,6 +13,8 @@ import {
   IonSearchbar,
   IonSpinner,
   IonTitle,
+  IonButtons,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -48,6 +50,8 @@ const DEFAULT_ZOOM = 12;
     IonSearchbar,
     IonSpinner,
     IonTitle,
+    IonButtons,
+    IonMenuButton,
     IonToolbar,
     SearchBlurDirective,
     SearchHistoryDirective,

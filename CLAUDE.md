@@ -33,7 +33,7 @@ npx cap sync             # copy www/ into android/ and ios/
 npx cap open android     # requires Android SDK
 ```
 
-No e2e suite and no CI workflows exist. Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
+There is a small e2e test suite, no CI. Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
 
 ## Architecture
 
@@ -66,6 +66,7 @@ src/app/
 - Components are prefixed with the data structure they handle: `ball-filter`, `game-list`, `league-selector` — see [shared/components/](src/app/shared/components/). Class suffix must be `Component` or `Page` (ESLint-enforced), selector prefix `app-`.
 - Standalone components only (no NgModules). Import individual `Ion*` components from `@ionic/angular/standalone`; register only needed icons via `addIcons({...})` in the constructor ([league-selector.component.ts](src/app/shared/components/league-selector/league-selector.component.ts)).
 - Signals-first: `signal`/`computed` for state, `input()`/`output()`/`model()` for component I/O, modern `@if`/`@for` template control flow. ES `#private` fields for internal store/service state, exposed via `.asReadonly()` or public `readonly` signals.
+- No template methods: for templates always use `signal`/`computed` so change detection can be easily adjusted to `OnPush`.
 - DI: both constructor injection and `inject()` appear; match the file you're editing.
 - Services live in `core/services/<name>/<name>.service.ts`; pure logic goes in `core/utils/` as free functions (e.g. [frame.utils.ts](src/app/core/utils/game-utils/frame.utils.ts)).
 - Tests: Jasmine specs colocated with source; `TestBed` with mock providers built from `jasmine.createSpy` object literals; set signal inputs via `fixture.componentRef.setInput(...)` ([league-selector.component.spec.ts](src/app/shared/components/league-selector/league-selector.component.spec.ts)).

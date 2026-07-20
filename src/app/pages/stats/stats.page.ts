@@ -16,9 +16,13 @@ import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
+  IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonLabel,
+  IonMenuButton,
   IonRefresher,
   IonSegment,
   IonSegmentButton,
@@ -43,7 +47,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { UtilsService } from 'src/app/core/utils/utils.service';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
@@ -104,6 +107,10 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     ]),
   ],
   imports: [
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonMenuButton,
     IonLabel,
     IonSegmentButton,
     IonSegment,
@@ -125,7 +132,6 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     StatDisplayComponent,
     StatPinLeaveComponent,
     GenericFilterActiveComponent,
-    FileHeaderButtonsComponent,
     StatSpareComponent,
     BowlingRefresherComponent,
     StatHighlightItemComponent,

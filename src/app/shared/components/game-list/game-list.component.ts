@@ -54,11 +54,10 @@ import { UtilsService } from 'src/app/core/utils/utils.service';
 
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Ball } from 'src/app/core/models/ball.model';
+import { ArsenalBall, Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
-import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
-import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { rankArsenalForSelection } from 'src/app/core/utils/game-utils/usage.utils';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -128,13 +127,11 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
     GameComponent,
     GameReadonlyComponent,
     GenericTypeaheadComponent,
-    BallSelectComponent,
     LeagueSelectorComponent,
   ],
 })
 export class GameListComponent implements OnInit {
   // DOM
-  @ViewChild('modal', { static: false }) modal!: IonModal;
   @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
   @ViewChild(AccordionDelayedCloseDirective) delayedClose!: AccordionDelayedCloseDirective;
   @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
@@ -169,6 +166,9 @@ export class GameListComponent implements OnInit {
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
+
+  /** Arsenal sorted by how often each ball was thrown, most used first. */
+  arsenalOptions = computed(() => rankArsenalForSelection(this.ballsStore.arsenal(), this.gamesStore.games()));
 
   showingGames = computed(() => {
     const games = this.sortedGames();
@@ -279,9 +279,7 @@ export class GameListComponent implements OnInit {
   // Config
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
-
-  enterAnimation = alertEnterAnimation;
-  leaveAnimation = alertLeaveAnimation;
+  arsenalTypeaheadConfig: TypeaheadConfig<ArsenalBall> = this.typeaheadConfigService.arsenalBall;
 
   constructor() {
     addIcons({
@@ -502,19 +500,17 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
-  onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
+  onBallAdd(ballIds: string[], game: Game) {
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.onBallSelect(
       selected.map((b) => b.ball_name),
       game,
-      modal,
     );
     this.saveBallToArsenal(selected);
   }
 
-  onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
-    modal.dismiss();
+  onBallSelect(selectedBalls: string[], game: Game): void {
     game.balls = selectedBalls;
   }
 

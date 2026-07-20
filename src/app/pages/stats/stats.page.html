@@ -1,6 +1,8 @@
 <ion-header [translucent]="true" class="ion-text-center">
   <ion-toolbar>
-    <app-file-header-buttons></app-file-header-buttons>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
     <ion-title> Stats </ion-title>
     <ion-buttons slot="end" class="action-sheet">
       <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">

@@ -9,15 +9,19 @@ ion-modal {
   }
 }
 
-.ball-modal {
-  --width: fit-content;
-  --min-width: 250px;
-  --height: fit-content;
-  --border-radius: 13px;
-  --max-height: auto;
+.typeahead-modal {
+  --background: var(--ion-background-color, #fff);
 }
 
-.ball-selector::part(detail-icon) {
+.selected-values {
+  overflow: hidden;
+  margin-left: 8px;
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.filter-selector::part(detail-icon) {
   opacity: 1;
   color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
   margin-inline-start: 4px;

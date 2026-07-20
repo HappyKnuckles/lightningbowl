@@ -155,9 +155,14 @@
             <span class="ion-text-right">{{ ballsText() || "None" }}</span>
           </ion-item>
           @if (ballsStore.arsenal().length > 0) {
-            <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal [trigger]="ballSelectorId()" class="ball-modal">
+            <ion-modal [trigger]="ballSelectorId()" [presentingElement]="presentingElement">
               <ng-template>
-                <app-ball-select (ballSelect)="onBallSelect($event, modal)" [selectedBalls]="currentGame().balls || []"></app-ball-select>
+                <app-generic-typeahead
+                  [items]="arsenalOptions()"
+                  [config]="arsenalTypeaheadConfig"
+                  [prevSelectedItems]="currentGame().balls || []"
+                  (selectedItemsChange)="onBallSelect($event)">
+                </app-generic-typeahead>
               </ng-template>
             </ion-modal>
           } @else {
@@ -172,7 +177,13 @@
               </ng-template>
             </ion-modal>
           }
-          <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
+          <ion-item
+            class="pattern-selector"
+            [id]="patternModalId()"
+            button
+            detail="true"
+            detailIcon="chevron-expand-outline"
+            [disabled]="patternsStore.allPatterns().length === 0">
             <ion-label>Patterns</ion-label>
             <span class="ion-text-right">{{ patternsText() || "None" }}</span>
           </ion-item>

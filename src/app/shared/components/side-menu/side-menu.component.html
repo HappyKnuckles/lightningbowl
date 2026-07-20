@@ -1,0 +1,73 @@
+<ion-menu contentId="main-content" menuId="main-menu" side="start" [disabled]="isDisabled()">
+  <ion-header [translucent]="true">
+    <ion-toolbar>
+      <ion-title>Menu</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content>
+    <ion-list>
+      <ion-item>
+        <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+        <ion-input
+          class="ion-text-right"
+          label="Your name"
+          type="text"
+          [value]="userService.username()"
+          placeholder="{{ userService.username() }}"
+          (ionChange)="changeName($event)"
+          style="margin-right: 21px">
+        </ion-input>
+      </ion-item>
+
+      <ion-item button (click)="scanScoreboard()">
+        <ion-icon name="camera-outline" slot="start"></ion-icon>
+        <ion-label>Scan Scoreboard</ion-label>
+      </ion-item>
+
+      <ion-item button [disabled]="ballsStore.allBalls().length === 0" (click)="openFileInput()">
+        <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        @if (ballsStore.allBalls().length === 0) {
+          <ion-spinner class="upload-spinner" name="crescent" slot="start"></ion-spinner>
+        }
+        <ion-label>Import File</ion-label>
+      </ion-item>
+
+      <ion-item button (click)="exportToExcel()">
+        <ion-icon name="cloud-download-outline" slot="start"></ion-icon>
+        <ion-label>Export to Excel</ion-label>
+      </ion-item>
+
+      <!-- <ion-item button (click)="changeUser()">
+        <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+        <ion-label>Change User</ion-label>
+        @if (bowlersStore.activeBowler(); as bowler) {
+          <ion-note slot="end">{{ bowler.name }}</ion-note>
+        }
+      </ion-item> -->
+      <app-league-selector></app-league-selector>
+      <ion-item>
+        <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+        <ion-select
+          label="Pin Input Mode"
+          interface="action-sheet"
+          [value]="settingsStore.pinInputMode() ? 'hit' : 'missing'"
+          (ionChange)="savePinInputMode($event.detail.value)">
+          <ion-select-option value="missing">Missing Pins</ion-select-option>
+          <ion-select-option value="hit">Hit Pins</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<input
+  type="file"
+  id="import"
+  #import
+  class="ion-hide"
+  (change)="handleFileUpload()"
+  placeholder="Upload file"
+  accept=".xlsx,.xls,.pinpal,.db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3,application/vnd.sqlite3" />
+
+<app-game-ocr-import></app-game-ocr-import>

@@ -172,7 +172,13 @@
               </ng-template>
             </ion-modal>
           }
-          <ion-item [id]="patternModalId()" button [disabled]="patternsStore.allPatterns().length === 0">
+          <ion-item
+            class="pattern-selector"
+            [id]="patternModalId()"
+            button
+            detail="true"
+            detailIcon="chevron-expand-outline"
+            [disabled]="patternsStore.allPatterns().length === 0">
             <ion-label>Patterns</ion-label>
             <span class="ion-text-right">{{ patternsText() || "None" }}</span>
           </ion-item>

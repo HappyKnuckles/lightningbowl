@@ -71,7 +71,14 @@
                   [leagues]="leagues()"
                   [selectedLeague]="lead.league ?? ''"
                   (leagueChanged)="onSeriesLeagueChanged(row, $event)"></app-league-selector>
-                <ion-item class="series-pattern" lines="none" button [id]="'selectPatternSeries' + row.id">
+                <ion-item
+                  class="series-pattern"
+                  class="pattern-selector"
+                  detail="true"
+                  detailIcon="chevron-expand-outline"
+                  lines="none"
+                  button
+                  [id]="'selectPatternSeries' + row.id">
                   <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                   <ion-label>Patterns</ion-label>
                   <span class="ion-text-right">{{ lead.patterns.join(", ") || "None" }}</span>
@@ -187,7 +194,7 @@
                 [selectedLeague]="game.league ?? ''"
                 (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
             }
-            <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
+            <ion-item class="ball-selector" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
               <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
               <ion-label>Balls</ion-label>
               <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
@@ -217,7 +224,7 @@
               </ion-modal>
             }
             @if (!inSeries) {
-              <ion-item class="pattern" button [id]="'selectPatternHistory' + game.gameId">
+              <ion-item class="pattern-selector" detail="true" detailIcon="chevron-expand-outline" button [id]="'selectPatternHistory' + game.gameId">
                 <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                 <ion-label>Patterns</ion-label>
                 <span class="ion-text-right"> {{ game.patterns.join(", ") || "None" }}</span>

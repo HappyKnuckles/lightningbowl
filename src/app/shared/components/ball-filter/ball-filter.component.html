@@ -12,16 +12,16 @@
 
 <ion-content>
   <ion-list style="padding-top: 10px" lines="full">
-    <ion-item button id="select-brands">
+    <ion-item class="brand-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-brands">
       <ion-label>Brands</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().brands.join(", ") }}
+        {{ ballFilterService.filters().brands.length ? ballFilterService.filters().brands.join(", ") : "All" }}
       </p>
     </ion-item>
-    <ion-item button id="select-coverstocks">
+    <ion-item class="coverstock-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-coverstocks">
       <ion-label>Coverstocks</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().coverstocks.join(", ") }}
+        {{ ballFilterService.filters().coverstocks.length ? ballFilterService.filters().coverstocks.join(", ") : "All" }}
       </p>
     </ion-item>
     <ion-item>
@@ -35,10 +35,10 @@
         <ion-select-option *ngFor="let coverstockType of coverstockTypes" [value]="coverstockType">{{ coverstockType }}</ion-select-option>
       </ion-select>
     </ion-item>
-    <ion-item button id="select-cores">
+    <ion-item class="core-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-cores">
       <ion-label>Cores</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().cores.join(", ") }}
+        {{ ballFilterService.filters().cores.length ? ballFilterService.filters().cores.join(", ") : "All" }}
       </p>
     </ion-item>
     <ion-item>

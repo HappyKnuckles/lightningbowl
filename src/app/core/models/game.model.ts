@@ -40,6 +40,8 @@ export interface GameDraft {
   selectedMode: string;
   gameIndex: string;
   segments: string[];
+  /** Multiplayer session: one participating bowler per game track. Absent in solo drafts. */
+  sessionBowlerIds?: string[];
 }
 
 /**

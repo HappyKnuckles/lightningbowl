@@ -87,6 +87,7 @@ ion-item-divider {
       ion-item.arsenal,
       ion-item.pattern,
       ion-item.note,
+      ion-item.bowler,
       ::ng-deep app-league-selector ion-item {
         --min-height: 40px;
         font-size: 0.875rem;
@@ -106,6 +107,10 @@ ion-item-divider {
       .game-date {
         display: flex;
         gap: 0.5rem;
+      }
+
+      .bowler-tag {
+        color: var(--ion-color-primary);
       }
 
       .score {
@@ -234,6 +239,10 @@ ion-item-divider {
           display: flex;
           gap: 0.5rem;
           color: var(--ion-color-step-400);
+
+          .bowler-tag {
+            color: var(--ion-color-primary);
+          }
         }
       }
 

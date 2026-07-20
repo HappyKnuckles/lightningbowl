@@ -19,11 +19,12 @@ export class BallsStore {
   readonly isUsingCache = signal<boolean>(false);
 
   // Arsenal of the active bowler; balls without owner tags belong to the default bowler.
-  readonly activeArsenal = computed(() => {
-    const activeId = this.bowlersStore.activeBowlerId();
+  readonly activeArsenal = computed(() => this.arsenalForBowler(this.bowlersStore.activeBowlerId()));
+
+  arsenalForBowler(bowlerId: string): Ball[] {
     const defaultId = this.bowlersStore.defaultBowlerId();
-    return this.arsenal().filter((ball) => (ball.bowlerIds?.length ? ball.bowlerIds : [defaultId]).includes(activeId));
-  });
+    return this.arsenal().filter((ball) => (ball.bowlerIds?.length ? ball.bowlerIds : [defaultId]).includes(bowlerId));
+  }
 
   constructor(
     private storageRepository: StorageRepository,

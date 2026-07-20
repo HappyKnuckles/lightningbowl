@@ -115,7 +115,7 @@ export class BowlerManagerComponent implements OnInit {
           text: 'Add',
           handler: (data: { name: string }) => {
             const name = data.name?.trim();
-            if (!name) {
+            if (!name || this.isNameTaken(name)) {
               return false;
             }
             void this.addBowler(name);
@@ -137,7 +137,7 @@ export class BowlerManagerComponent implements OnInit {
           text: 'Save',
           handler: (data: { name: string }) => {
             const name = data.name?.trim();
-            if (!name) {
+            if (!name || (name !== bowler.name && this.isNameTaken(name))) {
               return false;
             }
             void this.renameBowler(bowler, name);
@@ -147,6 +147,15 @@ export class BowlerManagerComponent implements OnInit {
       ],
     });
     await alert.present();
+  }
+
+  // Bowler names must be unique: filters and Excel import/export match by name.
+  private isNameTaken(name: string): boolean {
+    const taken = this.bowlersStore.bowlers().some((b) => b.name.toLowerCase() === name.toLowerCase());
+    if (taken) {
+      this.toastService.showToast(TOAST_MESSAGES.bowlerNameTaken, 'bug', true);
+    }
+    return taken;
   }
 
   async openDeleteAlert(bowler: Bowler): Promise<void> {
@@ -237,7 +246,7 @@ export class BowlerManagerComponent implements OnInit {
 
   private async renameBowler(bowler: Bowler, name: string): Promise<void> {
     try {
-      await this.bowlersStore.updateBowler({ ...bowler, name });
+      await this.appFacade.renameBowler(bowler, name);
       this.toastService.showToast(TOAST_MESSAGES.bowlerEditSuccess, 'checkmark-outline');
     } catch (error) {
       console.error(error);

@@ -2,9 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
+import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BOWLER_KEYS, STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
@@ -86,8 +89,18 @@ describe('AppFacade bowler migration', () => {
         { provide: AnalyticsService, useValue: { trackBallAdded: jasmine.createSpy('trackBallAdded') } },
         { provide: BallFilterService, useValue: {} },
         { provide: PatternsStore, useValue: {} },
-        { provide: LeaguesStore, useValue: { clearLeagues: jasmine.createSpy('clearLeagues') } },
+        {
+          provide: LeaguesStore,
+          useValue: {
+            clearLeagues: jasmine.createSpy('clearLeagues'),
+            stampUntaggedLeagues: jasmine.createSpy('stampUntaggedLeagues').and.resolveTo(),
+            removeBowlerFromLeagues: jasmine.createSpy('removeBowlerFromLeagues').and.resolveTo(),
+          },
+        },
         { provide: SettingsStore, useValue: {} },
+        { provide: GameFilterService, useValue: { replaceBowlerNameInFilters: jasmine.createSpy('replaceBowlerNameInFilters') } },
+        { provide: FavoritesService, useValue: { removeBowler: jasmine.createSpy('removeBowlerFavorites') } },
+        { provide: AlleyFavoritesService, useValue: { removeBowler: jasmine.createSpy('removeBowlerAlleys') } },
       ],
     });
     facade = TestBed.inject(AppFacade);

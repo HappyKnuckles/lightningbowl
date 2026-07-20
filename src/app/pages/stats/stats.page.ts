@@ -145,9 +145,10 @@ export class StatsPage implements OnInit {
   SPARE_STAT_DEFINITIONS = SPARE_STAT_DEFINITIONS;
   PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
   imagesUrl = environment.imagesUrl;
+  // Stats respect the applied game filter, which includes the bowler selection.
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
-    this.gamesStore.games().forEach((game) => {
+    this.gameFilterService.filteredGames().forEach((game) => {
       const date = new Date(game.date);
       date.setHours(0, 0, 0, 0);
       dateSet.add(date.getTime());
@@ -163,7 +164,7 @@ export class StatsPage implements OnInit {
 
   gamesForSelectedSession = computed(() => {
     const selDate = this.selectedDate();
-    const allGames = this.gamesStore.games();
+    const allGames = this.gameFilterService.filteredGames();
 
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });

@@ -53,8 +53,10 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { filterGamesByBowlers } from 'src/app/core/utils/bowler-utils/bowler.utils';
 import { sortGameHistoryByDate, sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
@@ -113,9 +115,13 @@ export class LeaguePage {
   segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
   isEditMode: Record<string, boolean> = {};
 
+  // League tab shows the active bowler's leagues and stats.
+  readonly activeBowlerGames: Signal<Game[]> = computed(() =>
+    filterGamesByBowlers(this.gamesStore.games(), [this.bowlersStore.activeBowlerId()], this.bowlersStore.defaultBowlerId()),
+  );
+
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
-    const games = this.gamesStore.games();
-    return sortGamesByLeagues(games, true);
+    return sortGamesByLeagues(this.activeBowlerGames(), true);
   });
 
   leagueKeys: Signal<string[]> = computed(() => {
@@ -123,8 +129,7 @@ export class LeaguePage {
   });
 
   overallStats: Signal<Stats> = computed(() => {
-    const games = this.gamesStore.games();
-    return this.statService.calculateBowlingStats(games);
+    return this.statService.calculateBowlingStats(this.activeBowlerGames());
   });
 
   gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
@@ -183,6 +188,7 @@ export class LeaguePage {
     public gamesStore: GamesStore,
     public ballsStore: BallsStore,
     public leaguesStore: LeaguesStore,
+    public bowlersStore: BowlersStore,
     private appFacade: AppFacade,
     private hapticService: HapticService,
     private statService: GameStatsService,

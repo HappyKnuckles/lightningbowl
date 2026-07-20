@@ -1,6 +1,10 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { GameFilter } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
+import { Bowler } from 'src/app/core/models/bowler.model';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { createEmptyGame } from 'src/app/core/utils/game-utils/frame.utils';
 import { GameFilterService } from './game-filter.service';
 
@@ -13,6 +17,14 @@ describe('GameFilterService.filterGames', () => {
   let service: GameFilterService;
   let nextId = 0;
 
+  const games = signal<Game[]>([]);
+  const bowlers = signal<Bowler[]>([]);
+  const mockGamesStore = { games };
+  const mockBowlersStore = {
+    bowlers,
+    defaultBowlerId: () => 'b1',
+  };
+
   const makeGame = (overrides: Partial<Game> = {}): Game => ({
     ...createEmptyGame(),
     gameId: `g${++nextId}`,
@@ -23,17 +35,24 @@ describe('GameFilterService.filterGames', () => {
   /** A baseline "match everything" filter; tests override one axis at a time. */
   const baseFilters = (): GameFilter => ({ ...service.defaultFilters });
 
-  const ids = (games: Game[]): string[] => games.map((g) => g.gameId);
+  const ids = (list: Game[]): string[] => list.map((g) => g.gameId);
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: GamesStore, useValue: mockGamesStore },
+        { provide: BowlersStore, useValue: mockBowlersStore },
+      ],
+    });
     service = TestBed.inject(GameFilterService);
     nextId = 0;
+    games.set([]);
+    bowlers.set([]);
   });
 
   it('returns every game with the default (no-op) filters', () => {
-    const games = [makeGame({ totalScore: 150 }), makeGame({ totalScore: 200 }), makeGame({ totalScore: 90 })];
-    expect(service.filterGames(games, baseFilters()).length).toBe(3);
+    const list = [makeGame({ totalScore: 150 }), makeGame({ totalScore: 200 }), makeGame({ totalScore: 90 })];
+    expect(service.filterGames(list, baseFilters()).length).toBe(3);
   });
 
   it('filters by score range (min/max inclusive)', () => {
@@ -80,6 +99,54 @@ describe('GameFilterService.filterGames', () => {
     expect(ids(result)).toEqual([perfect.gameId]);
   });
 
+  describe('bowlers', () => {
+    beforeEach(() => {
+      bowlers.set([
+        { bowlerId: 'b1', name: 'Nico', createdAt: 1 },
+        { bowlerId: 'b2', name: 'Partner', createdAt: 2 },
+      ]);
+    });
+
+    it('passes everything for ["all"]', () => {
+      const list = [makeGame({ bowlerId: 'b1' }), makeGame({ bowlerId: 'b2' }), makeGame()];
+      expect(service.filterGames(list, { ...baseFilters(), bowlers: ['all'] }).length).toBe(3);
+    });
+
+    it('matches games of the selected bowlers by name', () => {
+      const mine = makeGame({ bowlerId: 'b1' });
+      const partners = makeGame({ bowlerId: 'b2' });
+
+      const result = service.filterGames([mine, partners], { ...baseFilters(), bowlers: ['Partner'] });
+
+      expect(ids(result)).toEqual([partners.gameId]);
+    });
+
+    it('supports selecting multiple bowlers', () => {
+      const mine = makeGame({ bowlerId: 'b1' });
+      const partners = makeGame({ bowlerId: 'b2' });
+
+      const result = service.filterGames([mine, partners], { ...baseFilters(), bowlers: ['Nico', 'Partner'] });
+
+      expect(result.length).toBe(2);
+    });
+
+    it('attributes legacy games without bowlerId to the default bowler', () => {
+      const legacy = makeGame();
+      const partners = makeGame({ bowlerId: 'b2' });
+
+      const result = service.filterGames([legacy, partners], { ...baseFilters(), bowlers: ['Nico'] });
+
+      expect(ids(result)).toEqual([legacy.gameId]);
+    });
+
+    it('tolerates stored filters without the bowlers key', () => {
+      const filters = { ...baseFilters() } as Partial<GameFilter>;
+      delete filters.bowlers;
+      const list = [makeGame({ bowlerId: 'b1' }), makeGame({ bowlerId: 'b2' })];
+      expect(service.filterGames(list, filters as GameFilter).length).toBe(2);
+    });
+  });
+
   describe('leagues', () => {
     it('matches a specific league', () => {
       const monday = makeGame({ league: 'Monday Night League' });
@@ -91,8 +158,8 @@ describe('GameFilterService.filterGames', () => {
     });
 
     it('passes everything for ["all"]', () => {
-      const games = [makeGame({ league: 'A' }), makeGame({ league: 'B' }), makeGame({ league: '' })];
-      expect(service.filterGames(games, { ...baseFilters(), leagues: ['all'] }).length).toBe(3);
+      const list = [makeGame({ league: 'A' }), makeGame({ league: 'B' }), makeGame({ league: '' })];
+      expect(service.filterGames(list, { ...baseFilters(), leagues: ['all'] }).length).toBe(3);
     });
 
     it('matches games with no league via the empty-string value', () => {
@@ -165,5 +232,32 @@ describe('GameFilterService.filterGames', () => {
     });
 
     expect(ids(result)).toEqual([match.gameId]);
+  });
+
+  describe('bowler rename/delete healing', () => {
+    beforeEach(() => {
+      bowlers.set([
+        { bowlerId: 'b1', name: 'Nico', createdAt: 1 },
+        { bowlerId: 'b2', name: 'Partner', createdAt: 2 },
+      ]);
+    });
+
+    it('replaces a renamed bowler in the active filter', () => {
+      service.filters.update((f) => ({ ...f, bowlers: ['Partner'] }));
+      service.replaceBowlerNameInFilters('Partner', 'Buddy');
+      expect(service.filters().bowlers).toEqual(['Buddy']);
+    });
+
+    it('drops a deleted bowler and falls back to all when empty', () => {
+      service.filters.update((f) => ({ ...f, bowlers: ['Partner'] }));
+      service.replaceBowlerNameInFilters('Partner');
+      expect(service.filters().bowlers).toEqual(['all']);
+    });
+
+    it('leaves filters untouched when the name is not selected', () => {
+      service.filters.update((f) => ({ ...f, bowlers: ['Nico'] }));
+      service.replaceBowlerNameInFilters('Partner');
+      expect(service.filters().bowlers).toEqual(['Nico']);
+    });
   });
 });

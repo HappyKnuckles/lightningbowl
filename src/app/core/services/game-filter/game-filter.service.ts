@@ -1,6 +1,7 @@
 import { computed, Injectable, Signal, signal } from '@angular/core';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { UtilsService } from '../../utils/utils.service';
 const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
@@ -15,6 +16,7 @@ export class GameFilterService {
     maxScore: 300,
     isClean: false,
     isPerfect: false,
+    bowlers: ['all'],
     leagues: ['all'],
     balls: ['all'],
     patterns: ['all'],
@@ -53,6 +55,7 @@ export class GameFilterService {
   constructor(
     private utilsService: UtilsService,
     private gamesStore: GamesStore,
+    private bowlersStore: BowlersStore,
   ) {
     this.setDefaultFilters();
   }
@@ -76,6 +79,18 @@ export class GameFilterService {
       return noneMatch || specificMatch;
     };
 
+    // The bowler filter stores names (like leagues); games hold bowler ids.
+    const bowlerNamesById = new Map(this.bowlersStore.bowlers().map((bowler) => [bowler.bowlerId, bowler.name]));
+    const defaultBowlerId = this.bowlersStore.defaultBowlerId();
+    const selectedBowlers = filters.bowlers ?? ['all'];
+    const matchesBowlers = (game: Game): boolean => {
+      if (selectedBowlers.includes('all') || selectedBowlers.length === 0) {
+        return true;
+      }
+      const bowlerName = bowlerNamesById.get(game.bowlerId ?? defaultBowlerId) ?? '';
+      return selectedBowlers.includes(bowlerName);
+    };
+
     return games.filter((game) => {
       const gameDate = formatDate(new Date(game.date).toISOString());
 
@@ -87,6 +102,7 @@ export class GameFilterService {
         (filters.excludePractice ? !game.isPractice : true) &&
         (!filters.isPerfect || game.isPerfect) &&
         (!filters.isClean || game.isClean) &&
+        matchesBowlers(game) &&
         (filters.leagues.includes('all') || filters.leagues.length === 0 || filters.leagues.includes(game.league || '')) &&
         matchesMultiSelect(filters.patterns, game.patterns ?? []) &&
         matchesMultiSelect(filters.balls, game.balls ?? [])
@@ -117,9 +133,24 @@ export class GameFilterService {
     this.filters.set(this.loadInitialFilters());
   }
 
+  /** Keeps the saved bowler filter consistent after a bowler rename or delete. */
+  replaceBowlerNameInFilters(oldName: string, newName?: string): void {
+    this.filters.update((filters) => {
+      const bowlers = filters.bowlers ?? ['all'];
+      if (!bowlers.includes(oldName)) {
+        return filters;
+      }
+      const replaced = bowlers.map((name) => (name === oldName ? newName : name)).filter((name): name is string => !!name);
+      const deduped = [...new Set(replaced)];
+      return { ...filters, bowlers: deduped.length ? deduped : ['all'] };
+    });
+    this.saveFilters();
+  }
+
   private loadInitialFilters(): GameFilter {
     localStorage.removeItem('filter');
     const storedFilter = localStorage.getItem('game-filter');
-    return storedFilter ? JSON.parse(storedFilter) : { ...this.defaultFilters };
+    // Merge over the defaults so filters added in newer versions (e.g. bowlers) are always present.
+    return storedFilter ? { ...this.defaultFilters, ...JSON.parse(storedFilter) } : { ...this.defaultFilters };
   }
 }

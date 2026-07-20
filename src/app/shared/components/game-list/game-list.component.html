@@ -38,6 +38,9 @@
                       <span class="series-date">
                         <span>{{ lead.date | date: "MM.dd.yyyy" }}</span>
                         <span>#{{ row.firstNumber }}–{{ row.lastNumber }}</span>
+                        @if (showBowlerNames()) {
+                          <span class="bowler-tag">{{ bowlerNameByGameId()[lead.gameId] }}</span>
+                        }
                       </span>
                       <span class="series-label">{{ lead.league || "Practice" }}</span>
                     </div>
@@ -71,6 +74,19 @@
                   [leagues]="leagues()"
                   [selectedLeague]="lead.league ?? ''"
                   (leagueChanged)="onSeriesLeagueChanged(row, $event)"></app-league-selector>
+                @if (bowlersStore.hasMultipleBowlers()) {
+                  <ion-item
+                    class="series-bowler"
+                    lines="none"
+                    button
+                    detail="true"
+                    detailIcon="chevron-expand-outline"
+                    (click)="openBowlerEdit(lead)">
+                    <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+                    <ion-label>Bowler</ion-label>
+                    <span class="ion-text-right">{{ bowlerNameByGameId()[lead.gameId] }}</span>
+                  </ion-item>
+                }
                 <ion-item class="series-pattern" lines="none" button [id]="'selectPatternSeries' + row.id">
                   <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                   <ion-label>Patterns</ion-label>
@@ -140,6 +156,7 @@
             <p *ngIf="!inSeries" class="game-date">
               <span>{{ game.date | date: "MM.dd.yyyy" }}</span>
               <span *ngIf="numberTag">{{ numberTag }}</span>
+              <span *ngIf="showBowlerNames()" class="bowler-tag">{{ bowlerNameByGameId()[game.gameId] }}</span>
             </p>
             <h2 class="title">{{ title }}</h2>
             <p class="score" *ngIf="meta">
@@ -186,6 +203,13 @@
                 [leagues]="leagues()"
                 [selectedLeague]="game.league ?? ''"
                 (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
+              @if (bowlersStore.hasMultipleBowlers()) {
+                <ion-item class="bowler" button detail="true" detailIcon="chevron-expand-outline" (click)="openBowlerEdit(game)">
+                  <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+                  <ion-label>Bowler</ion-label>
+                  <span class="ion-text-right">{{ bowlerNameByGameId()[game.gameId] }}</span>
+                </ion-item>
+              }
             }
             <ion-item class="arsenal" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
               <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
@@ -201,7 +225,10 @@
                 trigger="ball-selector-{{ game.gameId }}"
                 class="ball-modal">
                 <ng-template>
-                  <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
+                  <app-ball-select
+                    (ballSelect)="onBallSelect($event, game, modal)"
+                    [selectedBalls]="game.balls || []"
+                    [bowlerId]="game.bowlerId ?? ''"></app-ball-select>
                 </ng-template>
               </ion-modal>
             } @else {

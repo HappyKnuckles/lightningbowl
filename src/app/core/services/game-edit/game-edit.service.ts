@@ -92,8 +92,9 @@ export class GameEditService {
       const original = this.originalGameState[game.gameId];
       const leagueChanged = original && original.league !== updatedGame.league;
       const patternsChanged = original && JSON.stringify(original.patterns) !== JSON.stringify(updatedGame.patterns);
+      const bowlerChanged = original && original.bowlerId !== updatedGame.bowlerId;
 
-      if (updatedGame.isSeries && (leagueChanged || patternsChanged)) {
+      if (updatedGame.isSeries && (leagueChanged || patternsChanged || bowlerChanged)) {
         await this.saveWithSeriesPropagation(updatedGame);
       } else {
         await this.gamesStore.saveGameToLocalStorage(updatedGame);
@@ -293,6 +294,7 @@ export class GameEditService {
         ...g,
         league: updatedGame.league,
         patterns: updatedGame.patterns,
+        bowlerId: updatedGame.bowlerId,
         isPractice: !updatedGame.league,
       }));
 

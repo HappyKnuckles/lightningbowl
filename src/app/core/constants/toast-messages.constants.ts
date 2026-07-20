@@ -25,6 +25,7 @@ export const TOAST_MESSAGES = {
   bowlerDeleteSuccess: 'Bowler deleted successfully.',
   bowlerDeleteError: 'Error deleting bowler.',
   bowlerReassignSuccess: 'Bowler deleted and data moved successfully.',
+  bowlerNameTaken: 'A bowler with this name already exists.',
   lastBowlerDeleteError: 'At least one bowler is required.',
   leagueSaveSuccess: 'League saved successfully.',
   leagueSaveError: 'Error saving league.',

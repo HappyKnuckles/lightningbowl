@@ -40,7 +40,7 @@ import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitio
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
-import { LiveSeriesStats } from 'src/app/core/models/stats.model';
+import { LiveSeriesStats, Stats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
@@ -115,17 +115,44 @@ defineCustomElements(window);
 export class AddGamePage implements OnInit {
   // Live stats
   liveSeriesStats: LiveSeriesStats | null = null;
-  allStats = this.gameStatsService.overallStats;
+  // Comparison baseline for the open live-stats sheet: that bowler's full history.
+  liveStatsBaseline = signal<Stats | null>(null);
   isLiveStatsOpen = false;
-  readonly hasLiveStats = computed(() => {
-    const active = new Set(this.getActiveTrackIndexes());
-    const games = this.games().filter((_, i) => active.has(i));
-    return games.map(toCompletedFramesGame).some((g) => g.frames.length > 0);
+  // Live stats are per bowler: a track's button reflects only its own bowler's games.
+  readonly liveStatsEnabledByTrack = computed<boolean[]>(() => {
+    const games = this.games();
+    const indexes = this.getActiveTrackIndexes();
+    const hasDataByBowler = new Map<string, boolean>();
+
+    for (const index of indexes) {
+      const bowlerId = this.trackBowlerId(index);
+      const hasData = toCompletedFramesGame(games[index]).frames.length > 0;
+      hasDataByBowler.set(bowlerId, (hasDataByBowler.get(bowlerId) ?? false) || hasData);
+    }
+
+    return indexes.map((index) => hasDataByBowler.get(this.trackBowlerId(index)) ?? false);
   });
   readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
 
   // UI State
   selectedMode = signal<SeriesMode>(SeriesMode.Single);
+
+  // Multiplayer session: participating bowlers. Empty = solo (active bowler).
+  // Combines freely with series modes: tracks = games-per-bowler × participants,
+  // laid out game-major (everyone's Game 1, then everyone's Game 2, …).
+  sessionBowlerIds = signal<string[]>([]);
+  readonly effectiveSessionBowlerIds = computed(() => {
+    const bowlers = this.bowlersStore.bowlers();
+    const ids = this.sessionBowlerIds().filter((id) => bowlers.some((bowler) => bowler.bowlerId === id));
+    return ids.length ? ids : [this.bowlersStore.activeBowlerId()];
+  });
+  readonly isMultiplayer = computed(() => this.effectiveSessionBowlerIds().length > 1);
+  readonly gamesPerBowler = computed(() => {
+    const countMatch = this.selectedMode().match(/\d+/);
+    return countMatch ? parseInt(countMatch[0], 10) : 1;
+  });
+  readonly hasSegments = computed(() => this.gamesPerBowler() > 1 || this.isMultiplayer());
+
   sheetOpen = false;
   isAlertOpen = false;
   isModalOpen = false;
@@ -204,6 +231,7 @@ export class AddGamePage implements OnInit {
       const pinModeState = this.pinModeState();
       const totalScores = this.totalScores();
       const maxScores = this.maxScores();
+      const sessionBowlerIds = this.sessionBowlerIds();
 
       const selectedMode = untracked(() => this.selectedMode());
       const isPinInputMode = untracked(() => this.isPinInputMode);
@@ -221,6 +249,7 @@ export class AddGamePage implements OnInit {
         isPinInputMode,
         gameIndex,
         segments,
+        sessionBowlerIds,
       });
     });
   }
@@ -483,19 +512,49 @@ export class AddGamePage implements OnInit {
     }
   }
 
+  /**
+   * Session participant picker: one checked bowler = solo entry (also becomes the
+   * active bowler), several = a multiplayer session with one game track each.
+   */
   async presentBowlerSheet(): Promise<void> {
     this.hapticService.vibrate(ImpactStyle.Light);
-    const buttons: { text: string; handler?: () => void; role?: string }[] = this.bowlersStore.bowlers().map((bowler) => ({
-      text: bowler.name + (bowler.bowlerId === this.bowlersStore.activeBowlerId() ? ' ✓' : ''),
-      handler: () => this.bowlersStore.setActiveBowler(bowler.bowlerId),
-    }));
-    buttons.push({ text: 'Cancel', role: 'cancel' });
-
-    const actionSheet = await this.actionSheetCtrl.create({
+    const selected = this.effectiveSessionBowlerIds();
+    const alert = await this.alertController.create({
       header: 'Who is bowling?',
-      buttons,
+      inputs: this.bowlersStore.bowlers().map((bowler) => ({
+        name: bowler.bowlerId,
+        type: 'checkbox' as const,
+        label: bowler.name,
+        value: bowler.bowlerId,
+        checked: selected.includes(bowler.bowlerId),
+      })),
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'OK',
+          handler: (bowlerIds: string[]) => {
+            if (!bowlerIds?.length) {
+              return false;
+            }
+            this.applySessionBowlers(bowlerIds);
+            return true;
+          },
+        },
+      ],
     });
-    await actionSheet.present();
+    await alert.present();
+  }
+
+  private applySessionBowlers(bowlerIds: string[]): void {
+    if (bowlerIds.length === 1) {
+      this.bowlersStore.setActiveBowler(bowlerIds[0]);
+      this.sessionBowlerIds.set([]);
+    } else {
+      this.sessionBowlerIds.set(bowlerIds);
+    }
+    this.updateSegments();
+    this.propagateMetadataToSeries();
+    this.recalculateActiveGameScores();
   }
 
   async presentActionSheet(): Promise<void> {
@@ -561,7 +620,7 @@ export class AddGamePage implements OnInit {
     } else {
       this.initializeGames();
       this.pinModeState.set(
-        Array.from({ length: 19 }, () => ({
+        Array.from({ length: Math.max(19, this.getActiveTrackIndexes().length) }, () => ({
           currentFrameIndex: 0,
           currentThrowIndex: 0,
           throwsData: Array.from({ length: 10 }, () => []),
@@ -580,13 +639,18 @@ export class AddGamePage implements OnInit {
   async calculateScore(): Promise<void> {
     const activeIndexes = this.getActiveTrackIndexes();
     const gamesToSave = activeIndexes.map((idx) => this.games()[idx]);
-    const isSeries = this.selectedMode() !== SeriesMode.Single;
+    const bowlerIds = activeIndexes.map((idx) => this.trackBowlerId(idx));
+    const isSeries = this.gamesPerBowler() > 1;
 
+    // Each bowler's games form their own series.
+    let seriesIds: string[] = [];
     if (isSeries) {
-      this.seriesId = this.utilsService.generateUniqueSeriesId();
+      const seriesIdByBowler = new Map(this.effectiveSessionBowlerIds().map((id) => [id, this.utilsService.generateUniqueSeriesId()]));
+      seriesIds = activeIndexes.map((idx) => seriesIdByBowler.get(this.trackBowlerId(idx))!);
+      this.seriesId = seriesIds[0];
     }
 
-    const success = await this.processAndSaveGames(gamesToSave, isSeries, this.seriesId);
+    const success = await this.processAndSaveGames(gamesToSave, isSeries, seriesIds, bowlerIds);
     if (success) {
       this.gameDraftService.clear();
       const perfectGame = gamesToSave.some((g) => g.totalScore === 300);
@@ -606,7 +670,7 @@ export class AddGamePage implements OnInit {
     }
   }
 
-  private async processAndSaveGames(games: Game[], isSeries = false, seriesId = ''): Promise<boolean> {
+  private async processAndSaveGames(games: Game[], isSeries = false, seriesIds: string[] | string = '', bowlerIds?: string[]): Promise<boolean> {
     if (!games.every((g) => this.isGameValid(g))) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
       this.isAlertOpen = true;
@@ -614,7 +678,6 @@ export class AddGamePage implements OnInit {
     }
 
     try {
-      const seriesConfig = isSeries ? { isSeries, seriesId } : undefined;
       const gamesToPersist: Game[] = [];
       const baseDate = Date.now();
       for (const [i, game] of games.entries()) {
@@ -623,8 +686,11 @@ export class AddGamePage implements OnInit {
           return false;
         }
         game.date = baseDate + i;
+        const seriesId = Array.isArray(seriesIds) ? seriesIds[i] : seriesIds;
+        const seriesConfig = isSeries && seriesId ? { isSeries, seriesId } : undefined;
         // Apply isPinMode and the owning bowler to the game before saving
-        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode, bowlerId: this.bowlersStore.activeBowlerId() };
+        const bowlerId = bowlerIds?.[i] ?? this.bowlersStore.activeBowlerId();
+        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode, bowlerId };
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
       }
 
@@ -636,13 +702,7 @@ export class AddGamePage implements OnInit {
 
       if (savedGames.length > 0) {
         savedGames.forEach((gameData) => this.analyticsService.trackGameSaved({ score: gameData.totalScore }));
-        // High score alerts only compare against the owning bowler's games.
-        const allGames = filterGamesByBowlers(this.gamesStore.games(), [this.bowlersStore.activeBowlerId()], this.bowlersStore.defaultBowlerId());
-        if (savedGames.length === 1) {
-          await this.highScroreAlertService.checkAndDisplayHighScoreAlerts(savedGames[0], allGames);
-        } else {
-          await this.highScroreAlertService.checkAndDisplayHighScoreAlertsForMultipleGames(savedGames, allGames);
-        }
+        await this.showHighScoreAlertsPerBowler(savedGames);
         this.hapticService.vibrate(ImpactStyle.Medium);
         this.toastService.showToast(TOAST_MESSAGES.gameSaveSuccess, 'add');
         return true;
@@ -653,6 +713,25 @@ export class AddGamePage implements OnInit {
       await this.analyticsService.trackError('game_save_error', error instanceof Error ? error.message : String(error));
     }
     return false;
+  }
+
+  // High score alerts only compare a game against its owning bowler's history.
+  private async showHighScoreAlertsPerBowler(savedGames: Game[]): Promise<void> {
+    const defaultId = this.bowlersStore.defaultBowlerId();
+    const byBowler = new Map<string, Game[]>();
+    for (const game of savedGames) {
+      const bowlerId = game.bowlerId ?? this.bowlersStore.activeBowlerId();
+      byBowler.set(bowlerId, [...(byBowler.get(bowlerId) ?? []), game]);
+    }
+
+    for (const [bowlerId, games] of byBowler) {
+      const bowlerGames = filterGamesByBowlers(this.gamesStore.games(), [bowlerId], defaultId);
+      if (games.length === 1) {
+        await this.highScroreAlertService.checkAndDisplayHighScoreAlerts(games[0], bowlerGames);
+      } else {
+        await this.highScroreAlertService.checkAndDisplayHighScoreAlertsForMultipleGames(games, bowlerGames);
+      }
+    }
   }
 
   // PRIVATE HELPERS - GAME STATE
@@ -684,22 +763,47 @@ export class AddGamePage implements OnInit {
   }
 
   private initializeGames(): void {
-    this.maxScores.set(new Array(19).fill(300));
-    this.totalScores.set(new Array(19).fill(0));
-    this.games.set(Array.from({ length: 19 }, () => createEmptyGame()));
+    const count = Math.max(19, this.getActiveTrackIndexes().length);
+    this.maxScores.set(new Array(count).fill(300));
+    this.totalScores.set(new Array(count).fill(0));
+    this.games.set(Array.from({ length: count }, () => createEmptyGame()));
   }
 
   private getActiveTrackIndexes(): number[] {
-    const countMatch = this.selectedMode().match(/\d+/);
-    const count = countMatch ? parseInt(countMatch[0], 10) : 1;
+    const count = this.gamesPerBowler() * this.effectiveSessionBowlerIds().length;
     return Array.from({ length: count }, (_, i) => i);
   }
 
-  onSeriesStatsClick(): void {
-    const active = new Set(this.getActiveTrackIndexes());
-    const games = this.games().filter((_, i) => active.has(i));
+  /** Owner of a game track (game-major layout: track = gameIndex × participants + bowlerIndex). */
+  trackBowlerId(index: number): string {
+    const participants = this.effectiveSessionBowlerIds();
+    return participants[index % participants.length] ?? this.bowlersStore.activeBowlerId();
+  }
+
+  /** 1-based game number of a track within its bowler's series. */
+  private trackGameNumber(index: number): number {
+    return Math.floor(index / this.effectiveSessionBowlerIds().length) + 1;
+  }
+
+  segmentLabel(index: number): string {
+    if (!this.isMultiplayer()) {
+      return this.segments[index];
+    }
+    const name = this.bowlersStore.bowlers().find((bowler) => bowler.bowlerId === this.trackBowlerId(index))?.name ?? this.segments[index];
+    return this.gamesPerBowler() > 1 ? `${name} ${this.trackGameNumber(index)}` : name;
+  }
+
+  // Stats for the bowler whose track the button was pressed on, not the whole session.
+  onSeriesStatsClick(trackIndex: number): void {
+    const bowlerId = this.trackBowlerId(trackIndex);
+    const games = this.getActiveTrackIndexes()
+      .filter((index) => this.trackBowlerId(index) === bowlerId)
+      .map((index) => this.games()[index]);
+
     this.liveSeriesStats = this.gameStatsService.calculateLiveSeriesStats(games);
     if (this.liveSeriesStats) {
+      const history = filterGamesByBowlers(this.gamesStore.games(), [bowlerId], this.bowlersStore.defaultBowlerId());
+      this.liveStatsBaseline.set(this.gameStatsService.calculateBowlingStats(history));
       this.isLiveStatsOpen = true;
     }
   }
@@ -739,13 +843,29 @@ export class AddGamePage implements OnInit {
 
   private updateSegments(): void {
     const activeIndexes = this.getActiveTrackIndexes();
+    this.ensureTrackCapacity(activeIndexes.length);
     const oldSelectedSegment = this.selectedSegment;
+    // Segment ids stay "Game N" (they are DOM content ids); multiplayer labels show bowler names.
     this.segments = activeIndexes.map((i) => `Game ${i + 1}`);
 
     // Reset to Game 1 if current segment is beyond the new series range
     if (!this.segments.includes(oldSelectedSegment)) {
       this.selectedSegment = 'Game 1';
     }
+  }
+
+  // The track arrays start at 19 slots; large sessions (bowlers × series games) grow them in place.
+  private ensureTrackCapacity(count: number): void {
+    if (this.games().length >= count) {
+      return;
+    }
+    const pad = <T>(arr: T[], make: () => T): T[] => [...arr, ...Array.from({ length: count - arr.length }, make)];
+    this.games.update((games) => pad(games, createEmptyGame));
+    this.pinModeState.update((states) =>
+      pad(states, () => ({ currentFrameIndex: 0, currentThrowIndex: 0, throwsData: Array.from({ length: 10 }, () => []) })),
+    );
+    this.totalScores.update((scores) => pad(scores, () => 0));
+    this.maxScores.update((scores) => pad(scores, () => 300));
   }
 
   private recalculateActiveGameScores(): void {
@@ -827,12 +947,14 @@ export class AddGamePage implements OnInit {
 
     this.selectedMode.set(draft.selectedMode as SeriesMode);
     this.isPinInputMode = draft.isPinInputMode;
-    this.updateSegments();
+    this.sessionBowlerIds.set(draft.sessionBowlerIds ?? []);
 
     this.games.set(draft.games);
     this.totalScores.set(draft.totalScores);
     this.maxScores.set(draft.maxScores);
     this.pinModeState.set(draft.pinModeState);
+    // After the arrays: updateSegments also grows track capacity for large sessions.
+    this.updateSegments();
     this.selectedSegment = draft.gameIndex;
 
     setTimeout(() => {

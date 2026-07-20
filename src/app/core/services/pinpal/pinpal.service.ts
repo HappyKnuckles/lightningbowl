@@ -4,6 +4,7 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BowlersStore } from 'src/app/core/stores/bowlers.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
@@ -36,6 +37,7 @@ export class PinpalService {
     private ballsStore: BallsStore,
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
+    private bowlersStore: BowlersStore,
     private scoreCalculator: GameScoreCalculatorService,
     private gameFilterService: GameFilterService,
     private toastService: ToastService,
@@ -98,6 +100,7 @@ export class PinpalService {
           patterns: matchedPattern ? [matchedPattern] : [],
           balls: matchedBall ? [matchedBall] : [],
           note: row.notes ?? '',
+          bowlerId: this.bowlersStore.activeBowlerId(),
         });
       }
 

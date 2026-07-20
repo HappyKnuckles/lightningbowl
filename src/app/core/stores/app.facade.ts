@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
+import { Bowler } from 'src/app/core/models/bowler.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
+import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BOWLER_KEYS } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { getGameBowlerId } from '../utils/bowler-utils/bowler.utils';
@@ -28,6 +32,9 @@ export class AppFacade {
     private ballService: BallService,
     private analyticsService: AnalyticsService,
     private ballFilterService: BallFilterService,
+    private gameFilterService: GameFilterService,
+    private favoritesService: FavoritesService,
+    private alleyFavoritesService: AlleyFavoritesService,
   ) {}
 
   async init(): Promise<void> {
@@ -121,7 +128,19 @@ export class AppFacade {
       await this.ballsStore.updateArsenalBalls(untaggedBalls.map((ball) => ({ ...ball, bowlerIds: [defaultId] })));
     }
 
+    await this.leaguesStore.stampUntaggedLeagues(defaultId);
+
+    // The bowler owns the display name from here on.
+    localStorage.removeItem('username');
+
     await this.storageRepository.set(BOWLER_KEYS.migrationV1, true);
+  }
+
+  /** Renames a bowler and keeps name-based state (saved game filter) consistent. */
+  async renameBowler(bowler: Bowler, newName: string): Promise<void> {
+    const oldName = bowler.name;
+    await this.bowlersStore.updateBowler({ ...bowler, name: newName.trim() });
+    this.gameFilterService.replaceBowlerNameInFilters(oldName, newName.trim());
   }
 
   /**
@@ -158,7 +177,15 @@ export class AppFacade {
         }
       }
 
+      await this.leaguesStore.removeBowlerFromLeagues(bowlerId, reassignToBowlerId);
+      this.favoritesService.removeBowler(bowlerId, reassignToBowlerId);
+      this.alleyFavoritesService.removeBowler(bowlerId, reassignToBowlerId);
+
+      const deletedName = this.bowlersStore.getBowlerName(bowlerId);
       await this.bowlersStore.deleteBowler(bowlerId);
+      if (deletedName) {
+        this.gameFilterService.replaceBowlerNameInFilters(deletedName);
+      }
     } catch (error) {
       console.error('Error deleting bowler:', error);
       throw error;
@@ -167,8 +194,7 @@ export class AppFacade {
 
   async editLeague(newLeague: string, oldLeague: string): Promise<void> {
     try {
-      await this.leaguesStore.deleteLeague(oldLeague);
-      await this.leaguesStore.addLeague(newLeague);
+      await this.leaguesStore.renameLeague(oldLeague, newLeague);
       const games = this.gamesStore.games();
       const updatedGames = games.map((game) => {
         if (game.league === oldLeague) {

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ALL_BOWLERS, Bowler } from 'src/app/core/models/bowler.model';
+import { Bowler } from 'src/app/core/models/bowler.model';
 import { BOWLER_KEYS, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { BowlersStore } from './bowlers.store';
@@ -92,6 +92,14 @@ describe('BowlersStore', () => {
     expect(store.bowlers()[0].name).toBe('Nicolas');
   });
 
+  it('resolves bowler names with a default-bowler fallback for legacy games', async () => {
+    const bowler = await store.addBowler('Nico');
+    await store.setDefaultBowlerId(bowler.bowlerId);
+    expect(store.getBowlerName(bowler.bowlerId)).toBe('Nico');
+    expect(store.getBowlerName(undefined)).toBe('Nico');
+    expect(store.getBowlerName('unknown')).toBe('');
+  });
+
   it('falls back to the first bowler when the active id is stale', async () => {
     const first = await store.addBowler('First');
     await store.addBowler('Second');
@@ -99,37 +107,17 @@ describe('BowlersStore', () => {
     expect(store.activeBowlerId()).toBe(first.bowlerId);
   });
 
-  it('statsBowlerId follows the active bowler until explicitly set', async () => {
+  it('deleting a bowler heals the active and default bowler', async () => {
     const first = await store.addBowler('First');
     const second = await store.addBowler('Second');
-    expect(store.statsBowlerId()).toBe(first.bowlerId);
-
-    store.setStatsBowlerId(second.bowlerId);
-    expect(store.statsBowlerId()).toBe(second.bowlerId);
-
-    // switching the active bowler resets stats back to "follow active"
-    store.setActiveBowler(first.bowlerId);
-    expect(store.statsBowlerId()).toBe(first.bowlerId);
-  });
-
-  it('deleting a bowler heals active, stats, and history selections', async () => {
-    const first = await store.addBowler('First');
-    const second = await store.addBowler('Second');
+    await store.setDefaultBowlerId(second.bowlerId);
     store.setActiveBowler(second.bowlerId);
-    store.setStatsBowlerId(second.bowlerId);
-    store.setHistoryBowlerIds([second.bowlerId]);
 
     await store.deleteBowler(second.bowlerId);
 
     expect(store.bowlers().map((b) => b.bowlerId)).toEqual([first.bowlerId]);
     expect(store.activeBowlerId()).toBe(first.bowlerId);
-    expect(store.statsBowlerId()).toBe(first.bowlerId);
-    expect(store.historyBowlerIds()).toEqual([ALL_BOWLERS]);
-  });
-
-  it('empty history selection resets to all', () => {
-    store.setHistoryBowlerIds([]);
-    expect(store.historyBowlerIds()).toEqual([ALL_BOWLERS]);
+    expect(store.defaultBowlerId()).toBe(first.bowlerId);
   });
 
   it('clearBowlers resets everything', async () => {

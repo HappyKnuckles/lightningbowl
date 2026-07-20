@@ -40,6 +40,7 @@ describe('BowlerManagerComponent', () => {
 
   const mockAppFacade = {
     deleteBowler: jasmine.createSpy('deleteBowler').and.resolveTo(),
+    renameBowler: jasmine.createSpy('renameBowler').and.resolveTo(),
   };
 
   const mockToastService = {

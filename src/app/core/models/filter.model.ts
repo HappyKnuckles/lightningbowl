@@ -5,6 +5,7 @@ export type GameFilter = {
   maxScore: number;
   isClean: boolean;
   isPerfect: boolean;
+  bowlers: string[];
   leagues: string[];
   balls: string[];
   patterns: string[];

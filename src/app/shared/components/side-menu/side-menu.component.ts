@@ -99,35 +99,15 @@ export class SideMenuComponent {
   }
 
   async scanScoreboard(): Promise<void> {
-    await this.menuController.close();
-    await this.ocrImport.open();
+    const opened = await this.ocrImport.open();
+    if (opened) {
+      await this.menuController.close();
+    }
   }
 
   async openFileInput(): Promise<void> {
-    await this.menuController.close();
-
     if (this.gamesStore.games().length === 0) {
-      const importInfoAlert = await this.alertController.create({
-        header: 'Info',
-        message: 'You can import files from PinPal or our custom Excel file.',
-        buttons: [
-          {
-            text: 'Continue',
-            role: 'confirm',
-            handler: () => {
-              this.fileImport.nativeElement.click();
-            },
-          },
-          {
-            text: 'Download .XLSX template',
-            role: 'cancel',
-            handler: () => {
-              this.exportToExcel();
-            },
-          },
-        ],
-      });
-      await importInfoAlert.present();
+      await this.presentImportInfoAlert();
       return;
     }
 
@@ -136,9 +116,11 @@ export class SideMenuComponent {
 
   async handleFileUpload(): Promise<void> {
     try {
-      this.loadingService.setLoading(true);
       const input = this.fileImport.nativeElement;
       if (!input.files || input.files.length === 0) return;
+
+      await this.menuController.close();
+      this.loadingService.setLoading(true);
       const file = input.files[0];
       const importResult = await this.importDispatcherService.importFromFile(file);
 
@@ -157,7 +139,7 @@ export class SideMenuComponent {
   }
 
   async exportToExcel(): Promise<void> {
-    await this.menuController.close();
+    void this.menuController.close();
 
     try {
       const gotPermission = await this.excelService.exportToExcel();
@@ -179,6 +161,30 @@ export class SideMenuComponent {
   private updateDisabledState(): void {
     const path = this.router.url.split('?')[0];
     this.isDisabled.set(MENULESS_ROUTES.includes(path));
+  }
+
+  private async presentImportInfoAlert(): Promise<void> {
+    const importInfoAlert = await this.alertController.create({
+      header: 'Info',
+      message: 'You can import files from PinPal or our custom Excel file.',
+      buttons: [
+        {
+          text: 'Continue',
+          role: 'confirm',
+          handler: () => {
+            this.fileImport.nativeElement.click();
+          },
+        },
+        {
+          text: 'Download .XLSX template',
+          role: 'cancel',
+          handler: () => {
+            this.exportToExcel();
+          },
+        },
+      ],
+    });
+    await importInfoAlert.present();
   }
 
   private async showPermissionDeniedAlert(): Promise<void> {

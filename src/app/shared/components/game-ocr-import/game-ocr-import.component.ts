@@ -51,13 +51,17 @@ export class GameOcrImportComponent {
     addIcons({ chevronBack });
   }
 
-  /** Runs the capture + OCR flow and opens the review modal when a game was parsed. */
-  async open(): Promise<void> {
+  /**
+   * Runs the capture + OCR flow and opens the review modal when a game was parsed.
+   * Resolves to whether the modal was opened, so callers can react to a cancelled capture.
+   */
+  async open(): Promise<boolean> {
     const game = await this.gameImageImport.captureAndParseGame();
-    if (game) {
-      this.gameData = game;
-      this.isOpen = true;
-    }
+    if (!game) return false;
+
+    this.gameData = game;
+    this.isOpen = true;
+    return true;
   }
 
   isGameValid(game: Game): boolean {

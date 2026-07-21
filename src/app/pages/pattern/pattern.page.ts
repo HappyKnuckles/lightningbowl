@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -40,6 +41,7 @@ import {
   heart,
   heartOutline,
   linkOutline,
+  scanOutline,
 } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
@@ -68,6 +70,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
   templateUrl: './pattern.page.html',
   styleUrls: ['./pattern.page.scss'],
   imports: [
+    RouterLink,
     IonLabel,
     IonItem,
     IonPopover,
@@ -153,6 +156,7 @@ export class PatternPage implements OnInit {
       heart,
       heartOutline,
       ellipsisVerticalOutline,
+      scanOutline,
     });
   }
   async ngOnInit() {

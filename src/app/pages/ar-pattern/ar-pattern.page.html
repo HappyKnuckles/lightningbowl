@@ -1,0 +1,127 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/pattern"></ion-back-button>
+    </ion-buttons>
+    <ion-title>View in AR</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content #arRoot [fullscreen]="true" class="ar-content" [class.session-live]="isSessionLive()">
+  @if (loading()) {
+    <div class="notice">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Loading pattern…</p>
+    </div>
+  } @else if (loadError(); as error) {
+    <div class="notice">
+      <h2>Nothing to show yet</h2>
+      <p>{{ error }}</p>
+      <ion-button (click)="load()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Try again
+      </ion-button>
+      <p class="diagnostics">{{ diagnostics() }}</p>
+    </div>
+  } @else if (isUnsupported() && quickLookUrl(); as usdz) {
+    <div class="notice">
+      <h2>View on your lane</h2>
+      <p>Open in AR, then place the pattern at the foul line. It is shown at true size — 60 feet from foul line to headpin.</p>
+      @if (pattern(); as active) {
+        <!--
+          AR Quick Look requires the anchor to hold exactly one img or picture
+          child. The preview is generated locally rather than fetched, because
+          a remote image that fails to load collapses the anchor to nothing and
+          leaves no tap target at all.
+        -->
+        <a class="quick-look" [href]="usdz" rel="ar">
+          <img [src]="quickLookPreview()" [alt]="active.title + ' oil pattern'" />
+        </a>
+        <p class="fallback-label">{{ active.title }} · {{ active.distance }}ft · {{ active.volume }}mL</p>
+        <a class="plain-link" [href]="usdz">Nothing happens? Open the file directly</a>
+      }
+      <p class="diagnostics">{{ diagnostics() }}</p>
+    </div>
+  } @else if (isUnsupported()) {
+    <div class="notice">
+      <h2>AR is not available here</h2>
+      <p>{{ message() }}</p>
+      @if (pattern(); as active) {
+        <p class="fallback-label">Showing {{ active.title }} flat instead.</p>
+        <app-pattern-canvas [pattern]="active" />
+      }
+      <p class="diagnostics">{{ diagnostics() }}</p>
+    </div>
+  } @else if (phase() === "failed") {
+    <div class="notice">
+      <h2>Could not start AR</h2>
+      <p>{{ message() }}</p>
+      <ion-button (click)="retry()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Try again
+      </ion-button>
+      <p class="diagnostics">{{ diagnostics() }}</p>
+    </div>
+  } @else if (isReady()) {
+    <div class="notice">
+      <h2>Ready when you are</h2>
+      <p>Stand at the approach and point the phone down the lane. You will be asked for camera access.</p>
+      @if (pattern(); as active) {
+        <p class="fallback-label">{{ active.title }} · {{ active.distance }}ft · {{ active.volume }}mL</p>
+      }
+      <ion-button (click)="enterAr()">
+        <ion-icon slot="start" name="scan-outline"></ion-icon>
+        Start AR
+      </ion-button>
+    </div>
+  } @else if (phase() === "starting") {
+    <div class="notice">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Starting the camera…</p>
+    </div>
+  } @else if (isScanning()) {
+    <div class="coaching">
+      <p class="headline">Point down the lane</p>
+      <p class="detail">Move the phone slowly so it can find the floor.</p>
+      <ion-button (click)="session.beginCalibration()">
+        <ion-icon slot="start" name="locate-outline"></ion-icon>
+        Line up the lane
+      </ion-button>
+    </div>
+  } @else if (isCalibrating()) {
+    <app-ar-lane-calibrator [taps]="session.taps()" (tapped)="onCalibrationTap($event)" />
+
+    <div class="coaching bottom">
+      <p class="headline">Tap the {{ session.tapsRemaining() }} highlighted arrows</p>
+      @if (message(); as warning) {
+        <p class="warning">{{ warning }}</p>
+      }
+      <ion-button fill="clear" size="small" (click)="session.undoTap()">
+        <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+        Undo
+      </ion-button>
+    </div>
+  } @else if (isLive()) {
+    <app-ar-pattern-hud
+      [pattern]="pattern()"
+      [patterns]="patterns()"
+      [confidence]="session.confidence()"
+      (patternSelected)="onPatternSelected($event)" />
+
+    <ion-button class="recalibrate" fill="solid" size="small" (click)="session.beginCalibration()">
+      <ion-icon slot="start" name="refresh-outline"></ion-icon>
+      Recalibrate
+    </ion-button>
+  } @else {
+    <!-- No state should reach here; showing the reason beats showing nothing. -->
+    <div class="notice">
+      <h2>AR is in an unexpected state</h2>
+      <p>Reload the page to start again.</p>
+      <ion-button (click)="load()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Reload
+      </ion-button>
+      <p class="diagnostics">{{ diagnostics() }}</p>
+    </div>
+  }
+</ion-content>

@@ -3,7 +3,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": ["node", "jasmine", "leaflet", "leaflet.markercluster"]
+    "types": ["node", "jasmine", "leaflet", "leaflet.markercluster", "webxr"]
   },
   "files": ["src/main.ts", "src/polyfills.ts"],
   "include": ["src/**/*.d.ts"]

@@ -105,6 +105,14 @@ ion-header {
     align-items: center;
   }
 
+  ion-buttons[slot="start"] {
+    margin-left: 8px;
+  }
+
+  ion-buttons[slot="end"] {
+    margin-right: 8px;
+  }
+
   ion-searchbar {
     padding-bottom: 0 !important;
   }

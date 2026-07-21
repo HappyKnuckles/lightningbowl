@@ -18,16 +18,6 @@ ion-grid {
   border-radius: var(--default-border-radius);
 }
 
-.action-sheet {
-  margin-right: 8px;
-
-  ion-button {
-    background: none;
-    --background-activated: none;
-    position: relative;
-  }
-}
-
 ion-input {
   text-align: center;
   background-color: var(--ion-color-secondary);

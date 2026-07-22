@@ -8,18 +8,6 @@
   }
 }
 
-ion-buttons {
-  padding: 4px;
-
-  .action-sheet {
-    ion-button {
-      background: none;
-
-      --background-activated: none;
-    }
-  }
-}
-
 ion-grid {
   background-color: var(--ion-color-quartiary);
   --ion-grid-padding: 0;

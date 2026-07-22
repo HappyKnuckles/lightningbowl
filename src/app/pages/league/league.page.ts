@@ -23,6 +23,7 @@ import {
   IonSegmentView,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import Chart from 'chart.js/auto';
@@ -84,6 +85,7 @@ import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     IonCheckbox,
     FormsModule,

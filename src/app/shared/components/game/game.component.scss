@@ -16,11 +16,14 @@
   }
 }
 
-.ball-selector::part(detail-icon) {
-  opacity: 1;
-  color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
-  margin-inline-start: 4px;
-  margin-inline-end: 0;
-  font-size: 18px;
-  --ionicon-stroke-width: 48px;
+.ball-selector, .pattern-selector{
+  &::part(detail-icon) {
+    opacity: 1;
+    color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
+    margin-inline-start: 4px;
+    margin-inline-end: 0;
+    font-size: 18px;
+    --ionicon-stroke-width: 48px;
+  }
 }
+

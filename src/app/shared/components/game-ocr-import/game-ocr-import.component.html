@@ -1,0 +1,36 @@
+<!-- Picked up by GameImageImportService via getElementById on web platforms. -->
+<input type="file" id="upload" class="ion-hide" accept="image/*" />
+
+<ion-modal [isOpen]="isOpen" (didDismiss)="isOpen.set(false)" #modal>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start" style="padding: 4px">
+          <ion-button color="medium" (click)="modal.dismiss()">
+            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+        <ion-title>Your game</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="confirm(modal)" [strong]="true" [disabled]="!isGameValid(gameData())">Save</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <h2 class="ion-text-center">Edit wrong game data</h2>
+      <app-game
+        #gameGrid
+        [ballSelectorId]="gameData().gameId + '-modal-ball-selector'"
+        [game]="gameData()"
+        [isPinInputMode]="false"
+        (throwInput)="handleThrowInput($event)"
+        (leagueChanged)="onLeagueChange($event)"
+        (isPracticeChanged)="onIsPracticeChange($event)"
+        (noteChanged)="onNoteChange($event)"
+        (ballsChanged)="onBallsChange($event)"
+        (patternChanged)="onPatternChange($event)"
+        [patternModalId]="gameData().gameId">
+      </app-game>
+    </ion-content>
+  </ng-template>
+</ion-modal>

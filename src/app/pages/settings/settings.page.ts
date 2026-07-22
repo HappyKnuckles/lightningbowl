@@ -182,10 +182,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
     await modal.present();
   }
 
-  savePinInputMode(pinMode: string): void {
-    this.settingsStore.savePinInputMode(pinMode);
-  }
-
   async getGameCountForAverage(event: InputCustomEvent): Promise<void> {
     const targetAvgString = event.detail.value;
     if (!targetAvgString) {

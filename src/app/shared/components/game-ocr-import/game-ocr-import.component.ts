@@ -1,4 +1,4 @@
-import { Component, ViewChild, inject } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonModal, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -13,12 +13,11 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { cloneFrames, recordThrow, removeThrow } from 'src/app/core/utils/game-utils/frame.utils';
+import { cloneFrames, createEmptyGame, recordThrow, removeThrow } from 'src/app/core/utils/game-utils/frame.utils';
 import { isGameValid, isValidFrameScore } from 'src/app/core/utils/game-utils/game-validation.utils';
 import { parseInputValue } from 'src/app/core/utils/game-utils/score-input.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { GameComponent } from '../game/game.component';
-import { UserService } from 'src/app/core/services/user/user.service';
 
 /**
  * Scoreboard photo import: captures an image, runs OCR and opens a review modal
@@ -31,10 +30,9 @@ import { UserService } from 'src/app/core/services/user/user.service';
   imports: [IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, GameComponent],
 })
 export class GameOcrImportComponent {
-  gameData!: Game;
-  isOpen = false;
-
-  @ViewChild('modalGrid', { static: false }) modalGrid!: GameComponent;
+  gameData = signal<Game>(createEmptyGame());
+  isOpen = signal(false);
+  gameGrid = viewChild<GameComponent>('gameGrid');
 
   private gameImageImport = inject(GameImageImportService);
   private gameScoreCalculatorService = inject(GameScoreCalculatorService);
@@ -45,7 +43,6 @@ export class GameOcrImportComponent {
   private utilsService = inject(UtilsService);
   private toastService = inject(ToastService);
   private gamesStore = inject(GamesStore);
-  private userService = inject(UserService);
 
   constructor() {
     addIcons({ chevronBack });
@@ -59,8 +56,8 @@ export class GameOcrImportComponent {
     const game = await this.gameImageImport.captureAndParseGame();
     if (!game) return false;
 
-    this.gameData = game;
-    this.isOpen = true;
+    this.gameData.set(game);
+    this.isOpen.set(true);
     return true;
   }
 
@@ -70,7 +67,7 @@ export class GameOcrImportComponent {
 
   handleThrowInput(event: { frameIndex: number; throwIndex: number; value: string }): void {
     const { frameIndex, throwIndex, value } = event;
-    const frames = cloneFrames(this.gameData.frames);
+    const frames = cloneFrames(this.gameData().frames);
 
     if (value.length === 0) {
       removeThrow(frames, frameIndex, throwIndex);
@@ -84,54 +81,54 @@ export class GameOcrImportComponent {
 
     if (!isValidNumber || !isValidScore) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
-      this.modalGrid?.handleInvalidInput(frameIndex, throwIndex);
+      this.gameGrid()?.handleInvalidInput(frameIndex, throwIndex);
       return;
     }
 
     recordThrow(frames, frameIndex, throwIndex, parsedValue);
     this.updateGameState(frames);
-    this.modalGrid?.focusNextInput(frameIndex, throwIndex);
+    this.gameGrid()?.focusNextInput(frameIndex, throwIndex);
   }
 
   onNoteChange(note: string): void {
-    this.gameData = { ...this.gameData, note };
+    this.gameData.update((current) => ({ ...current, note }));
   }
 
   onBallsChange(balls: string[]): void {
-    this.gameData = { ...this.gameData, balls };
+    this.gameData.update((current) => ({ ...current, balls }));
   }
 
   onIsPracticeChange(isPractice: boolean): void {
-    this.gameData = { ...this.gameData, isPractice };
+    this.gameData.update((current) => ({ ...current, isPractice }));
   }
 
   onPatternChange(patterns: string[]): void {
-    this.gameData = { ...this.gameData, patterns };
+    this.gameData.update((current) => ({ ...current, patterns }));
   }
 
   onLeagueChange(league: string): void {
     const isPractice = league === '' || league === 'New';
-    this.gameData = { ...this.gameData, league, isPractice };
+    this.gameData.update((current) => ({ ...current, league, isPractice }));
 
-    if (this.modalGrid?.checkbox) {
-      this.modalGrid.checkbox.checked = isPractice;
-      this.modalGrid.checkbox.disabled = !isPractice;
+    if (this.gameGrid()?.checkbox) {
+      this.gameGrid()!.checkbox.checked = isPractice;
+      this.gameGrid()!.checkbox.disabled = !isPractice;
     }
   }
 
   async confirm(modal: IonModal): Promise<void> {
-    if (!isGameValid(this.gameData)) {
+    if (!isGameValid(this.gameData())) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
       return;
     }
 
-    if (this.gameData.league === 'New') {
+    if (this.gameData().league === 'New') {
       this.toastService.showToast(TOAST_MESSAGES.selectLeague, 'bug', true);
       return;
     }
 
     try {
-      const game = this.transformGameService.transformGameData({ ...this.gameData, date: Date.now(), isPinMode: false });
+      const game = this.transformGameService.transformGameData({ ...this.gameData(), date: Date.now(), isPinMode: false });
 
       await this.gamesStore.saveGamesToLocalStorage([game]);
       this.analyticsService.trackGameSaved({ score: game.totalScore });
@@ -150,6 +147,6 @@ export class GameOcrImportComponent {
 
   private updateGameState(frames: Frame[]): void {
     const { frameScores, totalScore } = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
-    this.gameData = { ...this.gameData, frames, frameScores, totalScore };
+    this.gameData.update((current) => ({ ...current, frames, frameScores, totalScore }));
   }
 }

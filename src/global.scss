@@ -104,13 +104,16 @@ ion-header {
     flex: 1 1 0%;
     align-items: center;
   }
+  ion-buttons{
+    padding: 4px;
 
-  ion-buttons[slot="start"] {
-    margin-left: 8px;
-  }
+    [slot="start"]{
+      margin-left: 8px;
+    }
 
-  ion-buttons[slot="end"] {
-    margin-right: 8px;
+    [slot="end"]{
+      margin-right: 8px;
+    }
   }
 
   ion-searchbar {

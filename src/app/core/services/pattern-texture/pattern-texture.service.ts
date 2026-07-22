@@ -81,23 +81,6 @@ export class PatternTextureService {
     return canvas.toDataURL('image/png');
   }
 
-  /**
-   * A small self-contained preview, lane furniture included.
-   *
-   * Used where the image has to be guaranteed present — an AR Quick Look
-   * anchor collapses to nothing if its only child fails to load, and a remote
-   * chart image is exactly the kind of thing that fails.
-   */
-  bakePreview(pattern: Pattern, width = 200, height = 480): string {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-
-    this.renderToCanvas(canvas, pattern, { showFurniture: true, showBoardNumbers: false });
-
-    return canvas.toDataURL('image/png');
-  }
-
   /** Colour for a normalised oil value, as rgba(). */
   colourFor(value: number): string {
     const [r, g, b, a] = this.sampleRamp(value);

@@ -35,7 +35,7 @@
           leaves no tap target at all.
         -->
         <a class="quick-look" [href]="usdz" rel="ar">
-          <img [src]="quickLookPreview()" [alt]="active.title + ' oil pattern'" />
+          <img [src]="imagesUrl + active.chart_standard" [alt]="active.title + ' oil pattern'" />
         </a>
         <p class="fallback-label">{{ active.title }} · {{ active.distance }}ft · {{ active.volume }}mL</p>
         <a class="plain-link" [href]="usdz">Nothing happens? Open the file directly</a>

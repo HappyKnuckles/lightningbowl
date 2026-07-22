@@ -3,21 +3,11 @@
   gap: 8px;
   margin: 8px 16px;
 
-  .pattern-charts {
-    display: flex;
-    gap: 8px;
+  .pattern-image {
     width: 45%;
-
-    img,
-    app-pattern-canvas {
-      width: 50%;
-    }
-
-    img {
-      height: auto;
-      align-self: flex-start;
-      border-radius: var(--card-border-radius);
-    }
+    height: auto;
+    align-self: flex-start;
+    border-radius: var(--card-border-radius);
   }
 
   .pattern-info {

@@ -156,12 +156,21 @@ export function buildLaneUsda(textureFile: string, patternTitle: string): string
 
 def Xform "LanePattern"
 {
+    // Heading of the lane in the ground plane. Quick Look drops the model
+    // facing the viewer (RealityKit's camera looks down -Z), so without this
+    // the lane ran away from you the wrong way. Flip to 0 if it faces backward.
+    double3 xformOp:rotateXYZ = (0, 180, 0)
+    uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+
     def Mesh "Lane"
     {
         uniform bool doubleSided = 1
         float3[] extent = [(-${halfWidth}, 0, 0), (${halfWidth}, 0, ${length})]
         int[] faceVertexCounts = [3, 3]
-        int[] faceVertexIndices = [0, 1, 2, 0, 2, 3]
+        // Wound so the textured front face points +Y (up). The reverse winding
+        // pointed it into the floor, which is what read as upside down —
+        // viewed from above you saw the mirrored back face.
+        int[] faceVertexIndices = [0, 3, 2, 0, 2, 1]
         point3f[] points = [(-${halfWidth}, 0, 0), (${halfWidth}, 0, 0), (${halfWidth}, 0, ${length}), (-${halfWidth}, 0, ${length})]
         normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
             interpolation = "vertex"
@@ -189,6 +198,10 @@ def Xform "LanePattern"
                 color3f inputs:emissiveColor.connect = </LanePattern/Materials/PatternMaterial/PatternTexture.outputs:rgb>
                 float inputs:metallic = 0
                 float inputs:roughness = 1
+                // Uniform scalar opacity so the real lane shows through the
+                // whole overlay. A constant is reliable in Quick Look where
+                // per-pixel texture alpha was not — that came out solid black.
+                float inputs:opacity = 0.55
                 token outputs:surface
             }
 

@@ -11,7 +11,6 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { ArLaneCalibratorComponent } from 'src/app/shared/components/ar-lane-calibrator/ar-lane-calibrator.component';
 import { ArPatternHudComponent } from 'src/app/shared/components/ar-pattern-hud/ar-pattern-hud.component';
-import { PatternTextureService } from 'src/app/core/services/pattern-texture/pattern-texture.service';
 import { PatternCanvasComponent } from 'src/app/shared/components/pattern-canvas/pattern-canvas.component';
 import { environment } from 'src/environments/environment';
 
@@ -46,12 +45,10 @@ export class ArPatternPage implements OnDestroy {
   private readonly patternService = inject(PatternService);
   private readonly patternsStore = inject(PatternsStore);
   private readonly quickLook = inject(ArQuickLookService);
-  private readonly patternTextureService = inject(PatternTextureService);
   readonly session = inject(ArSessionService);
 
   /** iOS shows the pattern through AR Quick Look instead of a WebXR session. */
   readonly quickLookUrl = signal<string | null>(null);
-  readonly quickLookPreview = signal<string | null>(null);
   readonly quickLookSupported = this.quickLook.isSupported();
   readonly imagesUrl = environment.imagesUrl;
 
@@ -121,7 +118,6 @@ export class ArPatternPage implements OnDestroy {
     }
 
     try {
-      this.quickLookPreview.set(this.patternTextureService.bakePreview(pattern));
       this.quickLookUrl.set(await this.quickLook.buildUrl(pattern));
     } catch {
       this.quickLookUrl.set(null);

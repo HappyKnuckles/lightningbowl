@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -70,7 +70,6 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
   templateUrl: './pattern.page.html',
   styleUrls: ['./pattern.page.scss'],
   imports: [
-    RouterLink,
     IonLabel,
     IonItem,
     IonPopover,
@@ -140,6 +139,7 @@ export class PatternPage implements OnInit {
     public loadingService: LoadingService,
     private toastService: ToastService,
     private modalCtrl: ModalController,
+    private router: Router,
     public sortService: PatternSortService,
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
@@ -159,6 +159,32 @@ export class PatternPage implements OnInit {
       scanOutline,
     });
   }
+  private pendingArUrl: string | null = null;
+
+  /**
+   * Opens the pattern in AR.
+   *
+   * Navigating in the same tick as closing the modal races the modal's dismiss
+   * animation — the outcome was the modal neither closing nor routing. Instead
+   * we just start the dismiss here and let onModalDismiss do the navigation
+   * once the modal has actually gone.
+   */
+  openInAr(pattern: Pattern): void {
+    this.pendingArUrl = pattern.url;
+    this.selectedPattern.set(null);
+  }
+
+  /** Runs after the detail modal has fully dismissed. */
+  async onModalDismiss(): Promise<void> {
+    this.selectedPattern.set(null);
+
+    const url = this.pendingArUrl;
+    this.pendingArUrl = null;
+    if (url) {
+      await this.router.navigate(['/tabs/ar-pattern'], { queryParams: { pattern: url } });
+    }
+  }
+
   async ngOnInit() {
     this.loadFavoritesFirstSetting();
     await this.loadPatterns();

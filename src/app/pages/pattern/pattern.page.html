@@ -172,7 +172,7 @@
 </ion-content>
 
 @if (!loadingService.isLoading()) {
-  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="selectedPattern.set(null)">
+  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="onModalDismiss()">
     <ng-template>
       @if (selectedPattern(); as pattern) {
         <ion-header translucent="true">
@@ -184,7 +184,7 @@
             </ion-buttons>
             <ion-title>{{ pattern.title }}</ion-title>
             <ion-buttons slot="end">
-              <ion-button [routerLink]="['/tabs/ar-pattern']" [queryParams]="{ pattern: pattern.url }" (click)="selectedPattern.set(null)">
+              <ion-button (click)="openInAr(pattern)">
                 <ion-icon slot="icon-only" name="scan-outline"></ion-icon>
               </ion-button>
               <ion-button id="download">

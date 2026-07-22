@@ -1,8 +1,5 @@
 <div class="pattern-container">
-  <div class="pattern-charts">
-    <img [src]="imagesUrl + pattern().chart_standard" alt="Pattern image" />
-    <app-pattern-canvas [pattern]="pattern()" />
-  </div>
+  <img [src]="imagesUrl + pattern().chart_standard" class="pattern-image" alt="Pattern image" />
   <div class="pattern-info">
     <ion-chip>Distance: {{ pattern().distance }}ft</ion-chip>
     <ion-chip>Volume: {{ pattern().volume }}mL</ion-chip>

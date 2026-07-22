@@ -139,6 +139,21 @@ describe('usdz utils', () => {
       expect(usda).toContain('inputs:fallback');
     });
 
+    it('winds the front face upward so it is not upside down from above', () => {
+      // [0, 3, 2, 0, 2, 1] gives a +Y normal, matching the declared normals;
+      // the reverse winding pointed the textured face into the floor.
+      expect(usda).toContain('faceVertexIndices = [0, 3, 2, 0, 2, 1]');
+    });
+
+    it('is semi-transparent so the real lane shows through', () => {
+      expect(usda).toContain('inputs:opacity = 0.55');
+    });
+
+    it('orients the lane to face the viewer on placement', () => {
+      expect(usda).toContain('xformOp:rotateXYZ = (0, 180, 0)');
+      expect(usda).toContain('xformOpOrder = ["xformOp:rotateXYZ"]');
+    });
+
     it('strips characters that would break the scene description', () => {
       expect(buildLaneUsda('pattern.png', 'Bad "quoted" (name)')).toContain('doc = "Bad quoted name');
     });

@@ -97,8 +97,8 @@ describe('ArPatternPage', () => {
     component = fixture.componentInstance;
   }
 
-  describe('reached with no pattern in the store and no query param', () => {
-    it('loads the store rather than rendering nothing', async () => {
+  describe('reached with no query param', () => {
+    it('loads the pattern store to feed the search', async () => {
       const loadAllPatterns = jasmine.createSpy('loadAllPatterns').and.resolveTo();
       await configure({ patterns: [], queryParam: null, loadAllPatterns });
 
@@ -107,14 +107,36 @@ describe('ArPatternPage', () => {
       expect(loadAllPatterns).toHaveBeenCalled();
     });
 
-    it('shows an explanation when the store stays empty', async () => {
-      await configure({ patterns: [], queryParam: null });
+    it('shows the pattern chooser instead of auto-picking one', async () => {
+      await configure({ patterns: [{ url: PATTERN.url, title: PATTERN.title }], queryParam: null });
 
       const text = await textOf(fixture);
 
-      // The blank-page bug: every branch was false and nothing rendered.
-      expect(text.length).toBeGreaterThan(0);
-      expect(text).toContain('No patterns are available');
+      // No silent auto-pick — the user searches and chooses.
+      expect(component.needsPattern()).toBeTrue();
+      expect(component.pattern()).toBeNull();
+      expect(text).toContain('Choose a pattern');
+    });
+
+    it('loads the chosen pattern once picked, readying the Start AR screen', async () => {
+      await configure({ patterns: [{ url: PATTERN.url, title: PATTERN.title }], queryParam: null });
+      await textOf(fixture);
+
+      await component.onPatternPicked([PATTERN.url]);
+      fixture.detectChanges();
+
+      expect(component.pattern()?.url).toBe(PATTERN.url);
+      expect(component.isReady()).toBeTrue();
+    });
+
+    it('ignores an empty pick', async () => {
+      await configure({ patterns: [{ url: PATTERN.url, title: PATTERN.title }], queryParam: null });
+      await textOf(fixture);
+
+      await component.onPatternPicked([]);
+
+      expect(component.pattern()).toBeNull();
+      expect(component.needsPattern()).toBeTrue();
     });
   });
 

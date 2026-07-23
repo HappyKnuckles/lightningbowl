@@ -5,7 +5,11 @@ import {
   BALL_COVERSTOCK_TYPEAHEAD_CONFIG,
   BALL_TYPEAHEAD_CONFIG,
 } from '../../configs/typeahead/ball.config';
-import { createPartialPatternTypeaheadConfig, createPatternTypeaheadConfig } from '../../configs/typeahead/pattern.config';
+import {
+  createPartialPatternTypeaheadConfig,
+  createPatternTypeaheadConfig,
+  createSinglePatternTypeaheadConfig,
+} from '../../configs/typeahead/pattern.config';
 import { PatternService } from '../pattern/pattern.service';
 
 @Injectable({
@@ -22,4 +26,5 @@ export class TypeaheadConfigService {
 
   readonly pattern = createPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));
   readonly partialPattern = createPartialPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));
+  readonly singlePattern = createSinglePatternTypeaheadConfig((term) => this.patternService.searchPattern(term));
 }

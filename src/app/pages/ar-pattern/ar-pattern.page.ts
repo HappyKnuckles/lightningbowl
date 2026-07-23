@@ -1,18 +1,32 @@
 import { Component, ElementRef, OnDestroy, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { IonBackButton, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonSpinner, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+import {
+  IonBackButton,
+  IonButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonModal,
+  IonSpinner,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowUndoOutline, checkmarkOutline, locateOutline, refreshOutline, scanOutline } from 'ionicons/icons';
+import { arrowUndoOutline, checkmarkOutline, locateOutline, refreshOutline, scanOutline, searchOutline } from 'ionicons/icons';
 import { ArQuickLookService } from 'src/app/core/services/ar-quick-look/ar-quick-look.service';
 import { ArSessionService } from 'src/app/core/services/ar-session/ar-session.service';
 import { AR_BACKEND_PROVIDER } from 'src/app/core/services/ar-session/ar-backend.provider';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { ArLaneCalibratorComponent } from 'src/app/shared/components/ar-lane-calibrator/ar-lane-calibrator.component';
 import { ArPatternHudComponent } from 'src/app/shared/components/ar-pattern-hud/ar-pattern-hud.component';
+import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { PatternCanvasComponent } from 'src/app/shared/components/pattern-canvas/pattern-canvas.component';
 import { environment } from 'src/environments/environment';
+import { ModalController } from '@ionic/angular';
 
 /**
  * Projects an oil pattern onto a real lane.
@@ -24,7 +38,7 @@ import { environment } from 'src/environments/environment';
   selector: 'app-ar-pattern',
   templateUrl: './ar-pattern.page.html',
   styleUrl: './ar-pattern.page.scss',
-  providers: [AR_BACKEND_PROVIDER, ArSessionService],
+  providers: [AR_BACKEND_PROVIDER, ArSessionService, ModalController],
   imports: [
     IonHeader,
     IonToolbar,
@@ -35,8 +49,10 @@ import { environment } from 'src/environments/environment';
     IonButton,
     IonIcon,
     IonSpinner,
+    IonModal,
     ArLaneCalibratorComponent,
     ArPatternHudComponent,
+    GenericTypeaheadComponent,
     PatternCanvasComponent,
   ],
 })
@@ -45,7 +61,12 @@ export class ArPatternPage implements OnDestroy {
   private readonly patternService = inject(PatternService);
   private readonly patternsStore = inject(PatternsStore);
   private readonly quickLook = inject(ArQuickLookService);
+  private readonly typeaheadConfigService = inject(TypeaheadConfigService);
   readonly session = inject(ArSessionService);
+
+  /** Single-select pattern search, presented in a modal. Emits the pattern url. */
+  readonly patternTypeaheadConfig = this.typeaheadConfigService.singlePattern;
+  readonly pickerOpen = signal(false);
 
   /** iOS shows the pattern through AR Quick Look instead of a WebXR session. */
   readonly quickLookUrl = signal<string | null>(null);
@@ -67,8 +88,16 @@ export class ArPatternPage implements OnDestroy {
   readonly isLive = computed(() => this.phase() === 'tracking' || this.phase() === 'limited');
   /** Supported and loaded, waiting for the tap that opens the session. */
   readonly isReady = computed(() => this.phase() === 'idle' && this.pattern() !== null);
+  /** Idle with nothing chosen yet — show the pattern search instead of a dead end. */
+  readonly needsPattern = computed(() => this.phase() === 'idle' && this.pattern() === null);
   /** True only while a session owns the screen, so the camera shows through. */
   readonly isSessionLive = computed(() => this.isScanning() || this.isCalibrating() || this.isLive());
+
+  /** The chosen pattern's url, so the picker can pre-select it when reopened. */
+  readonly selectedUrls = computed(() => {
+    const current = this.pattern();
+    return current ? [current.url] : [];
+  });
 
   /**
    * What the page can see about its own environment.
@@ -97,7 +126,7 @@ export class ArPatternPage implements OnDestroy {
   private readonly host = viewChild('arRoot', { read: ElementRef<HTMLElement> });
 
   constructor() {
-    addIcons({ locateOutline, arrowUndoOutline, checkmarkOutline, refreshOutline, scanOutline });
+    addIcons({ locateOutline, arrowUndoOutline, checkmarkOutline, refreshOutline, scanOutline, searchOutline });
     void this.load();
   }
 
@@ -149,6 +178,32 @@ export class ArPatternPage implements OnDestroy {
     }
   }
 
+  openPicker(): void {
+    this.pickerOpen.set(true);
+  }
+
+  /**
+   * Handles a pick from the search modal.
+   *
+   * The single-select config emits the pattern url; there is at most one. If a
+   * session is already live we just swap the overlay, otherwise we load it so
+   * the "Start AR" screen is ready.
+   */
+  async onPatternPicked(urls: string[]): Promise<void> {
+    this.pickerOpen.set(false);
+
+    const url = urls[0];
+    if (!url) {
+      return;
+    }
+
+    if (this.isSessionLive()) {
+      await this.onPatternSelected(url);
+    } else {
+      await this.loadPattern(url);
+    }
+  }
+
   async retry(): Promise<void> {
     await this.session.stop();
     await this.enterAr();
@@ -159,32 +214,38 @@ export class ArPatternPage implements OnDestroy {
     this.loadError.set(null);
 
     try {
-      // Reached straight from the More tab the store may never have been
-      // filled, which is what left this page with nothing to show at all.
+      // Reached straight from the tab the store may never have been filled;
+      // it feeds the search list, so load it if empty.
       if (this.patterns().length === 0) {
         await this.patternsStore.loadAllPatterns();
       }
 
-      const requested = this.route.snapshot.queryParamMap.get('pattern') ?? this.patterns()[0]?.url;
-      if (!requested) {
-        this.loadError.set('No patterns are available yet. Open the Pattern Library once while online, then come back.');
-        return;
+      // A pattern in the query param (opened from the library) loads straight
+      // away. Without one the user searches — no silent auto-pick, which just
+      // showed an arbitrary pattern.
+      const requested = this.route.snapshot.queryParamMap.get('pattern');
+      if (requested) {
+        await this.loadPattern(requested);
       }
-
-      // getPatternData resolves to an empty object rather than throwing, so a
-      // missing url is how a failed fetch shows up here.
-      const pattern = await this.patternService.getPatternData(requested);
-      if (!pattern?.url) {
-        this.loadError.set('Could not load that pattern. Check your connection and try again.');
-        return;
-      }
-
-      await this.session.prepare(pattern);
-      await this.prepareQuickLook(pattern);
     } catch {
-      this.loadError.set('Could not load that pattern. Check your connection and try again.');
+      this.loadError.set('Could not load patterns. Check your connection and try again.');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Fetches full load data for a pattern url and readies the session for it. */
+  private async loadPattern(url: string): Promise<void> {
+    // getPatternData resolves to an empty object rather than throwing, so a
+    // missing url is how a failed fetch shows up here.
+    const pattern = await this.patternService.getPatternData(url);
+    if (!pattern?.url) {
+      this.loadError.set('Could not load that pattern. Check your connection and try again.');
+      return;
+    }
+
+    this.loadError.set(null);
+    await this.session.prepare(pattern);
+    await this.prepareQuickLook(pattern);
   }
 }

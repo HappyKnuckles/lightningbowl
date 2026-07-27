@@ -39,10 +39,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/pattern/pattern.page').then((m) => m.PatternPage),
       },
       {
-        path: 'ar-pattern',
-        loadComponent: () => import('./pages/ar-pattern/ar-pattern.page').then((m) => m.ArPatternPage),
-      },
-      {
         path: 'map',
         loadComponent: () => import('./pages/alley-map/alley-map.page').then((m) => m.AlleyMapPage),
       },

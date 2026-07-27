@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { ModalController, provideIonicAngular } from '@ionic/angular/standalone';
 import { Storage } from '@ionic/storage-angular';
 import { Pattern } from 'src/app/core/models/pattern.model';
@@ -90,35 +90,20 @@ describe('PatternPage', () => {
   describe('opening a pattern in AR', () => {
     const pattern = { url: 'https://patternlibrary.kegel.net/pattern/x', title: 'Cheetah' } as Pattern;
 
-    it('closes the detail modal without navigating yet', () => {
-      const router = TestBed.inject(Router);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    it('opens the AR view on the pattern that was showing', () => {
       component.selectedPattern.set(pattern);
 
       component.openInAr(pattern);
 
-      // The modal is asked to close; navigation waits for it to finish.
-      expect(component.selectedPattern()).toBeNull();
-      expect(navigate).not.toHaveBeenCalled();
+      expect(component.arPattern()).toBe(pattern);
     });
 
-    it('navigates once the modal has dismissed', async () => {
-      const router = TestBed.inject(Router);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    it('leaves the detail open underneath, so closing AR lands back on it', () => {
+      component.selectedPattern.set(pattern);
 
       component.openInAr(pattern);
-      await component.onModalDismiss();
 
-      expect(navigate).toHaveBeenCalledWith(['/tabs/ar-pattern'], { queryParams: { pattern: pattern.url } });
-    });
-
-    it('does not navigate on an ordinary modal dismiss', async () => {
-      const router = TestBed.inject(Router);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
-
-      await component.onModalDismiss();
-
-      expect(navigate).not.toHaveBeenCalled();
+      expect(component.selectedPattern()).toBe(pattern);
     });
   });
 });

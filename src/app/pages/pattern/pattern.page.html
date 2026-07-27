@@ -172,7 +172,7 @@
 </ion-content>
 
 @if (!loadingService.isLoading()) {
-  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="onModalDismiss()">
+  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="selectedPattern.set(null)">
     <ng-template>
       @if (selectedPattern(); as pattern) {
         <ion-header translucent="true">
@@ -213,4 +213,9 @@
       }
     </ng-template>
   </ion-modal>
+}
+
+<!-- No modal in the way: the tap on "view in AR" opens the camera itself. -->
+@if (arPattern(); as pattern) {
+  <app-ar-pattern-view [pattern]="pattern" (closed)="arPattern.set(null)" />
 }

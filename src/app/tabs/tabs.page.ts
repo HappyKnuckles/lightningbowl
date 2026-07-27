@@ -11,7 +11,6 @@ import {
   mapOutline,
   gameControllerOutline,
   scaleOutline,
-  scanOutline,
   trophyOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
@@ -55,11 +54,6 @@ export class TabsPage {
       src: 'assets/svg/lane.svg',
     },
     {
-      path: '/tabs/ar-pattern',
-      label: 'Pattern in AR',
-      icon: 'scan-outline',
-    },
-    {
       path: '/tabs/map',
       label: 'Map',
       icon: 'map-outline',
@@ -90,7 +84,6 @@ export class TabsPage {
       bagAddOutline,
       gameControllerOutline,
       scaleOutline,
-      scanOutline,
     });
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -58,6 +57,7 @@ import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.serv
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
+import { ArPatternViewComponent } from 'src/app/shared/components/ar-pattern-view/ar-pattern-view.component';
 import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
 import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
@@ -94,6 +94,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonToolbar,
     CommonModule,
     FormsModule,
+    ArPatternViewComponent,
     PatternInfoComponent,
     SearchBlurDirective,
     SearchHistoryDirective,
@@ -118,6 +119,8 @@ export class PatternPage implements OnInit {
   searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
   selectedPattern = signal<Pattern | null>(null);
+  /** The pattern being projected in AR, or null while the AR view is closed. */
+  arPattern = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,
@@ -139,7 +142,6 @@ export class PatternPage implements OnInit {
     public loadingService: LoadingService,
     private toastService: ToastService,
     private modalCtrl: ModalController,
-    private router: Router,
     public sortService: PatternSortService,
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
@@ -159,30 +161,14 @@ export class PatternPage implements OnInit {
       scanOutline,
     });
   }
-  private pendingArUrl: string | null = null;
-
   /**
-   * Opens the pattern in AR.
+   * Opens the pattern in AR — the tap goes straight into the camera session.
    *
-   * Navigating in the same tick as closing the modal races the modal's dismiss
-   * animation — the outcome was the modal neither closing nor routing. Instead
-   * we just start the dismiss here and let onModalDismiss do the navigation
-   * once the modal has actually gone.
+   * The detail modal stays open behind it, so leaving AR puts the user back on
+   * the pattern they were reading.
    */
   openInAr(pattern: Pattern): void {
-    this.pendingArUrl = pattern.url;
-    this.selectedPattern.set(null);
-  }
-
-  /** Runs after the detail modal has fully dismissed. */
-  async onModalDismiss(): Promise<void> {
-    this.selectedPattern.set(null);
-
-    const url = this.pendingArUrl;
-    this.pendingArUrl = null;
-    if (url) {
-      await this.router.navigate(['/tabs/ar-pattern'], { queryParams: { pattern: url } });
-    }
+    this.arPattern.set(pattern);
   }
 
   async ngOnInit() {

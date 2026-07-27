@@ -38,6 +38,34 @@ export class ArQuickLookService {
   }
 
   /**
+   * Goes straight into AR with the pattern.
+   *
+   * Quick Look only enters AR from a click on an `<a rel="ar">` that holds one
+   * image — but the click does not have to come from the user's finger. The
+   * anchor is built and clicked here, which is what turns "view in AR" into one
+   * press instead of a screen with a second thing to press.
+   *
+   * Returns the URL it opened, so a caller can still offer it as a plain link
+   * if nothing happened, or null where Quick Look is not available.
+   */
+  async open(pattern: Pattern): Promise<string | null> {
+    if (!this.isSupported()) {
+      return null;
+    }
+
+    const url = await this.buildUrl(pattern);
+
+    const anchor = document.createElement('a');
+    anchor.setAttribute('rel', 'ar');
+    anchor.href = url;
+    // Quick Look ignores an anchor that does not hold exactly one img child.
+    anchor.appendChild(document.createElement('img'));
+    anchor.click();
+
+    return url;
+  }
+
+  /**
    * Builds a USDZ for the pattern and returns a URL to hand to an
    * `<a rel="ar">`.
    *

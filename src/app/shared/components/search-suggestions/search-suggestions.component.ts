@@ -53,6 +53,7 @@ export class SearchSuggestionsComponent {
   // before the selection is processed; the blur is then triggered deliberately.
   selectSuggestion(event: Event, term: string): void {
     event.preventDefault();
+    event.stopPropagation();
     this.suggestionSelected.emit(term);
     (document.activeElement as HTMLElement | null)?.blur();
     void Keyboard.hide().catch(() => {

@@ -187,6 +187,9 @@
             </ion-buttons>
             <ion-title>{{ pattern.title }}</ion-title>
             <ion-buttons slot="end">
+              <ion-button (click)="openInAr(pattern)">
+                <ion-icon slot="icon-only" name="scan-outline"></ion-icon>
+              </ion-button>
               <ion-button id="download">
                 <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
               </ion-button>
@@ -213,4 +216,9 @@
       }
     </ng-template>
   </ion-modal>
+}
+
+<!-- No modal in the way: the tap on "view in AR" opens the camera itself. -->
+@if (arPattern(); as pattern) {
+  <app-ar-pattern-view [pattern]="pattern" (closed)="arPattern.set(null)" />
 }

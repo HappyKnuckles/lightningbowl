@@ -1,0 +1,8 @@
+<div #surface class="surface" (pointerdown)="onTap($event)">
+  @for (target of targets(); track target.label) {
+    <div class="target" [class.done]="target.done" [class.active]="target.active" [style.left.%]="target.left" [style.top.%]="target.top">
+      <span class="ring"></span>
+      <span class="label">{{ target.label }}</span>
+    </div>
+  }
+</div>

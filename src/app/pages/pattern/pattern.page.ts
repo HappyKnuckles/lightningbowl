@@ -41,6 +41,7 @@ import {
   heart,
   heartOutline,
   linkOutline,
+  scanOutline,
 } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
@@ -57,6 +58,7 @@ import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.serv
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
+import { ArPatternViewComponent } from 'src/app/shared/components/ar-pattern-view/ar-pattern-view.component';
 import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
 import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
@@ -94,6 +96,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonToolbar,
     CommonModule,
     FormsModule,
+    ArPatternViewComponent,
     PatternInfoComponent,
     SearchBlurDirective,
     SearchHistoryDirective,
@@ -118,6 +121,8 @@ export class PatternPage implements OnInit {
   searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
   selectedPattern = signal<Pattern | null>(null);
+  /** The pattern being projected in AR, or null while the AR view is closed. */
+  arPattern = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,
@@ -155,8 +160,19 @@ export class PatternPage implements OnInit {
       heart,
       heartOutline,
       ellipsisVerticalOutline,
+      scanOutline,
     });
   }
+  /**
+   * Opens the pattern in AR — the tap goes straight into the camera session.
+   *
+   * The detail modal stays open behind it, so leaving AR puts the user back on
+   * the pattern they were reading.
+   */
+  openInAr(pattern: Pattern): void {
+    this.arPattern.set(pattern);
+  }
+
   async ngOnInit() {
     this.loadFavoritesFirstSetting();
     await this.loadPatterns();

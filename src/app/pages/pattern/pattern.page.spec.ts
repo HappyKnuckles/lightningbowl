@@ -1,6 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ModalController } from '@ionic/angular/standalone';
+import { provideRouter } from '@angular/router';
+import { ModalController, provideIonicAngular } from '@ionic/angular/standalone';
+import { Storage } from '@ionic/storage-angular';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -43,6 +45,21 @@ describe('PatternPage', () => {
         { provide: FavoritesService, useValue: favoritesServiceSpy },
         { provide: AnalyticsService, useValue: analyticsServiceSpy },
         ModalController,
+        provideIonicAngular(),
+        provideRouter([]),
+        // PatternPage pulls in SearchHistoryService -> StorageRepository ->
+        // Storage transitively; a stub keeps the component instantiable.
+        {
+          provide: Storage,
+          useValue: {
+            create: () => Promise.resolve(),
+            get: () => Promise.resolve(null),
+            set: () => Promise.resolve(),
+            remove: () => Promise.resolve(),
+            forEach: () => Promise.resolve(),
+            clear: () => Promise.resolve(),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -68,5 +85,25 @@ describe('PatternPage', () => {
     component.searchTerm.set('pba');
 
     expect(component.searchSuggestions()).toEqual(['PBA Shark', 'PBA Cheetah 35']);
+  });
+
+  describe('opening a pattern in AR', () => {
+    const pattern = { url: 'https://patternlibrary.kegel.net/pattern/x', title: 'Cheetah' } as Pattern;
+
+    it('opens the AR view on the pattern that was showing', () => {
+      component.selectedPattern.set(pattern);
+
+      component.openInAr(pattern);
+
+      expect(component.arPattern()).toBe(pattern);
+    });
+
+    it('leaves the detail open underneath, so closing AR lands back on it', () => {
+      component.selectedPattern.set(pattern);
+
+      component.openInAr(pattern);
+
+      expect(component.selectedPattern()).toBe(pattern);
+    });
   });
 });

@@ -131,7 +131,11 @@ export class PatternService {
 
   async getPatternData(url: string): Promise<Pattern> {
     try {
-      const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`));
+      // A pattern's id is its full Kegel source URL, so it has to be encoded
+      // before going into the path. Interpolated raw it produces
+      // ".../patterns/https://patternlibrary.kegel.net/..." — a double slash
+      // mid-path that proxies collapse, leaving a key that no longer matches.
+      const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${encodeURIComponent(url)}`));
       return response;
     } catch (error) {
       console.error('Error fetching pattern data:', error);

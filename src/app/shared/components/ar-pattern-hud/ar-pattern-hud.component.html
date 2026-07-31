@@ -1,0 +1,19 @@
+<div class="hud">
+  <div class="status">
+    <ion-chip [color]="trackingColor()" class="tracking">
+      <ion-label>{{ trackingLabel() }}</ion-label>
+    </ion-chip>
+    @if (pattern(); as active) {
+      <span class="title">{{ active.title }}</span>
+      <span class="meta">{{ active.distance }}ft · {{ active.volume }}mL</span>
+    }
+  </div>
+
+  <div class="picker">
+    @for (candidate of patterns(); track candidate.url) {
+      <ion-chip [outline]="candidate.url !== pattern()?.url" color="primary" (click)="onSelect(candidate.url)">
+        <ion-label>{{ candidate.title }}</ion-label>
+      </ion-chip>
+    }
+  </div>
+</div>

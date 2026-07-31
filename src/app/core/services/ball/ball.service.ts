@@ -10,19 +10,9 @@ import { NetworkService } from '../network/network.service';
   providedIn: 'root',
 })
 export class BallService {
-  #brands = signal<Brand[]>([]);
-  #cores = signal<Core[]>([]);
-  #coverstocks = signal<Coverstock[]>([]);
-
-  get brands() {
-    return this.#brands;
-  }
-  get cores() {
-    return this.#cores;
-  }
-  get coverstocks() {
-    return this.#coverstocks;
-  }
+  readonly brands = signal<Brand[]>([]);
+  readonly cores = signal<Core[]>([]);
+  readonly coverstocks = signal<Coverstock[]>([]);
   private readonly pending = new Map<string, Promise<unknown>>();
 
   constructor(
@@ -149,7 +139,7 @@ export class BallService {
       'brands',
       () => firstValueFrom(this.http.get<Brand[]>(`${environment.bowwwlEndpoint}brands`)),
       7 * 24 * 60 * 60 * 1000,
-      (data) => this.#brands.set(data),
+      (data) => this.brands.set(data),
     );
   }
 
@@ -160,7 +150,7 @@ export class BallService {
       7 * 24 * 60 * 60 * 1000,
       (data) => {
         data.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.#cores.set(data);
+        this.cores.set(data);
       },
     );
   }
@@ -172,7 +162,7 @@ export class BallService {
       7 * 24 * 60 * 60 * 1000,
       (data) => {
         data.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.#coverstocks.set(data);
+        this.coverstocks.set(data);
       },
     );
   }

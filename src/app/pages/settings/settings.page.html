@@ -1,23 +1,14 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
     <ion-title>Settings</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-list>
-    <ion-item>
-      <ion-icon name="person-circle-outline" slot="start"></ion-icon>
-      <ion-input
-        class="ion-text-right"
-        label="Your name"
-        type="text"
-        [value]="userService.username()"
-        placeholder="{{ userService.username() }}"
-        (ionChange)="changeName($event)"
-        style="margin-right: 21px">
-      </ion-input>
-    </ion-item>
     <ion-item>
       <ion-icon name="color-palette-outline" slot="start"></ion-icon>
       <ion-select
@@ -32,21 +23,6 @@
         </ion-select-option>
       </ion-select>
     </ion-item>
-
-    <ion-item>
-      <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-      <ion-select
-        label="Pin Input Mode"
-        interface="action-sheet"
-        [value]="settingsStore.pinInputMode() ? 'hit' : 'missing'"
-        (ionChange)="savePinInputMode($event.detail.value)">
-        <ion-select-option value="missing">Missing Pins</ion-select-option>
-        <ion-select-option value="hit">Hit Pins</ion-select-option>
-      </ion-select>
-    </ion-item>
-
-    <app-league-selector></app-league-selector>
-
     <ion-item button id="spare-names-modal">
       <ion-icon src="/assets/svg/pin.svg" slot="start"></ion-icon>
       <ion-label>Spare Names</ion-label>
@@ -132,35 +108,44 @@
         </ion-card-header>
         <ion-card-content>
           <form #feedbackForm="ngForm" (ngSubmit)="submitFeedback(feedbackForm)">
-            <ion-item>
-              <ion-input
-                label="Your email"
-                pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,4}$"
-                labelPlacement="floating"
-                type="email"
-                placeholder="email@domain.com"
-                errorText="Invalid email address."
-                [(ngModel)]="userEmail"
-                name="userEmail"
-                required></ion-input>
-            </ion-item>
+            <ion-list lines="none">
+              <ion-item>
+                <ion-input
+                  label="Your email"
+                  pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,4}$"
+                  labelPlacement="floating"
+                  type="email"
+                  placeholder="email@domain.com"
+                  errorText="Invalid email address."
+                  [(ngModel)]="userEmail"
+                  name="userEmail"
+                  required></ion-input>
+              </ion-item>
 
-            <ion-item>
-              <ion-textarea
-                maxlength="500"
-                counter="true"
-                label="Feedback"
-                labelPlacement="floating"
-                placeholder="Enter your feedback"
-                [(ngModel)]="feedbackMessage"
-                name="feedbackMessage"
-                [autoGrow]="true"
-                required
-                #feedbackInput="ngModel"
-                errorText="Feedback is required."></ion-textarea>
-            </ion-item>
+              <ion-item>
+                <ion-textarea
+                  maxlength="500"
+                  counter="true"
+                  label="Feedback"
+                  labelPlacement="floating"
+                  placeholder="Enter your feedback"
+                  [(ngModel)]="feedbackMessage"
+                  name="feedbackMessage"
+                  [autoGrow]="true"
+                  required
+                  #feedbackInput="ngModel"
+                  errorText="Feedback is required."></ion-textarea>
+              </ion-item>
+            </ion-list>
 
-            <ion-button expand="full" color="primary" type="submit" [disabled]="feedbackForm.invalid"> Submit Feedback </ion-button>
+            <ion-button
+              expand="block"
+              style="--border-radius: var(--small-border-radius)"
+              color="primary"
+              type="submit"
+              [disabled]="feedbackForm.invalid">
+              Submit Feedback
+            </ion-button>
           </form>
         </ion-card-content>
       </ion-card>

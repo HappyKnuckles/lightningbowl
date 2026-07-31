@@ -16,12 +16,13 @@ import { PwaInstallService } from './core/services/pwa-install/pwa-install.servi
 import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { AnalyticsService } from './core/services/analytics/analytics.service';
 import { BowlingRefresherComponent } from './shared/components/bowling-refresher/bowling-refresher.component';
+import { SideMenuComponent } from './shared/components/side-menu/side-menu.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
-  imports: [IonApp, IonBackdrop, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent, BowlingRefresherComponent],
+  imports: [IonApp, IonBackdrop, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent, BowlingRefresherComponent, SideMenuComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly GREETING_THROTTLE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds

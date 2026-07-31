@@ -1,56 +1,75 @@
-@if (isAddPage) {
-  <ion-item>
-    <ion-select label="League/Tournament" [(ngModel)]="selectedLeague" (ionChange)="leagueChanged.emit(this.selectedLeague); onLeagueChange($event)">
-      <ion-select-option value="new">Add new</ion-select-option>
-      <ion-select-option value="">None</ion-select-option>
-      <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
-    </ion-select>
+@if (isAddPage()) {
+  <ion-item class="league-selector" button detail="true" detailIcon="chevron-expand-outline" (click)="openPicker()">
+    @if (icon()) {
+      <ion-icon [name]="icon()" slot="start"></ion-icon>
+    }
+    <ion-label>League/Tournament</ion-label>
+    <span class="ion-text-right">{{ selectedLeague() || "None" }}</span>
   </ion-item>
 } @else {
-  <ion-item>
+  <ion-item button (click)="openPicker()">
     <ion-icon name="trophy-outline" slot="start"></ion-icon>
-    <ion-select
-      label="Leagues/Tournaments"
-      (ionChange)="onLeagueChange($event)"
-      interface="action-sheet"
-      placeholder="Edit leagues"
-      [(ngModel)]="selectedLeague">
-      <ion-select-option value="new">Add league</ion-select-option>
-      <ion-select-option value="edit" *ngIf="leagues().length !== 0">Edit league</ion-select-option>
-      <ion-select-option value="delete" *ngIf="leagues().length !== 0">Delete league</ion-select-option>
-    </ion-select>
+    <ion-label>Leagues/Tournaments</ion-label>
   </ion-item>
 }
 
-<ion-modal [isOpen]="isModalOpen" #modal>
+<ion-modal [presentingElement]="presentingElement" [isOpen]="isPickerOpen()" (didDismiss)="closePicker()">
   <ng-template>
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button (click)="cancel()">Cancel</ion-button>
+          <ion-button (click)="closePicker()">{{ isAddPage() ? "Cancel" : "Done" }}</ion-button>
         </ion-buttons>
-        <ion-title>Edit league</ion-title>
-        <ion-buttons slot="end">
-          <ion-button type="submit" (click)="editLeague()" [disabled]="newLeague === ''">Save</ion-button>
-        </ion-buttons>
+        <ion-title>{{ isAddPage() ? "Select League" : "Manage Leagues" }}</ion-title>
+      </ion-toolbar>
+      <ion-toolbar>
+        <ion-searchbar placeholder="Search or create..." [value]="searchTerm()" (ionInput)="onSearchInput($event)" appSearchBlur></ion-searchbar>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-item>
-        <ion-icon name="trophy-outline" slot="start"></ion-icon>
-        <ion-select label="Choose League" [(ngModel)]="leagueToChange">
-          <ion-select-option *ngFor="let league of leagues()" [value]="league">{{ league }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <ion-icon name="create-outline" slot="start"></ion-icon>
-        <ion-input
-          label="Change league name"
-          [value]="leagueToChange"
-          [readonly]="leagueToChange === ''"
-          placeholder="League name"
-          (ionChange)="newLeague = $event.target.value!.toString()"></ion-input>
-      </ion-item>
+      <ion-list>
+        @if (isAddPage() && !searchTerm().trim()) {
+          <ion-item button [detail]="false" (click)="onLeagueTap('')">
+            <ion-label>None</ion-label>
+            @if (selectedLeague() === "") {
+              <ion-icon name="checkmark-outline" slot="end"></ion-icon>
+            }
+          </ion-item>
+        }
+        @for (league of filteredLeagues(); track league) {
+          <ion-item-sliding #sliding>
+            <ion-item-options side="start" (ionSwipe)="openEditAlert(league); sliding.closeOpened()">
+              <ion-item-option expandable (click)="openEditAlert(league); sliding.closeOpened()">
+                <ion-icon name="create-outline"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+
+            <ion-item button [detail]="false" (click)="onLeagueTap(league)">
+              <ion-label>{{ league }}</ion-label>
+              @if (isAddPage() && selectedLeague() === league) {
+                <ion-icon name="checkmark-outline" slot="end"></ion-icon>
+              }
+            </ion-item>
+
+            <ion-item-options side="end" (ionSwipe)="openDeleteAlert(league); sliding.closeOpened()">
+              <ion-item-option color="danger" expandable (click)="openDeleteAlert(league); sliding.closeOpened()">
+                <ion-icon name="trash-outline"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
+        }
+        @if (creatableName()) {
+          <ion-item button [detail]="false" (click)="createLeague()">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            <ion-label>Create "{{ creatableName() }}"</ion-label>
+          </ion-item>
+        }
+      </ion-list>
+      @if (availableLeagues().length === 0 && !searchTerm().trim()) {
+        <ion-text color="medium">
+          <p class="ion-padding-horizontal">No leagues yet. Type a name above to create one.</p>
+        </ion-text>
+      }
     </ion-content>
   </ng-template>
 </ion-modal>

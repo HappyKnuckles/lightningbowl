@@ -5,7 +5,7 @@
 </ion-header>
 <ion-content>
   <ion-list>
-    @for (ball of ballsStore.arsenal(); track $index) {
+    @for (ball of rankedArsenal(); track $index) {
       <ion-item [lines]="$last ? 'none' : ''">
         <ion-avatar slot="start" (click)="toggleBallSelection(ball.ball_name)">
           <img [src]="ballsStore.url + ball.thumbnail_image" [alt]="ball.ball_name + 'image'" />

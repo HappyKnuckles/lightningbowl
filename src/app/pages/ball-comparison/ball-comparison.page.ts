@@ -27,6 +27,7 @@ import {
   IonSelectOption,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
@@ -63,6 +64,7 @@ interface SavedEntry {
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     IonButton,
     IonButtons,

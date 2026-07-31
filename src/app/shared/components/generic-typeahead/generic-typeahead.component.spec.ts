@@ -1,33 +1,37 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GenericTypeaheadComponent } from './generic-typeahead.component';
+import { IonContent } from '@ionic/angular/standalone';
 import { ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { GenericTypeaheadComponent } from './generic-typeahead.component';
 
-// Mock interfaces for testing
 interface TestItem {
-  id: number;
+  id: string;
   name: string;
 }
+
+const ITEMS: TestItem[] = [
+  { id: 'alpha', name: 'Alpha' },
+  { id: 'beta', name: 'Beta' },
+  { id: 'gamma', name: 'Gamma' },
+];
+
+const CONFIG: TypeaheadConfig<TestItem> = {
+  title: 'Test Title',
+  searchPlaceholder: 'Search...',
+  loadingText: 'Loading...',
+  displayFields: [{ key: 'name', isPrimary: true }],
+  searchKeys: [{ name: 'name', weight: 1 }],
+  identifierKey: 'id',
+  searchMode: 'local',
+};
 
 describe('GenericTypeaheadComponent', () => {
   let component: GenericTypeaheadComponent<TestItem>;
   let fixture: ComponentFixture<GenericTypeaheadComponent<TestItem>>;
 
-  const testItems: TestItem[] = [
-    { id: 1, name: 'Item 1' },
-    { id: 2, name: 'Item 2' },
-    { id: 3, name: 'Item 3' }
-  ];
-
-  const mockConfig = {
-    title: 'Test Title',
-    searchPlaceholder: 'Search...',
-    identifierKey: 'id',
-    displayFields: [{ key: 'name', isPrimary: true, isSecondary: false }],
-    searchKeys: ['name'],
-    searchMode: 'local' as const,
-    loadingText: 'Loading...'
-  };
+  const search = (value: string): Promise<void> => component.searchItems({ detail: { value } } as CustomEvent);
+  const check = (item: TestItem, checked: boolean): void => component.checkboxChange({ detail: { checked } } as CustomEvent, item);
 
   beforeEach(async () => {
     const modalControllerSpy = jasmine.createSpyObj('ModalController', ['dismiss']);
@@ -37,201 +41,90 @@ describe('GenericTypeaheadComponent', () => {
       imports: [GenericTypeaheadComponent],
       providers: [
         { provide: ModalController, useValue: modalControllerSpy },
-        { provide: LoadingService, useValue: loadingServiceSpy }
-      ]
-    })
-    .compileComponents();
+        { provide: LoadingService, useValue: loadingServiceSpy },
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(GenericTypeaheadComponent<TestItem>);
     component = fixture.componentInstance;
-
-    // Set required inputs
-    fixture.componentRef.setInput('items', testItems);
-    fixture.componentRef.setInput('config', mockConfig);
+    fixture.componentRef.setInput('items', ITEMS);
+    fixture.componentRef.setInput('config', CONFIG);
     fixture.componentRef.setInput('prevSelectedItems', []);
-    
-    fixture.detectChanges();
   });
 
+  /** Runs ngOnInit and stubs the content ViewChild that searchItems scrolls. */
+  const init = (): void => {
+    fixture.detectChanges();
+    component.content = { scrollToTop: jasmine.createSpy('scrollToTop') } as unknown as IonContent;
+  };
+
   it('should create', () => {
+    init();
     expect(component).toBeTruthy();
   });
 
-  it('should reset selection and search bar properly', () => {
-    // Select some items first
-    component.selectedItems = [testItems[0], testItems[1]];
-    
-    // Simulate the reordering that would happen when items are selected
-    component.filteredItems.set([testItems[0], testItems[1], testItems[2]]);
-    
-    // Mock the searchbar
-    const mockSearchbar = { 
-      value: 'test search',
-      handleIonInput: jasmine.createSpy(),
-      injector: null,
-      elementRef: null,
-      onChange: jasmine.createSpy(),
-      onInput: jasmine.createSpy(),
-      onBlur: jasmine.createSpy(),
-      onFocus: jasmine.createSpy(),
-      onCancel: jasmine.createSpy(),
-      onClear: jasmine.createSpy(),
-      onIonChange: jasmine.createSpy(),
-      onIonInput: jasmine.createSpy(),
-      onIonBlur: jasmine.createSpy(),
-      onIonFocus: jasmine.createSpy(),
-      onIonCancel: jasmine.createSpy(),
-      onIonClear: jasmine.createSpy()
-    } as any;
-    component.searchbar = mockSearchbar;
-    
-    // Spy on searchItems method to verify it gets called
-    spyOn(component, 'searchItems').and.callThrough();
-    
-    // Call resetSelection
-    component.resetSelection();
-    
-    // Verify selectedItems is empty
+  it('initialises the list from the items input', () => {
+    init();
+    expect(component.filteredItems()).toEqual(ITEMS);
+    expect(component.displayedItems()).toEqual(ITEMS);
+  });
+
+  it('restores the previous selection from values and pins it to the top', () => {
+    fixture.componentRef.setInput('prevSelectedItems', ['beta']);
+    init();
+
+    expect(component.selectedItems).toEqual([ITEMS[1]]);
+    expect(component.filteredItems()[0]).toEqual(ITEMS[1]);
+  });
+
+  it('narrows the list with a local fuzzy search and restores it on empty term', async () => {
+    init();
+
+    await search('beta');
+    expect(component.filteredItems()).toEqual([ITEMS[1]]);
+
+    await search('');
+    expect(component.filteredItems()).toEqual(ITEMS);
+  });
+
+  it('keeps selected items visible even when the search does not match them', async () => {
+    init();
+    check(ITEMS[0], true);
+
+    await search('beta');
+
+    // "Alpha" does not match "beta" but stays pinned above the actual match.
+    expect(component.filteredItems()).toEqual([ITEMS[0], ITEMS[1]]);
+  });
+
+  it('pins a newly checked item to the top and unpins it when unchecked', () => {
+    init();
+
+    check(ITEMS[2], true);
+    expect(component.selectedItems).toEqual([ITEMS[2]]);
+    expect(component.filteredItems()[0]).toEqual(ITEMS[2]);
+
+    check(ITEMS[2], false);
     expect(component.selectedItems).toEqual([]);
-    
-    // Verify search bar is cleared
-    expect(component.searchbar.value).toBe('');
-    
-    // Verify searchItems was called with empty search term
-    expect(component.searchItems).toHaveBeenCalledWith(jasmine.objectContaining({
-      detail: { value: '' }
-    }));
-    
-    // Verify filteredItems is reset to original order
-    expect(component.filteredItems()).toEqual(testItems);
-    
-    // Verify loadedCount is reset to batch size or items length
-    expect(component.loadedCount()).toBe(Math.min(component['batchSize'], testItems.length));
   });
 
-  it('should maintain filtered items in original order after reset', () => {
-    // Select items to change the order
-    component.selectedItems = [testItems[1], testItems[2]];
-    component.filteredItems.set([testItems[1], testItems[2], testItems[0]]);
-    
-    // Reset selection
-    component.resetSelection();
-    
-    // Verify items are back in original order
-    expect(component.filteredItems()).toEqual([
-      { id: 1, name: 'Item 1' },
-      { id: 2, name: 'Item 2' },
-      { id: 3, name: 'Item 3' }
-    ]);
-  });
-
-  it('should properly reset when search pattern was active', () => {
-    // Simulate a scenario where user had searched and selected items
-    component.selectedItems = [testItems[0]];
-    component.filteredItems.set([testItems[0]]); // Simulate filtered state from search
-    
-    // Mock searchbar with active search
-    const mockSearchbar = { 
-      value: 'Item 1',
-      handleIonInput: jasmine.createSpy(),
-      injector: null,
-      elementRef: null,
-      onChange: jasmine.createSpy(),
-      onInput: jasmine.createSpy(),
-      onBlur: jasmine.createSpy(),
-      onFocus: jasmine.createSpy(),
-      onCancel: jasmine.createSpy(),
-      onClear: jasmine.createSpy(),
-      onIonChange: jasmine.createSpy(),
-      onIonInput: jasmine.createSpy(),
-      onIonBlur: jasmine.createSpy(),
-      onIonFocus: jasmine.createSpy(),
-      onIonCancel: jasmine.createSpy(),
-      onIonClear: jasmine.createSpy()
-    } as any;
-    component.searchbar = mockSearchbar;
-    
-    // Spy on searchItems
-    spyOn(component, 'searchItems').and.callThrough();
-    
-    // Call resetSelection
-    component.resetSelection();
-    
-    // Verify searchbar is cleared
-    expect(mockSearchbar.value).toBe('');
-    
-    // Verify searchItems was called to reset the search
-    expect(component.searchItems).toHaveBeenCalledWith(jasmine.objectContaining({
-      detail: { value: '' }
-    }));
-    
-    // Verify selectedItems is empty
-    expect(component.selectedItems).toEqual([]);
-    
-    // Verify all items are restored
-    expect(component.filteredItems()).toEqual(testItems);
-  });
-
-  it('should emit selectedItemsChange on ngOnDestroy even when selection is empty', () => {
-    // Spy on the selectedItemsChange emit
+  it('emits the changed selection values on destroy', () => {
+    init();
     spyOn(component.selectedItemsChange, 'emit');
-    
-    // Test case 1: No items selected
-    component.selectedItems = [];
+
+    check(ITEMS[0], true);
     component.ngOnDestroy();
-    
-    // Should emit empty array
-    expect(component.selectedItemsChange.emit).toHaveBeenCalledWith([]);
-    
-    // Reset spy
-    component.selectedItemsChange.emit = jasmine.createSpy();
-    
-    // Test case 2: Items selected
-    component.selectedItems = [testItems[0], testItems[1]];
-    component.ngOnDestroy();
-    
-    // Should emit selected item identifiers
-    expect(component.selectedItemsChange.emit).toHaveBeenCalledWith([1, 2]);
+
+    expect(component.selectedItemsChange.emit).toHaveBeenCalledWith(['alpha']);
   });
 
-  it('should reset selection and emit change when destroyed after reset', () => {
-    // Start with selected items
-    component.selectedItems = [testItems[0], testItems[1]];
-    
-    // Mock the searchbar
-    const mockSearchbar = { 
-      value: 'test search',
-      handleIonInput: jasmine.createSpy(),
-      injector: null,
-      elementRef: null,
-      onChange: jasmine.createSpy(),
-      onInput: jasmine.createSpy(),
-      onBlur: jasmine.createSpy(),
-      onFocus: jasmine.createSpy(),
-      onCancel: jasmine.createSpy(),
-      onClear: jasmine.createSpy(),
-      onIonChange: jasmine.createSpy(),
-      onIonInput: jasmine.createSpy(),
-      onIonBlur: jasmine.createSpy(),
-      onIonFocus: jasmine.createSpy(),
-      onIonCancel: jasmine.createSpy(),
-      onIonClear: jasmine.createSpy()
-    } as any;
-    component.searchbar = mockSearchbar;
-    
-    // Spy on the selectedItemsChange emit
+  it('does not emit on destroy when the selection is unchanged', () => {
+    fixture.componentRef.setInput('prevSelectedItems', ['alpha']);
+    init();
     spyOn(component.selectedItemsChange, 'emit');
-    
-    // Reset selection
-    component.resetSelection();
-    
-    // Verify selectedItems is empty
-    expect(component.selectedItems).toEqual([]);
-    
-    // Now destroy component - it should emit empty array
+
     component.ngOnDestroy();
-    
-    // Should emit empty array to notify parent that selection was cleared
-    expect(component.selectedItemsChange.emit).toHaveBeenCalledWith([]);
+
+    expect(component.selectedItemsChange.emit).not.toHaveBeenCalled();
   });
 });

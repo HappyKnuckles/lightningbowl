@@ -4,7 +4,7 @@ import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';
 import { StorageRepository } from '../storage/storage.repository';
 import { ToastService } from '../toast/toast.service';
-import { CloudSyncApiService } from './cloud-sync-api.service';
+import { CloudAuthRequiredError, CloudSyncApiService } from './cloud-sync-api.service';
 
 const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
 
@@ -51,6 +51,10 @@ export class CloudSyncService {
   private async loadSettings(): Promise<void> {
     const savedSettings = await this.storageRepository.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
     if (savedSettings) {
+      if (savedSettings.lastSyncDate && !savedSettings.lastSyncProvider) {
+        savedSettings.lastSyncProvider = savedSettings.connectedProvider ?? savedSettings.provider;
+      }
+
       this.#settings.set(savedSettings);
       this.#syncStatus.update((status) => ({
         ...status,
@@ -68,7 +72,7 @@ export class CloudSyncService {
     // If frequency is being updated, recalculate nextSyncDate
     if (settings.frequency !== undefined) {
       const now = Date.now();
-      const fromDate = currentSettings.lastSyncDate || now;
+      const fromDate = updatedSettings.lastSyncDate || now;
       const calculatedNextSync = this.calculateNextSyncDate(settings.frequency, fromDate);
 
       // If the calculated next sync is in the past, sync now
@@ -126,23 +130,29 @@ export class CloudSyncService {
   async handleAuthCallback(provider: string, status: string, error?: string): Promise<void> {
     if (status === 'success') {
       const providerEnum = provider as CloudProvider;
-      const now = Date.now();
-      const nextSync = this.calculateNextSyncDate(SyncFrequency.WEEKLY, now);
+      const currentSettings = this.#settings();
+      // Reconnecting to the provider the saved lastSyncDate belongs to
+      // (e.g. after the session went stale) keeps the sync history;
+      // connecting to a different provider starts fresh.
+      const isReconnect = currentSettings.lastSyncDate !== undefined && currentSettings.lastSyncProvider === providerEnum;
 
       await this.updateSettings({
         provider: providerEnum,
         connectedProvider: providerEnum,
         enabled: true,
-        frequency: SyncFrequency.WEEKLY,
-        nextSyncDate: nextSync,
+        frequency: isReconnect ? currentSettings.frequency : SyncFrequency.WEEKLY,
+        ...(isReconnect ? {} : { lastSyncDate: undefined, lastSyncProvider: undefined }),
       });
 
+      // updateSettings recalculated nextSyncDate (and may have synced
+      // immediately if the reconnect was overdue), so read the result back.
+      const updatedSettings = this.#settings();
       this.#syncStatus.update((s) => ({
         ...s,
         isAuthenticated: true,
         error: undefined,
-        lastSync: undefined,
-        nextSync: new Date(nextSync),
+        lastSync: updatedSettings.lastSyncDate ? new Date(updatedSettings.lastSyncDate) : undefined,
+        nextSync: updatedSettings.nextSyncDate ? new Date(updatedSettings.nextSyncDate) : undefined,
       }));
 
       this.toastService.showToast(`${this.cloudSyncApiService.getProviderDisplayName(providerEnum)} connected successfully!`, 'checkmark-circle');
@@ -160,8 +170,9 @@ export class CloudSyncService {
     try {
       return await this.cloudSyncApiService.getAccessToken(provider);
     } catch (error) {
-      // If not authenticated, clear local state
-      if (error instanceof Error && error.message.includes('Not authenticated')) {
+      // Only a definitive auth rejection clears local state; transient
+      // failures keep the connection so the next sync can retry.
+      if (error instanceof CloudAuthRequiredError) {
         await this.updateSettings({ connectedProvider: undefined, enabled: false });
         this.#syncStatus.update((s) => ({ ...s, isAuthenticated: false }));
       }
@@ -184,6 +195,7 @@ export class CloudSyncService {
           enabled: false,
           connectedProvider: undefined,
           lastSyncDate: undefined,
+          lastSyncProvider: undefined,
           nextSyncDate: undefined,
           folderId: undefined,
         });
@@ -242,6 +254,7 @@ export class CloudSyncService {
 
       await this.updateSettings({
         lastSyncDate: now,
+        lastSyncProvider: settings.connectedProvider,
         nextSyncDate: nextSync,
       });
 
@@ -282,6 +295,10 @@ export class CloudSyncService {
       : settings.nextSyncDate !== undefined && settings.nextSyncDate <= now;
 
     if (!shouldSync) {
+      // No sync due — still ping the backend so its sliding session cookie
+      // is renewed on every app start and revoked connections are detected
+      // early instead of at the next scheduled sync.
+      void this.keepSessionAlive(settings.connectedProvider);
       return;
     }
 
@@ -290,6 +307,18 @@ export class CloudSyncService {
       await this.syncNow();
     } catch (error) {
       console.error('Automatic sync on startup failed:', error);
+    }
+  }
+
+  private async keepSessionAlive(provider: CloudProvider): Promise<void> {
+    try {
+      await this.getAccessToken(provider);
+    } catch (error) {
+      // Auth rejections already cleared local state in getAccessToken;
+      // transient failures are ignored — the next sync will retry.
+      if (error instanceof CloudAuthRequiredError) {
+        this.toastService.showToast('Cloud sync connection expired. Please reconnect.', 'bug-outline', true);
+      }
     }
   }
 

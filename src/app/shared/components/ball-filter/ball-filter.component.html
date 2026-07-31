@@ -12,16 +12,16 @@
 
 <ion-content>
   <ion-list style="padding-top: 10px" lines="full">
-    <ion-item button id="select-brands">
+    <ion-item class="brand-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-brands">
       <ion-label>Brands</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().brands.join(", ") }}
+        {{ ballFilterService.filters().brands.length ? ballFilterService.filters().brands.join(", ") : "All" }}
       </p>
     </ion-item>
-    <ion-item button id="select-coverstocks">
+    <ion-item class="coverstock-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-coverstocks">
       <ion-label>Coverstocks</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().coverstocks.join(", ") }}
+        {{ ballFilterService.filters().coverstocks.length ? ballFilterService.filters().coverstocks.join(", ") : "All" }}
       </p>
     </ion-item>
     <ion-item>
@@ -35,10 +35,10 @@
         <ion-select-option *ngFor="let coverstockType of coverstockTypes" [value]="coverstockType">{{ coverstockType }}</ion-select-option>
       </ion-select>
     </ion-item>
-    <ion-item button id="select-cores">
+    <ion-item class="core-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-cores">
       <ion-label>Cores</ion-label>
       <p style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-left: 10px; text-align: right">
-        {{ ballFilterService.filters().cores.join(", ") }}
+        {{ ballFilterService.filters().cores.length ? ballFilterService.filters().cores.join(", ") : "All" }}
       </p>
     </ion-item>
     <ion-item>
@@ -72,44 +72,52 @@
       </ion-select>
     </ion-item>
     <ion-item>
-      <ion-input
-        class="ion-text-center"
-        [ngModel]="ballFilterService.filters().minRg"
-        name="minRg"
-        clearOnEdit="true"
-        inputmode="decimal"
-        label="RG range"
-        (ionChange)="updateNumericFilter('minRg', $event.detail.value)"></ion-input>
-      <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
-      <ion-input
-        label="-"
-        class="ion-text-center"
-        style="width: 60%"
-        [ngModel]="ballFilterService.filters().maxRg"
-        name="maxRg"
-        clearOnEdit="true"
-        inputmode="decimal"
-        (ionChange)="updateNumericFilter('maxRg', $event.detail.value)"></ion-input>
+      <ion-label>RG range</ion-label>
+      <div class="range-group" slot="end">
+        <ion-input
+          class="range-input"
+          [ngModel]="ballFilterService.filters().minRg"
+          name="minRg"
+          inputmode="decimal"
+          placeholder="0"
+          clearOnEdit="true"
+          aria-label="Minimum RG"
+          (ionChange)="updateNumericFilter('minRg', $event.detail.value)"></ion-input>
+        <span class="range-separator">-</span>
+        <ion-input
+          class="range-input"
+          [ngModel]="ballFilterService.filters().maxRg"
+          name="maxRg"
+          inputmode="decimal"
+          placeholder="3"
+          clearOnEdit="true"
+          aria-label="Maximum RG"
+          (ionChange)="updateNumericFilter('maxRg', $event.detail.value)"></ion-input>
+      </div>
     </ion-item>
     <ion-item>
-      <ion-input
-        class="ion-text-center"
-        [ngModel]="ballFilterService.filters().minDiff"
-        name="minDiff"
-        clearOnEdit="true"
-        inputmode="decimal"
-        label="Diff range"
-        (ionChange)="updateNumericFilter('minDiff', $event.detail.value)"></ion-input>
-      <!-- <ion-label class="ion-text-center" style="margin-inline-end: 8px">-</ion-label> -->
-      <ion-input
-        label="-"
-        class="ion-text-center"
-        style="width: 60%"
-        [ngModel]="ballFilterService.filters().maxDiff"
-        name="maxDiff"
-        clearOnEdit="true"
-        inputmode="decimal"
-        (ionChange)="updateNumericFilter('maxDiff', $event.detail.value)"></ion-input>
+      <ion-label>Diff range</ion-label>
+      <div class="range-group" slot="end">
+        <ion-input
+          class="range-input"
+          [ngModel]="ballFilterService.filters().minDiff"
+          name="minDiff"
+          inputmode="decimal"
+          placeholder="0"
+          clearOnEdit="true"
+          aria-label="Minimum diff"
+          (ionChange)="updateNumericFilter('minDiff', $event.detail.value)"></ion-input>
+        <span class="range-separator">-</span>
+        <ion-input
+          class="range-input"
+          [ngModel]="ballFilterService.filters().maxDiff"
+          name="maxDiff"
+          inputmode="decimal"
+          placeholder="0.1"
+          clearOnEdit="true"
+          aria-label="Maximum diff"
+          (ionChange)="updateNumericFilter('maxDiff', $event.detail.value)"></ion-input>
+      </div>
     </ion-item>
     <ion-item>
       <ion-toggle [ngModel]="ballFilterService.filters().inArsenal" (ionChange)="updateFilter('inArsenal', $event.detail.checked)"

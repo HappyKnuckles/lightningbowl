@@ -32,7 +32,11 @@
   <ion-toolbar>
     <ion-searchbar
       appSearchBlur
+      appSearchHistory
+      historyKey="balls"
+      #search="appSearchHistory"
       [value]="searchTerm()"
+      [disabled]="searchDisabled()"
       (ionInput)="searchBalls($event)"
       placeholder="Search for a ball"
       showCancelButton="focus"
@@ -42,6 +46,13 @@
     <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="ballFilterConfigs">
     </app-generic-filter-active>
   </ion-toolbar>
+  <app-search-suggestions
+    historyKey="balls"
+    [searchTerm]="searchTerm()"
+    [suggestions]="searchSuggestions()"
+    [open]="search.focused()"
+    (suggestionSelected)="search.recordSelection($event); onSearchSuggestionSelected($event)">
+  </app-search-suggestions>
 </ion-header>
 
 <ion-content [fullscreen]="true" role="feed">

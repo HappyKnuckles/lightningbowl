@@ -41,40 +41,70 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshots/start_wide.png",
-      "sizes": "2777x1932",
+      "src": "assets/screenshots/games/score-entry_wide.png",
+      "sizes": "2880x1800",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/stats_wide.png",
-      "sizes": "2777x1932",
+      "src": "assets/screenshots/statistics/overall_wide.png",
+      "sizes": "2880x1800",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/history_wide.png",
-      "sizes": "2777x1932",
+      "src": "assets/screenshots/games/game-details_wide.png",
+      "sizes": "2880x1800",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/start.png",
+      "src": "assets/screenshots/games/score-entry.png",
       "sizes": "1179x2556",
       "type": "image/png"
     },
     {
-      "src": "assets/screenshots/stats.png",
-      "sizes": "383x830",
+      "src": "assets/screenshots/statistics/overall.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+        {
+      "src": "assets/screenshots/statistics/throws.png",
+      "sizes": "1179x2556",
       "type": "image/png"
     },
     {
-      "src": "assets/screenshots/stats2.png",
-      "sizes": "383x830",
+      "src": "assets/screenshots/statistics/spares.png",
+      "sizes": "1179x2556",
       "type": "image/png"
     },
     {
-      "src": "assets/screenshots/history.png",
+      "src": "assets/screenshots/statistics/pins.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/screenshots/games/game-details.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/screenshots/patterns/library.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/screenshots/equipment/arsenal.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/screenshots/equipment/ball-library.png",
+      "sizes": "1179x2556",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/screenshots/equipment/comparison.png",
       "sizes": "1179x2556",
       "type": "image/png"
     }

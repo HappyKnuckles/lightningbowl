@@ -5,6 +5,11 @@ const angular = require("angular-eslint");
 
 module.exports = tseslint.config(
   {
+    // The Playwright screenshot system is plain Node/TS, not Angular — keep the
+    // Angular lint rules (and its app-prefix selector rules) away from it.
+    ignores: ["playwright/**", "playwright.config.ts"],
+  },
+  {
     files: ["**/*.ts"],
     extends: [eslint.configs.recommended, ...tseslint.configs.recommended, ...tseslint.configs.stylistic, ...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,

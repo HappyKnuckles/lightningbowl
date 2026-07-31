@@ -4,12 +4,9 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class LoadingService {
-  #isLoading = signal<boolean>(false);
-  get isLoading() {
-    return this.#isLoading;
-  }
+  readonly isLoading = signal<boolean>(false);
 
   setLoading(isLoading: boolean): void {
-    this.#isLoading.set(isLoading);
+    this.isLoading.set(isLoading);
   }
 }

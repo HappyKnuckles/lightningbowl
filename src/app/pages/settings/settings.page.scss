@@ -34,3 +34,12 @@
   color: var(--ion-color-primary, #3880ff);
   cursor: pointer;
 }
+
+ion-list{
+  padding-bottom: 8px;
+}
+
+ion-button{
+  margin-top: 16px;
+  border-radius: var(--small-border-radius);
+}

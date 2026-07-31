@@ -1,0 +1,35 @@
+@if (isVisible()) {
+  <div class="suggestion-panel" aria-label="Search suggestions">
+    @if (displayedHistory().length > 0) {
+      <div class="section">
+        <div class="section-label">Recent</div>
+        @for (entry of displayedHistory(); track entry) {
+          <ion-item button detail="false" lines="none" (pointerdown)="selectSuggestion($event, entry)">
+            <ion-icon name="time-outline" slot="start" aria-hidden="true"></ion-icon>
+            <ion-label>{{ entry }}</ion-label>
+            <ion-button
+              class="remove-button"
+              fill="clear"
+              color="medium"
+              slot="end"
+              (pointerdown)="removeFromHistory($event, entry)"
+              [attr.aria-label]="'Remove ' + entry + ' from recent searches'">
+              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-item>
+        }
+      </div>
+    }
+    @if (displayedSuggestions().length > 0) {
+      <div class="section">
+        <div class="section-label">Suggestions</div>
+        @for (entry of displayedSuggestions(); track entry) {
+          <ion-item button detail="false" lines="none" (pointerdown)="selectSuggestion($event, entry)">
+            <ion-icon name="search-outline" slot="start" aria-hidden="true"></ion-icon>
+            <ion-label>{{ entry }}</ion-label>
+          </ion-item>
+        }
+      </div>
+    }
+  </div>
+}

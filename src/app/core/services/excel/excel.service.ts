@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { isPlatform } from '@ionic/angular';
-import * as ExcelJS from 'exceljs';
+import type * as ExcelJS from 'exceljs';
 import { Game, Throw } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -21,6 +21,8 @@ type ExcelRow = Record<string, ExcelCellValue>;
   providedIn: 'root',
 })
 export class ExcelService {
+  private excelJsModule: typeof import('exceljs') | null = null;
+
   constructor(
     private hapticService: HapticService,
     private gamesStore: GamesStore,
@@ -87,7 +89,8 @@ export class ExcelService {
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
     try {
-      const workbook = new ExcelJS.Workbook();
+      const { Workbook } = await this.getExcelJs();
+      const workbook = new Workbook();
       const buffer = await this.fileToBuffer(file);
       await workbook.xlsx.load(buffer);
       const worksheet = workbook.worksheets[0];
@@ -253,7 +256,8 @@ export class ExcelService {
         this.statsService.currentStats(),
       );
 
-      const workbook = new ExcelJS.Workbook();
+      const { Workbook } = await this.getExcelJs();
+      const workbook = new Workbook();
       const gameWorksheet = workbook.addWorksheet('Game History');
       const statsWorksheet = workbook.addWorksheet('Statistics');
 
@@ -731,6 +735,14 @@ export class ExcelService {
       console.error('File existence check error:', error);
       return false;
     }
+  }
+
+  // exceljs pulls in JSZip and is only needed once a workbook is actually built, so it stays out of the initial bundle
+  private async getExcelJs(): Promise<typeof import('exceljs')> {
+    if (!this.excelJsModule) {
+      this.excelJsModule = await import('exceljs');
+    }
+    return this.excelJsModule;
   }
 
   private fileToBuffer(file: File): Promise<ArrayBuffer> {

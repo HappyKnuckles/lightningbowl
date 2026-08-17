@@ -1,10 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { CloudProvider, CloudSyncSettings, CloudSyncStatus, SyncFrequency } from '../../models/cloud-sync.model';
 import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';
 import { StorageRepository } from '../storage/storage.repository';
 import { ToastService } from '../toast/toast.service';
-import { CloudAuthRequiredError, CloudSyncApiService } from './cloud-sync-api.service';
+import { CloudAuthRequiredError, CloudSyncApiService, NATIVE_AUTH_CALLBACK_URL } from './cloud-sync-api.service';
 
 const CLOUD_SYNC_STORAGE_KEY = 'cloud_sync_settings';
 
@@ -41,11 +44,48 @@ export class CloudSyncService {
   ) {}
 
   public async init(): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      this.listenForNativeAuthCallback();
+    }
+
     await this.appFacade.init();
     await this.loadSettings();
     // Fire-and-forget: startup sync runs in the background and should not
     // block other operations like handling the OAuth callback redirect.
     void this.checkAndSyncOnStartup();
+  }
+
+  /**
+   * The in-app browser used for OAuth on native platforms is a separate
+   * browsing context, so the backend can't redirect straight back into the
+   * app's own WebView like it does on web — it redirects to a custom URL
+   * scheme instead, which the OS hands to the app as an `appUrlOpen` event.
+   *
+   * Unlike the web flow (a full page reload that has to reconstruct UI state
+   * from query params, including reopening the sync modal), the native app
+   * never navigates away: authenticateWithProvider can only be triggered from
+   * the sync modal on the settings page, and that modal is still open
+   * underneath the in-app browser the whole time. So we just close the
+   * browser and update auth state directly — the modal picks it up reactively
+   * through the syncStatus/settings signals, no navigation needed.
+   */
+  private listenForNativeAuthCallback(): void {
+    void App.addListener('appUrlOpen', ({ url }) => {
+      if (!url.startsWith(NATIVE_AUTH_CALLBACK_URL)) return;
+
+      void Browser.close().catch(() => undefined);
+
+      const { searchParams } = new URL(url);
+      const provider = searchParams.get('provider');
+      const status = searchParams.get('status');
+      const error = searchParams.get('error');
+
+      if (provider && status) {
+        void this.handleAuthCallback(provider, status, error || undefined).catch((err) => {
+          console.error('Auth callback handling failed:', err);
+        });
+      }
+    });
   }
 
   private async loadSettings(): Promise<void> {

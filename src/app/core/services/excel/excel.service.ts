@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
+import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
 import * as ExcelJS from 'exceljs';
 import { Game, Throw } from 'src/app/core/models/game.model';
@@ -17,6 +18,14 @@ import { GameStatsService } from '../game-stats/game-stats.service';
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
 
+/**
+ * 'cancelled' means the file was generated and written to disk, but the user
+ * dismissed the native share sheet without saving/sending it anywhere —
+ * distinct from 'permission-denied' so the UI doesn't show a misleading
+ * permission alert for a plain cancel.
+ */
+export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -31,7 +40,7 @@ export class ExcelService {
   ) {}
 
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
-  async exportToExcel(): Promise<boolean> {
+  async exportToExcel(): Promise<ExcelExportResult> {
     try {
       const isTemplateExport = this.gamesStore.games().length === 0;
       const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.gamesStore.games();
@@ -48,7 +57,7 @@ export class ExcelService {
       if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
         if (permissionRequestResult.publicStorage !== 'granted') {
-          return false;
+          return 'permission-denied';
         }
       }
 
@@ -68,13 +77,13 @@ export class ExcelService {
         }
       }
 
-      await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
+      const completed = await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
 
       if (isPlatform('mobileweb')) {
         existingFiles.push(`${fileName + suffix}.xlsx`);
         localStorage.setItem('savedFilenames', JSON.stringify(existingFiles));
       }
-      return true;
+      return completed ? 'success' : 'cancelled';
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       throw new Error(`Export failed: ${error}`);
@@ -308,7 +317,8 @@ export class ExcelService {
     }
   }
 
-  private async saveExcelFile(buffer: ArrayBuffer, fileName: string): Promise<void> {
+  /** @returns false only when the user dismissed the native share sheet without saving/sending the file anywhere. */
+  private async saveExcelFile(buffer: ArrayBuffer, fileName: string): Promise<boolean> {
     try {
       let binary = '';
       const bytes = new Uint8Array(buffer);
@@ -329,13 +339,33 @@ export class ExcelService {
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
-      } else {
-        await Filesystem.writeFile({
-          path: fileName,
-          data: dataUri,
-          directory: Directory.Documents,
-          recursive: true,
+        return true;
+      }
+
+      await Filesystem.writeFile({
+        path: fileName,
+        data: dataUri,
+        directory: Directory.Documents,
+        recursive: true,
+      });
+
+      const fileUri = await Filesystem.getUri({
+        directory: Directory.Documents,
+        path: fileName,
+      });
+
+      try {
+        await Share.share({
+          title: fileName,
+          url: fileUri.uri,
+          dialogTitle: 'Save or Share Excel File',
         });
+        return true;
+      } catch (shareError) {
+        if (shareError instanceof Error && shareError.message === 'Share canceled') {
+          return false;
+        }
+        throw shareError;
       }
     } catch (error) {
       console.error('Error saving Excel file:', error);

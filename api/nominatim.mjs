@@ -6,6 +6,8 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'LightningBowl/1.0 (+https://lightningbowl.de)';
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
   const query = req.query.q;
   if (!query) {
     res.status(400).json({ error: 'Missing q parameter' });

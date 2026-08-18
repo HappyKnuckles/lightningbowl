@@ -11,6 +11,8 @@ const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.
 const USER_AGENT = 'LightningBowl/1.0 (+https://lightningbowl.de)';
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;

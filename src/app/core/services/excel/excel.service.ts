@@ -3,7 +3,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
-import * as ExcelJS from 'exceljs';
+import type { Workbook, Worksheet } from 'exceljs';
 import { Game, Throw } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -30,6 +30,8 @@ export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
   providedIn: 'root',
 })
 export class ExcelService {
+  #excelJs?: Promise<typeof import('exceljs')>;
+
   constructor(
     private hapticService: HapticService,
     private gamesStore: GamesStore,
@@ -96,6 +98,7 @@ export class ExcelService {
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
     try {
+      const ExcelJS = await this.loadExcelJs();
       const workbook = new ExcelJS.Workbook();
       const buffer = await this.fileToBuffer(file);
       await workbook.xlsx.load(buffer);
@@ -262,6 +265,7 @@ export class ExcelService {
         this.statsService.currentStats(),
       );
 
+      const ExcelJS = await this.loadExcelJs();
       const workbook = new ExcelJS.Workbook();
       const gameWorksheet = workbook.addWorksheet('Game History');
       const statsWorksheet = workbook.addWorksheet('Statistics');
@@ -499,7 +503,7 @@ export class ExcelService {
     return notes;
   }
 
-  private addHeaderNotes(worksheet: ExcelJS.Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
+  private addHeaderNotes(worksheet: Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
     const row = worksheet.getRow(rowNumber);
     row.eachCell((cell) => {
       const headerName = cell.value?.toString();
@@ -641,7 +645,7 @@ export class ExcelService {
     return { overall, spares, throwStats, strike, special, playFrequency, series, pinStats };
   }
 
-  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: HighlightItemStats[]): void {
+  private addBallStatsWorksheet(workbook: Workbook, allBallStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Ball Stats');
     const headers = ['Ball', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
@@ -661,7 +665,7 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: HighlightItemStats[]): void {
+  private addPatternStatsWorksheet(workbook: Workbook, allPatternStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Pattern Stats');
     const headers = ['Pattern', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
@@ -681,7 +685,7 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addLeaveStatsWorksheet(workbook: ExcelJS.Workbook, allLeaves: LeaveStats[]): void {
+  private addLeaveStatsWorksheet(workbook: Workbook, allLeaves: LeaveStats[]): void {
     const leaveWorksheet = workbook.addWorksheet('Pin Leave Stats');
     const sharedCols = ['Occurrences', 'Pickups', 'Pickup %', 'Misses', 'Miss %'];
 
@@ -731,7 +735,7 @@ export class ExcelService {
     return result;
   }
 
-  private addTable(worksheet: ExcelJS.Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {
+  private addTable(worksheet: Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {
     worksheet.addTable({
       name,
       ref,
@@ -743,7 +747,7 @@ export class ExcelService {
     });
   }
 
-  private setColumnWidths(worksheet: ExcelJS.Worksheet, headers: string[], data: Record<string, ExcelCellValue>[], startIndex: number): void {
+  private setColumnWidths(worksheet: Worksheet, headers: string[], data: Record<string, ExcelCellValue>[], startIndex: number): void {
     headers.forEach((header, index) => {
       const maxContentLength = Math.max(header.length, ...data.map((row) => (row[header] ?? '').toString().length));
       worksheet.getColumn(startIndex + index).width = maxContentLength + 1;
@@ -839,5 +843,21 @@ export class ExcelService {
       patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
       balls: ['Rocket A.I.'],
     };
+  }
+
+  /**
+   * exceljs (with its jszip dependency) is ~900KB and was landing in the
+   * eagerly-loaded startup bundle, because CloudSyncService — constructed by an
+   * app initializer — injects this service. Import/export is a rare, explicit
+   * user action, so the library is fetched on first use instead and cached for
+   * subsequent calls.
+   */
+  private loadExcelJs(): Promise<typeof import('exceljs')> {
+    this.#excelJs ??= import('exceljs').then((module) => {
+      // exceljs is CommonJS, so the namespace may wrap the real exports in `default`.
+      const commonJsExport = (module as { default?: typeof import('exceljs') }).default;
+      return commonJsExport ?? module;
+    });
+    return this.#excelJs;
   }
 }

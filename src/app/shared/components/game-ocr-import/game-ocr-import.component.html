@@ -1,7 +1,7 @@
 <!-- Picked up by GameImageImportService via getElementById on web platforms. -->
 <input type="file" id="upload" class="ion-hide" accept="image/*" />
 
-<ion-modal [isOpen]="isOpen" (didDismiss)="isOpen.set(false)" #modal>
+<ion-modal [isOpen]="isOpen()" (didDismiss)="isOpen.set(false)" #modal>
   <ng-template>
     <ion-header>
       <ion-toolbar>

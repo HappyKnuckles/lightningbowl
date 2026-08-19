@@ -1,5 +1,5 @@
 import { DatePipe, NgIf } from '@angular/common';
-import { Component, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -41,6 +41,7 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
   templateUrl: 'history.page.html',
   styleUrls: ['history.page.scss'],
   providers: [DatePipe, ModalController],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonButtons,
     IonHeader,

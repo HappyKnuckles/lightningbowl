@@ -1,5 +1,5 @@
 import { DatePipe, NgIf, NgTemplateOutlet } from '@angular/common';
-import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal, viewChild, viewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -99,6 +99,7 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
   templateUrl: './game-list.component.html',
   styleUrls: ['./game-list.component.scss'],
   providers: [DatePipe, ModalController, GameEditService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonModal,
     IonBadge,
@@ -134,15 +135,15 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
 })
 export class GameListComponent implements OnInit {
   // DOM
-  @ViewChild('modal', { static: false }) modal!: IonModal;
-  @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
-  @ViewChild(AccordionDelayedCloseDirective) delayedClose!: AccordionDelayedCloseDirective;
-  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  accordionGroup = viewChild.required<IonAccordionGroup>('accordionGroup');
+  delayedClose = viewChild.required(AccordionDelayedCloseDirective);
+  gameComponents = viewChildren(GameComponent);
 
   // Inputs
   games = input.required<Game[]>();
   isLeaguePage = input<boolean>(false);
   batchSize = input<number>(100);
+  initialBatchSize = input<number>(25);
 
   // Services
   public editService = inject(GameEditService);
@@ -300,7 +301,7 @@ export class GameListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadedCount.set(this.batchSize());
+    this.loadedCount.set(this.initialBatchSize());
 
     this.presentingElement = document.querySelector('.ion-page')!;
   }
@@ -315,21 +316,21 @@ export class GameListComponent implements OnInit {
 
   // ACCORDION
   private isAccordionOpen(accordionId: string): boolean {
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     return Array.isArray(value) ? value.includes(accordionId) : value === accordionId;
   }
 
   private openAccordion(accordionId: string): void {
     if (this.isAccordionOpen(accordionId)) return;
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup.value = [...open, accordionId];
+    this.accordionGroup().value = [...open, accordionId];
   }
 
   private closeAccordion(accordionId: string): void {
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup.value = open.filter((id) => id !== accordionId);
+    this.accordionGroup().value = open.filter((id) => id !== accordionId);
   }
 
   // NAVIGATION
@@ -394,7 +395,7 @@ export class GameListComponent implements OnInit {
 
   // SHARE
   async takeScreenshotAndShare(game: Game): Promise<void> {
-    this.delayedClose.markVisible(game.gameId);
+    this.delayedClose().markVisible(game.gameId);
 
     const accordion = document.getElementById(game.gameId);
     if (!accordion) {
@@ -410,14 +411,14 @@ export class GameListComponent implements OnInit {
       return;
     }
 
-    const previousValue = this.accordionGroup.value;
+    const previousValue = this.accordionGroup().value;
     if (!this.isAccordionOpen(game.gameId)) this.openAccordion(game.gameId);
 
     try {
       await this.shareService.shareGame(game, scoreTemplate);
     } finally {
-      this.accordionGroup.value = previousValue;
-      this.delayedClose.clear(game.gameId);
+      this.accordionGroup().value = previousValue;
+      this.delayedClose().clear(game.gameId);
     }
   }
 
@@ -427,7 +428,7 @@ export class GameListComponent implements OnInit {
       this.editAccordionWasOpen.set(game.gameId, this.isAccordionOpen(game.gameId));
       this.editService.startEdit(game);
       this.openAccordion(game.gameId);
-      this.delayedClose.markVisible(game.gameId);
+      this.delayedClose().markVisible(game.gameId);
     } else {
       this.cancelEdit(game);
     }
@@ -452,7 +453,7 @@ export class GameListComponent implements OnInit {
 
     if (!wasOpen) {
       this.closeAccordion(gameId);
-      this.delayedClose.clear(gameId);
+      this.delayedClose().clear(gameId);
     }
   }
 
@@ -461,13 +462,13 @@ export class GameListComponent implements OnInit {
     const result = this.editService.handleThrowInput(event, game);
 
     if (result === 'invalid') {
-      const grid = this.gameComponents.find((g) => g.game()?.gameId === game.gameId);
+      const grid = this.gameComponents().find((g) => g.game()?.gameId === game.gameId);
       grid?.handleInvalidInput(event.frameIndex, event.throwIndex);
       return;
     }
 
     if (result === 'recorded') {
-      const grid = this.gameComponents.find((g) => g.game()?.gameId === game.gameId);
+      const grid = this.gameComponents().find((g) => g.game()?.gameId === game.gameId);
       grid?.focusNextInput(event.frameIndex, event.throwIndex);
     }
   }

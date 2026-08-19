@@ -16,7 +16,10 @@ export function pickTop(
   stats: Record<string, HighlightItemStats>,
   cmp: (a: HighlightItemStats, b: HighlightItemStats) => number,
 ): HighlightItemStats {
-  const items = Object.values(stats);
+  return pickTopFromList(Object.values(stats), cmp);
+}
+
+export function pickTopFromList(items: HighlightItemStats[], cmp: (a: HighlightItemStats, b: HighlightItemStats) => number): HighlightItemStats {
   return items.length ? items.reduce((best, x) => (cmp(x, best) < 0 ? x : best)) : DEFAULT_HIGHLIGHT;
 }
 

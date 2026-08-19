@@ -3,14 +3,15 @@ import { StatsPage } from './stats.page';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { AngularDelegate } from '@ionic/angular';
+import { vi } from 'vitest';
 
 const mockGamesStore = {
-  games: jasmine.createSpy('games').and.returnValue([]),
-  loadGameHistory: jasmine.createSpy('loadGameHistory').and.returnValue(Promise.resolve([])),
+  games: vi.fn().mockReturnValue([]),
+  loadGameHistory: vi.fn().mockReturnValue(Promise.resolve([])),
 };
 
 const mockBallsStore = {
-  allBalls: jasmine.createSpy('allBalls').and.returnValue([]),
+  allBalls: vi.fn().mockReturnValue([]),
 };
 
 describe('StatsPage', () => {

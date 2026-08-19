@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { StatSpareComponent } from './stat-spare.component';
 
@@ -6,8 +6,8 @@ describe('SpareDisplayComponent', () => {
   let component: StatSpareComponent;
   let fixture: ComponentFixture<StatSpareComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
       imports: [StatSpareComponent],
     }).compileComponents();
 
@@ -41,7 +41,7 @@ describe('SpareDisplayComponent', () => {
       overallMissedRate: 0,
     });
     fixture.detectChanges();
-  }));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();

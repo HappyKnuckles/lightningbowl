@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Game } from 'src/app/core/models/game.model';
 import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
@@ -6,24 +8,30 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { LeaguePage } from './league.page';
+import { makeGame } from 'src/testing/fixtures';
+import { vi } from 'vitest';
+
+// `games` must be a real signal: the page derives per-league stats with `computed`,
+// which only recomputes when a signal it read actually changes.
+const gamesSignal = signal<Game[]>([]);
 
 const mockGamesStore = {
-  games: jasmine.createSpy('games').and.returnValue([]),
-  loadGameHistory: jasmine.createSpy('loadGameHistory').and.returnValue(Promise.resolve([])),
+  games: gamesSignal,
+  loadGameHistory: vi.fn().mockReturnValue(Promise.resolve([])),
 };
 
 const mockBallsStore = {
-  allBalls: jasmine.createSpy('allBalls').and.returnValue([]),
+  allBalls: vi.fn().mockReturnValue([]),
 };
 
 const mockLeaguesStore = {
-  leagues: jasmine.createSpy('leagues').and.returnValue([]),
-  addLeague: jasmine.createSpy('addLeague').and.returnValue(Promise.resolve()),
-  deleteLeague: jasmine.createSpy('deleteLeague').and.returnValue(Promise.resolve()),
+  leagues: vi.fn().mockReturnValue([]),
+  addLeague: vi.fn().mockReturnValue(Promise.resolve()),
+  deleteLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 const mockAppFacade = {
-  editLeague: jasmine.createSpy('editLeague').and.returnValue(Promise.resolve()),
+  editLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 describe('LeaguePage', () => {
@@ -54,7 +62,7 @@ describe('LeaguePage', () => {
   });
 
   it('should calculate pattern stats per league', () => {
-    mockGamesStore.games.and.returnValue([{ league: 'League A' } as any]);
+    gamesSignal.set([makeGame({ league: 'League A' })]);
 
     const mostPlayedPattern = {
       name: 'Pattern Most Played',
@@ -74,9 +82,9 @@ describe('LeaguePage', () => {
     };
 
     const statService = TestBed.inject(GameStatsService);
-    spyOn(statService, 'calculateMostPlayedPatternStats').and.returnValue(mostPlayedPattern);
-    spyOn(statService, 'calculateBestPatternStats').and.returnValue(bestPattern);
-    spyOn(statService, 'calculateAllPatternStats').and.returnValue([mostPlayedPattern, bestPattern]);
+    vi.spyOn(statService, 'calculateMostPlayedPatternStats').mockReturnValue(mostPlayedPattern);
+    vi.spyOn(statService, 'calculateBestPatternStats').mockReturnValue(bestPattern);
+    vi.spyOn(statService, 'calculateAllPatternStats').mockReturnValue([mostPlayedPattern, bestPattern]);
 
     expect(component.mostPlayedPatternsByLeague()['League A']).toEqual(mostPlayedPattern);
     expect(component.bestPatternsByLeague()['League A']).toEqual(bestPattern);
@@ -84,7 +92,7 @@ describe('LeaguePage', () => {
   });
 
   it('should calculate pin leave stats per league', () => {
-    mockGamesStore.games.and.returnValue([{ league: 'League A' } as any]);
+    gamesSignal.set([makeGame({ league: 'League A' })]);
 
     const allLeaves = [
       {
@@ -120,10 +128,10 @@ describe('LeaguePage', () => {
     ];
 
     const statService = TestBed.inject(GameStatsService);
-    spyOn(statService, 'calculateAllLeaves').and.returnValue(allLeaves);
-    spyOn(statService, 'calculateMostCommonLeaves').and.returnValue(commonLeaves);
-    spyOn(statService, 'calculateBestSpares').and.returnValue(bestLeaves);
-    spyOn(statService, 'calculateWorstSpares').and.returnValue(worstLeaves);
+    vi.spyOn(statService, 'calculateAllLeaves').mockReturnValue(allLeaves);
+    vi.spyOn(statService, 'calculateMostCommonLeaves').mockReturnValue(commonLeaves);
+    vi.spyOn(statService, 'calculateBestSpares').mockReturnValue(bestLeaves);
+    vi.spyOn(statService, 'calculateWorstSpares').mockReturnValue(worstLeaves);
 
     expect(component.leaveStatsByLeague()['League A']).toEqual({
       all: allLeaves,

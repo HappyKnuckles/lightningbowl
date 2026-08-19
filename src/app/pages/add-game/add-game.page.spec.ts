@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AddGamePage } from './add-game.page';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { vi } from 'vitest';
 
 const mockGamesStore = {
-  games: jasmine.createSpy('games').and.returnValue([]),
-  saveGameToLocalStorage: jasmine.createSpy('saveGameToLocalStorage').and.returnValue(Promise.resolve()),
+  games: vi.fn().mockReturnValue([]),
+  saveGameToLocalStorage: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 describe('AddGamePage', () => {

@@ -93,7 +93,7 @@ describe('FavoritesService', () => {
       service.addFavorite(pattern2);
 
       // Create new instance to test persistence
-      const newService = new FavoritesService();
+      const newService = TestBed.runInInjectionContext(() => new FavoritesService());
 
       expect(newService.isFavorite(pattern1.url)).toBe(true);
       expect(newService.isFavorite(pattern2.url)).toBe(true);
@@ -102,7 +102,7 @@ describe('FavoritesService', () => {
     it('should handle invalid localStorage data gracefully', () => {
       localStorage.setItem('favoritePatterns', 'invalid-json');
 
-      const newService = new FavoritesService();
+      const newService = TestBed.runInInjectionContext(() => new FavoritesService());
       expect(newService.getFavoritePatternUrls()).toEqual([]);
     });
   });
@@ -129,7 +129,7 @@ describe('FavoritesService', () => {
       service.addBallFavorite(ball1);
       service.addBallFavorite(ball2);
 
-      const newService = new FavoritesService();
+      const newService = TestBed.runInInjectionContext(() => new FavoritesService());
 
       expect(newService.isBallFavorite(ball1.ball_id, ball1.core_weight)).toBe(true);
       expect(newService.isBallFavorite(ball2.ball_id, ball2.core_weight)).toBe(true);
@@ -138,7 +138,7 @@ describe('FavoritesService', () => {
     it('should handle invalid ball favorites localStorage data gracefully', () => {
       localStorage.setItem('favoriteBalls', 'invalid-json');
 
-      const newService = new FavoritesService();
+      const newService = TestBed.runInInjectionContext(() => new FavoritesService());
       expect(newService.getFavoriteBallKeys()).toEqual([]);
     });
 

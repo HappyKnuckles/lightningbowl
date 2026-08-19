@@ -6,7 +6,7 @@ describe('KeyboardToolbarService', () => {
   let service: KeyboardToolbarService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({ providers: [KeyboardToolbarService] });
     service = TestBed.inject(KeyboardToolbarService);
   });
 

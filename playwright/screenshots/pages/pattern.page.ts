@@ -4,6 +4,7 @@ import { BasePage } from './base.page';
 /** Pattern Library page + pattern detail modal. */
 export class PatternPage extends BasePage {
   async waitForPatterns(): Promise<void> {
+    await this.waitForSkeletons();
     await this.waitForCount('ion-card', 3);
     await waitForImages(this.page);
   }

@@ -1,0 +1,12 @@
+/* TypeScript program for the standalone coverage run (vitest.coverage.config.ts).
+   The Angular plugin needs every decorated source file in the program, which
+   tsconfig.spec.json (specs only) does not provide. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/coverage",
+    "types": ["vitest/globals", "node"]
+  },
+  "files": ["src/zone-flags.ts", "src/testing/test-providers.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+}

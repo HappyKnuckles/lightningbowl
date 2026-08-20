@@ -23,6 +23,13 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Use npm 11
+        # package-lock.json is written by npm 11, which nests webpack-dev-server's
+        # chokidar@3.6.0 subtree under it. npm 10 (what Node 22 ships) expects those
+        # four packages hoisted to the root instead and rejects the lockfile as out
+        # of sync. Predates this pipeline — it just had no CI to surface it.
+        run: npm install -g npm@11
+
       - name: Install dependencies
         run: npm ci
 
@@ -57,6 +64,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - name: Use npm 11
+        # package-lock.json is written by npm 11, which nests webpack-dev-server's
+        # chokidar@3.6.0 subtree under it. npm 10 (what Node 22 ships) expects those
+        # four packages hoisted to the root instead and rejects the lockfile as out
+        # of sync. Predates this pipeline — it just had no CI to surface it.
+        run: npm install -g npm@11
 
       - name: Install dependencies
         run: npm ci

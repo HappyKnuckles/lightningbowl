@@ -4,6 +4,8 @@ import { ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { GenericTypeaheadComponent } from './generic-typeahead.component';
+import { vi } from 'vitest';
+import { createSpyObj } from '../../../../testing/spy-obj';
 
 interface TestItem {
   id: string;
@@ -34,8 +36,8 @@ describe('GenericTypeaheadComponent', () => {
   const check = (item: TestItem, checked: boolean): void => component.checkboxChange({ detail: { checked } } as CustomEvent, item);
 
   beforeEach(async () => {
-    const modalControllerSpy = jasmine.createSpyObj('ModalController', ['dismiss']);
-    const loadingServiceSpy = jasmine.createSpyObj('LoadingService', ['setLoading']);
+    const modalControllerSpy = createSpyObj(['dismiss']);
+    const loadingServiceSpy = createSpyObj(['setLoading']);
 
     await TestBed.configureTestingModule({
       imports: [GenericTypeaheadComponent],
@@ -55,7 +57,7 @@ describe('GenericTypeaheadComponent', () => {
   /** Runs ngOnInit and stubs the content ViewChild that searchItems scrolls. */
   const init = (): void => {
     fixture.detectChanges();
-    component.content = { scrollToTop: jasmine.createSpy('scrollToTop') } as unknown as IonContent;
+    component.content = { scrollToTop: vi.fn() } as unknown as IonContent;
   };
 
   it('should create', () => {
@@ -110,7 +112,7 @@ describe('GenericTypeaheadComponent', () => {
 
   it('emits the changed selection values on destroy', () => {
     init();
-    spyOn(component.selectedItemsChange, 'emit');
+    vi.spyOn(component.selectedItemsChange, 'emit');
 
     check(ITEMS[0], true);
     component.ngOnDestroy();
@@ -121,7 +123,7 @@ describe('GenericTypeaheadComponent', () => {
   it('does not emit on destroy when the selection is unchanged', () => {
     fixture.componentRef.setInput('prevSelectedItems', ['alpha']);
     init();
-    spyOn(component.selectedItemsChange, 'emit');
+    vi.spyOn(component.selectedItemsChange, 'emit');
 
     component.ngOnDestroy();
 

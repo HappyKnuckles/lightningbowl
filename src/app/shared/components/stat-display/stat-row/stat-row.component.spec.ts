@@ -1,12 +1,12 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { StatRowComponent } from './stat-row.component';
 
 describe('StatRowComponent', () => {
   let component: StatRowComponent;
   let fixture: ComponentFixture<StatRowComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
       imports: [StatRowComponent],
     }).compileComponents();
 
@@ -18,7 +18,7 @@ describe('StatRowComponent', () => {
     fixture.componentRef.setInput('currentStat', 100);
 
     fixture.detectChanges();
-  }));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();

@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SettingsPage } from './settings.page';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { vi } from 'vitest';
 
 const mockSettingsStore = {
-  pinInputMode: jasmine.createSpy('pinInputMode').and.returnValue(true),
-  savePinInputMode: jasmine.createSpy('savePinInputMode'),
+  pinInputMode: vi.fn().mockReturnValue(true),
+  savePinInputMode: vi.fn(),
 };
 
 describe('SettingsPage', () => {

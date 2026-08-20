@@ -3,14 +3,15 @@ import { HistoryPage } from './history.page';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { AngularDelegate } from '@ionic/angular';
+import { vi } from 'vitest';
 
 const mockGamesStore = {
-  games: jasmine.createSpy('games').and.returnValue([]),
-  loadGameHistory: jasmine.createSpy('loadGameHistory').and.returnValue(Promise.resolve([])),
+  games: vi.fn().mockReturnValue([]),
+  loadGameHistory: vi.fn().mockReturnValue(Promise.resolve([])),
 };
 
 const mockAppFacade = {
-  deleteAllData: jasmine.createSpy('deleteAllData').and.returnValue(Promise.resolve()),
+  deleteAllData: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 describe('HistoryPage', () => {

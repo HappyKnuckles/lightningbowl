@@ -13,6 +13,7 @@ describe('PinDeckComponent', () => {
 
     fixture = TestBed.createComponent(PinDeckComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('activePins', []);
     fixture.detectChanges();
   });
 

@@ -17,7 +17,7 @@ test.describe('ball library (mocked API)', () => {
 
     await balls.search('Honey Badger');
 
-    await expect(balls.active().getByText('Honey Badger U78')).toBeVisible();
+    await expect(balls.active().locator('ion-card').filter({ hasText: 'Honey Badger U78' }).first()).toBeVisible();
     expect(await balls.active().locator('ion-card').count()).toBeLessThan(total);
   });
 

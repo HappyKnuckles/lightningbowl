@@ -54,7 +54,7 @@ test.describe('add game — series mode', () => {
   test('switches to a 3-game series', async ({ app }) => {
     await app.boot('/tabs/add');
 
-    await new AddGamePage(app.page).selectMode('3 Series');
+    await new AddGamePage(app.page).selectMode('3-Series');
 
     // One segment tab per game in the series, plus the series save action.
     await expect(app.active().locator('ion-segment-button')).toHaveCount(3);

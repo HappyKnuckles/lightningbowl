@@ -17,9 +17,15 @@ export class AddGamePage extends BasePage {
     await settle(this.page, 400);
   }
 
-  /** Open the "Choose series mode" action sheet (tap the title). */
+  /**
+   * Open the "Choose series mode" action sheet (tap the title).
+   *
+   * Scoped to the active page's header: `app-side-menu` is mounted before the
+   * router outlet in app.component.html, so a page-wide `ion-title` locator
+   * resolves to the menu's hidden "Quick actions" title and the click times out.
+   */
   async openModeSheet(): Promise<void> {
-    await this.page.locator('ion-title').first().click();
+    await this.active().locator('ion-header ion-title').first().click();
     await this.waitForActionSheet();
   }
 

@@ -132,6 +132,29 @@ describe('GameFilterService.filterGames', () => {
 
       expect(ids(result)).toEqual([phaze.gameId]);
     });
+
+    it('matches games played at a selected alley', () => {
+      const strikeZone = makeGame({ alley: 'Strike Zone' });
+      const dreamBowl = makeGame({ alley: 'Dream Bowl' });
+
+      const result = service.filterGames([strikeZone, dreamBowl], { ...baseFilters(), alleys: ['Strike Zone'] });
+
+      expect(ids(result)).toEqual([strikeZone.gameId]);
+    });
+
+    it('matches games with no alley via the empty-string ("none") value', () => {
+      const withAlley = makeGame({ alley: 'Strike Zone' });
+      const without = makeGame({ alley: '' });
+
+      const result = service.filterGames([withAlley, without], { ...baseFilters(), alleys: [''] });
+
+      expect(ids(result)).toEqual([without.gameId]);
+    });
+
+    it('passes every game for alleys ["all"]', () => {
+      const games = [makeGame({ alley: 'Strike Zone' }), makeGame({ alley: '' })];
+      expect(service.filterGames(games, { ...baseFilters(), alleys: ['all'] }).length).toBe(2);
+    });
   });
 
   describe('date range', () => {

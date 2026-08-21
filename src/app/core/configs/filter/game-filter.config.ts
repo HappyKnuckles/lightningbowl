@@ -56,6 +56,18 @@ export const GAME_FILTER_CONFIGS: FilterConfig[] = [
     },
   },
   {
+    key: 'alleys',
+    label: 'Alleys',
+    type: 'array',
+    displayValue: (value) => {
+      const alleys = Array.isArray(value) ? value : [];
+      if (alleys.length === 1 && alleys[0] === '') {
+        return 'No Alleys';
+      }
+      return `${alleys.join(', ')}`;
+    },
+  },
+  {
     key: 'dateRange',
     label: 'Time Range',
     type: 'date',

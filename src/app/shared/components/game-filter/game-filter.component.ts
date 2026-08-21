@@ -75,6 +75,13 @@ export class GameFilterComponent implements OnInit {
       .flat()
       .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index);
   });
+  alleys = computed<string[]>(() => {
+    const names = this.gamesStore
+      .games()
+      .map((game) => game.alley)
+      .filter((alley): alley is string => !!alley);
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b));
+  });
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -185,6 +192,7 @@ export class GameFilterComponent implements OnInit {
         has_leagues: filters.leagues.length > 0,
         has_balls: filters.balls.length > 0,
         has_patterns: filters.patterns.length > 0,
+        has_alleys: filters.alleys.length > 0,
         has_date_range: !!filters.startDate || !!filters.endDate,
         has_score_range: filters.minScore > 0 || filters.maxScore < 300,
         exclude_practice: filters.excludePractice,

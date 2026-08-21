@@ -82,13 +82,42 @@ describe('SeriesStatsCalculatorService', () => {
       });
     });
 
-    it('counts a spare thrown after a strike in the 10th', () => {
+    // The 10th-frame rules are gated on `frameIndex === 9`, but frames are 1-based,
+    // so they key off the 9th frame and the real 10th frame falls through them.
+    it('counts a strike followed by a spare in the 9th frame, where the 10th-frame rule fires', () => {
       const throwsPerFrame = [...Array.from({ length: 8 }, () => [10]), [10, 4, 6], [10, 10, 10]];
       const games = [makeGame({ gameId: 'g1', seriesId: 's', totalScore: 250, frames: framesFrom(throwsPerFrame) })];
 
       calculator.calculateSeriesStats(games);
 
       expect(calculator.seriesStats['totalSpares']).toBe(1);
+      expect(calculator.seriesStats['totalStrikes']).toBe(10);
+    });
+
+    it('misses a strike followed by a spare in the actual 10th frame', () => {
+      const throwsPerFrame = [...Array.from({ length: 9 }, () => [10]), [10, 4, 6]];
+      const games = [makeGame({ gameId: 'g1', seriesId: 's', totalScore: 250, frames: framesFrom(throwsPerFrame) })];
+
+      calculator.calculateSeriesStats(games);
+
+      expect(calculator.seriesStats['totalSpares']).toBe(0);
+    });
+
+    it('misses an open 10th frame, which matches neither open-frame rule', () => {
+      const throwsPerFrame = [...Array.from({ length: 9 }, () => [10]), [7, 2]];
+      const games = [makeGame({ gameId: 'g1', seriesId: 's', totalScore: 250, frames: framesFrom(throwsPerFrame) })];
+
+      calculator.calculateSeriesStats(games);
+
+      expect(calculator.seriesStats['averageOpensPerSeries']).toBe(0);
+    });
+
+    it('counts only the first throw of the 10th as a strike, so a perfect game reports ten', () => {
+      const throwsPerFrame = [...Array.from({ length: 9 }, () => [10]), [10, 10, 10]];
+      const games = [makeGame({ gameId: 'g1', seriesId: 's', totalScore: 300, frames: framesFrom(throwsPerFrame) })];
+
+      calculator.calculateSeriesStats(games);
+
       expect(calculator.seriesStats['totalStrikes']).toBe(10);
     });
 

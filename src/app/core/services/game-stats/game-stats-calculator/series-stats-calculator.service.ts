@@ -155,20 +155,22 @@ export class SeriesStatsCalculatorService {
 
     const totalSeries = seriesScores.length;
     const averageSeriesScore = totalPins / totalSeries || 0;
-    const highSeries = Math.max(0, ...seriesScores);
-    const lowSeries = seriesScores.length > 0 ? Math.min(...seriesScores) : 0;
+
+    const highSeries = totalSeries > 0 ? Math.max(...seriesScores) : 0;
+    const lowSeries = totalSeries > 0 ? Math.min(...seriesScores) : 0;
+
     const averageStrikesPerSeries = totalStrikes / totalSeries || 0;
     const averageSparesPerSeries = totalSpares / totalSeries || 0;
     const averageOpensPerSeries = totalOpens / totalSeries || 0;
 
     const average3SeriesScore = series3Scores.reduce((sum, score) => sum + score, 0) / series3Scores.length || 0;
-    const high3Series = Math.max(0, ...series3Scores);
+    const high3Series = series3Scores.length > 0 ? Math.max(...series3Scores) : 0;
     const average4SeriesScore = series4Scores.reduce((sum, score) => sum + score, 0) / series4Scores.length || 0;
-    const high4Series = Math.max(0, ...series4Scores);
+    const high4Series = series4Scores.length > 0 ? Math.max(...series4Scores) : 0;
     const average5SeriesScore = series5Scores.reduce((sum, score) => sum + score, 0) / series5Scores.length || 0;
-    const high5Series = Math.max(0, ...series5Scores);
+    const high5Series = series5Scores.length > 0 ? Math.max(...series5Scores) : 0;
     const average6SeriesScore = series6Scores.reduce((sum, score) => sum + score, 0) / series6Scores.length || 0;
-    const high6Series = Math.max(0, ...series6Scores);
+    const high6Series = series6Scores.length > 0 ? Math.max(...series6Scores) : 0;
 
     // Populate the internal detailed seriesStats object
     this.seriesStats = {

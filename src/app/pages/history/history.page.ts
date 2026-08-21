@@ -1,5 +1,5 @@
 import { DatePipe, NgIf } from '@angular/common';
-import { Component, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -41,6 +41,7 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
   templateUrl: 'history.page.html',
   styleUrls: ['history.page.scss'],
   providers: [DatePipe, ModalController],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonButtons,
     IonHeader,
@@ -165,12 +166,18 @@ export class HistoryPage {
 
   async exportToExcel(): Promise<void> {
     try {
-      const gotPermission = await this.excelService.exportToExcel();
-      if (gotPermission) {
-        this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
-        await this.analyticsService.trackExport('excel');
-      } else {
-        await this.showPermissionDeniedAlert();
+      const result = await this.excelService.exportToExcel();
+      switch (result) {
+        case 'success':
+          this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
+          await this.analyticsService.trackExport('excel');
+          break;
+        case 'permission-denied':
+          await this.showPermissionDeniedAlert();
+          break;
+        case 'cancelled':
+          // User dismissed the share sheet without saving/sending it anywhere — nothing to report.
+          break;
       }
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadError, 'bug', true);

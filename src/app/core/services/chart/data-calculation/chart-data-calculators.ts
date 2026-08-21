@@ -26,7 +26,8 @@ export function calculatePerGameScoreChartData(gameHistory: Game[]) {
   let cumulativeSum = 0;
   let count = 0;
 
-  const sortedGames = gameHistory.sort((a, b) => a.date - b.date);
+  // Copy before sorting — this runs on the caller's game list, which must not be reordered.
+  const sortedGames = [...gameHistory].sort((a, b) => a.date - b.date);
 
   sortedGames.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -102,7 +103,7 @@ export function calculateWeeklyScoreChartData(gameHistory: Game[]) {
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
     const weekStart = getStartOfWeek(gameDate);
-    const weekKey = weekStart.toISOString().split('T')[0];
+    const weekKey = toLocalDateKey(weekStart);
 
     if (!weeklyData[weekKey]) {
       weeklyData[weekKey] = { scores: [], count: 0 };
@@ -121,9 +122,7 @@ export function calculateWeeklyScoreChartData(gameHistory: Game[]) {
   let totalCount = 0;
 
   sortedWeeks.forEach((weekKey) => {
-    const weekDate = new Date(weekKey);
-    const formattedWeek = `Week of ${weekDate.getMonth() + 1}/${weekDate.getDate()}`;
-    gameLabels.push(formattedWeek);
+    gameLabels.push(formatWeekLabel(weekKey));
 
     const weekScores = weeklyData[weekKey].scores;
     const weekSum = weekScores.reduce((sum, score) => sum + score, 0);
@@ -290,7 +289,7 @@ export function calculateWeeklyAverageScoreData(gameHistory: Game[]) {
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
     const weekStart = getStartOfWeek(gameDate);
-    const weekKey = weekStart.toISOString().split('T')[0];
+    const weekKey = toLocalDateKey(weekStart);
 
     if (!weeklyScores[weekKey]) {
       weeklyScores[weekKey] = [];
@@ -304,9 +303,7 @@ export function calculateWeeklyAverageScoreData(gameHistory: Game[]) {
   const gamesPlayedDaily: number[] = [];
 
   sortedWeeks.forEach((weekKey) => {
-    const weekDate = new Date(weekKey);
-    const formattedWeek = `Week of ${weekDate.getMonth() + 1}/${weekDate.getDate()}`;
-    gameLabels.push(formattedWeek);
+    gameLabels.push(formatWeekLabel(weekKey));
 
     const weekAverage = weeklyScores[weekKey].reduce((sum, score) => sum + score, 0) / weeklyScores[weekKey].length;
     averages.push(Math.round(weekAverage));
@@ -410,6 +407,26 @@ export function calculateThrowChartDataPercentages(stats: Stats): { opens: numbe
 }
 
 // Helper functions
+
+/**
+ * `YYYY-MM-DD` for the calendar day the date falls on locally.
+ *
+ * `toISOString()` cannot stand in here: it re-reads a local midnight in UTC, which
+ * rolls the day back for any timezone ahead of UTC and labels a week by the Sunday
+ * before it starts.
+ */
+function toLocalDateKey(date: Date): string {
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/** `Week of M/D` read straight off a `YYYY-MM-DD` key, without a timezone round-trip. */
+function formatWeekLabel(weekKey: string): string {
+  const [, month, day] = weekKey.split('-');
+  return `Week of ${parseInt(month, 10)}/${parseInt(day, 10)}`;
+}
+
 export function getRate(converted: number, missed: number): number {
   const total = converted + missed;
   if (total === 0) {
@@ -422,7 +439,9 @@ export function getRate(converted: number, missed: number): number {
 export function getStartOfWeek(date: Date): Date {
   const day = date.getDay();
   const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  const startOfWeek = new Date(date.setDate(diff));
+  // Shift the copy, not the argument — setDate mutates in place.
+  const startOfWeek = new Date(date);
+  startOfWeek.setDate(diff);
   startOfWeek.setHours(0, 0, 0, 0);
   return startOfWeek;
 }

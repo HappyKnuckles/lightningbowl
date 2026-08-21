@@ -99,9 +99,8 @@ ion-header {
   // background-color: #080f08;
 
   ion-toolbar:first-child {
-    height: 50px !important;
+    --min-height: 50px;
     display: flex;
-    flex: 1 1 0%;
     align-items: center;
   }
   ion-buttons{

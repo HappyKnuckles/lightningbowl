@@ -142,11 +142,17 @@ export class SideMenuComponent {
     void this.menuController.close();
 
     try {
-      const gotPermission = await this.excelService.exportToExcel();
-      if (gotPermission) {
-        this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
-      } else {
-        await this.showPermissionDeniedAlert();
+      const result = await this.excelService.exportToExcel();
+      switch (result) {
+        case 'success':
+          this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
+          break;
+        case 'permission-denied':
+          await this.showPermissionDeniedAlert();
+          break;
+        case 'cancelled':
+          // User dismissed the share sheet without saving/sending it anywhere — nothing to report.
+          break;
       }
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadError, 'bug', true);

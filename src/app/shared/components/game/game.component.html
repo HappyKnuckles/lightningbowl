@@ -128,6 +128,9 @@
           @if (game().league) {
             <p>{{ game().league }}</p>
           }
+          @if (game().alley) {
+            <p>{{ game().alley }}</p>
+          }
           @if (game().balls) {
             <p>{{ ballsText() }}</p>
           }
@@ -150,6 +153,10 @@
           </ion-item>
           <!-- TODO make this reset on save-->
           <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
+          <ion-item class="alley-selector" button detail="true" detailIcon="chevron-expand-outline" (click)="openAlleySelect()">
+            <ion-label>Alley</ion-label>
+            <span class="ion-text-right">{{ alleyText() || "None" }}</span>
+          </ion-item>
           <ion-item [id]="ballSelectorId()" class="ball-selector" button detail="true" detailIcon="chevron-expand-outline">
             <ion-label>Balls</ion-label>
             <span class="ion-text-right">{{ ballsText() || "None" }}</span>

@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { InputCustomEvent } from '@ionic/angular';
+import { InputCustomEvent, ModalController } from '@ionic/angular';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -48,6 +48,7 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { AlleySelectComponent } from '../alley-select/alley-select.component';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
@@ -78,7 +79,7 @@ interface FrameView {
   selector: 'app-game',
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.scss'],
-  providers: [KeyboardToolbarService],
+  providers: [KeyboardToolbarService, ModalController],
   imports: [
     IonList,
     IonCheckbox,
@@ -124,6 +125,7 @@ export class GameComponent implements OnInit {
   // --- Outputs ---
   throwInput = output<{ frameIndex: number; throwIndex: number; value: string }>();
   leagueChanged = output<string>();
+  alleyChanged = output<string>();
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
@@ -187,6 +189,7 @@ export class GameComponent implements OnInit {
   });
 
   ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
+  alleyText = computed(() => this.currentGame().alley ?? '');
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
   /** Patterns sorted by how often they were played, most used first. */
@@ -206,6 +209,7 @@ export class GameComponent implements OnInit {
   keyboardOffset = 0;
   isLandScapeMode = false;
   private keyboardToolbar = inject(KeyboardToolbarService);
+  private modalCtrl = inject(ModalController);
   readonly toolbarState = this.keyboardToolbar.state;
   private localFrameIndex = 0;
   private localThrowIndex = 0;
@@ -319,6 +323,19 @@ export class GameComponent implements OnInit {
 
   onLeagueChanged(league: string) {
     this.leagueChanged.emit(league);
+  }
+  /** Presented through the controller so the picker gets the full screen. */
+  async openAlleySelect(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: AlleySelectComponent,
+      componentProps: { selectedAlley: this.alleyText() },
+    });
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss<string>();
+    if (role === 'select') {
+      this.alleyChanged.emit(data ?? '');
+    }
   }
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);

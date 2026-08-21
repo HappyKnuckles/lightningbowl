@@ -16,7 +16,7 @@
   }
 }
 
-.ball-selector, .pattern-selector{
+.ball-selector, .pattern-selector, .alley-selector{
   &::part(detail-icon) {
     opacity: 1;
     color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));

@@ -1,5 +1,5 @@
 export interface Alley {
-  /** Stable id derived from the OSM element, e.g. "node/123456". */
+  /** Stable id derived from the source element, e.g. "node/123456" (OSM) or "google/ChIJ…". */
   id: string;
   name: string;
   lat: number;
@@ -12,6 +12,8 @@ export interface Alley {
   laneCount?: number;
   /** Distance from the current search origin in meters. */
   distanceMeters?: number;
+  /** Where the entry came from. Absent means OpenStreetMap, the original source. */
+  source?: 'osm' | 'google';
 }
 
 export interface AlleySearchOrigin {

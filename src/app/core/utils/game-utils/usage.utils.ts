@@ -32,6 +32,19 @@ export function countPatternUsage(games: readonly Game[]): Map<string, UsageStat
 }
 
 /**
+ * Count how often each alley was played at across all games, keyed by alley name.
+ */
+export function countAlleyUsage(games: readonly Game[]): Map<string, UsageStats> {
+  const usage = new Map<string, UsageStats>();
+  for (const game of games) {
+    if (game.alley) {
+      bump(usage, game.alley, game.date);
+    }
+  }
+  return usage;
+}
+
+/**
  * Sort items by usage: most used first, ties broken by most recently used.
  * Unused items keep their relative order (stable sort).
  */

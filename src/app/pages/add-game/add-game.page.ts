@@ -373,6 +373,9 @@ export class AddGamePage implements OnInit {
   onPatternChange(patterns: string[]) {
     this.updateSeriesProperty('patterns', patterns);
   }
+  onAlleyChange(alley: string) {
+    this.updateSeriesProperty('alley', alley);
+  }
 
   // GRID MODE INPUT & SCORING LOGIC
   handleThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, index: number): void {
@@ -632,6 +635,7 @@ export class AddGamePage implements OnInit {
           return {
             ...g,
             league: sourceGame.league,
+            alley: sourceGame.alley,
             isPractice: sourceGame.isPractice,
             patterns: [...sourceGame.patterns],
           };

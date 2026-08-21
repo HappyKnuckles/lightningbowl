@@ -1,0 +1,91 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start" style="padding: 4px">
+      <ion-button color="medium" (click)="cancel()">
+        <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Alley</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="clear()">Clear</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      appSearchBlur
+      placeholder="Search for an alley or a city"
+      [debounce]="500"
+      (ionInput)="onSearchInput($any($event))"
+      (ionChange)="search()"
+      (keyup.enter)="search()"></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list lines="full" class="alley-select-list">
+    <ion-item button detail="false" (click)="searchNearMe()">
+      <ion-icon name="locate-outline" slot="start"></ion-icon>
+      <ion-label>Alleys near me</ion-label>
+    </ion-item>
+
+    @if (isLoading()) {
+      <div class="state-block ion-text-center">
+        <ion-spinner name="bubbles"></ion-spinner>
+      </div>
+    } @else {
+      @if (showSavedLists()) {
+        @if (savedAlleys().length > 0) {
+          <div class="list-header">Saved alleys</div>
+          @for (alley of savedAlleys(); track alley.id) {
+            <ng-container *ngTemplateOutlet="alleyRow; context: { alley: alley }"></ng-container>
+          }
+        }
+        @if (recentAlleys().length > 0) {
+          <div class="list-header">Recently used</div>
+          @for (alley of recentAlleys(); track alley.id) {
+            <ng-container *ngTemplateOutlet="alleyRow; context: { alley: alley }"></ng-container>
+          }
+        }
+        @if (savedAlleys().length === 0 && recentAlleys().length === 0) {
+          <div class="state-block ion-text-center">
+            <ion-icon name="search-outline"></ion-icon>
+            <p>Search for an alley to add it to this game. Save one with the heart to keep it here.</p>
+          </div>
+        }
+      } @else {
+        @for (alley of results(); track alley.id) {
+          <ng-container *ngTemplateOutlet="alleyRow; context: { alley: alley }"></ng-container>
+        }
+        @if (showCustomEntry()) {
+          <div class="state-block ion-text-center">
+            <p>No alley found for "{{ searchTerm() }}".</p>
+          </div>
+          <ion-item button detail="false" (click)="selectCustom()">
+            <ion-icon name="search-outline" slot="start"></ion-icon>
+            <ion-label>Use "{{ searchTerm() }}"</ion-label>
+          </ion-item>
+        }
+      }
+    }
+  </ion-list>
+</ion-content>
+
+<ng-template #alleyRow let-alley="alley">
+  <ion-item button detail="false" [class.is-selected]="isSelected(alley)" (click)="select(alley)">
+    <ion-label>
+      <h2>{{ alley.name }}</h2>
+      @if (alley.address) {
+        <p>{{ alley.address }}</p>
+      }
+      @if (alley.source === "google") {
+        <p class="source-note">via Google</p>
+      }
+    </ion-label>
+    @if (alley.distanceMeters !== undefined) {
+      <ion-note slot="end" class="distance-note">{{ alley.distanceMeters | distance }}</ion-note>
+    }
+    <ion-button slot="end" fill="clear" size="small" (click)="toggleFavorite($event, alley)">
+      <ion-icon slot="icon-only" [name]="isFavorite(alley) ? 'heart' : 'heart-outline'"></ion-icon>
+    </ion-button>
+  </ion-item>
+</ng-template>

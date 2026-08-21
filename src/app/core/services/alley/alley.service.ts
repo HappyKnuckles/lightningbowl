@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { firstValueFrom } from 'rxjs';
+import { environment } from 'src/environments/environment';
 import { Alley } from '../../models/alley.model';
 
 interface OverpassTags {
@@ -50,13 +51,30 @@ interface NominatimResult {
   display_name: string;
 }
 
+interface GooglePlace {
+  id: string;
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  location?: { latitude: number; longitude: number };
+  nationalPhoneNumber?: string;
+  websiteUri?: string;
+}
+
+interface GooglePlacesResponse {
+  places?: GooglePlace[];
+}
+
 const CACHE_TTL_MS = 5 * 60 * 1000;
+/** Radius searched around a geocoded place when looking an alley up by name. */
+const TEXT_SEARCH_RADIUS_KM = 25;
 
 @Injectable({ providedIn: 'root' })
 export class AlleyService {
   private http = inject(HttpClient);
   private readonly overpassUrl = this.resolveEndpoint('/api/overpass', 'https://overpass-api.de/api/interpreter');
   private readonly nominatimUrl = this.resolveEndpoint('/api/nominatim', 'https://nominatim.openstreetmap.org/search');
+  // Places always needs the serverless proxy — the API key can't ship in a client.
+  private readonly placesUrl = this.resolveEndpoint('/api/places', environment.placesEndpoint);
   private cache = new Map<string, { timestamp: number; alleys: Alley[] }>();
   private inflight = new Map<string, Promise<Alley[]>>();
 
@@ -141,6 +159,78 @@ out center;`;
     return { lat: parseFloat(lat), lon: parseFloat(lon), label: display_name };
   }
 
+  /**
+   * Looks an alley up by free text: geocodes the term, then lists the alleys
+   * around that place. OSM only knows what someone mapped, so when Overpass
+   * comes back empty the same term goes to Google Places, which indexes far
+   * more of the smaller alleys.
+   */
+  async searchByText(query: string): Promise<Alley[]> {
+    const term = query.trim();
+    if (!term) {
+      return [];
+    }
+
+    let origin: GeocodeResult | null = null;
+    let alleys: Alley[] = [];
+    try {
+      origin = await this.geocode(term);
+      if (origin) {
+        alleys = await this.searchNearby(origin.lat, origin.lon, TEXT_SEARCH_RADIUS_KM);
+      }
+    } catch (error) {
+      // A failing Overpass/Nominatim lookup shouldn't block the Places fallback.
+      console.warn('Alley text search via OSM failed:', error);
+    }
+
+    if (alleys.length > 0) {
+      return alleys;
+    }
+    return this.searchPlaces(term, origin ?? undefined);
+  }
+
+  /**
+   * Google Places text search through the serverless proxy. Returns an empty
+   * list when the proxy has no API key configured (HTTP 501) or is unreachable,
+   * so callers can treat it as "no extra results" rather than an error.
+   */
+  async searchPlaces(query: string, origin?: { lat: number; lon: number }): Promise<Alley[]> {
+    const params = new URLSearchParams({ q: query });
+    if (origin) {
+      params.set('lat', String(origin.lat));
+      params.set('lon', String(origin.lon));
+    }
+
+    try {
+      const response = await firstValueFrom(this.http.get<GooglePlacesResponse>(`${this.placesUrl}?${params.toString()}`));
+      return (response.places ?? []).map((place) => this.toAlleyFromPlace(place, origin)).filter((alley): alley is Alley => alley !== null);
+    } catch (error) {
+      console.warn('Places search unavailable:', error);
+      return [];
+    }
+  }
+
+  private toAlleyFromPlace(place: GooglePlace, origin?: { lat: number; lon: number }): Alley | null {
+    const lat = place.location?.latitude;
+    const lon = place.location?.longitude;
+    const name = place.displayName?.text;
+    if (lat === undefined || lon === undefined || !name) {
+      return null;
+    }
+
+    return {
+      id: `google/${place.id}`,
+      name,
+      lat,
+      lon,
+      address: place.formattedAddress,
+      phone: place.nationalPhoneNumber,
+      website: place.websiteUri,
+      distanceMeters: origin ? this.calculateDistance(origin.lat, origin.lon, lat, lon) : undefined,
+      source: 'google',
+    };
+  }
+
   /** POSTs an Overpass query, retrying once after a pause when the instance throttles. */
   private async postWithRetry(query: string): Promise<OverpassResponse> {
     // 406/429/504 are the transient responses the overloaded public instance
@@ -191,6 +281,7 @@ out center;`;
       openingHours: tags.opening_hours,
       laneCount: laneCount && !isNaN(laneCount) ? laneCount : undefined,
       distanceMeters: this.calculateDistance(originLat, originLon, lat, lon),
+      source: 'osm',
     };
   }
 

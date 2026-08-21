@@ -47,6 +47,12 @@
                         <span>{{ lead.patterns.join(", ") }}</span>
                       </p>
                     }
+                    @if (lead.alley) {
+                      <p class="series-meta">
+                        <ion-icon name="location-outline"></ion-icon>
+                        <span>{{ lead.alley }}</span>
+                      </p>
+                    }
                   </div>
                   <div class="series-score">
                     <div class="series-games">{{ row.count }}-Series</div>
@@ -93,6 +99,17 @@
                     </app-generic-typeahead>
                   </ng-template>
                 </ion-modal>
+                <ion-item
+                  class="alley-selector"
+                  detail="true"
+                  detailIcon="chevron-expand-outline"
+                  lines="none"
+                  button
+                  (click)="openSeriesAlleySelect(row)">
+                  <ion-icon name="location-outline" slot="start"></ion-icon>
+                  <ion-label>Alley</ion-label>
+                  <span class="ion-text-right">{{ lead.alley || "None" }}</span>
+                </ion-item>
                 <div class="action-row">
                   <ion-button class="left-button" size="small" (click)="cancelSeriesEdit(row)">Cancel</ion-button>
                   <ion-button class="right-button" size="small" (click)="saveSeriesEdit(row)">Save</ion-button>
@@ -152,6 +169,10 @@
             <p class="score" *ngIf="meta">
               <ion-icon src="assets/svg/lane.svg"></ion-icon>
               <span>{{ meta }}</span>
+            </p>
+            <p class="score" *ngIf="game.alley">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ game.alley }}</span>
             </p>
           </ion-label>
           <div slot="end" class="score-badge">
@@ -224,6 +245,11 @@
               </ion-modal>
             }
             @if (!inSeries) {
+              <ion-item class="alley-selector" detail="true" detailIcon="chevron-expand-outline" button (click)="openAlleySelect(game)">
+                <ion-icon name="location-outline" slot="start"></ion-icon>
+                <ion-label>Alley</ion-label>
+                <span class="ion-text-right">{{ game.alley || "None" }}</span>
+              </ion-item>
               <ion-item class="pattern-selector" detail="true" detailIcon="chevron-expand-outline" button [id]="'selectPatternHistory' + game.gameId">
                 <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                 <ion-label>Patterns</ion-label>
@@ -235,7 +261,7 @@
                     [items]="patternsStore.allPatterns()"
                     [config]="patternTypeaheadConfig"
                     [prevSelectedItems]="game.patterns"
-                    (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
+                    (selectedItemsChange)="game.patterns = $event; updateSeries(game, { patterns: game.patterns })">
                   </app-generic-typeahead>
                 </ng-template>
               </ion-modal>

@@ -20,6 +20,13 @@ export interface EditFocus {
 
 export type ThrowInputResult = 'invalid' | 'recorded' | 'removed';
 
+/** Fields shared by every game of a series. Omitted keys stay untouched. */
+export interface SeriesFields {
+  league?: string;
+  patterns?: string[];
+  alley?: string;
+}
+
 @Injectable()
 export class GameEditService {
   private gamesStore = inject(GamesStore);
@@ -71,7 +78,7 @@ export class GameEditService {
     delete this.editedFocusMap[game.gameId];
 
     if (game.isSeries) {
-      this.propagateSeriesFields(game, game.league, game.patterns);
+      this.propagateSeriesFields(game, { league: game.league, patterns: game.patterns, alley: game.alley });
     }
 
     this.isEditModeMap[game.gameId] = false;
@@ -92,8 +99,9 @@ export class GameEditService {
       const original = this.originalGameState[game.gameId];
       const leagueChanged = original && original.league !== updatedGame.league;
       const patternsChanged = original && JSON.stringify(original.patterns) !== JSON.stringify(updatedGame.patterns);
+      const alleyChanged = original && original.alley !== updatedGame.alley;
 
-      if (updatedGame.isSeries && (leagueChanged || patternsChanged)) {
+      if (updatedGame.isSeries && (leagueChanged || patternsChanged || alleyChanged)) {
         await this.saveWithSeriesPropagation(updatedGame);
       } else {
         await this.gamesStore.saveGameToLocalStorage(updatedGame);
@@ -215,10 +223,11 @@ export class GameEditService {
     return canUndoLastThrow(editedGame.frames, focus.frameIndex, focus.throwIndex);
   }
 
-  // Applies league/patterns to every game of a series and persists immediately
-  async saveSeriesFields(game: Game, league?: string, patterns?: string[]): Promise<void> {
+  // Applies league/patterns/alley to every game of a series and persists immediately
+  async saveSeriesFields(game: Game, fields: SeriesFields): Promise<void> {
     if (!game.isSeries) return;
 
+    const { league, patterns, alley } = fields;
     try {
       const members = this.gamesStore
         .games()
@@ -227,6 +236,7 @@ export class GameEditService {
           ...g,
           ...(league !== undefined && { league, isPractice: !league }),
           ...(patterns !== undefined && { patterns }),
+          ...(alley !== undefined && { alley }),
         }));
 
       await this.gamesStore.saveGamesToLocalStorage(members);
@@ -240,9 +250,10 @@ export class GameEditService {
   }
 
   // SERIES PROPAGATION (in-memory only)
-  propagateSeriesFields(game: Game, league?: string, patterns?: string[]): void {
+  propagateSeriesFields(game: Game, fields: SeriesFields): void {
     if (!game.isSeries) return;
 
+    const { league, patterns, alley } = fields;
     this.gamesStore.updateGamesInMemory((games) =>
       games.map((g) => {
         if (g.seriesId === game.seriesId) {
@@ -250,6 +261,7 @@ export class GameEditService {
             ...g,
             ...(league !== undefined && { league }),
             ...(patterns !== undefined && { patterns }),
+            ...(alley !== undefined && { alley }),
           };
         }
         return g;
@@ -293,6 +305,7 @@ export class GameEditService {
         ...g,
         league: updatedGame.league,
         patterns: updatedGame.patterns,
+        alley: updatedGame.alley,
         isPractice: !updatedGame.league,
       }));
 

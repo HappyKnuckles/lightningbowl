@@ -87,6 +87,7 @@ ion-item-divider {
 
       ion-item.ball-selector,
       ion-item.pattern-selector,
+      ion-item.alley-selector,
       ion-item.note,
       ::ng-deep app-league-selector ion-item {
         --min-height: 40px;
@@ -172,7 +173,8 @@ ion-item-divider {
 }
 
 .ball-selector,
-.pattern-selector {
+.pattern-selector,
+.alley-selector {
 
   &::part(detail-icon) {
     opacity: 1;

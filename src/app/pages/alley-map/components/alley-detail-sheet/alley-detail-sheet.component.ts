@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import {
   IonButton,
@@ -29,14 +30,17 @@ import {
 } from 'ionicons/icons';
 import { Alley } from 'src/app/core/models/alley.model';
 import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
+import { AlleyStatsCalculatorService } from 'src/app/core/services/game-stats/game-stats-calculator/alley-stats-calculator.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { formatOpeningHours, getOpenState } from 'src/app/core/utils/opening-hours.util';
+import { formatDifferential } from 'src/app/core/utils/stat-utils/stat.utils';
 import { DistancePipe } from 'src/app/shared/pipes/distance-pipe/distance.pipe';
 
 @Component({
   selector: 'app-alley-detail-sheet',
-  imports: [IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, DistancePipe],
+  imports: [IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, DistancePipe, DatePipe],
   templateUrl: './alley-detail-sheet.component.html',
   styleUrl: './alley-detail-sheet.component.scss',
 })
@@ -46,10 +50,24 @@ export class AlleyDetailSheetComponent {
   private favoritesService = inject(AlleyFavoritesService);
   private hapticService = inject(HapticService);
   private toastService = inject(ToastService);
+  private gamesStore = inject(GamesStore);
+  private alleyStatsCalculator = inject(AlleyStatsCalculatorService);
+
+  formatDifferential = formatDifferential;
 
   openState = computed(() => getOpenState(this.alley().openingHours));
   hoursLines = computed(() => (this.alley().openingHours ? formatOpeningHours(this.alley().openingHours!) : []));
   isFavorite = computed(() => this.favoritesService.favorites().has(this.alley().id));
+
+  /**
+   * What the player has logged at this alley, matched on the name a game stores.
+   * Runs over the whole history rather than the filtered set — the map is a
+   * lookup, not a slice of the stats page. Null when they've never played here.
+   */
+  playHistory = computed(() => {
+    const name = this.alley().name;
+    return this.alleyStatsCalculator.calculateAllAlleyStats(this.gamesStore.games()).find((stats) => stats.name === name) ?? null;
+  });
 
   constructor() {
     addIcons({ callOutline, clipboardOutline, globeOutline, heart, heartOutline, locationOutline, navigateOutline, shareSocialOutline, timeOutline });

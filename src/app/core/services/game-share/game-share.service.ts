@@ -60,6 +60,7 @@ export class GameShareService {
         ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
         : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
       this.formatBallsPart(game.balls),
+      game.alley ? `Alley: ${game.alley}` : null,
       game.patterns?.length ? `Patterns: ${game.patterns.join(', ')}` : null,
     ];
 

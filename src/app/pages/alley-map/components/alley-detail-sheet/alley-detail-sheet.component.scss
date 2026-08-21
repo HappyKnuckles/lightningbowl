@@ -91,3 +91,62 @@ ion-header ion-buttons ion-icon {
   font-size: 0.75rem;
   color: var(--ion-color-medium, #92949c);
 }
+
+.play-history {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--ion-card-background);
+  border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
+  border-radius: var(--card-border-radius, 14px);
+
+  .history-heading {
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ion-color-medium, #92949c);
+  }
+
+  .history-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 12px 0 0;
+  }
+
+  .history-line {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .history-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ion-color-medium, #92949c);
+  }
+
+  .history-value {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--ion-text-color);
+
+    &.is-above {
+      color: var(--ion-color-success);
+    }
+
+    &.is-below {
+      color: var(--ion-color-danger);
+    }
+  }
+
+  .history-note {
+    margin: 12px 0 0;
+    font-size: 0.75rem;
+    color: var(--ion-color-medium, #92949c);
+  }
+}

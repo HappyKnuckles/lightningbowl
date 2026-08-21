@@ -50,6 +50,41 @@
       </ion-button>
     </div>
 
+    @if (playHistory(); as history) {
+      <section class="play-history" aria-label="Your history at this alley">
+        <h3 class="history-heading">Your history here</h3>
+        <dl class="history-stats">
+          <div class="history-line">
+            <dt class="history-label">Games</dt>
+            <dd class="history-value">{{ history.gameCount }}</dd>
+          </div>
+          <div class="history-line">
+            <dt class="history-label">Visits</dt>
+            <dd class="history-value">{{ history.visitCount }}</dd>
+          </div>
+          <div class="history-line">
+            <dt class="history-label">Avg</dt>
+            <dd class="history-value">{{ history.avg }}</dd>
+          </div>
+          <div class="history-line">
+            <dt class="history-label">High</dt>
+            <dd class="history-value">{{ history.highestGame }}</dd>
+          </div>
+          @if (history.differential !== undefined) {
+            <div class="history-line">
+              <dt class="history-label">vs Avg</dt>
+              <dd class="history-value" [class.is-above]="history.differential > 0" [class.is-below]="history.differential < 0">
+                {{ formatDifferential(history.differential) }}
+              </dd>
+            </div>
+          }
+        </dl>
+        @if (history.lastPlayed) {
+          <p class="history-note">Last played {{ history.lastPlayed | date: "MM.dd.yyyy" }}</p>
+        }
+      </section>
+    }
+
     <ion-list lines="none" class="detail-list">
       @if (alley().address) {
         <ion-item button detail="false" (click)="navigate()">

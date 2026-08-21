@@ -205,6 +205,7 @@ export class ExcelService {
           isSeries: (row['Series'] as string)?.trim().toLowerCase() === 'true',
           seriesId: row['Series ID'] as string,
           isPinMode: isPinMode,
+          alley: (row['Alley'] as string)?.trim() || '',
           patterns: (row['Patterns'] as string)?.trim()
             ? (row['Patterns'] as string).split(', ').slice(0, 2)
             : (row['Pattern'] as string)?.trim()
@@ -295,6 +296,11 @@ export class ExcelService {
         this.addPatternStatsWorksheet(workbook, allPatternStats);
       }
 
+      const allAlleyStats = this.statsService.allAlleyStats();
+      if (allAlleyStats.length > 0) {
+        this.addAlleyStatsWorksheet(workbook, allAlleyStats);
+      }
+
       const allLeaves = this.statsService.allLeaves();
       if (allLeaves.length > 0) {
         this.addLeaveStatsWorksheet(workbook, allLeaves);
@@ -365,6 +371,7 @@ export class ExcelService {
       'Perfect',
       'Series',
       'Series ID',
+      'Alley',
       'Patterns',
       'Balls',
       'Notes',
@@ -422,6 +429,7 @@ export class ExcelService {
         game.isPerfect ? 'true' : 'false',
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
+        game.alley || '',
         game.patterns?.join(', ') || '',
         game.balls?.join(', ') || '',
         game.note || '',
@@ -451,6 +459,7 @@ export class ExcelService {
       Perfect: 'Boolean value: true or false. True means a 300 game.',
       Series: 'Boolean value: true or false. Set true if this game belongs to a series.',
       'Series ID': 'Use the same Series ID on each game that belongs to the same series.',
+      Alley: 'Optional. Name of the alley the game was played at.',
       Patterns: 'Optional. One or two pattern names separated by comma and space.',
       Balls: 'Optional. Ball names separated by comma and space.',
       Notes: 'Optional free-text note for the game.',
@@ -651,6 +660,29 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
+  private addAlleyStatsWorksheet(workbook: ExcelJS.Workbook, allAlleyStats: HighlightItemStats[]): void {
+    const worksheet = workbook.addWorksheet('Alley Stats');
+    const headers = ['Alley', 'Games', 'Visits', 'Avg', 'vs Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games', 'Last Played'];
+
+    const rows = [...allAlleyStats]
+      .sort((a, b) => b.avg - a.avg)
+      .map((alley) => ({
+        Alley: alley.name,
+        Games: alley.gameCount,
+        Visits: alley.visitCount ?? '',
+        Avg: alley.avg.toFixed(2),
+        'vs Avg': alley.differential !== undefined ? (alley.differential > 0 ? `+${alley.differential}` : `${alley.differential}`) : '',
+        High: alley.highestGame,
+        Low: alley.lowestGame,
+        'Strike Rate %': alley.strikeRate !== undefined ? `${alley.strikeRate.toFixed(2)}%` : '',
+        'Clean Games': alley.cleanGameCount ?? '',
+        'Last Played': alley.lastPlayed ? new Date(alley.lastPlayed).toLocaleDateString('en-US') : '',
+      }));
+
+    this.addTable(worksheet, 'AlleyStats', 'A1', headers, rows);
+    this.setColumnWidths(worksheet, headers, rows, 1);
+  }
+
   private addLeaveStatsWorksheet(workbook: ExcelJS.Workbook, allLeaves: LeaveStats[]): void {
     const leaveWorksheet = workbook.addWorksheet('Pin Leave Stats');
     const sharedCols = ['Occurrences', 'Pickups', 'Pickup %', 'Misses', 'Miss %'];
@@ -805,6 +837,7 @@ export class ExcelService {
       isPractice: false,
       isPinMode: true,
       league: 'Example League',
+      alley: 'Example Bowling Center',
       note: 'Example note',
       patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
       balls: ['Rocket A.I.'],

@@ -102,7 +102,7 @@ export class SeriesStatsCalculatorService {
           }
           // 10th frame spare (X 7 /)
           if (
-            frame.frameIndex === 9 &&
+            frame.frameIndex === 10 &&
             frameThrows.length === 3 &&
             frameThrows[0] === 10 &&
             frameThrows[1] < 10 &&
@@ -115,8 +115,8 @@ export class SeriesStatsCalculatorService {
             seriesSpares++;
           } else if (!isStrike) {
             // Open frame (not strike, not spare)
-            const is10thFrameOpen = frame.frameIndex === 9 && frameThrows.length < 3 && frameThrows[0] + frameThrows[1] < 10;
-            const isRegularOpen = frame.frameIndex < 9 && frameThrows.length === 2 && frameThrows[0] + frameThrows[1] < 10;
+            const is10thFrameOpen = frame.frameIndex === 10 && frameThrows.length < 3 && frameThrows[0] + frameThrows[1] < 10;
+            const isRegularOpen = frame.frameIndex < 10 && frameThrows.length === 2 && frameThrows[0] + frameThrows[1] < 10;
             if (isRegularOpen || is10thFrameOpen) {
               seriesOpens++;
             }

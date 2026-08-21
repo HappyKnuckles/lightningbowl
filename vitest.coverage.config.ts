@@ -40,7 +40,7 @@ export default defineConfig({
       include: ['src/app/**/*.ts'],
       exclude: ['src/**/*.spec.ts', 'src/**/*.model.ts', 'src/app/core/constants/**'],
       // Floor, not a target — raise it as coverage climbs so it can't silently regress.
-      thresholds: { lines: 40 },
+      thresholds: { lines: 60 },
     },
   },
 });

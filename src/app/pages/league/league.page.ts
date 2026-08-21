@@ -137,6 +137,9 @@ export class LeaguePage {
   bestPatternsByLeague = this.perLeague((games) => this.statService.calculateBestPatternStats(games));
   mostPlayedPatternsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedPatternStats(games));
   allPatternsByLeague = this.perLeague((games) => this.statService.calculateAllPatternStats(games));
+  bestAlleysByLeague = this.perLeague((games) => this.statService.calculateBestAlleyStats(games));
+  mostPlayedAlleysByLeague = this.perLeague((games) => this.statService.calculateMostPlayedAlleyStats(games));
+  allAlleysByLeague = this.perLeague((games) => this.statService.calculateAllAlleyStats(games));
   leaveStatsByLeague = this.perLeague<LeagueLeaveStats>((games) => {
     const all = this.statService.calculateAllLeaves(games);
     return {
@@ -159,6 +162,9 @@ export class LeaguePage {
         mostPlayedPattern: this.mostPlayedPatternsByLeague()[league],
         bestPattern: this.bestPatternsByLeague()[league],
         allPatterns: this.allPatternsByLeague()[league],
+        mostPlayedAlley: this.mostPlayedAlleysByLeague()[league],
+        bestAlley: this.bestAlleysByLeague()[league],
+        allAlleys: this.allAlleysByLeague()[league],
       });
     }
     return result;

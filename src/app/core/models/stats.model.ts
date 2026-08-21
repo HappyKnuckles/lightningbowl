@@ -142,6 +142,19 @@ export interface HighlightItemStats {
   gameCount: number;
   strikeRate?: number;
   cleanGameCount?: number;
+  /** Share of games finished without an open frame, 0-100. */
+  cleanRate?: number;
+  /**
+   * Alley-only extras. A ball or pattern is something you carry between houses,
+   * so these only carry meaning for a venue: how it compares to your baseline,
+   * how often you actually go, and whether you still play there.
+   */
+  /** Average here minus the overall average of the same game set. */
+  differential?: number;
+  /** Distinct days played here — an alley visit, not a single game. */
+  visitCount?: number;
+  /** Timestamp of the most recent game played here. */
+  lastPlayed?: number;
 }
 
 export interface LeaveStats {

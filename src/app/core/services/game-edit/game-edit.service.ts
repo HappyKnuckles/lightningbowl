@@ -232,6 +232,30 @@ export class GameEditService {
     return canUndoLastThrow(editedGame.frames, focus.frameIndex, focus.throwIndex);
   }
 
+  // Applies league/patterns to every game of a series and persists immediately
+  async saveSeriesFields(game: Game, league?: string, patterns?: string[]): Promise<void> {
+    if (!game.isSeries) return;
+
+    try {
+      const members = this.gamesStore
+        .games()
+        .filter((g) => g.seriesId === game.seriesId)
+        .map((g) => ({
+          ...g,
+          ...(league !== undefined && { league, isPractice: !league }),
+          ...(patterns !== undefined && { patterns }),
+        }));
+
+      await this.gamesStore.saveGamesToLocalStorage(members);
+      this.toastService.showToast(TOAST_MESSAGES.gameUpdateSuccess, 'refresh-outline');
+      this.hapticService.vibrate(ImpactStyle.Light);
+      this.analyticsService.trackGameEdited();
+    } catch (error) {
+      this.toastService.showToast(TOAST_MESSAGES.gameUpdateError, 'bug', true);
+      console.error('Error saving series edit:', error);
+    }
+  }
+
   // SERIES PROPAGATION (in-memory only)
   propagateSeriesFields(game: Game, league?: string, patterns?: string[]): void {
     if (!game.isSeries) return;

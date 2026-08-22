@@ -1,5 +1,5 @@
 @if (isAddPage()) {
-  <ion-item button detail="true" detailIcon="chevron-expand-outline" (click)="openPicker()">
+  <ion-item class="league-selector" button detail="true" detailIcon="chevron-expand-outline" (click)="openPicker()">
     @if (icon()) {
       <ion-icon [name]="icon()" slot="start"></ion-icon>
     }

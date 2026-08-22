@@ -4,17 +4,15 @@
       <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
     </ion-button>
   }
-  @if (ballsStore.arsenal().length > 0) {
-    <div class="ball-selector-corner">
-      <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
-        @if (selectedBallThumbnail(); as thumbnail) {
-          <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
-        } @else {
-          <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
-        }
-      </ion-button>
-    </div>
-  }
+  <div class="ball-selector-corner">
+    <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+      @if (selectedBallThumbnail(); as thumbnail) {
+        <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
+      } @else {
+        <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
+      }
+    </ion-button>
+  </div>
 
   @for (row of pinRows(); track $index) {
     <div class="pin-row">
@@ -56,5 +54,12 @@
   [leaveAnimation]="leaveAnimation">
   <ng-template>
     <app-ball-select [selectedBalls]="selectedBallKeys()" [singleSelect]="true" (ballSelect)="onBallSelection($event)"></app-ball-select>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="isAddBallModalOpen()" (didDismiss)="closeAddBallModal()">
+  <ng-template>
+    <app-generic-typeahead [items]="ballsStore.allBalls()" [config]="ballTypeaheadConfig" (selectedItemsChange)="onBallAdd($event)">
+    </app-generic-typeahead>
   </ng-template>
 </ion-modal>

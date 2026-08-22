@@ -1,5 +1,5 @@
 import { DatePipe, NgIf } from '@angular/common';
-import { Component, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -13,6 +13,7 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
+  IonMenuButton,
   IonRefresher,
   IonText,
   IonTitle,
@@ -30,7 +31,6 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
@@ -41,12 +41,14 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
   templateUrl: 'history.page.html',
   styleUrls: ['history.page.scss'],
   providers: [DatePipe, ModalController],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonButtons,
     IonHeader,
     IonToolbar,
     IonButton,
     IonIcon,
+    IonMenuButton,
     IonTitle,
     IonBadge,
     IonContent,
@@ -58,7 +60,6 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     FormsModule,
     GameListComponent,
     GenericFilterActiveComponent,
-    FileHeaderButtonsComponent,
     BowlingRefresherComponent,
   ],
 })
@@ -165,12 +166,18 @@ export class HistoryPage {
 
   async exportToExcel(): Promise<void> {
     try {
-      const gotPermission = await this.excelService.exportToExcel();
-      if (gotPermission) {
-        this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
-        await this.analyticsService.trackExport('excel');
-      } else {
-        await this.showPermissionDeniedAlert();
+      const result = await this.excelService.exportToExcel();
+      switch (result) {
+        case 'success':
+          this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadSuccess, 'checkmark-outline');
+          await this.analyticsService.trackExport('excel');
+          break;
+        case 'permission-denied':
+          await this.showPermissionDeniedAlert();
+          break;
+        case 'cancelled':
+          // User dismissed the share sheet without saving/sending it anywhere — nothing to report.
+          break;
       }
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.excelFileDownloadError, 'bug', true);

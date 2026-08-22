@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { StatSpareComponent } from './stat-spare.component';
 
@@ -6,15 +6,15 @@ describe('SpareDisplayComponent', () => {
   let component: StatSpareComponent;
   let fixture: ComponentFixture<StatSpareComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
       imports: [StatSpareComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(StatSpareComponent);
     component = fixture.componentInstance;
 
-    component.stats = {
+    fixture.componentRef.setInput('stats', {
       totalGames: 0,
       totalPins: 0,
       perfectGameCount: 0,
@@ -39,9 +39,9 @@ describe('SpareDisplayComponent', () => {
       spareRates: [],
       overallSpareRate: 0,
       overallMissedRate: 0,
-    };
+    });
     fixture.detectChanges();
-  }));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();

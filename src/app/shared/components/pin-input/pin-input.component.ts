@@ -3,11 +3,15 @@ import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ThrowBall } from 'src/app/core/models/game.model';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -27,10 +31,14 @@ const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonButton, IonIcon, IonModal, BallSelectComponent],
+  imports: [IonButton, IonIcon, IonModal, BallSelectComponent, GenericTypeaheadComponent],
 })
 export class PinInputComponent {
   ballsStore = inject(BallsStore);
+  private toastService = inject(ToastService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
+
+  readonly ballTypeaheadConfig = this.typeaheadConfigService.ball;
 
   pinsLeftStanding = input<number[]>(PINS);
   canStrike = input<boolean>(false);
@@ -48,6 +56,7 @@ export class PinInputComponent {
   ballSelected = output<ThrowBall | undefined>();
 
   readonly isBallModalOpen = signal(false);
+  readonly isAddBallModalOpen = signal(false);
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -95,6 +104,7 @@ export class PinInputComponent {
 
   openBallSelector(): void {
     if (this.ballsStore.arsenal().length === 0) {
+      this.isAddBallModalOpen.set(true);
       return;
     }
     this.isBallModalOpen.set(true);
@@ -102,6 +112,26 @@ export class PinInputComponent {
 
   closeBallSelector(): void {
     this.isBallModalOpen.set(false);
+  }
+
+  closeAddBallModal(): void {
+    this.isAddBallModalOpen.set(false);
+  }
+
+  async onBallAdd(ballIds: string[]): Promise<void> {
+    const ballId = ballIds[0];
+    const ball = ballId ? this.ballsStore.allBalls().find((b) => b.ball_id === ballId) : undefined;
+    this.isAddBallModalOpen.set(false);
+    if (!ball) return;
+
+    const failed = await this.ballsStore.saveBallsToArsenal([ball]);
+    if (failed.length) {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+      return;
+    }
+
+    this.toastService.showToast(TOAST_MESSAGES.ballSaveSuccess, 'checkmark-outline');
+    this.ballSelected.emit({ name: ball.ball_name, weight: ball.core_weight });
   }
 
   onBallSelection(selectedKeys: string[]): void {

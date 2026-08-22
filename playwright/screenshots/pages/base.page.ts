@@ -116,6 +116,19 @@ export class BasePage {
   }
 
   /** Wait until the list/feed has rendered at least `min` of `selector`. */
+  /**
+   * Wait out a page's skeleton placeholder state.
+   *
+   * The balls and pattern pages render eight skeleton <ion-card>s while
+   * `isPageLoading()` is true. Those satisfy a bare `waitForCount('ion-card', 3)`,
+   * so a spec can start driving a page that has not loaded: the card count it
+   * captures is 8 placeholders rather than results, and the searchbar is still
+   * `[disabled]` (it gates on the store being non-empty), so clicking it times out.
+   */
+  async waitForSkeletons(scope: Locator = this.active()): Promise<void> {
+    await scope.locator('ion-skeleton-text').first().waitFor({ state: 'detached', timeout: 20_000 });
+  }
+
   async waitForCount(selector: string, min = 1): Promise<void> {
     await this.page
       .waitForFunction(({ sel, n }) => document.querySelectorAll(sel).length >= n, { sel: selector, n: min }, { timeout: 20_000 })

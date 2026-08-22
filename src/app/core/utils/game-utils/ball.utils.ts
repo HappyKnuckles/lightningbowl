@@ -1,6 +1,5 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
-import { createThrow } from './frame.utils';
 
 // Keys & formatting
 
@@ -135,13 +134,18 @@ export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throw
 
 // Mutators
 
-/** Assign a ball to a throw within a frames array, creating placeholder throws if needed (mutates). */
+/**
+ * Assign a ball to a throw within a frames array (mutates).
+ * If that throw hasn't been recorded yet, the ball is stashed on the frame as `pendingBall`
+ * instead of fabricating a placeholder throw — it's applied once the throw is actually recorded.
+ */
 export function setThrowBall(frames: Frame[], frameIndex: number, throwIndex: number, ball: ThrowBall | undefined): void {
   const frame = frames[frameIndex];
   if (!frame) return;
 
-  while (frame.throws.length <= throwIndex) {
-    frame.throws.push(createThrow(0, frame.throws.length + 1));
+  if (throwIndex < frame.throws.length) {
+    frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
+  } else {
+    frame.pendingBall = ball;
   }
-  frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
 }

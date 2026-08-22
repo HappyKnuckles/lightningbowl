@@ -2,18 +2,13 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { SwUpdate } from '@angular/service-worker';
-import { Observable } from 'rxjs'; // Import `of` to create observables
+import { EMPTY } from 'rxjs';
 import { AppComponent } from './app.component';
 
 const mockSwUpdate = {
   isEnabled: false,
-  available: new Observable((subscriber: { next: (arg0: { current: string; available: string }) => void; complete: () => void }) => {
-    subscriber.next({ current: '1.0.0', available: '1.1.0' });
-    subscriber.complete();
-  }),
-  subscribe: (callback: (value: unknown) => void) => {
-    mockSwUpdate.available.subscribe(callback);
-  },
+  versionUpdates: EMPTY,
+  checkForUpdate: () => Promise.resolve(false),
 };
 
 describe('AppComponent', () => {

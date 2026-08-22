@@ -25,6 +25,8 @@ export interface Frame {
   frameIndex: number;
   throws: Throw[];
   isInvalid?: boolean;
+  /** Ball selected for the next throw in this frame, before that throw has actually been recorded. */
+  pendingBall?: ThrowBall;
 }
 
 /**

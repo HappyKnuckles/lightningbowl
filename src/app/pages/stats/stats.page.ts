@@ -16,9 +16,13 @@ import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
 import {
+  IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonLabel,
+  IonMenuButton,
   IonRefresher,
   IonSegment,
   IonSegmentButton,
@@ -43,7 +47,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { UtilsService } from 'src/app/core/utils/utils.service';
-import { FileHeaderButtonsComponent } from 'src/app/shared/components/file-header-buttons/file-header-buttons.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
@@ -61,8 +64,8 @@ import {
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { Stats } from 'src/app/core/models/stats.model';
-import { sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
-import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
+import { byAvg, byGameCount, sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
+import { buildHighlights, pickTopFromList } from 'src/app/core/utils/stat-utils/stat.utils';
 import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
@@ -104,6 +107,10 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     ]),
   ],
   imports: [
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonMenuButton,
     IonLabel,
     IonSegmentButton,
     IonSegment,
@@ -125,7 +132,6 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     StatDisplayComponent,
     StatPinLeaveComponent,
     GenericFilterActiveComponent,
-    FileHeaderButtonsComponent,
     StatSpareComponent,
     BowlingRefresherComponent,
     StatHighlightItemComponent,
@@ -170,13 +176,15 @@ export class StatsPage implements OnInit {
 
   sessionStats: Signal<Stats> = computed(() => this.statsService.calculateBowlingStats(this.gamesForSelectedSession()));
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
-  sessionBestBallStats = computed(() => this.statsService.calculateBestBallStats(this.gamesForSelectedSession()));
-  sessionMostPlayedBallStats = computed(() => this.statsService.calculateMostPlayedBallStats(this.gamesForSelectedSession()));
   sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
-  sessionBestPatternStats = computed(() => this.statsService.calculateBestPatternStats(this.gamesForSelectedSession()));
-  sessionMostPlayedPatternStats = computed(() => this.statsService.calculateMostPlayedPatternStats(this.gamesForSelectedSession()));
+
+  sessionBestBallStats = computed(() => pickTopFromList(this.sessionAllBallStats(), byAvg));
+  sessionMostPlayedBallStats = computed(() => pickTopFromList(this.sessionAllBallStats(), byGameCount));
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
+  sessionBestPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byAvg));
+  sessionMostPlayedPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byGameCount));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
+  readonly chartGames = computed(() => sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true));
 
   readonly hasGames = computed(
     () =>
@@ -404,7 +412,7 @@ export class StatsPage implements OnInit {
 
       this.scoreChartInstance = this.chartService.generateScoreChart(
         canvas,
-        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        this.chartGames(),
         this.scoreChartInstance!,
         this.chartViewMode,
         () => this.toggleChartView(),
@@ -423,7 +431,7 @@ export class StatsPage implements OnInit {
 
       this.averageScoreChartInstance = this.chartService.generateAverageScoreChart(
         canvas,
-        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        this.chartGames(),
         this.averageScoreChartInstance!,
         this.averageChartViewMode,
         () => this.toggleAverageChartView(),
@@ -442,7 +450,7 @@ export class StatsPage implements OnInit {
 
       this.scoreDistributionChartInstance = this.chartService.generateScoreDistributionChart(
         canvas,
-        sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true),
+        this.chartGames(),
         this.scoreDistributionChartInstance!,
         isReload,
       );

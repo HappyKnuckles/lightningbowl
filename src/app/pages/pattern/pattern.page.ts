@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -25,6 +27,7 @@ import {
   IonSkeletonText,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
@@ -43,6 +46,7 @@ import {
 } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
+import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { PatternSortField, PatternSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -53,7 +57,10 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
 import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pattern-info.component';
+import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { environment } from 'src/environments/environment';
 import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
@@ -85,11 +92,14 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     CommonModule,
     FormsModule,
     PatternInfoComponent,
     SearchBlurDirective,
+    SearchHistoryDirective,
+    SearchSuggestionsComponent,
     SortHeaderComponent,
     BowlingRefresherComponent,
   ],
@@ -101,6 +111,13 @@ export class PatternPage implements OnInit {
   hasMoreData = true;
   isPageLoading = signal(false);
   searchTerm = signal('');
+  searchSuggestions = computed(() =>
+    buildSearchSuggestions(
+      this.patternsStore.allPatterns().map((pattern) => pattern.title),
+      this.searchTerm(),
+    ),
+  );
+  searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
   selectedPattern = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
@@ -119,6 +136,7 @@ export class PatternPage implements OnInit {
   private debounceMs = 300;
   constructor(
     private patternService: PatternService,
+    private patternsStore: PatternsStore,
     private hapticService: HapticService,
     public loadingService: LoadingService,
     private toastService: ToastService,
@@ -203,9 +221,16 @@ export class PatternPage implements OnInit {
   }
 
   async searchPatterns(event: CustomEvent): Promise<void> {
+    await this.runSearch(event.detail.value || '');
+  }
+
+  onSearchSuggestionSelected(term: string): void {
+    void this.runSearch(term);
+  }
+
+  private async runSearch(searchValue: string): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      const searchValue = event.detail.value || '';
       this.searchTerm.set(searchValue);
 
       const { field, direction } = this.currentSortOption();
@@ -244,6 +269,14 @@ export class PatternPage implements OnInit {
   getRatioValue(ratio: string): number {
     const numericPart = ratio.split(':')[0];
     return parseFloat(numericPart);
+  }
+
+  openPatternFile(url: string): void {
+    if (Capacitor.isNativePlatform()) {
+      void Browser.open({ url });
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
   }
 
   // private generateChartImages(): void {

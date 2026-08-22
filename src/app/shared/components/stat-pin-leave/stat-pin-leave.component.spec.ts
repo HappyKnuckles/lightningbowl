@@ -13,6 +13,7 @@ describe('StatPinLeaveComponent', () => {
 
     fixture = TestBed.createComponent(StatPinLeaveComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('leaveStats', []);
     fixture.detectChanges();
   });
 

@@ -176,6 +176,12 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
     isSplit: isSplitThrow,
   };
 
+  // Apply a ball picked before this throw was recorded, if any
+  if (frame.pendingBall) {
+    frame.throws[throwIndex].ball = frame.pendingBall;
+    frame.pendingBall = undefined;
+  }
+
   // Carry the ball over from earlier throws of the same kind when none was explicitly selected
   if (!frame.throws[throwIndex].ball) {
     frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);

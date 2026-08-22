@@ -1,15 +1,3 @@
-.action-sheet {
-  margin-right: 8px;
-
-  ion-button {
-    background: none;
-
-    --background-activated: none;
-
-    position: relative;
-  }
-}
-
 .sliding {
   ion-item:not(.note, .league) {
     --padding-start: 0;

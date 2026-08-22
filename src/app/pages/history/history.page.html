@@ -1,6 +1,8 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <app-file-header-buttons></app-file-header-buttons>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
     <ion-title>
       History
       <ion-badge>{{ gameFilterService.filteredGames().length }}</ion-badge>
@@ -42,6 +44,6 @@
   <!-- Main content to display when there is game history or when loading is done -->
   <ng-template #content>
     <!-- <ion-button (click)="deleteAll()">Delete</ion-button>-->
-    <app-game-list [games]="gameFilterService.filteredGames()" [gameCount]="gameFilterService.filteredGames().length"></app-game-list>
+    <app-game-list [games]="gameFilterService.filteredGames()"></app-game-list>
   </ng-template>
 </ion-content>

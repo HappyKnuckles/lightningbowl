@@ -1,14 +1,22 @@
 <ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
     <ion-title>Alley map</ion-title>
   </ion-toolbar>
   <ion-toolbar>
     <ion-searchbar
       appSearchBlur
+      appSearchHistory
+      historyKey="alleys"
+      #search="appSearchHistory"
       placeholder="Search city, address or alley"
       inputmode="search"
       enterkeyhint="search"
-      (ionChange)="onSearch($event)"></ion-searchbar>
+      [value]="searchTerm()"
+      (ionInput)="onSearchInput($event)"
+      (searchCommitted)="onSearch($event)"></ion-searchbar>
   </ion-toolbar>
   <ion-toolbar class="chips-toolbar">
     <div class="filter-chips" role="group" aria-label="Filter alleys">
@@ -20,6 +28,12 @@
       <ion-chip (click)="cycleRadius()" aria-label="Change search radius">Within {{ filters().radiusKm }} km</ion-chip>
     </div>
   </ion-toolbar>
+  <app-search-suggestions
+    historyKey="alleys"
+    [searchTerm]="searchTerm()"
+    [open]="search.focused()"
+    (suggestionSelected)="search.recordSelection($event); onSearchSuggestionSelected($event)">
+  </app-search-suggestions>
 </ion-header>
 
 <ion-content [fullscreen]="true">

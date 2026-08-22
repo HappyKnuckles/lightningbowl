@@ -2,36 +2,37 @@ import { TestBed } from '@angular/core/testing';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { SortUtilsService } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { HapticService } from '../haptic/haptic.service';
 import { ToastService } from '../toast/toast.service';
 import { ExcelService } from './excel.service';
+import { vi } from 'vitest';
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 describe('ExcelService', () => {
   let service: ExcelService;
-  let mockGamesStore: jasmine.SpyObj<GamesStore>;
-  let mockBallsStore: jasmine.SpyObj<BallsStore>;
-  let mockLeaguesStore: jasmine.SpyObj<LeaguesStore>;
+  let mockGamesStore: SpyObj<GamesStore>;
+  let mockBallsStore: SpyObj<BallsStore>;
+  let mockLeaguesStore: SpyObj<LeaguesStore>;
 
   beforeEach(() => {
-    const gamesStoreSpy = jasmine.createSpyObj('GamesStore', ['games', 'saveGamesToLocalStorage']);
-    const ballsStoreSpy = jasmine.createSpyObj('BallsStore', ['allBalls', 'arsenal', 'saveBallToArsenal']);
-    const leaguesStoreSpy = jasmine.createSpyObj('LeaguesStore', ['addLeague']);
+    const gamesStoreSpy = createSpyObj(['games', 'saveGamesToLocalStorage']);
+    const ballsStoreSpy = createSpyObj(['allBalls', 'arsenal', 'saveBallToArsenal']);
+    const leaguesStoreSpy = createSpyObj(['addLeague']);
 
     TestBed.configureTestingModule({
       providers: [
         {
           provide: ToastService,
           useValue: {
-            showToast: jasmine.createSpy('showToast'),
+            showToast: vi.fn(),
           },
         },
         {
           provide: HapticService,
           useValue: {
-            triggerHaptic: jasmine.createSpy('triggerHaptic'),
+            triggerHaptic: vi.fn(),
           },
         },
         {
@@ -47,29 +48,23 @@ describe('ExcelService', () => {
           useValue: leaguesStoreSpy,
         },
         {
-          provide: SortUtilsService,
-          useValue: {
-            sortGameHistoryByDate: jasmine.createSpy('sortGameHistoryByDate').and.returnValue([]),
-          },
-        },
-        {
           provide: GameFilterService,
           useValue: {
-            setDefaultFilters: jasmine.createSpy('setDefaultFilters'),
+            setDefaultFilters: vi.fn(),
           },
         },
         {
           provide: GameStatsService,
           useValue: {
-            calculateStats: jasmine.createSpy('calculateStats'),
+            calculateStats: vi.fn(),
           },
         },
       ],
     });
     service = TestBed.inject(ExcelService);
-    mockGamesStore = TestBed.inject(GamesStore) as jasmine.SpyObj<GamesStore>;
-    mockBallsStore = TestBed.inject(BallsStore) as jasmine.SpyObj<BallsStore>;
-    mockLeaguesStore = TestBed.inject(LeaguesStore) as jasmine.SpyObj<LeaguesStore>;
+    mockGamesStore = TestBed.inject(GamesStore) as SpyObj<GamesStore>;
+    mockBallsStore = TestBed.inject(BallsStore) as SpyObj<BallsStore>;
+    mockLeaguesStore = TestBed.inject(LeaguesStore) as SpyObj<LeaguesStore>;
   });
 
   it('should be created', () => {
@@ -78,11 +73,11 @@ describe('ExcelService', () => {
 
   it('should support legacy Pattern field in transformData', async () => {
     // Mock storage service methods
-    mockBallsStore.allBalls.and.returnValue([]);
-    mockBallsStore.arsenal.and.returnValue([]);
-    mockLeaguesStore.addLeague.and.returnValue(Promise.resolve());
-    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve());
-    mockGamesStore.saveGamesToLocalStorage.and.returnValue(Promise.resolve());
+    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.arsenal.mockReturnValue([]);
+    mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
+    mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
+    mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
 
     const testData = [
       // Header row
@@ -133,32 +128,34 @@ describe('ExcelService', () => {
         Perfect: 'true',
         Series: 'false',
         'Series ID': '',
-        Pattern: 'Test Pattern, House Shot', // Legacy field with comma-separated values
+        Pattern: 'Test Pattern, House Shot', // A single legacy pattern name that happens to contain a comma
         Balls: 'Storm Ball',
         Notes: 'Test game',
       },
     ];
 
     // This should not throw and should process the legacy Pattern field
-    await expectAsync(service.transformData(testData)).toBeResolved();
+    await expect(service.transformData(testData)).resolves.toBeUndefined();
 
     // Verify that the storageService methods were called
     expect(mockGamesStore.saveGamesToLocalStorage).toHaveBeenCalled();
 
-    // Check that the game was processed with the patterns from the legacy field
-    const savedGamesCall = mockGamesStore.saveGamesToLocalStorage.calls.mostRecent();
-    const savedGames = savedGamesCall.args[0];
+    // The singular legacy `Pattern` column holds exactly one pattern name, so its
+    // value is taken verbatim rather than split on commas (only the plural
+    // `Patterns` column is comma-separated).
+    const savedGamesCall = mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)!;
+    const savedGames = savedGamesCall[0];
     expect(savedGames.length).toBe(1);
-    expect(savedGames[0].patterns).toEqual(['Test Pattern', 'House Shot']);
+    expect(savedGames[0].patterns).toEqual(['Test Pattern, House Shot']);
   });
 
   it('should prefer new Patterns field over legacy Pattern field', async () => {
     // Mock storage service methods
-    mockBallsStore.allBalls.and.returnValue([]);
-    mockBallsStore.arsenal.and.returnValue([]);
-    mockLeaguesStore.addLeague.and.returnValue(Promise.resolve());
-    mockBallsStore.saveBallToArsenal.and.returnValue(Promise.resolve());
-    mockGamesStore.saveGamesToLocalStorage.and.returnValue(Promise.resolve());
+    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.arsenal.mockReturnValue([]);
+    mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
+    mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
+    mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
 
     const testData = [
       // Header row
@@ -217,11 +214,11 @@ describe('ExcelService', () => {
       },
     ];
 
-    await expectAsync(service.transformData(testData)).toBeResolved();
+    await expect(service.transformData(testData)).resolves.toBeUndefined();
 
     // Check that the new Patterns field was used, not the legacy one
-    const savedGamesCall = mockGamesStore.saveGamesToLocalStorage.calls.mostRecent();
-    const savedGames = savedGamesCall.args[0];
+    const savedGamesCall = mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)!;
+    const savedGames = savedGamesCall[0];
     expect(savedGames.length).toBe(1);
     expect(savedGames[0].patterns).toEqual(['New Pattern', 'Sport Pattern']);
   });

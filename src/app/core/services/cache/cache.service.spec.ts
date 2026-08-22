@@ -1,22 +1,22 @@
 import { TestBed } from '@angular/core/testing';
 import { CacheService } from './cache.service';
 import { Storage } from '@ionic/storage-angular';
+import { DEFAULT_CACHE_CONFIG } from '../../models/cache.model';
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 describe('CacheService', () => {
   let service: CacheService;
-  let storageSpy: jasmine.SpyObj<Storage>;
+  let storageSpy: SpyObj<Storage>;
 
   beforeEach(() => {
-    const spy = jasmine.createSpyObj('Storage', ['set', 'get', 'remove', 'keys']);
+    const spy = createSpyObj(['set', 'get', 'remove', 'keys']);
 
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Storage, useValue: spy }
-      ]
+      providers: [{ provide: Storage, useValue: spy }],
     });
 
     service = TestBed.inject(CacheService);
-    storageSpy = TestBed.inject(Storage) as jasmine.SpyObj<Storage>;
+    storageSpy = TestBed.inject(Storage) as SpyObj<Storage>;
   });
 
   it('should be created', () => {
@@ -27,20 +27,20 @@ describe('CacheService', () => {
     const testData = { test: 'value' };
     const cacheKey = 'test_key';
 
-    storageSpy.set.and.returnValue(Promise.resolve());
+    storageSpy.set.mockReturnValue(Promise.resolve());
 
     await service.set(cacheKey, testData);
 
     expect(storageSpy.set).toHaveBeenCalledWith(
       `cache_${cacheKey}`,
-      jasmine.objectContaining({
+      expect.objectContaining({
         data: testData,
-        metadata: jasmine.objectContaining({
-          lastUpdated: jasmine.any(Number),
+        metadata: expect.objectContaining({
+          lastUpdated: expect.any(Number),
           version: '1.0',
-          expires: jasmine.any(Number)
-        })
-      })
+          expires: expect.any(Number),
+        }),
+      }),
     );
   });
 
@@ -53,11 +53,11 @@ describe('CacheService', () => {
       metadata: {
         lastUpdated: now,
         version: '1.0',
-        expires: now + 1000 * 60 * 60 // 1 hour from now
-      }
+        expires: now + 1000 * 60 * 60, // 1 hour from now
+      },
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
+    storageSpy.get.mockReturnValue(Promise.resolve(mockCacheEntry));
 
     const result = await service.get(cacheKey);
 
@@ -74,12 +74,12 @@ describe('CacheService', () => {
       metadata: {
         lastUpdated: now - 1000 * 60 * 60 * 2, // 2 hours ago
         version: '1.0',
-        expires: now - 1000 * 60 * 60 // 1 hour ago (expired)
-      }
+        expires: now - 1000 * 60 * 60, // 1 hour ago (expired)
+      },
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve(mockCacheEntry));
-    storageSpy.remove.and.returnValue(Promise.resolve());
+    storageSpy.get.mockReturnValue(Promise.resolve(mockCacheEntry));
+    storageSpy.remove.mockReturnValue(Promise.resolve());
 
     const result = await service.get(cacheKey);
 
@@ -93,13 +93,15 @@ describe('CacheService', () => {
     const mockMetadata = {
       lastUpdated: now,
       version: '1.0',
-      expires: now + 1000 * 60 * 60 // 1 hour from now
+      expires: now + 1000 * 60 * 60, // 1 hour from now
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve({ 
-      data: {}, 
-      metadata: mockMetadata 
-    }));
+    storageSpy.get.mockReturnValue(
+      Promise.resolve({
+        data: {},
+        metadata: mockMetadata,
+      }),
+    );
 
     const isValid = await service.isValid(cacheKey);
     expect(isValid).toBe(true);
@@ -111,15 +113,43 @@ describe('CacheService', () => {
     const mockMetadata = {
       lastUpdated: now - 1000 * 60 * 60 * 25, // 25 hours ago
       version: '1.0',
-      expires: now + 1000 * 60 * 60 // 1 hour from now (not expired but stale)
+      expires: now + 1000 * 60 * 60, // 1 hour from now (not expired but stale)
     };
 
-    storageSpy.get.and.returnValue(Promise.resolve({ 
-      data: {}, 
-      metadata: mockMetadata 
-    }));
+    storageSpy.get.mockReturnValue(
+      Promise.resolve({
+        data: {},
+        metadata: mockMetadata,
+      }),
+    );
 
     const isStale = await service.isStale(cacheKey);
     expect(isStale).toBe(true);
+  });
+
+  it('should not report freshly cached data as stale', async () => {
+    const cacheKey = 'test_key';
+    const now = Date.now();
+
+    storageSpy.get.mockReturnValue(
+      Promise.resolve({
+        data: {},
+        metadata: {
+          lastUpdated: now - 1000 * 60 * 60, // 1 hour ago
+          version: '1.0',
+          expires: now + 1000 * 60 * 60 * 23,
+        },
+      }),
+    );
+
+    const isStale = await service.isStale(cacheKey);
+    expect(isStale).toBe(false);
+  });
+
+  // Guards the stale-while-revalidate path in balls.store / patterns.store: `get()` has
+  // already dropped anything past `defaultTTL`, so a `maxAge` at or above it would leave
+  // `isStale` permanently false and the background refresh unreachable.
+  it('should keep the staleness window below the hard TTL', () => {
+    expect(DEFAULT_CACHE_CONFIG.maxAge).toBeLessThan(DEFAULT_CACHE_CONFIG.defaultTTL);
   });
 });

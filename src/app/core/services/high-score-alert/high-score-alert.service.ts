@@ -4,6 +4,7 @@ import { Game } from '../../models/game.model';
 
 export interface GameDetails {
   league?: string;
+  alley?: string;
   patterns?: string[];
   balls?: string[];
   date: string;
@@ -134,6 +135,7 @@ export class HighScoreAlertService {
   private getGameDetails(game: Game): GameDetails {
     return {
       league: game.league || undefined,
+      alley: game.alley || undefined,
       patterns: game.patterns && game.patterns.length > 0 ? game.patterns : undefined,
       balls: game.balls && game.balls.length > 0 ? game.balls : undefined,
       date: new Date(game.date).toLocaleDateString(),
@@ -228,6 +230,9 @@ export class HighScoreAlertService {
       // GameDetails
       if (details.league) {
         htmlParts.push(`<p style="margin: 3px 0; font-size: 0.9em;"><strong>League:</strong> ${details.league}</p>`);
+      }
+      if (details.alley) {
+        htmlParts.push(`<p style="margin: 3px 0; font-size: 0.9em;"><strong>Alley:</strong> ${details.alley}</p>`);
       }
       if (details.patterns && details.patterns.length > 0) {
         htmlParts.push(`<p style="margin: 3px 0; font-size: 0.9em;"><strong>Patterns:</strong> ${details.patterns.join(', ')}</p>`);

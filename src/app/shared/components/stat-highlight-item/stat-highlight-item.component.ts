@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, input, signal } from '@angular/core';
 import {
   IonButton,
@@ -17,11 +18,12 @@ import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
+import { formatDifferential } from 'src/app/core/utils/stat-utils/stat.utils';
 
 @Component({
   selector: 'app-stat-highlight-item',
   standalone: true,
-  imports: [IonList, IonImg, IonRippleEffect, IonIcon, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent],
+  imports: [IonList, IonImg, IonRippleEffect, IonIcon, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, DatePipe],
   templateUrl: './stat-highlight-item.component.html',
   styleUrl: './stat-highlight-item.component.scss',
 })
@@ -42,6 +44,8 @@ export class StatHighlightItemComponent {
   constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });
   }
+
+  formatDifferential = formatDifferential;
 
   openModal(): void {
     if (this.allItems()?.length) {

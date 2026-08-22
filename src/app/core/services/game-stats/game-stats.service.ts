@@ -6,6 +6,7 @@ import { GameFilterService } from '../game-filter/game-filter.service';
 
 import { Game } from '../../models/game.model';
 import { isAllFramesComplete, toCompletedFramesGame } from '../../utils/game-utils/frame.utils';
+import { AlleyStatsCalculatorService } from './game-stats-calculator/alley-stats-calculator.service';
 import { byAvg, byGameCount } from '../../utils/sort-utils/sort.utils';
 import { pickTopFromList } from '../../utils/stat-utils/stat.utils';
 import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-calculator.service';
@@ -26,6 +27,7 @@ export class GameStatsService {
     private seriesStatsCalculatorService: SeriesStatsCalculatorService,
     private ballStatsCalculatorService: BallStatsCalculatorService,
     private patternStatsCalculatorService: PatternStatsCalculatorService,
+    private alleyStatsCalculatorService: AlleyStatsCalculatorService,
     private pinStatsCalculatorService: PinStatsCalculatorService,
     private statsPersistenceService: StatsPersistenceService,
   ) {}
@@ -54,6 +56,18 @@ export class GameStatsService {
 
   public readonly mostPlayedPatternStats: Signal<HighlightItemStats> = computed(() => {
     return pickTopFromList(this.allPatternStats(), byGameCount);
+  });
+
+  public readonly allAlleyStats: Signal<HighlightItemStats[]> = computed(() => {
+    return this.alleyStatsCalculatorService.calculateAllAlleyStats(this.gameFilterService.filteredGames());
+  });
+
+  public readonly bestAlleyStats: Signal<HighlightItemStats> = computed(() => {
+    return this.alleyStatsCalculatorService.calculateBestAlleyStats(this.gameFilterService.filteredGames());
+  });
+
+  public readonly mostPlayedAlleyStats: Signal<HighlightItemStats> = computed(() => {
+    return this.alleyStatsCalculatorService.calculateMostPlayedAlleyStats(this.gameFilterService.filteredGames());
   });
 
   public readonly allLeaves: Signal<LeaveStats[]> = computed(() => {
@@ -158,6 +172,18 @@ export class GameStatsService {
 
   calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightItemStats {
     return this.patternStatsCalculatorService.calculateMostPlayedPatternStats(gameHistory);
+  }
+
+  calculateBestAlleyStats(gameHistory: Game[]): HighlightItemStats {
+    return this.alleyStatsCalculatorService.calculateBestAlleyStats(gameHistory);
+  }
+
+  calculateMostPlayedAlleyStats(gameHistory: Game[]): HighlightItemStats {
+    return this.alleyStatsCalculatorService.calculateMostPlayedAlleyStats(gameHistory);
+  }
+
+  calculateAllAlleyStats(gameHistory: Game[]): HighlightItemStats[] {
+    return this.alleyStatsCalculatorService.calculateAllAlleyStats(gameHistory);
   }
 
   calculateAllPatternStats(gameHistory: Game[]): HighlightItemStats[] {

@@ -183,6 +183,9 @@ export class StatsPage implements OnInit {
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
   sessionBestPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byAvg));
   sessionMostPlayedPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byGameCount));
+  sessionBestAlleyStats = computed(() => this.statsService.calculateBestAlleyStats(this.gamesForSelectedSession()));
+  sessionMostPlayedAlleyStats = computed(() => this.statsService.calculateMostPlayedAlleyStats(this.gamesForSelectedSession()));
+  sessionAllAlleyStats = computed(() => this.statsService.calculateAllAlleyStats(this.gamesForSelectedSession()));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
   readonly chartGames = computed(() => sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true));
 
@@ -255,6 +258,9 @@ export class StatsPage implements OnInit {
       mostPlayedPattern: this.statsService.mostPlayedPatternStats(),
       bestPattern: this.statsService.bestPatternStats(),
       allPatterns: this.statsService.allPatternStats(),
+      mostPlayedAlley: this.statsService.mostPlayedAlleyStats(),
+      bestAlley: this.statsService.bestAlleyStats(),
+      allAlleys: this.statsService.allAlleyStats(),
     }),
   );
 
@@ -266,6 +272,9 @@ export class StatsPage implements OnInit {
       mostPlayedPattern: this.sessionMostPlayedPatternStats(),
       bestPattern: this.sessionBestPatternStats(),
       allPatterns: this.sessionAllPatternStats(),
+      mostPlayedAlley: this.sessionMostPlayedAlleyStats(),
+      bestAlley: this.sessionBestAlleyStats(),
+      allAlleys: this.sessionAllAlleyStats(),
     }),
   );
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';

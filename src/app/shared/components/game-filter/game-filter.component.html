@@ -160,6 +160,19 @@
         <ion-select-option *ngFor="let pattern of patterns()" [value]="pattern">{{ pattern }}</ion-select-option>
       </ion-select>
     </ion-item>
+
+    <ion-item>
+      <ion-select
+        name="alleys"
+        [ngModel]="gameFilterService.filters().alleys"
+        label="Alleys"
+        multiple="true"
+        (ionChange)="updateFilter('alleys', $event.detail.value)">
+        <ion-select-option value="all">All</ion-select-option>
+        <ion-select-option value="">None</ion-select-option>
+        <ion-select-option *ngFor="let alley of alleys()" [value]="alley">{{ alley }}</ion-select-option>
+      </ion-select>
+    </ion-item>
   </ion-list>
 </ion-content>
 <ion-footer>

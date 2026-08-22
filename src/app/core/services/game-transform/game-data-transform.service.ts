@@ -48,6 +48,7 @@ export class GameDataTransformerService {
         isPractice: game.isPractice,
         isPinMode: game.isPinMode ?? false,
         league: game.league,
+        alley: game.alley,
         isClean,
         isPerfect,
         patterns: game.patterns ? [...game.patterns].sort() : [],

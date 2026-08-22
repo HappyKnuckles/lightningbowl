@@ -27,6 +27,7 @@ export function createEmptyGame(): Game {
     isPractice: true,
     note: '',
     league: '',
+    alley: '',
     patterns: [],
     balls: [],
   };

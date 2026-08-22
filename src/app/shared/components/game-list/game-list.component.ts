@@ -33,6 +33,7 @@ import {
   filterOutline,
   gridOutline,
   layersOutline,
+  locationOutline,
   shareOutline,
   trashOutline,
   trophyOutline,
@@ -41,7 +42,7 @@ import {
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
-import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
+import { GameEditService, SeriesFields } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -58,6 +59,7 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { AlleySelectComponent } from '../alley-select/alley-select.component';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
 import { GameComponent } from '../game/game.component';
@@ -272,7 +274,7 @@ export class GameListComponent implements OnInit {
 
   // Series header editing (league/patterns preview in memory, persist on Save)
   editingSeriesId = signal<string | null>(null);
-  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[] }>();
+  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[]; alley: string }>();
 
   // Accordion open state per game before editing started, restored when editing ends
   private editAccordionWasOpen = new Map<string, boolean>();
@@ -297,6 +299,7 @@ export class GameListComponent implements OnInit {
       cloudDownloadOutline,
       filterOutline,
       layersOutline,
+      locationOutline,
     });
   }
 
@@ -519,8 +522,8 @@ export class GameListComponent implements OnInit {
     game.balls = selectedBalls;
   }
 
-  updateSeries(game: Game, league?: string, patterns?: string[]): void {
-    this.editService.propagateSeriesFields(game, league, patterns);
+  updateSeries(game: Game, fields: SeriesFields): void {
+    this.editService.propagateSeriesFields(game, fields);
   }
 
   // SERIES HEADER EDIT
@@ -533,7 +536,7 @@ export class GameListComponent implements OnInit {
     if (openId) this.revertSeriesEdit(openId);
 
     const lead = row.games[0];
-    this.seriesEditSnapshots.set(row.id, { game: lead, league: lead.league ?? '', patterns: [...lead.patterns] });
+    this.seriesEditSnapshots.set(row.id, { game: lead, league: lead.league ?? '', patterns: [...lead.patterns], alley: lead.alley ?? '' });
     this.editingSeriesId.set(row.id);
   }
 
@@ -544,29 +547,59 @@ export class GameListComponent implements OnInit {
 
   async saveSeriesEdit(row: SeriesRow): Promise<void> {
     const lead = row.games[0];
-    await this.editService.saveSeriesFields(lead, lead.league ?? '', lead.patterns);
+    await this.editService.saveSeriesFields(lead, { league: lead.league ?? '', patterns: lead.patterns, alley: lead.alley ?? '' });
     this.seriesEditSnapshots.delete(row.id);
     this.editingSeriesId.set(null);
   }
 
   onSeriesLeagueChanged(row: SeriesRow, league: string): void {
-    this.editService.propagateSeriesFields(row.games[0], league);
+    this.editService.propagateSeriesFields(row.games[0], { league });
   }
 
   onSeriesPatternsChanged(row: SeriesRow, patterns: string[]): void {
-    this.editService.propagateSeriesFields(row.games[0], undefined, patterns);
+    this.editService.propagateSeriesFields(row.games[0], { patterns });
+  }
+
+  async openSeriesAlleySelect(row: SeriesRow): Promise<void> {
+    const alley = await this.presentAlleySelect(row.games[0].alley ?? '');
+    if (alley !== null) {
+      this.editService.propagateSeriesFields(row.games[0], { alley });
+    }
   }
 
   private revertSeriesEdit(rowId: string): void {
     const snapshot = this.seriesEditSnapshots.get(rowId);
-    if (snapshot) this.editService.propagateSeriesFields(snapshot.game, snapshot.league, snapshot.patterns);
+    if (snapshot) {
+      this.editService.propagateSeriesFields(snapshot.game, { league: snapshot.league, patterns: snapshot.patterns, alley: snapshot.alley });
+    }
     this.seriesEditSnapshots.delete(rowId);
   }
 
   // LEAGUE
   onEditLeagueChanged(game: Game, league: string): void {
     game.league = league;
-    this.updateSeries(game, league);
+    this.updateSeries(game, { league });
+  }
+
+  // ALLEY
+  async openAlleySelect(game: Game): Promise<void> {
+    const alley = await this.presentAlleySelect(game.alley ?? '');
+    if (alley !== null) {
+      game.alley = alley;
+      this.updateSeries(game, { alley });
+    }
+  }
+
+  /** Presents the picker full screen and returns the picked name, or null when cancelled. */
+  private async presentAlleySelect(selectedAlley: string): Promise<string | null> {
+    const modal = await this.modalCtrl.create({
+      component: AlleySelectComponent,
+      componentProps: { selectedAlley },
+    });
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss<string>();
+    return role === 'select' ? (data ?? '') : null;
   }
 
   // HELPERS

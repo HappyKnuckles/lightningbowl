@@ -18,6 +18,7 @@ export class GameFilterService {
     leagues: ['all'],
     balls: ['all'],
     patterns: ['all'],
+    alleys: ['all'],
     timeRange: TimeRange.ALL,
     startDate: new Date(Date.now() - FIFTY_YEARS_MS).toISOString(),
     endDate: new Date(Date.now() + FIFTY_YEARS_MS).toISOString(),
@@ -89,7 +90,8 @@ export class GameFilterService {
         (!filters.isClean || game.isClean) &&
         (filters.leagues.includes('all') || filters.leagues.length === 0 || filters.leagues.includes(game.league || '')) &&
         matchesMultiSelect(filters.patterns, game.patterns ?? []) &&
-        matchesMultiSelect(filters.balls, game.balls ?? [])
+        matchesMultiSelect(filters.balls, game.balls ?? []) &&
+        matchesMultiSelect(filters.alleys, game.alley ? [game.alley] : [])
       );
     });
   }
@@ -120,6 +122,8 @@ export class GameFilterService {
   private loadInitialFilters(): GameFilter {
     localStorage.removeItem('filter');
     const storedFilter = localStorage.getItem('game-filter');
-    return storedFilter ? JSON.parse(storedFilter) : { ...this.defaultFilters };
+    // Spread over the defaults so filters stored before a key existed (e.g. alleys)
+    // come back complete instead of undefined.
+    return storedFilter ? { ...this.defaultFilters, ...JSON.parse(storedFilter) } : { ...this.defaultFilters };
   }
 }

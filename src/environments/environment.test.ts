@@ -7,6 +7,7 @@ export const environment = {
   emailUserID: 'mkI2Kqg6m34U7GL8m',
   patternEndpoint: 'https://pattern.lightningbowl.de/api/',
   analyticsEndpoint: 'https://analytics.nicolas-hoffmann.dev/api/',
+  placesEndpoint: 'https://lightningbowl.de/api/places',
   imagesUrl: 'https://images.lightningbowl.de/',
   branch: 'test',
   authBackendUrl: 'https://auth.lightningbowl.de/api',

@@ -93,7 +93,8 @@
 
   .item-stats {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px 16px;
     margin: 10px 0 0;
   }
 
@@ -116,7 +117,27 @@
       color: var(--ion-text-color, #ece4d4);
       letter-spacing: -0.01em;
       margin: 0;
+
+      &.is-above {
+        color: var(--ion-color-success);
+      }
+
+      &.is-below {
+        color: var(--ion-color-danger);
+      }
     }
+  }
+
+  .item-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 0;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ion-color-medium, #7c7c7a);
   }
 
   .card-chevron {

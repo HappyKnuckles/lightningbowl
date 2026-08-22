@@ -106,6 +106,10 @@ export class GameOcrImportComponent {
     this.gameData.update((current) => ({ ...current, patterns }));
   }
 
+  onAlleyChange(alley: string): void {
+    this.gameData.update((current) => ({ ...current, alley }));
+  }
+
   onLeagueChange(league: string): void {
     const isPractice = league === '' || league === 'New';
     this.gameData.update((current) => ({ ...current, league, isPractice }));

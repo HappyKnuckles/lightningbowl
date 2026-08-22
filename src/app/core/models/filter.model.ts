@@ -8,6 +8,7 @@ export type GameFilter = {
   leagues: string[];
   balls: string[];
   patterns: string[];
+  alleys: string[];
   timeRange: TimeRange;
   startDate?: string;
   endDate?: string;

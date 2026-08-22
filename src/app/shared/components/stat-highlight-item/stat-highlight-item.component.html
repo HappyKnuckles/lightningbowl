@@ -45,7 +45,37 @@
           <dt class="item-label">Low</dt>
           <dd class="item-value">{{ item().lowestGame }}</dd>
         </div>
+        @if (item().strikeRate !== undefined) {
+          <div class="item-line">
+            <dt class="item-label">Strike</dt>
+            <dd class="item-value">{{ item().strikeRate }}%</dd>
+          </div>
+        }
+        @if (item().cleanRate !== undefined) {
+          <div class="item-line">
+            <dt class="item-label">Clean</dt>
+            <dd class="item-value">{{ item().cleanRate }}%</dd>
+          </div>
+        }
+        @if (item().differential !== undefined) {
+          <div class="item-line">
+            <dt class="item-label">vs Avg</dt>
+            <dd class="item-value" [class.is-above]="item().differential! > 0" [class.is-below]="item().differential! < 0">
+              {{ formatDifferential(item().differential) }}
+            </dd>
+          </div>
+        }
       </dl>
+      @if (item().visitCount || item().lastPlayed) {
+        <p class="item-extra">
+          @if (item().visitCount) {
+            <span>{{ item().visitCount }} {{ item().visitCount === 1 ? "visit" : "visits" }}</span>
+          }
+          @if (item().lastPlayed) {
+            <span>last played {{ item().lastPlayed | date: "MM.dd.yyyy" }}</span>
+          }
+        </p>
+      }
     </div>
   }
 
@@ -71,8 +101,10 @@
         <ion-list style="background: none">
           @for (listItem of allItemsSorted(); track listItem.name) {
             <article class="item-card modal-card">
-              <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
-              </ion-img>
+              @if (listItem.image) {
+                <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
+                </ion-img>
+              }
               <div class="item-meta">
                 <header class="item-top">
                   <h3 class="item-name">{{ listItem.name }}</h3>
@@ -91,7 +123,37 @@
                     <dt class="item-label">Low</dt>
                     <dd class="item-value">{{ listItem.lowestGame }}</dd>
                   </div>
+                  @if (listItem.strikeRate !== undefined) {
+                    <div class="item-line">
+                      <dt class="item-label">Strike</dt>
+                      <dd class="item-value">{{ listItem.strikeRate }}%</dd>
+                    </div>
+                  }
+                  @if (listItem.cleanRate !== undefined) {
+                    <div class="item-line">
+                      <dt class="item-label">Clean</dt>
+                      <dd class="item-value">{{ listItem.cleanRate }}%</dd>
+                    </div>
+                  }
+                  @if (listItem.differential !== undefined) {
+                    <div class="item-line">
+                      <dt class="item-label">vs Avg</dt>
+                      <dd class="item-value" [class.is-above]="listItem.differential! > 0" [class.is-below]="listItem.differential! < 0">
+                        {{ formatDifferential(listItem.differential) }}
+                      </dd>
+                    </div>
+                  }
                 </dl>
+                @if (listItem.visitCount || listItem.lastPlayed) {
+                  <p class="item-extra">
+                    @if (listItem.visitCount) {
+                      <span>{{ listItem.visitCount }} {{ listItem.visitCount === 1 ? "visit" : "visits" }}</span>
+                    }
+                    @if (listItem.lastPlayed) {
+                      <span>last played {{ listItem.lastPlayed | date: "MM.dd.yyyy" }}</span>
+                    }
+                  </p>
+                }
               </div>
             </article>
           }

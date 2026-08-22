@@ -59,6 +59,8 @@ export interface Game {
   seriesId?: string;
   note?: string;
   league?: string;
+  /** Name of the alley the game was played at, as picked from the alley search. */
+  alley?: string;
   patterns: string[];
   balls?: string[];
 }

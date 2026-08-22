@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -267,6 +269,14 @@ export class PatternPage implements OnInit {
   getRatioValue(ratio: string): number {
     const numericPart = ratio.split(':')[0];
     return parseFloat(numericPart);
+  }
+
+  openPatternFile(url: string): void {
+    if (Capacitor.isNativePlatform()) {
+      void Browser.open({ url });
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
   }
 
   // private generateChartImages(): void {

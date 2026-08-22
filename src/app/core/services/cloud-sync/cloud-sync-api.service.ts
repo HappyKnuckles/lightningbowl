@@ -1,6 +1,16 @@
 import { Injectable } from '@angular/core';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { environment } from 'src/environments/environment';
 import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
+
+/**
+ * Custom URL scheme the OAuth backend redirects to once a native app's flow
+ * finishes in the in-app browser (see AppUrlOpen handling in CloudSyncService).
+ * Registered in ios/App/App/Info.plist (CFBundleURLTypes) and
+ * android/app/src/main/AndroidManifest.xml (intent-filter).
+ */
+export const NATIVE_AUTH_CALLBACK_URL = 'lightningbowl://auth-callback';
 
 /**
  * The OAuth backend definitively rejected the session or refresh token —
@@ -23,12 +33,23 @@ export class CloudAuthRequiredError extends Error {
 })
 export class CloudSyncApiService {
   /**
-   * Navigate browser to OAuth start endpoint
+   * Kick off the OAuth start endpoint. On native platforms this opens an
+   * in-app browser (SFSafariViewController/Custom Tabs) instead of
+   * navigating the app's own WebView away, so the login flow keeps its own
+   * chrome (address bar, cancel button) and the app UI stays intact behind
+   * it. The backend redirects back via a custom URL scheme, picked up by
+   * CloudSyncService's `appUrlOpen` listener.
    */
   authenticateWithProvider(provider: CloudProvider): void {
-    const redirectUrl = `${window.location.origin}/tabs/settings?openCloudSync=true`;
+    const isNative = Capacitor.isNativePlatform();
+    const redirectUrl = isNative ? NATIVE_AUTH_CALLBACK_URL : `${window.location.origin}/tabs/settings?openCloudSync=true`;
     const startUrl = `${environment.authBackendUrl}/${provider}/start?redirect=${encodeURIComponent(redirectUrl)}`;
-    window.location.href = startUrl;
+
+    if (isNative) {
+      void Browser.open({ url: startUrl });
+    } else {
+      window.location.href = startUrl;
+    }
   }
 
   /**

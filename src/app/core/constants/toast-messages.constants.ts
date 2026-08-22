@@ -1,6 +1,8 @@
 export const TOAST_MESSAGES = {
   noImage: 'No image uploaded.',
   imageUploadError: 'Error uploading image.',
+  noTextFound: "Couldn't read any scores from that image. Try a clearer photo.",
+  noScoresForUser: 'No scores found for your name on that sheet. Check your name in the menu.',
   gameSaveSuccess: 'Game saved successfully.',
   gameResetSuccess: 'Game reset successfully.',
   gameSaveError: 'Error saving game.',

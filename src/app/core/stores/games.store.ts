@@ -37,19 +37,13 @@ export class GamesStore {
           needsUpdate = true;
         }
 
-        if (game.patterns && Array.isArray(game.patterns)) {
-          const originalPatternsStr = JSON.stringify(game.patterns);
+        if (game.patterns && Array.isArray(game.patterns) && !this.isSorted(game.patterns)) {
           game.patterns.sort();
-          if (JSON.stringify(game.patterns) !== originalPatternsStr) {
-            needsUpdate = true;
-          }
+          needsUpdate = true;
         }
-        if (game.balls && Array.isArray(game.balls)) {
-          const originalBallsStr = JSON.stringify(game.balls);
+        if (game.balls && Array.isArray(game.balls) && !this.isSorted(game.balls)) {
           game.balls.sort();
-          if (JSON.stringify(game.balls) !== originalBallsStr) {
-            needsUpdate = true;
-          }
+          needsUpdate = true;
         }
       });
 
@@ -211,5 +205,15 @@ export class GamesStore {
     }
 
     localStorage.setItem('first-game', date.toString());
+  }
+
+  /** Cheap already-sorted check so loadGameHistory can skip sort+save for the common case without JSON.stringify-ing every game's arrays. */
+  private isSorted(values: string[]): boolean {
+    for (let i = 1; i < values.length; i++) {
+      if (values[i - 1] > values[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 }

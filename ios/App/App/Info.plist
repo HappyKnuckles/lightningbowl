@@ -22,6 +22,23 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Lightning Bowl uses the camera to scan paper scoresheets and import games.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Lightning Bowl needs access to your photos to import scoresheet images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Lightning Bowl needs access to your photos to import scoresheet images.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Lightning Bowl uses your location to find bowling alleys near you on the map.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lightningbowl</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

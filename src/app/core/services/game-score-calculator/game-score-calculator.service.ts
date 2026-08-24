@@ -51,35 +51,6 @@ export class GameScoreCalculatorService {
   }
 
   /**
-   * Get strike bonus by looking at the next two throws across frames
-   */
-  private getStrikeBonus(frames: Frame[], frameIndex: number): number {
-    const throwsNeeded: number[] = [];
-
-    // Collect the next two throws
-    for (let i = frameIndex + 1; i < frames.length && throwsNeeded.length < 2; i++) {
-      const frame = frames[i];
-      if (!frame || !frame.throws) continue;
-
-      for (const t of frame.throws) {
-        if (throwsNeeded.length < 2) {
-          throwsNeeded.push(t.value);
-        }
-      }
-    }
-
-    return (throwsNeeded[0] ?? 0) + (throwsNeeded[1] ?? 0);
-  }
-
-  /**
-   * Get spare bonus by looking at the next throw
-   */
-  private getSpareBonus(frames: Frame[], frameIndex: number): number {
-    const nextFrame = frames[frameIndex + 1];
-    return getThrowValue(nextFrame, 0) ?? 0;
-  }
-
-  /**
    * Calculate maximum possible score from current frame state
    */
   calculateMaxScoreFromFrames(frames: Frame[], currentTotalScore: number): number {
@@ -228,5 +199,34 @@ export class GameScoreCalculatorService {
     }
 
     return maxScore;
+  }
+
+  /**
+   * Get strike bonus by looking at the next two throws across frames
+   */
+  private getStrikeBonus(frames: Frame[], frameIndex: number): number {
+    const throwsNeeded: number[] = [];
+
+    // Collect the next two throws
+    for (let i = frameIndex + 1; i < frames.length && throwsNeeded.length < 2; i++) {
+      const frame = frames[i];
+      if (!frame || !frame.throws) continue;
+
+      for (const t of frame.throws) {
+        if (throwsNeeded.length < 2) {
+          throwsNeeded.push(t.value);
+        }
+      }
+    }
+
+    return (throwsNeeded[0] ?? 0) + (throwsNeeded[1] ?? 0);
+  }
+
+  /**
+   * Get spare bonus by looking at the next throw
+   */
+  private getSpareBonus(frames: Frame[], frameIndex: number): number {
+    const nextFrame = frames[frameIndex + 1];
+    return getThrowValue(nextFrame, 0) ?? 0;
   }
 }

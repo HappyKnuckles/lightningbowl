@@ -110,42 +110,28 @@ export class LeaguePage {
   @ViewChild('modalContent') content!: IonContent;
   @ViewChild('scoreChart', { static: false }) scoreChart?: ElementRef;
   @ViewChild('pinChart', { static: false }) pinChart?: ElementRef;
-  imagesUrl = environment.imagesUrl;
-  selectedSegment = 'Overall';
-  segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
-  isEditMode: Record<string, boolean> = {};
-
   gamesByLeague: Signal<Record<string, Game[]>> = computed(() => {
     const games = this.gamesStore.games();
     return sortGamesByLeagues(games, true);
   });
-
   leagueKeys: Signal<string[]> = computed(() => {
     return Object.keys(this.gamesByLeague());
   });
-
   overallStats: Signal<Stats> = computed(() => {
     const games = this.gamesStore.games();
     return this.statService.calculateBowlingStats(games);
   });
-
-  gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
   statsByLeague = this.perLeague((games) => this.statService.calculateBowlingStats(games));
+
   bestBallsByLeague = this.perLeague((games) => this.statService.calculateBestBallStats(games));
+
   mostPlayedBallsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedBallStats(games));
+
   allBallsByLeague = this.perLeague((games) => this.statService.calculateAllBallStats(games));
+
   bestPatternsByLeague = this.perLeague((games) => this.statService.calculateBestPatternStats(games));
   mostPlayedPatternsByLeague = this.perLeague((games) => this.statService.calculateMostPlayedPatternStats(games));
   allPatternsByLeague = this.perLeague((games) => this.statService.calculateAllPatternStats(games));
-  leaveStatsByLeague = this.perLeague<LeagueLeaveStats>((games) => {
-    const all = this.statService.calculateAllLeaves(games);
-    return {
-      all,
-      common: this.statService.calculateMostCommonLeaves(all),
-      best: this.statService.calculateBestSpares(all),
-      worst: this.statService.calculateWorstSpares(all),
-    };
-  });
   // beobachten ob rebuild für alle leagues teuer ist
   readonly leagueHighlights = computed(() => {
     const statsByLeague = this.statsByLeague();
@@ -163,23 +149,37 @@ export class LeaguePage {
     }
     return result;
   });
-
-  statDefinitions = LEAGUE_STAT_DEFINITIONS;
-  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
-
-  private scoreChartInstances: Record<string, Chart> = {};
-  private pinChartInstances: Record<string, Chart> = {};
-
+  readonly noLeaguesShown = computed(() => !Object.values(this.hiddenLeagueSelectionService.selectionState()).some((isVisible) => isVisible));
   isVisibilityEdit = signal(false);
   selectedLeague = signal<string | null>(null);
   isRefreshing = signal(false);
+  imagesUrl = environment.imagesUrl;
+  selectedSegment = 'Overall';
 
-  readonly noLeaguesShown = computed(() => !Object.values(this.hiddenLeagueSelectionService.selectionState()).some((isVisible) => isVisible));
+  segments: string[] = ['Overall', 'Spares', 'Pins', 'Games'];
+  isEditMode: Record<string, boolean> = {};
 
+  gamesByLeagueReverse = this.perLeague((games) => sortGameHistoryByDate(games, true));
+  leaveStatsByLeague = this.perLeague<LeagueLeaveStats>((games) => {
+    const all = this.statService.calculateAllLeaves(games);
+    return {
+      all,
+      common: this.statService.calculateMostCommonLeaves(all),
+      best: this.statService.calculateBestSpares(all),
+      worst: this.statService.calculateWorstSpares(all),
+    };
+  });
+
+  statDefinitions = LEAGUE_STAT_DEFINITIONS;
+  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
   readonly leagueSelectionState = this.hiddenLeagueSelectionService.selectionState;
 
-  private previousLeagueSelectionState: Record<string, boolean> = {};
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'session';
+
+  private scoreChartInstances: Record<string, Chart> = {};
+
+  private pinChartInstances: Record<string, Chart> = {};
+  private previousLeagueSelectionState: Record<string, boolean> = {};
 
   constructor(
     public gamesStore: GamesStore,

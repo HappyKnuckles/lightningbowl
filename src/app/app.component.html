@@ -4,10 +4,10 @@
 </ion-app>
 @if (loadingService.isLoading()) {
   <ion-backdrop style="opacity: 0.4; z-index: 999999"></ion-backdrop>
-  <app-bowling-refresher [refreshing]="true" [size]="0.5" [align]="'middle'" [background]="'none'" class="custom-loader"></app-bowling-refresher>
+  <app-bowling-refresher class="custom-loader" [align]="'middle'" [background]="'none'" [refreshing]="true" [size]="0.5"></app-bowling-refresher>
 }
 <app-toast></app-toast>
 
 <!-- PWA Install Prompt -->
-<app-pwa-install-prompt [isOpen]="showPwaInstallPrompt" [canInstall]="canInstallPwa" (install)="onPwaInstall()" (dismiss)="onPwaDismiss()">
+<app-pwa-install-prompt [canInstall]="canInstallPwa" [isOpen]="showPwaInstallPrompt" (dismiss)="onPwaDismiss()" (install)="onPwaInstall()">
 </app-pwa-install-prompt>

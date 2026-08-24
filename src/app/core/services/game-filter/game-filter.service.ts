@@ -23,6 +23,8 @@ export class GameFilterService {
     endDate: new Date(Date.now() + FIFTY_YEARS_MS).toISOString(),
   };
 
+  readonly filters = signal<GameFilter>({ ...this.defaultFilters });
+
   activeFilterCount: Signal<number> = computed(() => {
     return Object.keys(this.filters()).reduce((count, key) => {
       const filterValue = this.filters()[key as keyof GameFilter];
@@ -47,8 +49,6 @@ export class GameFilterService {
     const filters = this.filters();
     return this.filterGames(games, filters);
   });
-
-  readonly filters = signal<GameFilter>({ ...this.defaultFilters });
 
   constructor(
     private utilsService: UtilsService,

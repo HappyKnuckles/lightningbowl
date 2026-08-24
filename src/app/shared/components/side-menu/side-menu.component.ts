@@ -61,23 +61,23 @@ const MENULESS_ROUTES = ['/tabs/arsenal', '/tabs/balls'];
   ],
 })
 export class SideMenuComponent {
-  readonly isDisabled = signal(false);
-
   ballsStore = inject(BallsStore);
+
   settingsStore = inject(SettingsStore);
-
-  @ViewChild(GameOcrImportComponent, { static: true }) ocrImport!: GameOcrImportComponent;
-  @ViewChild('import', { static: true }) fileImport!: ElementRef<HTMLInputElement>;
-
   private gamesStore = inject(GamesStore);
+
   private loadingService = inject(LoadingService);
   private excelService = inject(ExcelService);
+
   private importDispatcherService = inject(ImportDispatcherService);
   private toastService = inject(ToastService);
   private alertController = inject(AlertController);
   private menuController = inject(MenuController);
   private router = inject(Router);
   userService = inject(UserService);
+  @ViewChild(GameOcrImportComponent, { static: true }) ocrImport!: GameOcrImportComponent;
+  @ViewChild('import', { static: true }) fileImport!: ElementRef<HTMLInputElement>;
+  readonly isDisabled = signal(false);
 
   constructor() {
     addIcons({ cameraOutline, cloudUploadOutline, cloudDownloadOutline, personCircleOutline, bowlingBallOutline });

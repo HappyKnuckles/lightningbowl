@@ -25,11 +25,11 @@ import { SideMenuComponent } from './shared/components/side-menu/side-menu.compo
   imports: [IonApp, IonBackdrop, IonRouterOutlet, ToastComponent, PwaInstallPromptComponent, BowlingRefresherComponent, SideMenuComponent],
 })
 export class AppComponent implements OnInit, OnDestroy {
+  showPwaInstallPrompt = false;
+  canInstallPwa = false;
   private readonly GREETING_THROTTLE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
   private pwaInstallSubscription: Subscription;
   private updateInterval: any;
-  showPwaInstallPrompt = false;
-  canInstallPwa = false;
 
   constructor(
     private alertController: AlertController,
@@ -72,6 +72,24 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
     }
+  }
+
+  async onPwaInstall(): Promise<void> {
+    try {
+      const installed = await this.pwaInstallService.triggerInstall();
+      if (installed) {
+        this.toastService.showToast('App installed successfully!', 'checkmark-circle', false);
+        this.showPwaInstallPrompt = false;
+      }
+    } catch (error) {
+      console.error('Error installing PWA:', error);
+      this.toastService.showToast('Installation failed. Please try again.', 'alert-circle', true);
+    }
+  }
+
+  onPwaDismiss(): void {
+    this.pwaInstallService.dismissInstallPrompt();
+    this.showPwaInstallPrompt = false;
   }
 
   private initializeApp(): void {
@@ -221,24 +239,6 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     await alert.present();
-  }
-
-  async onPwaInstall(): Promise<void> {
-    try {
-      const installed = await this.pwaInstallService.triggerInstall();
-      if (installed) {
-        this.toastService.showToast('App installed successfully!', 'checkmark-circle', false);
-        this.showPwaInstallPrompt = false;
-      }
-    } catch (error) {
-      console.error('Error installing PWA:', error);
-      this.toastService.showToast('Installation failed. Please try again.', 'alert-circle', true);
-    }
-  }
-
-  onPwaDismiss(): void {
-    this.pwaInstallService.dismissInstallPrompt();
-    this.showPwaInstallPrompt = false;
   }
 
   private async presentGreetingAlert(name: string): Promise<void> {

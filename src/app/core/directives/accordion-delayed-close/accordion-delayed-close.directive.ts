@@ -12,6 +12,13 @@ export class AccordionDelayedCloseDirective implements OnDestroy {
   private closeTimers: Record<string, ReturnType<typeof setTimeout>> = {};
   private readonly closeDelay = 500;
 
+  ngOnDestroy(): void {
+    for (const timer of Object.values(this.closeTimers)) {
+      clearTimeout(timer);
+    }
+    this.closeTimers = {};
+  }
+
   @HostListener('ionChange', ['$event'])
   onAccordionChange(event: CustomEvent): void {
     const openIds: string[] = event.detail?.value ?? [];
@@ -37,13 +44,6 @@ export class AccordionDelayedCloseDirective implements OnDestroy {
         delete this.closeTimers[id];
       }, this.closeDelay);
     }
-  }
-
-  ngOnDestroy(): void {
-    for (const timer of Object.values(this.closeTimers)) {
-      clearTimeout(timer);
-    }
-    this.closeTimers = {};
   }
 
   isVisible(id: string): boolean {

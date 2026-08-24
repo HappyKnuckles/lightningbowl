@@ -186,6 +186,11 @@ export class HistoryPage {
     }
   }
 
+  async deleteAll(): Promise<void> {
+    await this.appFacade.deleteAllData();
+    window.dispatchEvent(new Event('dataDeleted'));
+  }
+
   private async showPermissionDeniedAlert(): Promise<void> {
     const alert = await this.alertController.create({
       header: 'Permission Denied',
@@ -207,10 +212,5 @@ export class HistoryPage {
       ],
     });
     await alert.present();
-  }
-
-  async deleteAll(): Promise<void> {
-    await this.appFacade.deleteAllData();
-    window.dispatchEvent(new Event('dataDeleted'));
   }
 }

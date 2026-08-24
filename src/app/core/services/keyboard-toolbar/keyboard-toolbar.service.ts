@@ -9,15 +9,26 @@ export class KeyboardToolbarService {
 
   private keyboardOpen = signal(false);
   private offset = signal(0);
-  private landscape = signal(false);
   private focused = signal(false);
-
   readonly state = computed(() => ({
     show: this.keyboardOpen() && this.focused(),
     offset: this.keyboardOpen() ? this.offset() : 0,
   }));
 
+  private landscape = signal(false);
+
   private handles: PluginListenerHandle[] = [];
+
+  private onViewportResize = (): void => {
+    if (!window.visualViewport) return;
+    const kbHeight = window.innerHeight - window.visualViewport.height;
+    if (kbHeight > 100) {
+      this.offset.set(Math.max(0, kbHeight - (this.landscape() ? 72 : 85)));
+      this.keyboardOpen.set(true);
+    } else {
+      this.keyboardOpen.set(false);
+    }
+  };
 
   constructor() {
     void this.init();
@@ -46,17 +57,6 @@ export class KeyboardToolbarService {
     const sub = this.platform.resize.subscribe(() => this.landscape.set(this.platform.isLandscape()));
     inject(DestroyRef).onDestroy(() => sub.unsubscribe());
   }
-
-  private onViewportResize = (): void => {
-    if (!window.visualViewport) return;
-    const kbHeight = window.innerHeight - window.visualViewport.height;
-    if (kbHeight > 100) {
-      this.offset.set(Math.max(0, kbHeight - (this.landscape() ? 72 : 85)));
-      this.keyboardOpen.set(true);
-    } else {
-      this.keyboardOpen.set(false);
-    }
-  };
 
   private teardown(): void {
     this.handles.forEach((h) => h.remove());

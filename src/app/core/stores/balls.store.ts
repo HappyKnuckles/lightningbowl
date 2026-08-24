@@ -10,11 +10,11 @@ import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 
 @Injectable({ providedIn: 'root' })
 export class BallsStore {
-  readonly url = BOWWWL_URL;
-
   readonly arsenal = signal<Ball[]>([]);
+
   readonly allBalls = signal<Ball[]>([]);
   readonly isUsingCache = signal<boolean>(false);
+  readonly url = BOWWWL_URL;
 
   constructor(
     private storageRepository: StorageRepository,

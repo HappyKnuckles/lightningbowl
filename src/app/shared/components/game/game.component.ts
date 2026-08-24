@@ -102,6 +102,7 @@ interface FrameView {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class GameComponent implements OnInit {
+  private keyboardToolbar = inject(KeyboardToolbarService);
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -110,8 +111,8 @@ export class GameComponent implements OnInit {
   maxScore = input<number | undefined>(undefined);
   strikeDisabled = input<boolean>(true);
   spareDisabled = input<boolean>(true);
-  isPinInputMode = input<boolean>(false);
 
+  isPinInputMode = input<boolean>(false);
   // Pin Input Mode
   pinsLeftStanding = input<number[]>(PINS);
   currentFrameIndex = input<number>(0);
@@ -119,30 +120,31 @@ export class GameComponent implements OnInit {
   canStrike = input<boolean>(false);
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
-  isGameComplete = input<boolean>(false);
 
+  isGameComplete = input<boolean>(false);
+  showStatsButton = input<boolean>(false);
+  statsEnabled = input<boolean>(true);
   // --- Outputs ---
   throwInput = output<{ frameIndex: number; throwIndex: number; value: string }>();
   leagueChanged = output<string>();
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
+
   ballsChanged = output<string[]>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
-
   // Pin Input Mode - Events from Child to Parent
   pinThrowConfirmed = output<ThrowConfirmedEvent>();
   pinUndoRequested = output<void>();
   seriesStatsClick = output<void>();
-  showStatsButton = input<boolean>(false);
-  statsEnabled = input<boolean>(true);
+
   // Pin mode edit - score cell clicked
   scoreCellClick = output<{ frameIndex: number; throwIndex: number }>();
-
   // --- View Children ---
   @ViewChildren(IonInput) inputs!: QueryList<IonInput>;
   @ViewChild('leagueSelector') leagueSelector!: LeagueSelectorComponent;
+
   @ViewChild('checkbox') checkbox!: IonCheckbox;
 
   // --- Computed State ---
@@ -185,8 +187,8 @@ export class GameComponent implements OnInit {
       };
     });
   });
-
   ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
+
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
   /** Patterns sorted by how often they were played, most used first. */
@@ -194,18 +196,16 @@ export class GameComponent implements OnInit {
     const usage = countPatternUsage(this.gamesStore.games());
     return rankByUsage(this.patternsStore.allPatterns(), usage, (pattern) => pattern.title ?? '');
   });
-
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
   presentingElement!: HTMLElement | null;
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
-  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   showButtonToolbar = false;
   keyboardOffset = 0;
   isLandScapeMode = false;
-  private keyboardToolbar = inject(KeyboardToolbarService);
   readonly toolbarState = this.keyboardToolbar.state;
   private localFrameIndex = 0;
   private localThrowIndex = 0;
@@ -296,10 +296,6 @@ export class GameComponent implements OnInit {
     }
   }
 
-  private getInputPosition(frameIndex: number, throwIndex: number): number {
-    return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
-  }
-
   getBallIds(names: string[] | undefined): string[] {
     if (!names) return [];
 
@@ -320,6 +316,7 @@ export class GameComponent implements OnInit {
   onLeagueChanged(league: string) {
     this.leagueChanged.emit(league);
   }
+
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
@@ -332,6 +329,9 @@ export class GameComponent implements OnInit {
   }
   onIsPracticeChange(isPractice: boolean) {
     this.isPracticeChanged.emit(isPractice);
+  }
+  private getInputPosition(frameIndex: number, throwIndex: number): number {
+    return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
 
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {

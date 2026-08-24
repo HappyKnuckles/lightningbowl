@@ -3,25 +3,25 @@
     <ion-title>Arsenal</ion-title>
     <ion-buttons slot="end">
       <ion-button class="action-sheet" id="addBall">
-        <ion-icon slot="icon-only" name="add"></ion-icon>
+        <ion-icon name="add" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-buttons slot="start">
       <ion-button [href]="ballsStore.url">
         <div class="powered-by">powered by</div>
         <img
-          [src]="ballsStore.url + '/sites/default/files/logo/bowwwl-logo.svg'"
           alt="bowwwl"
+          style="height: 1.5rem; min-width: 80px"
           title="bowwwl.com"
-          style="height: 1.5rem; min-width: 80px" />
+          [src]="ballsStore.url + '/sites/default/files/logo/bowwwl-logo.svg'" />
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   @if (ballsStore.arsenal().length > 0) {
     <ion-toolbar>
       <ion-segment [(ngModel)]="selectedSegment">
-        <ion-segment-button value="arsenal" contentId="arsenal">Arsenal</ion-segment-button>
-        <ion-segment-button value="compare" contentId="compare">Compare Chart</ion-segment-button>
+        <ion-segment-button contentId="arsenal" value="arsenal">Arsenal</ion-segment-button>
+        <ion-segment-button contentId="compare" value="compare">Compare Chart</ion-segment-button>
       </ion-segment>
     </ion-toolbar>
   }
@@ -36,7 +36,7 @@
             <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
               <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
                 <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
-                  <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+                  <ion-icon class="title" name="trash-outline" style="transform: translateY(-2px)"></ion-icon>
                 </ion-item-option>
               </ion-item-options>
 
@@ -54,11 +54,11 @@
                     <ion-chip (click)="$event.stopPropagation()">
                       <ion-select
                         #weightSelect
-                        [value]="ball.core_weight"
+                        interface="popover"
                         style="min-height: 0"
                         [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
-                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
-                        interface="popover">
+                        [value]="ball.core_weight"
+                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)">
                         <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
                       </ion-select>
                     </ion-chip>
@@ -118,7 +118,7 @@
   </ng-template> -->
 </ion-content>
 
-<ion-modal *ngFor="let ball of ballsStore.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
+<ion-modal *ngFor="let ball of ballsStore.arsenal()" #modal [trigger]="ball.ball_id + ball.core_weight">
   <ng-template>
     <ion-header [translucent]="true">
       <ion-toolbar>
@@ -133,14 +133,14 @@
     <ion-content [fullscreen]="true">
       <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
       <ion-card
-        class="ion-activatable ion-ripple-parent"
+        aria-label="View coverstock balls"
         button
+        class="ion-activatable ion-ripple-parent"
+        role="button"
+        tabindex="0"
         (click)="getSameCoverstockBalls(ball)"
         (keydown.enter)="getSameCoverstockBalls(ball)"
-        (keydown.space)="getSameCoverstockBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View coverstock balls">
+        (keydown.space)="getSameCoverstockBalls(ball)">
         <ion-card-content>
           <div class="coverstock-container">
             <div class="coverstock-image">
@@ -163,14 +163,14 @@
 
       <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
       <ion-card
-        class="ion-activatable ion-ripple-parent"
+        aria-label="View core balls"
         button
+        class="ion-activatable ion-ripple-parent"
+        role="button"
+        tabindex="0"
         (click)="getSameCoreBalls(ball)"
         (keydown.enter)="getSameCoreBalls(ball)"
-        (keydown.space)="getSameCoreBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View core balls">
+        (keydown.space)="getSameCoreBalls(ball)">
         <ion-card-content>
           <div class="core-container">
             <div class="core-image">
@@ -204,25 +204,25 @@
   </ng-template>
 </ion-modal>
 
-<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #coverstock>
+<ion-modal #coverstock [breakpoints]="[0, 0.35, 0.5, 0.75]" [initialBreakpoint]="0.35">
   <ng-template>
     <app-ball-list [balls]="coverstockBalls" [isCoverstock]="true"></app-ball-list>
   </ng-template>
 </ion-modal>
 
-<ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #core>
+<ion-modal #core [breakpoints]="[0, 0.35, 0.5, 0.75]" [initialBreakpoint]="0.35">
   <ng-template>
     <app-ball-list [balls]="coreBalls" [isCoverstock]="false"></app-ball-list>
   </ng-template>
 </ion-modal>
 
-<ion-modal [presentingElement]="presentingElement" trigger="addBall">
+<ion-modal trigger="addBall" [presentingElement]="presentingElement">
   <ng-template>
     <app-generic-typeahead
-      [items]="ballsWithoutArsenal()"
       [config]="ballTypeaheadConfig"
-      (selectedItemsChange)="onBallSelectionChange($event)"
-      [prevSelectedItems]="[]">
+      [items]="ballsWithoutArsenal()"
+      [prevSelectedItems]="[]"
+      (selectedItemsChange)="onBallSelectionChange($event)">
     </app-generic-typeahead>
   </ng-template>
 </ion-modal>

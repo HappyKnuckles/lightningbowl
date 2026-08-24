@@ -138,17 +138,6 @@ export class PwaInstallPromptComponent implements OnInit {
     this.presentingElement = document.querySelector('.ion-page');
   }
 
-  private detectBrowser(): void {
-    const userAgent = navigator.userAgent;
-    // More precise Chrome/Chromium/Edge detection that excludes Safari
-    this.isChrome =
-      (/Chrome|Chromium|Edg/.test(userAgent) && !/Safari\/[0-9]/.test(userAgent)) ||
-      (/Chrome/.test(userAgent) && /Safari/.test(userAgent) && !/Mobile.*Safari/.test(userAgent));
-
-    // Precise iOS Safari detection - iOS device with Safari but not Chrome/Firefox/Edge on iOS
-    this.isIOS = /iPad|iPhone|iPod/.test(userAgent) && /Safari/.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent); // Exclude Chrome, Firefox, Edge, Opera on iOS
-  }
-
   onInstall(): void {
     this.install.emit();
   }
@@ -173,5 +162,16 @@ export class PwaInstallPromptComponent implements OnInit {
       this.selectedImage = image;
       this.currentImageIndex = this.images.findIndex((img) => img.id === image);
     }, 50);
+  }
+
+  private detectBrowser(): void {
+    const userAgent = navigator.userAgent;
+    // More precise Chrome/Chromium/Edge detection that excludes Safari
+    this.isChrome =
+      (/Chrome|Chromium|Edg/.test(userAgent) && !/Safari\/[0-9]/.test(userAgent)) ||
+      (/Chrome/.test(userAgent) && /Safari/.test(userAgent) && !/Mobile.*Safari/.test(userAgent));
+
+    // Precise iOS Safari detection - iOS device with Safari but not Chrome/Firefox/Edge on iOS
+    this.isIOS = /iPad|iPhone|iPod/.test(userAgent) && /Safari/.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent); // Exclude Chrome, Firefox, Edge, Opera on iOS
   }
 }

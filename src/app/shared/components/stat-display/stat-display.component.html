@@ -6,13 +6,13 @@
     @for (row of rows(); track row.key) {
       <li class="stat-row">
         <app-stat-row
-          [label]="row.label"
           [currentStat]="row.current"
+          [id]="row.id"
+          [isPercentage]="row.isPercentage"
+          [label]="row.label"
           [prevStat]="row.prev"
           [secondaryStat]="row.secondary"
-          [toolTip]="row.toolTip"
-          [id]="row.id"
-          [isPercentage]="row.isPercentage" />
+          [toolTip]="row.toolTip" />
       </li>
     }
   </ul>

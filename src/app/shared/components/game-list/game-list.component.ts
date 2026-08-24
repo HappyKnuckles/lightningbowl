@@ -134,32 +134,32 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
   ],
 })
 export class GameListComponent implements OnInit {
-  // DOM
-  accordionGroup = viewChild.required<IonAccordionGroup>('accordionGroup');
-  delayedClose = viewChild.required(AccordionDelayedCloseDirective);
-  gameComponents = viewChildren(GameComponent);
-
-  // Inputs
-  games = input.required<Game[]>();
-  isLeaguePage = input<boolean>(false);
-  batchSize = input<number>(100);
-  initialBatchSize = input<number>(25);
-
   // Services
   public editService = inject(GameEditService);
   public gamesStore = inject(GamesStore);
   public ballsStore = inject(BallsStore);
+
   public settingsStore = inject(SettingsStore);
   public patternsStore = inject(PatternsStore);
-
   private alertController = inject(AlertController);
   private toastService = inject(ToastService);
+
   private hapticService = inject(HapticService);
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
   private shareService = inject(GameShareService);
+
   private typeaheadConfigService = inject(TypeaheadConfigService);
+  // Inputs
+  games = input.required<Game[]>();
+  isLeaguePage = input<boolean>(false);
+  batchSize = input<number>(100);
+  initialBatchSize = input<number>(25);
+  // DOM
+  accordionGroup = viewChild.required<IonAccordionGroup>('accordionGroup');
+  delayedClose = viewChild.required(AccordionDelayedCloseDirective);
+  gameComponents = viewChildren(GameComponent);
 
   // Computed
   leagues = computed(() => {
@@ -170,6 +170,9 @@ export class GameListComponent implements OnInit {
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
+
+  // Pagination state
+  public loadedCount = signal(0);
 
   showingGames = computed(() => {
     const games = this.sortedGames();
@@ -265,24 +268,21 @@ export class GameListComponent implements OnInit {
 
     return rows;
   });
-
-  // Pagination state
-  public loadedCount = signal(0);
-  public presentingElement?: HTMLElement;
-
   // Series header editing (league/patterns preview in memory, persist on Save)
   editingSeriesId = signal<string | null>(null);
-  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[] }>();
 
-  // Accordion open state per game before editing started, restored when editing ends
-  private editAccordionWasOpen = new Map<string, boolean>();
-
+  public presentingElement?: HTMLElement;
   // Config
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
+
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
+
+  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[] }>();
+  // Accordion open state per game before editing started, restored when editing ends
+  private editAccordionWasOpen = new Map<string, boolean>();
 
   constructor() {
     addIcons({
@@ -312,25 +312,6 @@ export class GameListComponent implements OnInit {
       this.loadedCount.update((count) => count + this.batchSize());
       event.target.complete();
     }, 50);
-  }
-
-  // ACCORDION
-  private isAccordionOpen(accordionId: string): boolean {
-    const value = this.accordionGroup().value;
-    return Array.isArray(value) ? value.includes(accordionId) : value === accordionId;
-  }
-
-  private openAccordion(accordionId: string): void {
-    if (this.isAccordionOpen(accordionId)) return;
-    const value = this.accordionGroup().value;
-    const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup().value = [...open, accordionId];
-  }
-
-  private closeAccordion(accordionId: string): void {
-    const value = this.accordionGroup().value;
-    const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup().value = open.filter((id) => id !== accordionId);
   }
 
   // NAVIGATION
@@ -446,17 +427,6 @@ export class GameListComponent implements OnInit {
     this.restoreAccordionAfterEdit(game.gameId);
   }
 
-  // Editing always opens the accordion; afterwards it returns to its pre-edit state.
-  private restoreAccordionAfterEdit(gameId: string): void {
-    const wasOpen = this.editAccordionWasOpen.get(gameId) ?? false;
-    this.editAccordionWasOpen.delete(gameId);
-
-    if (!wasOpen) {
-      this.closeAccordion(gameId);
-      this.delayedClose().clear(gameId);
-    }
-  }
-
   // EDIT INPUT
   onEditThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, game: Game): void {
     const result = this.editService.handleThrowInput(event, game);
@@ -557,12 +527,6 @@ export class GameListComponent implements OnInit {
     this.editService.propagateSeriesFields(row.games[0], undefined, patterns);
   }
 
-  private revertSeriesEdit(rowId: string): void {
-    const snapshot = this.seriesEditSnapshots.get(rowId);
-    if (snapshot) this.editService.propagateSeriesFields(snapshot.game, snapshot.league, snapshot.patterns);
-    this.seriesEditSnapshots.delete(rowId);
-  }
-
   // LEAGUE
   onEditLeagueChanged(game: Game, league: string): void {
     game.league = league;
@@ -590,6 +554,42 @@ export class GameListComponent implements OnInit {
       .allBalls()
       .filter((ball) => names.includes(ball.ball_name))
       .map((ball) => ball.ball_id);
+  }
+
+  // ACCORDION
+  private isAccordionOpen(accordionId: string): boolean {
+    const value = this.accordionGroup().value;
+    return Array.isArray(value) ? value.includes(accordionId) : value === accordionId;
+  }
+
+  private openAccordion(accordionId: string): void {
+    if (this.isAccordionOpen(accordionId)) return;
+    const value = this.accordionGroup().value;
+    const open = Array.isArray(value) ? value : value ? [value] : [];
+    this.accordionGroup().value = [...open, accordionId];
+  }
+
+  private closeAccordion(accordionId: string): void {
+    const value = this.accordionGroup().value;
+    const open = Array.isArray(value) ? value : value ? [value] : [];
+    this.accordionGroup().value = open.filter((id) => id !== accordionId);
+  }
+
+  // Editing always opens the accordion; afterwards it returns to its pre-edit state.
+  private restoreAccordionAfterEdit(gameId: string): void {
+    const wasOpen = this.editAccordionWasOpen.get(gameId) ?? false;
+    this.editAccordionWasOpen.delete(gameId);
+
+    if (!wasOpen) {
+      this.closeAccordion(gameId);
+      this.delayedClose().clear(gameId);
+    }
+  }
+
+  private revertSeriesEdit(rowId: string): void {
+    const snapshot = this.seriesEditSnapshots.get(rowId);
+    if (snapshot) this.editService.propagateSeriesFields(snapshot.game, snapshot.league, snapshot.patterns);
+    this.seriesEditSnapshots.delete(rowId);
   }
 
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {

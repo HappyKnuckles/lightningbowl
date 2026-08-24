@@ -3,9 +3,9 @@
     <ion-buttons slot="start">
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
-    <ion-title (click)="presentActionSheet()" style="cursor: pointer">
+    <ion-title style="cursor: pointer" (click)="presentActionSheet()">
       New {{ selectedMode() === "Single" ? "Game" : selectedMode() }}
-      <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
+      <ion-icon class="mode-chevron" name="chevron-down" size="big" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
       <ion-button fill="clear" (click)="togglePinInputMode()">
@@ -16,8 +16,8 @@
 
   @if (selectedMode() !== "Single") {
     <ion-toolbar>
-      <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
-        <ion-segment-button *ngFor="let segment of segments" [value]="segment" [contentId]="segment">
+      <ion-segment [scrollable]="true" [value]="selectedSegment" (ionChange)="onSegmentChange($event)">
+        <ion-segment-button *ngFor="let segment of segments" [contentId]="segment" [value]="segment">
           <ion-label class="segment-label">{{ segment }}</ion-label>
         </ion-segment-button>
       </ion-segment>
@@ -25,16 +25,16 @@
   }
 </ion-header>
 
-<ion-alert [isOpen]="isAlertOpen" header="Error" message="You didn't fill all inputs" [buttons]="['Dismiss']" (didDismiss)="isAlertOpen = false">
+<ion-alert header="Error" message="You didn't fill all inputs" [buttons]="['Dismiss']" [isOpen]="isAlertOpen" (didDismiss)="isAlertOpen = false">
 </ion-alert>
 
 <app-game-score-toolbar
-  [show]="showScoreToolbar"
   [offset]="toolbarOffset"
-  [strikeDisabled]="toolbarDisabledState.strikeDisabled"
+  [show]="showScoreToolbar"
   [spareDisabled]="toolbarDisabledState.spareDisabled"
-  (strikeClick)="onToolbarButtonClick('X')"
-  (spareClick)="onToolbarButtonClick('/')">
+  [strikeDisabled]="toolbarDisabledState.strikeDisabled"
+  (spareClick)="onToolbarButtonClick('/')"
+  (strikeClick)="onToolbarButtonClick('X')">
 </app-game-score-toolbar>
 
 <div
@@ -51,7 +51,7 @@
     align-items: center;
     z-index: 500;
   ">
-  <lottie-player slot="end" autoplay loop src="https://lottie.host/7b3bdd2a-221b-463e-9f59-d95964639389/duMcnXopMJ.json"></lottie-player>
+  <lottie-player autoplay loop slot="end" src="https://lottie.host/7b3bdd2a-221b-463e-9f59-d95964639389/duMcnXopMJ.json"></lottie-player>
 </div>
 
 <ion-content [fullscreen]="true">
@@ -59,34 +59,34 @@
     <ion-segment-content *ngFor="let segment of segments; let i = index" [id]="segment">
       <app-game
         #gameRef
-        [game]="games()[i]"
-        [strikeDisabled]="toolbarDisabledState.strikeDisabled"
-        [spareDisabled]="toolbarDisabledState.spareDisabled"
-        [maxScore]="maxScores()[i]"
-        [isPinInputMode]="isPinInputMode"
-        [pinsLeftStanding]="getPinsLeftStanding(i)"
+        [ballSelectorId]="'modal-ball-selector' + i"
+        [canSpare]="canRecordSpare(i)"
+        [canStrike]="canRecordStrike(i)"
+        [canUndo]="canUndoForPinMode(i)"
         [currentFrameIndex]="getCurrentFrameIndex(i)"
         [currentThrowIndex]="getCurrentThrowIndex(i)"
-        [canStrike]="canRecordStrike(i)"
-        [canSpare]="canRecordSpare(i)"
-        [canUndo]="canUndoForPinMode(i)"
+        [game]="games()[i]"
         [isGameComplete]="isGameComplete(i)"
+        [isPinInputMode]="isPinInputMode"
+        [maxScore]="maxScores()[i]"
         [patternModalId]="i.toString()"
-        [ballSelectorId]="'modal-ball-selector' + i"
+        [pinsLeftStanding]="getPinsLeftStanding(i)"
         [showStatsButton]="selectedMode() !== 'Single'"
-        (throwInput)="handleThrowInput($event, i)"
+        [spareDisabled]="toolbarDisabledState.spareDisabled"
+        [statsEnabled]="hasLiveStats()"
+        [strikeDisabled]="toolbarDisabledState.strikeDisabled"
+        (ballsChanged)="onBallsChange($event, i)"
+        (inputFocused)="onInputFocused($event, i)"
+        (isPracticeChanged)="onIsPracticeChange($event, i)"
+        (leagueChanged)="onLeagueChange($event)"
+        (noteChanged)="onNoteChange($event, i)"
+        (patternChanged)="onPatternChange($event)"
         (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
         (pinUndoRequested)="handlePinUndoRequested(i)"
         (scoreCellClick)="onScoreCellClick($event, i)"
-        (leagueChanged)="onLeagueChange($event)"
-        (patternChanged)="onPatternChange($event)"
-        (isPracticeChanged)="onIsPracticeChange($event, i)"
-        (toolbarStateChanged)="onToolbarStateChange($event)"
-        (noteChanged)="onNoteChange($event, i)"
-        (ballsChanged)="onBallsChange($event, i)"
-        (inputFocused)="onInputFocused($event, i)"
         (seriesStatsClick)="onSeriesStatsClick()"
-        [statsEnabled]="hasLiveStats()">
+        (throwInput)="handleThrowInput($event, i)"
+        (toolbarStateChanged)="onToolbarStateChange($event)">
       </app-game>
 
       <ion-grid *ngIf="selectedMode() !== 'Single'">
@@ -127,14 +127,14 @@
 </ion-content>
 
 <!-- Modal for Live Series Stats -->
-<ion-modal [isOpen]="isLiveStatsOpen" (didDismiss)="isLiveStatsOpen = false" [breakpoints]="[0, 0.75, 1]" [initialBreakpoint]="0.75">
+<ion-modal [breakpoints]="[0, 0.75, 1]" [initialBreakpoint]="0.75" [isOpen]="isLiveStatsOpen" (didDismiss)="isLiveStatsOpen = false">
   <ng-template>
     <ion-header>
       <ion-toolbar>
         <ion-title>Series Stats</ion-title>
         <ion-buttons slot="start" style="padding: 4px">
           <ion-button color="medium" (click)="isLiveStatsOpen = false">
-            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -147,9 +147,9 @@
 
         @if (series.stats; as stats) {
           <app-stat-display [currentStats]="stats" [prevStats]="allStats()" [statDefinitions]="liveStatDefinitions"></app-stat-display>
-          <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="series.leaves.best"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="series.leaves.worst"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="series.leaves.common" [allLeaves]="series.allLeaves"></app-stat-pin-leave>
+          <app-stat-pin-leave [leaveStats]="series.leaves.best" [title]="'Strongest Spares'"></app-stat-pin-leave>
+          <app-stat-pin-leave [leaveStats]="series.leaves.worst" [title]="'Weakest Spares'"></app-stat-pin-leave>
+          <app-stat-pin-leave [allLeaves]="series.allLeaves" [leaveStats]="series.leaves.common" [title]="'Most Common Leaves'"></app-stat-pin-leave>
         }
       }
     </ion-content>

@@ -94,23 +94,23 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   ],
 })
 export class ArsenalPage implements OnInit {
+  selectedSegment = model('arsenal');
   @ViewChild('core', { static: false }) coreModal!: IonModal;
   @ViewChild('coverstock', { static: false }) coverstockModal!: IonModal;
-  coverstockBalls: Ball[] = [];
-  coreBalls: Ball[] = [];
-  presentingElement!: HTMLElement | null;
-
-  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
+  @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore
       .allBalls()
       .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
-  selectedSegment = model('arsenal');
-  @ViewChild('balls', { static: false }) ballChart?: ElementRef;
-  private ballsChartInstance: Chart | null = null;
+
   readonly loadingWeightBallIds = signal<Set<string>>(new Set());
+  coverstockBalls: Ball[] = [];
+  coreBalls: Ball[] = [];
+  presentingElement!: HTMLElement | null;
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   readonly availableWeights = ['12', '13', '14', '15', '16'];
+  private ballsChartInstance: Chart | null = null;
 
   constructor(
     public ballsStore: BallsStore,
@@ -133,22 +133,6 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page');
-  }
-
-  private generateBallDistributionChart(): void {
-    try {
-      if (!this.ballChart) {
-        return;
-      }
-      this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
-        this.ballChart!,
-        this.ballsStore.arsenal(),
-        this.ballsChartInstance!,
-      );
-    } catch (error) {
-      console.error('Error generating ball distribution chart:', error);
-      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
-    }
   }
 
   async removeFromArsenal(ball: Ball): Promise<void> {
@@ -290,6 +274,22 @@ export class ArsenalPage implements OnInit {
         next.delete(key);
         return next;
       });
+    }
+  }
+
+  private generateBallDistributionChart(): void {
+    try {
+      if (!this.ballChart) {
+        return;
+      }
+      this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
+        this.ballChart!,
+        this.ballsStore.arsenal(),
+        this.ballsChartInstance!,
+      );
+    } catch (error) {
+      console.error('Error generating ball distribution chart:', error);
+      this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
     }
   }
 }

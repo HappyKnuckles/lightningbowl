@@ -95,8 +95,6 @@ export class SettingsPage implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private modalCtrl = inject(ModalController);
   private router = inject(Router);
-  private hasHandledAuthCallback = false;
-  private hasOpenedCloudSyncModal = false;
   currentColor: string | null = '';
   optionsWithClasses: { name: string; class: string }[] = [
     { name: 'Blue', class: 'blue-option' },
@@ -109,6 +107,8 @@ export class SettingsPage implements OnInit, AfterViewInit {
   userEmail = '';
   feedbackMessage = '';
   updateAvailable = false;
+  private hasHandledAuthCallback = false;
+  private hasOpenedCloudSyncModal = false;
   constructor(
     private toastService: ToastService,
     private loadingService: LoadingService,

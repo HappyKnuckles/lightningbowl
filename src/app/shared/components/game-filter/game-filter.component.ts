@@ -65,9 +65,6 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
 })
 export class GameFilterComponent implements OnInit {
   @Input() filteredGames!: Game[];
-  defaultFilters = this.gameFilterService.defaultFilters;
-  highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
-  leagues: string[] = [];
   patterns = computed<string[]>(() => {
     return this.gamesStore
       .games()
@@ -75,6 +72,9 @@ export class GameFilterComponent implements OnInit {
       .flat()
       .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index);
   });
+  defaultFilters = this.gameFilterService.defaultFilters;
+  highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
+  leagues: string[] = [];
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 

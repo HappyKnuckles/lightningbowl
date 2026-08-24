@@ -11,6 +11,18 @@ import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
 export class PatternStatsCalculatorService {
   constructor(private patternsStore: PatternsStore) {}
 
+  calculateAllPatternStats(gameHistory: Game[]): HighlightItemStats[] {
+    return Object.values(this._calculateAllPatternStats(gameHistory));
+  }
+
+  calculateBestPatternStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllPatternStats(gameHistory), byAvg);
+  }
+
+  calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightItemStats {
+    return pickTop(this._calculateAllPatternStats(gameHistory), byGameCount);
+  }
+
   private _calculateAllPatternStats(gameHistory: Game[]): Record<string, HighlightItemStats> {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);
     const tempStats: Record<
@@ -74,17 +86,5 @@ export class PatternStatsCalculatorService {
       };
     }
     return finalStats;
-  }
-
-  calculateAllPatternStats(gameHistory: Game[]): HighlightItemStats[] {
-    return Object.values(this._calculateAllPatternStats(gameHistory));
-  }
-
-  calculateBestPatternStats(gameHistory: Game[]): HighlightItemStats {
-    return pickTop(this._calculateAllPatternStats(gameHistory), byAvg);
-  }
-
-  calculateMostPlayedPatternStats(gameHistory: Game[]): HighlightItemStats {
-    return pickTop(this._calculateAllPatternStats(gameHistory), byGameCount);
   }
 }

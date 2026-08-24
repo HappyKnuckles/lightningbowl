@@ -106,10 +106,6 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
 })
 export class PatternPage implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
-  patterns = signal<Pattern[]>([]);
-  currentPage = 1;
-  hasMoreData = true;
-  isPageLoading = signal(false);
   searchTerm = signal('');
   searchSuggestions = computed(() =>
     buildSearchSuggestions(
@@ -118,20 +114,24 @@ export class PatternPage implements OnInit {
     ),
   );
   searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
+  patterns = signal<Pattern[]>([]);
   favoritesFirst = signal(false);
-  selectedPattern = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,
     label: 'Title (A-Z)',
   });
-  imagesUrl = environment.imagesUrl;
   displayedPatterns = computed(() => {
     if (this.searchTerm().trim() !== '') {
       return this.patterns();
     }
     return this.sortService.sortPatterns(this.patterns(), this.currentSortOption(), this.favoritesFirst());
   });
+  isPageLoading = signal(false);
+  selectedPattern = signal<Pattern | null>(null);
+  currentPage = 1;
+  hasMoreData = true;
+  imagesUrl = environment.imagesUrl;
   private lastLoadTime = 0;
   private debounceMs = 300;
   constructor(
@@ -228,37 +228,6 @@ export class PatternPage implements OnInit {
     void this.runSearch(term);
   }
 
-  private async runSearch(searchValue: string): Promise<void> {
-    try {
-      this.loadingService.setLoading(true);
-      this.searchTerm.set(searchValue);
-
-      const { field, direction } = this.currentSortOption();
-      if (searchValue === '') {
-        this.hasMoreData = true;
-        const response = await this.patternService.getPatterns(this.currentPage, false, field, direction);
-        this.patterns.set(response.patterns);
-        this.currentPage++;
-      } else {
-        const response = await this.patternService.searchPattern(searchValue, true, field, direction);
-        this.patterns.set(response.patterns);
-        this.hasMoreData = false;
-        this.currentPage = 1;
-
-        void this.analyticsService.trackPatternLookup(searchValue);
-      }
-      setTimeout(() => {
-        this.content.scrollToTop(300);
-      }, 300);
-    } catch (error) {
-      console.error('Error searching patterns:', error);
-      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
-    } finally {
-      this.loadingService.setLoading(false);
-      // this.generateChartImages();
-    }
-  }
-
   async openAddPatternModal(): Promise<void> {
     const modal = await this.modalCtrl.create({
       component: PatternFormComponent,
@@ -278,21 +247,6 @@ export class PatternPage implements OnInit {
       window.open(url, '_blank', 'noopener');
     }
   }
-
-  // private generateChartImages(): void {
-  //   this.patterns().forEach((pattern) => {
-  //     if (!pattern.chartImageSrc) {
-  //       try {
-  //         const svgDataUri = this.chartService.generatePatternChartDataUri(pattern, 325, 1300, 1300, 400, 20, 1, 7, true);
-  //         const svgDataUriHor = this.chartService.generatePatternChartDataUri(pattern, 375, 1500, 400, 1500, 20, 1, 7, false);
-  //         pattern.chartImageSrcHorizontal = this.sanitizer.bypassSecurityTrustUrl(svgDataUriHor);
-  //         pattern.chartImageSrc = this.sanitizer.bypassSecurityTrustUrl(svgDataUri);
-  //       } catch (error) {
-  //         console.error(`Error generating chart for pattern ${pattern.title}:`, error);
-  //       }
-  //     }
-  //   });
-  // }
 
   onSortChanged(sortOption: PatternSortOption): void {
     this.currentSortOption.set(sortOption);
@@ -319,6 +273,21 @@ export class PatternPage implements OnInit {
       sort_label: sortOption.label,
     });
   }
+
+  // private generateChartImages(): void {
+  //   this.patterns().forEach((pattern) => {
+  //     if (!pattern.chartImageSrc) {
+  //       try {
+  //         const svgDataUri = this.chartService.generatePatternChartDataUri(pattern, 325, 1300, 1300, 400, 20, 1, 7, true);
+  //         const svgDataUriHor = this.chartService.generatePatternChartDataUri(pattern, 375, 1500, 400, 1500, 20, 1, 7, false);
+  //         pattern.chartImageSrcHorizontal = this.sanitizer.bypassSecurityTrustUrl(svgDataUriHor);
+  //         pattern.chartImageSrc = this.sanitizer.bypassSecurityTrustUrl(svgDataUri);
+  //       } catch (error) {
+  //         console.error(`Error generating chart for pattern ${pattern.title}:`, error);
+  //       }
+  //     }
+  //   });
+  // }
 
   toggleFavorite(event: Event, pattern: Pattern): void {
     event.stopPropagation();
@@ -350,6 +319,37 @@ export class PatternPage implements OnInit {
       setTimeout(() => {
         this.content.scrollToTop(300);
       }, 100);
+    }
+  }
+
+  private async runSearch(searchValue: string): Promise<void> {
+    try {
+      this.loadingService.setLoading(true);
+      this.searchTerm.set(searchValue);
+
+      const { field, direction } = this.currentSortOption();
+      if (searchValue === '') {
+        this.hasMoreData = true;
+        const response = await this.patternService.getPatterns(this.currentPage, false, field, direction);
+        this.patterns.set(response.patterns);
+        this.currentPage++;
+      } else {
+        const response = await this.patternService.searchPattern(searchValue, true, field, direction);
+        this.patterns.set(response.patterns);
+        this.hasMoreData = false;
+        this.currentPage = 1;
+
+        void this.analyticsService.trackPatternLookup(searchValue);
+      }
+      setTimeout(() => {
+        this.content.scrollToTop(300);
+      }, 300);
+    } catch (error) {
+      console.error('Error searching patterns:', error);
+      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
+    } finally {
+      this.loadingService.setLoading(false);
+      // this.generateChartImages();
     }
   }
 

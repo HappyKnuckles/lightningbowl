@@ -9,13 +9,6 @@ const MAX_FRAMES = 10;
   providedIn: 'root',
 })
 export class OverallStatsCalculatorService {
-  private getRate(converted: number, missed: number): number {
-    if (converted + missed === 0) {
-      return 0;
-    }
-    return (converted / (converted + missed)) * 100;
-  }
-
   calculateBowlingStats(gameHistory: Game[], seriesStats: SeriesStats): Stats {
     let totalStrikes = 0;
     let totalSparesConverted = 0;
@@ -458,6 +451,7 @@ export class OverallStatsCalculatorService {
       makeableSplitPercentage,
     };
   }
+
   calculateGamesForTargetAverage(targetAvg: number, stats: Stats, steps = 15): { score: number; gamesNeeded: number }[] {
     const N0 = stats.totalGames;
     const A0 = stats.averageScore;
@@ -491,5 +485,11 @@ export class OverallStatsCalculatorService {
     }
 
     return results;
+  }
+  private getRate(converted: number, missed: number): number {
+    if (converted + missed === 0) {
+      return 0;
+    }
+    return (converted / (converted + missed)) * 100;
   }
 }

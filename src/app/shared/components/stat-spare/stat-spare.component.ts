@@ -51,10 +51,6 @@ export class StatSpareComponent {
   readonly prevStats = input<PrevStats | Stats>();
   readonly id = input('');
 
-  constructor(private utilsService: UtilsService) {
-    addIcons({ informationCircleOutline, arrowUp, arrowDown });
-  }
-
   readonly overallVm = computed<SpareSummary>(() => {
     const stats = this.stats();
     const prev = this.prevStats();
@@ -105,6 +101,10 @@ export class StatSpareComponent {
       };
     });
   });
+
+  constructor(private utilsService: UtilsService) {
+    addIcons({ informationCircleOutline, arrowUp, arrowDown });
+  }
 
   private maxAttempts(s: Stats): number {
     let max = 0;

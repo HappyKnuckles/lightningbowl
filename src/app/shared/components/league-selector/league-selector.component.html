@@ -1,7 +1,7 @@
 @if (isAddPage()) {
-  <ion-item class="league-selector" button detail="true" detailIcon="chevron-expand-outline" (click)="openPicker()">
+  <ion-item button class="league-selector" detail="true" detailIcon="chevron-expand-outline" (click)="openPicker()">
     @if (icon()) {
-      <ion-icon [name]="icon()" slot="start"></ion-icon>
+      <ion-icon slot="start" [name]="icon()"></ion-icon>
     }
     <ion-label>League/Tournament</ion-label>
     <span class="ion-text-right">{{ selectedLeague() || "None" }}</span>
@@ -13,7 +13,7 @@
   </ion-item>
 }
 
-<ion-modal [presentingElement]="presentingElement" [isOpen]="isPickerOpen()" (didDismiss)="closePicker()">
+<ion-modal [isOpen]="isPickerOpen()" [presentingElement]="presentingElement" (didDismiss)="closePicker()">
   <ng-template>
     <ion-header>
       <ion-toolbar>
@@ -23,7 +23,7 @@
         <ion-title>{{ isAddPage() ? "Select League" : "Manage Leagues" }}</ion-title>
       </ion-toolbar>
       <ion-toolbar>
-        <ion-searchbar placeholder="Search or create..." [value]="searchTerm()" (ionInput)="onSearchInput($event)" appSearchBlur></ion-searchbar>
+        <ion-searchbar appSearchBlur placeholder="Search or create..." [value]="searchTerm()" (ionInput)="onSearchInput($event)"></ion-searchbar>
       </ion-toolbar>
     </ion-header>
     <ion-content>

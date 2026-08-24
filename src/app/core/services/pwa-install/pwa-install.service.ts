@@ -13,6 +13,43 @@ export class PwaInstallService {
     this.initializeInstallPrompt();
   }
 
+  canShowInstallPrompt(): Observable<boolean> {
+    return this.showInstallPromptSubject.asObservable();
+  }
+
+  async triggerInstall(): Promise<boolean> {
+    if (!this.deferredPrompt) {
+      if (this.isIOSSafari()) {
+        this.showInstallPromptSubject.next(false);
+        return false;
+      }
+      return false;
+    }
+
+    try {
+      this.deferredPrompt.prompt();
+
+      const { outcome } = await this.deferredPrompt.userChoice;
+
+      this.deferredPrompt = null;
+      this.showInstallPromptSubject.next(false);
+
+      return outcome === 'accepted';
+    } catch (error) {
+      console.error('Error during PWA installation:', error);
+      return false;
+    }
+  }
+
+  dismissInstallPrompt(): void {
+    sessionStorage.setItem('pwa-install-dismissed', 'true');
+    this.showInstallPromptSubject.next(false);
+  }
+
+  isInstallable(): boolean {
+    return this.deferredPrompt !== null || this.isIOSSafari();
+  }
+
   private initializeInstallPrompt(): void {
     let canShowPrompt = false;
     let shouldShowPrompt = false;
@@ -86,39 +123,6 @@ export class PwaInstallService {
     }
   }
 
-  canShowInstallPrompt(): Observable<boolean> {
-    return this.showInstallPromptSubject.asObservable();
-  }
-
-  async triggerInstall(): Promise<boolean> {
-    if (!this.deferredPrompt) {
-      if (this.isIOSSafari()) {
-        this.showInstallPromptSubject.next(false);
-        return false;
-      }
-      return false;
-    }
-
-    try {
-      this.deferredPrompt.prompt();
-
-      const { outcome } = await this.deferredPrompt.userChoice;
-
-      this.deferredPrompt = null;
-      this.showInstallPromptSubject.next(false);
-
-      return outcome === 'accepted';
-    } catch (error) {
-      console.error('Error during PWA installation:', error);
-      return false;
-    }
-  }
-
-  dismissInstallPrompt(): void {
-    sessionStorage.setItem('pwa-install-dismissed', 'true');
-    this.showInstallPromptSubject.next(false);
-  }
-
   private isInstallPromptDismissed(): boolean {
     return sessionStorage.getItem('pwa-install-dismissed') === 'true';
   }
@@ -134,9 +138,5 @@ export class PwaInstallService {
 
   private isPWAInstallable(): boolean {
     return 'serviceWorker' in navigator && window.location.protocol === 'https:' && document.querySelector('link[rel="manifest"]') !== null;
-  }
-
-  isInstallable(): boolean {
-    return this.deferredPrompt !== null || this.isIOSSafari();
   }
 }

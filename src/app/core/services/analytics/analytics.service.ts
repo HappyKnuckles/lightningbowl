@@ -42,6 +42,8 @@ interface QueuedEvent {
 export class AnalyticsService {
   private http = inject(HttpClient);
   private storage = inject(Storage);
+  readonly #analyticsEnabled = signal<boolean>(true);
+  readonly analyticsEnabled = this.#analyticsEnabled.asReadonly();
   private readonly analyticsEndpoint = `${environment.analyticsEndpoint}events`;
   private readonly analyticsBatchEndpoint = `${environment.analyticsEndpoint}events/batch`;
   private readonly appId = 'lightning-bowl';
@@ -52,23 +54,21 @@ export class AnalyticsService {
   private readonly BATCH_DEBOUNCE_MS = 5000; // Wait 5 seconds before sending batch (collect more events)
   private readonly MAX_QUEUE_SIZE = 500; // Prevent infinite queue growth
   private processingQueue = false;
+
   private storageReady = false;
   private batchFlushTimer?: ReturnType<typeof setTimeout>;
 
   private navigationStartTime?: number;
   private currentRoute?: string;
 
-  readonly #analyticsEnabled = signal<boolean>(true);
-  readonly analyticsEnabled = this.#analyticsEnabled.asReadonly();
+  constructor() {
+    // Initialize queue processing
+    void this.initializeQueueProcessing();
+  }
 
   // Only track in production
   private get isProduction(): boolean {
     return environment.production;
-  }
-
-  constructor() {
-    // Initialize queue processing
-    void this.initializeQueueProcessing();
   }
 
   /**
@@ -251,6 +251,29 @@ export class AnalyticsService {
   }
 
   /**
+   * Track route/page navigation performance
+   * Call this when navigating to a new route
+   */
+  async trackRouteChange(route: string): Promise<void> {
+    const now = Date.now();
+
+    // If we have a previous navigation, calculate the duration
+    if (this.navigationStartTime && this.currentRoute) {
+      const duration = now - this.navigationStartTime;
+      await this.trackEvent('performance_navigation', {
+        fromRoute: this.currentRoute,
+        toRoute: route,
+        duration,
+        ...this.getDeviceInfo(),
+      });
+    }
+
+    // Update for next navigation
+    this.currentRoute = route;
+    this.navigationStartTime = now;
+  }
+
+  /**
    * Initialize queue processing and background sync
    */
   private async initializeQueueProcessing(): Promise<void> {
@@ -292,29 +315,6 @@ export class AnalyticsService {
       value: Math.round(value),
       ...this.getDeviceInfo(),
     });
-  }
-
-  /**
-   * Track route/page navigation performance
-   * Call this when navigating to a new route
-   */
-  async trackRouteChange(route: string): Promise<void> {
-    const now = Date.now();
-
-    // If we have a previous navigation, calculate the duration
-    if (this.navigationStartTime && this.currentRoute) {
-      const duration = now - this.navigationStartTime;
-      await this.trackEvent('performance_navigation', {
-        fromRoute: this.currentRoute,
-        toRoute: route,
-        duration,
-        ...this.getDeviceInfo(),
-      });
-    }
-
-    // Update for next navigation
-    this.currentRoute = route;
-    this.navigationStartTime = now;
   }
 
   /**

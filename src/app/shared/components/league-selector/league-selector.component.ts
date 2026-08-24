@@ -54,19 +54,43 @@ import { LeaguesStore } from 'src/app/core/stores/leagues.store';
   ],
 })
 export class LeagueSelectorComponent implements OnInit {
+  private analyticsService = inject(AnalyticsService);
   isAddPage = input<boolean>(false);
-  selectedLeague = model<string>('');
   icon = input<string>('');
   leagues = input<string[]>([]);
+  selectedLeague = model<string>('');
+
   leagueChanged = output<string>();
+  availableLeagues = computed(() => {
+    const savedLeagues = this.leaguesStore.leagues();
+    // The settings variant manages the league list, so it must show every league, including hidden ones.
+    if (!this.isAddPage()) return this.sortByRecency(savedLeagues);
+    this.hiddenLeagueSelectionService.selectionState();
+    const savedJson = localStorage.getItem('leagueSelection');
+    const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
+    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
+    return this.sortByRecency([...new Set([...visibleLeagues, ...this.leagues()])]);
+  });
+  searchTerm = signal('');
+
+  filteredLeagues = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const leagues = this.availableLeagues();
+    return term ? leagues.filter((league) => league.toLowerCase().includes(term)) : leagues;
+  });
+
+  creatableName = computed(() => {
+    const name = this.searchTerm().trim();
+    if (!name) return '';
+    const exists = this.leaguesStore.leagues().some((league) => league.toLowerCase() === name.toLowerCase());
+    return exists ? '' : name;
+  });
 
   isPickerOpen = signal(false);
-  searchTerm = signal('');
-  presentingElement!: HTMLElement | null;
 
   private recentLeagues = signal<string[]>(this.readRecentLeagues());
 
-  private analyticsService = inject(AnalyticsService);
+  presentingElement!: HTMLElement | null;
 
   constructor(
     public leaguesStore: LeaguesStore,
@@ -81,30 +105,6 @@ export class LeagueSelectorComponent implements OnInit {
   ngOnInit(): void {
     this.presentingElement = document.querySelector('.ion-page');
   }
-
-  availableLeagues = computed(() => {
-    const savedLeagues = this.leaguesStore.leagues();
-    // The settings variant manages the league list, so it must show every league, including hidden ones.
-    if (!this.isAddPage()) return this.sortByRecency(savedLeagues);
-    this.hiddenLeagueSelectionService.selectionState();
-    const savedJson = localStorage.getItem('leagueSelection');
-    const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
-    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
-    return this.sortByRecency([...new Set([...visibleLeagues, ...this.leagues()])]);
-  });
-
-  filteredLeagues = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const leagues = this.availableLeagues();
-    return term ? leagues.filter((league) => league.toLowerCase().includes(term)) : leagues;
-  });
-
-  creatableName = computed(() => {
-    const name = this.searchTerm().trim();
-    if (!name) return '';
-    const exists = this.leaguesStore.leagues().some((league) => league.toLowerCase() === name.toLowerCase());
-    return exists ? '' : name;
-  });
 
   openPicker(): void {
     // Other selector instances (e.g. game-list rows) may have updated the recency since this one was created.

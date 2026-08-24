@@ -30,19 +30,19 @@ import { GameComponent } from '../game/game.component';
   imports: [IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, GameComponent],
 })
 export class GameOcrImportComponent {
-  gameData = signal<Game>(createEmptyGame());
-  isOpen = signal(false);
-  gameGrid = viewChild<GameComponent>('gameGrid');
-
   private gameImageImport = inject(GameImageImportService);
   private gameScoreCalculatorService = inject(GameScoreCalculatorService);
   private transformGameService = inject(GameDataTransformerService);
+
   private highScoreAlertService = inject(HighScoreAlertService);
   private analyticsService = inject(AnalyticsService);
   private hapticService = inject(HapticService);
   private utilsService = inject(UtilsService);
   private toastService = inject(ToastService);
   private gamesStore = inject(GamesStore);
+  gameGrid = viewChild<GameComponent>('gameGrid');
+  gameData = signal<Game>(createEmptyGame());
+  isOpen = signal(false);
 
   constructor() {
     addIcons({ chevronBack });

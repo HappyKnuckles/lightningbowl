@@ -57,11 +57,14 @@ interface Arrow {
 export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('gameCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  score = 0;
+  pinsKnocked = 0;
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
-  private animationId!: number;
-  private gameState: 'ready' | 'aiming' | 'rolling' | 'finished' = 'ready';
 
+  private animationId!: number;
+
+  private gameState: 'ready' | 'aiming' | 'rolling' | 'finished' = 'ready';
   // Game objects
   private ball: Ball = {
     x: 0,
@@ -76,29 +79,26 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     curveStartDistance: 85, // Start curving earlier - after traveling 80 pixels
     inGutter: false,
   };
-
   private pins: Pin[] = [];
+
   private particles: Particle[] = [];
   private arrows: Arrow[] = [];
-
   // Game settings
   private readonly LANE_WIDTH = 280;
   private readonly LANE_HEIGHT = 600;
   private readonly PIN_WIDTH = 24;
   private readonly PIN_HEIGHT = 50;
   private readonly GRAVITY = 0.5;
+
   private readonly FRICTION = 0.98;
   private readonly CURVE_FORCE = 0.175; // 15% reduction from 0.25 (0.25 * 0.85)
-
   // Touch/mouse tracking
   private isDragging = false;
   private startX = 0;
   private startY = 0;
+
   private aimX = 0;
   private aimY = 0;
-
-  score = 0;
-  pinsKnocked = 0;
 
   constructor(private hapticService: HapticService) {
     addIcons({ refresh });
@@ -124,6 +124,28 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
     }
+  }
+
+  get gameStatus(): string {
+    switch (this.gameState) {
+      case 'ready':
+        return 'Swipe to throw the ball!';
+      case 'aiming':
+        return 'Keep swiping...';
+      case 'rolling':
+        return 'Ball is rolling...';
+      case 'finished':
+        if (this.pinsKnocked === 10) {
+          return '🎉 STRIKE! Auto-resetting in 2 seconds...';
+        }
+        return `${this.pinsKnocked}/10 pins down! Resetting in 2 seconds...`;
+      default:
+        return '';
+    }
+  }
+
+  resetGame() {
+    this.setupGame();
   }
 
   private setupGame() {
@@ -727,7 +749,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.renderBall();
     this.renderParticles();
   }
-
   private renderLane() {
     // Lane background
     this.ctx.fillStyle = '#8B4513';
@@ -750,7 +771,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.ctx.fillRect(0, 0, 18, this.LANE_HEIGHT);
     this.ctx.fillRect(this.LANE_WIDTH - 18, 0, 18, this.LANE_HEIGHT);
   }
-
   private renderPins() {
     this.pins.forEach((pin) => {
       this.ctx.save();
@@ -786,6 +806,7 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       this.ctx.restore();
     });
   }
+
   private drawRoundedRect(x: number, y: number, width: number, height: number, radius: number) {
     this.ctx.moveTo(x + radius, y);
     this.ctx.lineTo(x + width - radius, y);
@@ -796,6 +817,7 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.ctx.quadraticCurveTo(x, y, x + radius, y); // Top-left corner
     this.ctx.closePath();
   }
+
   private drawPinShape(x: number, y: number, width: number, height: number) {
     // Pin shadow/depth
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -955,28 +977,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.score = this.pinsKnocked * 10;
     if (this.pinsKnocked === 10) {
       this.score += 20; // Strike bonus
-    }
-  }
-
-  resetGame() {
-    this.setupGame();
-  }
-
-  get gameStatus(): string {
-    switch (this.gameState) {
-      case 'ready':
-        return 'Swipe to throw the ball!';
-      case 'aiming':
-        return 'Keep swiping...';
-      case 'rolling':
-        return 'Ball is rolling...';
-      case 'finished':
-        if (this.pinsKnocked === 10) {
-          return '🎉 STRIKE! Auto-resetting in 2 seconds...';
-        }
-        return `${this.pinsKnocked}/10 pins down! Resetting in 2 seconds...`;
-      default:
-        return '';
     }
   }
 }

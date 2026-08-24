@@ -1,15 +1,15 @@
-<ion-button fill="clear" #sortTrigger [id]="id()">
-  <ion-icon slot="icon-only" name="swap-vertical"></ion-icon>
+<ion-button #sortTrigger fill="clear" [id]="id()">
+  <ion-icon name="swap-vertical" slot="icon-only"></ion-icon>
 </ion-button>
 
-<ion-popover [trigger]="id()" dismissOnSelect="true" alignment="center" side="bottom" (didPresent)="onPopoverPresent()">
+<ion-popover alignment="center" dismissOnSelect="true" side="bottom" [trigger]="id()" (didPresent)="onPopoverPresent()">
   <ng-template>
     <ion-list #sortList>
       <ion-item *ngIf="favoritesFirstStorageKey" lines="full">
         <ion-checkbox justify="space-between" [checked]="favoritesFirst" (ionChange)="onFavoritesFirstChange($event)">Favorites first</ion-checkbox>
       </ion-item>
       <ion-radio-group [(ngModel)]="selectedSortKey" (ngModelChange)="onSortChange($event)">
-        <ion-item *ngFor="let option of sortOptions()" (click)="selectOption(option)" [id]="'sort-item-' + getSortKey(option)">
+        <ion-item *ngFor="let option of sortOptions()" [id]="'sort-item-' + getSortKey(option)" (click)="selectOption(option)">
           <ion-radio slot="start" [value]="getSortKey(option)"></ion-radio>
           <ion-label>{{ option.label }}</ion-label>
         </ion-item>

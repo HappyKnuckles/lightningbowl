@@ -5,16 +5,16 @@
     </ion-buttons>
     <ion-title>Ball Comparison</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="openAddBallModal()" [disabled]="selectedBalls().length >= maxBalls">
-        <ion-icon slot="icon-only" name="add"></ion-icon>
+      <ion-button [disabled]="selectedBalls().length >= maxBalls" (click)="openAddBallModal()">
+        <ion-icon name="add" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   @if (selectedBalls().length > 0) {
     <ion-toolbar>
       <ion-segment [(ngModel)]="selectedSegment">
-        <ion-segment-button value="compare" contentId="compare" aria-label="Compare balls view">Compare</ion-segment-button>
-        <ion-segment-button value="chart" contentId="chart" aria-label="Chart comparison view">Chart</ion-segment-button>
+        <ion-segment-button aria-label="Compare balls view" contentId="compare" value="compare">Compare</ion-segment-button>
+        <ion-segment-button aria-label="Chart comparison view" contentId="chart" value="chart">Chart</ion-segment-button>
       </ion-segment>
     </ion-toolbar>
   }
@@ -23,7 +23,7 @@
 <ion-content [fullscreen]="true">
   @if (selectedBalls().length === 0) {
     <div class="empty-state">
-      <ion-icon name="scale-outline" class="empty-icon"></ion-icon>
+      <ion-icon class="empty-icon" name="scale-outline"></ion-icon>
       <ion-text>
         <h2>Compare Bowling Balls</h2>
         <p>
@@ -32,7 +32,7 @@
         </p>
       </ion-text>
       <ion-button (click)="openAddBallModal()">
-        <ion-icon slot="start" name="add"></ion-icon>
+        <ion-icon name="add" slot="start"></ion-icon>
         Add Ball
       </ion-button>
     </div>
@@ -49,12 +49,12 @@
               <div class="ball-header">
                 <ion-select
                   #weightSelect
+                  aria-label="Weight"
                   class="weight-change"
                   interface="popover"
-                  [value]="ball.data.core_weight"
-                  (ionChange)="onWeightSelect(ball.data, $event.detail.value, weightSelect)"
                   [disabled]="loadingWeightBallIds().has(ball.data.ball_id + ball.data.core_weight)"
-                  aria-label="Weight">
+                  [value]="ball.data.core_weight"
+                  (ionChange)="onWeightSelect(ball.data, $event.detail.value, weightSelect)">
                   @for (weight of availableWeights; track weight) {
                     <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
                   }
@@ -66,7 +66,7 @@
               </div>
 
               <div class="ball-image-wrapper">
-                <ion-img [src]="url + ball.data.thumbnail_image" [alt]="ball.data.ball_name"></ion-img>
+                <ion-img [alt]="ball.data.ball_name" [src]="url + ball.data.thumbnail_image"></ion-img>
               </div>
 
               <ion-card-header>
@@ -94,7 +94,7 @@
                         >
                       </ion-row>
                       <div class="metric-bar-bg">
-                        <div class="metric-bar" [style.width.%]="ball.metrics.hookScore" [style.background]="ball.hookBarColor"></div>
+                        <div class="metric-bar" [style.background]="ball.hookBarColor" [style.width.%]="ball.metrics.hookScore"></div>
                       </div>
                     </ion-col>
                   </ion-row>
@@ -111,7 +111,7 @@
                         </ion-col>
                       </ion-row>
                       <div class="metric-bar-bg">
-                        <div class="metric-bar" [style.width.%]="ball.metrics.lengthScore" [style.background]="'var(--ion-color-primary)'"></div>
+                        <div class="metric-bar" [style.background]="'var(--ion-color-primary)'" [style.width.%]="ball.metrics.lengthScore"></div>
                       </div>
                     </ion-col>
                   </ion-row>
@@ -128,7 +128,7 @@
                         >
                       </ion-row>
                       <div class="metric-bar-bg">
-                        <div class="metric-bar" [style.width.%]="ball.metrics.flareScore" [style.background]="ball.flareBarColor"></div>
+                        <div class="metric-bar" [style.background]="ball.flareBarColor" [style.width.%]="ball.metrics.flareScore"></div>
                       </div>
                     </ion-col>
                   </ion-row>
@@ -148,7 +148,7 @@
                   <ion-row class="lane-condition">
                     <ion-col><span class="lane-label">Best For:</span></ion-col>
                     <ion-col size="auto">
-                      <ion-chip [color]="ball.metrics.laneConditionColor" class="lane-chip">
+                      <ion-chip class="lane-chip" [color]="ball.metrics.laneConditionColor">
                         {{ ball.metrics.laneCondition }}
                       </ion-chip>
                     </ion-col>
@@ -181,7 +181,7 @@
         @if (selectedBalls().length < maxBalls) {
           <div class="add-more-row">
             <ion-button size="small" (click)="openAddBallModal()">
-              <ion-icon slot="start" name="add"></ion-icon>
+              <ion-icon name="add" slot="start"></ion-icon>
               Add Another Ball
             </ion-button>
           </div>
@@ -195,7 +195,7 @@
         @if (selectedBalls().length < maxBalls) {
           <div class="add-more-row">
             <ion-button size="small" (click)="openAddBallModal()">
-              <ion-icon slot="start" name="add"></ion-icon>
+              <ion-icon name="add" slot="start"></ion-icon>
               Add Another Ball
             </ion-button>
           </div>
@@ -208,8 +208,8 @@
 <ion-modal #addBallModal [presentingElement]="presentingElement">
   <ng-template>
     <app-generic-typeahead
-      [items]="allBalls()"
       [config]="ballTypeaheadConfig"
+      [items]="allBalls()"
       [prevSelectedItems]="selectedBallIds()"
       (selectedItemsChange)="onBallSelectionChange($event)">
     </app-generic-typeahead>

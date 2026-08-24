@@ -2,16 +2,16 @@
   <ion-toast
     #toastRef
     class="custom-toast"
-    [isOpen]="true"
-    [message]="toast.message"
-    [icon]="toast.icon"
+    position="bottom"
+    swipeGesture="vertical"
     [color]="toast.isError ? 'danger' : 'primary'"
     [duration]="TOAST_DURATION"
-    position="bottom"
-    (didPresent)="onToastDidPresent(toast.id, $event)"
-    (didDismiss)="onToastDidDismiss(toast.id)"
+    [icon]="toast.icon"
+    [isOpen]="true"
+    [message]="toast.message"
+    [ngStyle]="{ transform: 'translateY(-' + getOffset($index) + 'px)' }"
     (click)="toastRef.dismiss()"
-    swipeGesture="vertical"
-    [ngStyle]="{ transform: 'translateY(-' + getOffset($index) + 'px)' }">
+    (didDismiss)="onToastDidDismiss(toast.id)"
+    (didPresent)="onToastDidPresent(toast.id, $event)">
   </ion-toast>
 }

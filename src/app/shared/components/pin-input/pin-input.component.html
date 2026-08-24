@@ -1,7 +1,7 @@
 <div class="pin-input-container">
   @if (showStatsButton()) {
-    <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
-      <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
+    <ion-button class="stats-btn" fill="clear" size="small" [disabled]="!statsEnabled()" (click)="statsClick.emit()">
+      <ion-icon name="bar-chart-outline" slot="icon-only"></ion-icon>
     </ion-button>
   }
 
@@ -21,18 +21,18 @@
   }
 
   <div class="quick-actions">
-    <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
-    <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
-    <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+    <ion-button size="small" [disabled]="!canStrike() || isGameComplete()" (click)="recordStrike()"> X </ion-button>
+    <ion-button size="small" [disabled]="!canSpare() || isGameComplete()" (click)="recordSpare()"> / </ion-button>
+    <ion-button size="small" [disabled]="isGameComplete()" (click)="recordGutter()"> - </ion-button>
 
-    <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
-      <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+    <ion-button size="small" [disabled]="!hasSelection() || isGameComplete()" (click)="clearSelectedPins()">
+      <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
     </ion-button>
-    <ion-button size="small" (click)="undoLastThrow()" [disabled]="!canUndo()">
-      <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+    <ion-button size="small" [disabled]="!canUndo()" (click)="undoLastThrow()">
+      <ion-icon name="arrow-undo-outline" slot="icon-only"></ion-icon>
     </ion-button>
-    <ion-button size="small" (click)="confirmThrow()" [disabled]="isGameComplete()">
-      <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+    <ion-button size="small" [disabled]="isGameComplete()" (click)="confirmThrow()">
+      <ion-icon name="checkmark-outline" slot="icon-only"></ion-icon>
     </ion-button>
   </div>
 </div>

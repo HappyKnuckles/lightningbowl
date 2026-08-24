@@ -41,11 +41,11 @@ import { DistancePipe } from 'src/app/shared/pipes/distance-pipe/distance.pipe';
   styleUrl: './alley-detail-sheet.component.scss',
 })
 export class AlleyDetailSheetComponent {
-  alley = input.required<Alley>();
-
   private favoritesService = inject(AlleyFavoritesService);
+
   private hapticService = inject(HapticService);
   private toastService = inject(ToastService);
+  alley = input.required<Alley>();
 
   openState = computed(() => getOpenState(this.alley().openingHours));
   hoursLines = computed(() => (this.alley().openingHours ? formatOpeningHours(this.alley().openingHours!) : []));
@@ -104,6 +104,12 @@ export class AlleyDetailSheetComponent {
     await this.copyToClipboard(text, url);
   }
 
+  toggleFavorite(): void {
+    const isFavorited = this.favoritesService.toggleFavorite(this.alley());
+    void this.hapticService.vibrate(ImpactStyle.Light);
+    this.toastService.showToast(isFavorited ? 'Added to favorite alleys' : 'Removed from favorite alleys', isFavorited ? 'heart' : 'heart-outline');
+  }
+
   private async copyToClipboard(text: string, url: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(`${text}\n${url}`);
@@ -111,11 +117,5 @@ export class AlleyDetailSheetComponent {
     } catch {
       this.toastService.showToast('Sharing is not supported on this device.', 'share-social-outline', true);
     }
-  }
-
-  toggleFavorite(): void {
-    const isFavorited = this.favoritesService.toggleFavorite(this.alley());
-    void this.hapticService.vibrate(ImpactStyle.Light);
-    this.toastService.showToast(isFavorited ? 'Added to favorite alleys' : 'Removed from favorite alleys', isFavorited ? 'heart' : 'heart-outline');
   }
 }

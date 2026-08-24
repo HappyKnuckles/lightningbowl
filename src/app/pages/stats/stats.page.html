@@ -1,21 +1,21 @@
-<ion-header [translucent]="true" class="ion-text-center">
+<ion-header class="ion-text-center" [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
     <ion-title> Stats </ion-title>
-    <ion-buttons slot="end" class="action-sheet">
-      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
-        <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
-        <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
+    <ion-buttons class="action-sheet" slot="end">
+      <ion-button fill="clear" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()" (click)="openFilterModal()">
+        <ion-icon name="filter-outline" slot="icon-only"></ion-icon>
+        <ion-text *ngIf="gameFilterService.activeFilterCount() !== 0" class="filter-indicator">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   @if (hasGames()) {
     <ion-toolbar>
-      <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)" scrollable="true">
+      <ion-segment scrollable="true" [value]="selectedSegment" (ionChange)="onSegmentChanged($event)">
         @for (segment of segments; track segment) {
-          <ion-segment-button [value]="segment" [contentId]="segment">
+          <ion-segment-button [contentId]="segment" [value]="segment">
             <ion-label class="segment-label">{{ segment }}</ion-label>
           </ion-segment-button>
         }
@@ -23,17 +23,17 @@
     </ion-toolbar>
   }
   <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
-    <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
+    <app-generic-filter-active [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs" [filters]="currentFilters()">
     </app-generic-filter-active>
   </ion-toolbar>
 
   @if (hasGames()) {
-    <ion-toolbar [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'" class="ion-activatable ion-ripple-parent">
+    <ion-toolbar class="ion-activatable ion-ripple-parent" [@toolbarFade]="selectedSegment === 'Sessions' ? 'visible' : 'hidden'">
       <ion-select
         class="date-picker"
+        expandedIcon="calendar-number"
         label="Session date"
         toggleIcon="calendar-number-outline"
-        expandedIcon="calendar-number"
         [value]="selectedDate()"
         (ionChange)="_selectedDate.set($event.detail.value)">
         <ion-select-option *ngFor="let unixDate of uniqueSortedDates()" [value]="unixDate">
@@ -55,7 +55,7 @@
     @let prevStats = statsService.prevStats();
 
     <ion-segment-content id="Overall">
-      <section class="tab" *ngIf="hasFilteredGames()">
+      <section *ngIf="hasFilteredGames()" class="tab">
         <!-- SCORING -->
         <h2 class="sec-heading"><span>Scoring</span><span class="divider-line"></span></h2>
         <dl class="feature-card">
@@ -63,7 +63,7 @@
           <dd class="feature-row">
             <span class="feature-val" id="average">{{ stats.averageScore | number: "1.2-2" }}</span>
             @if (averageVm().trend) {
-              <span class="feature-trend" [class.up]="averageVm().trend === 'up'" [class.down]="averageVm().trend === 'down'">
+              <span class="feature-trend" [class.down]="averageVm().trend === 'down'" [class.up]="averageVm().trend === 'up'">
                 <ion-icon [name]="averageVm().trend === 'up' ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
                 {{ averageVm().trend === "up" ? "Trending up" : "Trending down" }}
               </span>
@@ -71,7 +71,7 @@
           </dd>
         </dl>
         @if (averageVm().diff) {
-          <ion-popover class="diff-popover" [trigger]="'average'" alignment="start">
+          <ion-popover alignment="start" class="diff-popover" [trigger]="'average'">
             <ion-text [color]="averageVm().diffColor">{{ averageVm().diff }}</ion-text>
           </ion-popover>
         }
@@ -107,13 +107,13 @@
                 <span class="acc-val">{{ row.value | number: "1.2-2" }}{{ row.suffix }}</span>
               </div>
               <div
+                aria-valuemax="100"
+                aria-valuemin="0"
                 class="acc-track"
                 role="progressbar"
-                [attr.aria-valuenow]="row.fill"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                [attr.aria-label]="row.label">
-                <div class="acc-fill" [style.width.%]="row.fill" [style.--fill]="row.fill || 1"></div>
+                [attr.aria-label]="row.label"
+                [attr.aria-valuenow]="row.fill">
+                <div class="acc-fill" [style.--fill]="row.fill || 1" [style.width.%]="row.fill"></div>
               </div>
             </li>
           }
@@ -138,14 +138,14 @@
 
         @for (highlight of overallHighlights(); track highlight.title) {
           <app-stat-highlight-item
-            [title]="highlight.title"
-            [item]="highlight.item"
             [allItems]="highlight.allItems"
-            [sortMode]="highlight.sortMode"
-            [totalGames]="stats.totalGames"
             [emptyMessage]="highlight.emptyMessage"
             [imageUrlBase]="highlight.imageUrlBase"
-            [roundImage]="highlight.roundImage">
+            [item]="highlight.item"
+            [roundImage]="highlight.roundImage"
+            [sortMode]="highlight.sortMode"
+            [title]="highlight.title"
+            [totalGames]="stats.totalGames">
           </app-stat-highlight-item>
         }
 
@@ -161,8 +161,8 @@
           </thead>
           <tbody>
             @for (row of seriesRows(); track row.label; let last = $last) {
-              <tr class="series-row" [class.last]="last" [class.empty]="!row.avg">
-                <th scope="row" class="series-label">{{ row.label }}</th>
+              <tr class="series-row" [class.empty]="!row.avg" [class.last]="last">
+                <th class="series-label" scope="row">{{ row.label }}</th>
                 <td class="series-val">{{ row.avg ? (row.avg | number: "1.2-2") : "—" }}</td>
                 <td class="series-val">{{ row.high || "—" }}</td>
               </tr>
@@ -172,10 +172,10 @@
 
         <!-- PLAY FREQUENCY -->
         <app-stat-display
-          [title]="'Play Frequency'"
-          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
           [currentStats]="stats"
-          [prevStats]="prevStats">
+          [prevStats]="prevStats"
+          [statDefinitions]="PLAY_FREQUENCY_STAT_DEFINITIONS"
+          [title]="'Play Frequency'">
         </app-stat-display>
         <!-- <h2 class="sec-heading"><span>Play frequency</span><span class="divider-line"></span></h2>
         <div class="stat-grid-3">
@@ -219,10 +219,10 @@
     </ion-segment-content>
 
     <ion-segment-content id="Throws">
-      <section class="tab" *ngIf="hasFilteredGames()">
-        <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+      <section *ngIf="hasFilteredGames()" class="tab">
+        <app-stat-display [currentStats]="stats" [prevStats]="prevStats" [statDefinitions]="THROW_STAT_DEFINITIONS" [title]="'Throw stats'">
         </app-stat-display>
-        <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+        <app-stat-display [currentStats]="stats" [prevStats]="prevStats" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [title]="'Strike stats'">
         </app-stat-display>
         <h2 class="sec-heading"><span>Throw distribution</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
@@ -232,14 +232,14 @@
     </ion-segment-content>
 
     <ion-segment-content id="Spares">
-      <section class="tab" *ngIf="hasFilteredGames()">
-        <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overallSpareStats">
+      <section *ngIf="hasFilteredGames()" class="tab">
+        <app-stat-spare id="overallSpareStats" [prevStats]="prevStats" [stats]="statsService.currentStats()" [title]="'Spare stats'">
         </app-stat-spare>
         <app-stat-display
-          [title]="'Spare conversion by pin count'"
-          [statDefinitions]="SPARE_STAT_DEFINITIONS"
           [currentStats]="stats"
-          [prevStats]="prevStats">
+          [prevStats]="prevStats"
+          [statDefinitions]="SPARE_STAT_DEFINITIONS"
+          [title]="'Spare conversion by pin count'">
         </app-stat-display>
         <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="divider-line"></span></h2>
         <figure class="chart-card">
@@ -253,12 +253,12 @@
     </ion-segment-content>
 
     <ion-segment-content id="Pins">
-      <section class="tab" *ngIf="hasFilteredGames()">
-        <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+      <section *ngIf="hasFilteredGames()" class="tab">
+        <app-stat-display [currentStats]="stats" [prevStats]="prevStats" [statDefinitions]="PIN_STAT_DEFINITIONS" [title]="'Pin stats'">
         </app-stat-display>
-        <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-stat-pin-leave>
-        <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-stat-pin-leave>
-        <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+        <app-stat-pin-leave [leaveStats]="statsService.bestLeaves()" [title]="'Strongest spares'"></app-stat-pin-leave>
+        <app-stat-pin-leave [leaveStats]="statsService.worstLeaves()" [title]="'Weakest spares'"></app-stat-pin-leave>
+        <app-stat-pin-leave [allLeaves]="statsService.allLeaves()" [leaveStats]="statsService.commonLeaves()" [title]="'Most common leaves'">
         </app-stat-pin-leave>
       </section>
     </ion-segment-content>
@@ -267,28 +267,28 @@
       @if (hasFilteredGames()) {
         <section class="tab">
           <app-stat-display
-            [title]="'Overall stats'"
-            [statDefinitions]="SESSION_STAT_DEFINITIONS"
             [currentStats]="sessionStats()"
-            [prevStats]="stats">
+            [prevStats]="stats"
+            [statDefinitions]="SESSION_STAT_DEFINITIONS"
+            [title]="'Overall stats'">
           </app-stat-display>
           @for (highlight of sessionHighlights(); track highlight.title) {
             <app-stat-highlight-item
-              [title]="highlight.title"
-              [item]="highlight.item"
               [allItems]="highlight.allItems"
-              [sortMode]="highlight.sortMode"
-              [totalGames]="sessionStats().totalGames"
               [emptyMessage]="highlight.emptyMessage"
               [imageUrlBase]="highlight.imageUrlBase"
-              [roundImage]="highlight.roundImage">
+              [item]="highlight.item"
+              [roundImage]="highlight.roundImage"
+              [sortMode]="highlight.sortMode"
+              [title]="highlight.title"
+              [totalGames]="sessionStats().totalGames">
             </app-stat-highlight-item>
           }
-          <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
-          <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
-          <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
+          <app-stat-display [currentStats]="sessionStats()" [statDefinitions]="PIN_STAT_DEFINITIONS" [title]="'Pin stats'"></app-stat-display>
+          <app-spare-display [id]="'sessionSpareStats'" [prevStats]="stats" [stats]="sessionStats()" [title]="'Spare stats'"> </app-spare-display>
+          <app-stat-pin-leave [leaveStats]="sessionLeaves().best" [title]="'Strongest spares'"></app-stat-pin-leave>
+          <app-stat-pin-leave [leaveStats]="sessionLeaves().worst" [title]="'Weakest spares'"></app-stat-pin-leave>
+          <app-stat-pin-leave [allLeaves]="sessionAllLeaves()" [leaveStats]="sessionLeaves().common" [title]="'Most common leaves'">
           </app-stat-pin-leave>
         </section>
       }

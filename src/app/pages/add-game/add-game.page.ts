@@ -102,36 +102,27 @@ defineCustomElements(window);
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AddGamePage implements OnInit {
-  // Live stats
-  liveSeriesStats: LiveSeriesStats | null = null;
-  allStats = this.gameStatsService.overallStats;
-  isLiveStatsOpen = false;
+  // View Children & DOM References
+  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  // Game Data State
+  games = signal(Array.from({ length: 19 }, () => createEmptyGame()));
   readonly hasLiveStats = computed(() => {
     const active = new Set(this.getActiveTrackIndexes());
     const games = this.games().filter((_, i) => active.has(i));
     return games.map(toCompletedFramesGame).some((g) => g.frames.length > 0);
   });
-  readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
+  maxScores = signal(new Array(19).fill(300));
+  // computed state
+  seriesMaxscore = computed(() => {
+    return this.getActiveTrackIndexes().reduce((acc, idx) => acc + this.maxScores()[idx], 0);
+  });
 
+  totalScores = signal(new Array(19).fill(0));
+  seriesCurrentScore = computed(() => {
+    return this.getActiveTrackIndexes().reduce((acc, idx) => acc + this.totalScores()[idx], 0);
+  });
   // UI State
   selectedMode = signal<SeriesMode>(SeriesMode.Single);
-  sheetOpen = false;
-  isAlertOpen = false;
-  is300 = false;
-  selectedSegment = 'Game 1';
-  segments: string[] = ['Game 1'];
-  showScoreToolbar = false;
-  toolbarOffset = 0;
-  toolbarDisabledState = { strikeDisabled: true, spareDisabled: true };
-
-  // Game Data State
-  games = signal(Array.from({ length: 19 }, () => createEmptyGame()));
-  totalScores = signal(new Array(19).fill(0));
-  maxScores = signal(new Array(19).fill(300));
-
-  // Pin input mode state
-  isPinInputMode = true;
-
   pinModeState = signal<PinModeState[]>(
     Array.from({ length: 19 }, () => ({
       currentFrameIndex: 0,
@@ -139,18 +130,27 @@ export class AddGamePage implements OnInit {
       throwsData: Array.from({ length: 10 }, () => []),
     })),
   );
+  // Live stats
+  liveSeriesStats: LiveSeriesStats | null = null;
+  allStats = this.gameStatsService.overallStats;
+  isLiveStatsOpen = false;
+  readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
+  sheetOpen = false;
 
-  // computed state
-  seriesMaxscore = computed(() => {
-    return this.getActiveTrackIndexes().reduce((acc, idx) => acc + this.maxScores()[idx], 0);
-  });
+  isAlertOpen = false;
+  is300 = false;
+  selectedSegment = 'Game 1';
 
-  seriesCurrentScore = computed(() => {
-    return this.getActiveTrackIndexes().reduce((acc, idx) => acc + this.totalScores()[idx], 0);
-  });
+  segments: string[] = ['Game 1'];
 
-  // View Children & DOM References
-  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  showScoreToolbar = false;
+
+  toolbarOffset = 0;
+
+  toolbarDisabledState = { strikeDisabled: true, spareDisabled: true };
+
+  // Pin input mode state
+  isPinInputMode = true;
   presentingElement!: HTMLElement | null;
 
   // Internal Logic State
@@ -529,6 +529,15 @@ export class AddGamePage implements OnInit {
     }
   }
 
+  onSeriesStatsClick(): void {
+    const active = new Set(this.getActiveTrackIndexes());
+    const games = this.games().filter((_, i) => active.has(i));
+    this.liveSeriesStats = this.gameStatsService.calculateLiveSeriesStats(games);
+    if (this.liveSeriesStats) {
+      this.isLiveStatsOpen = true;
+    }
+  }
+
   private async processAndSaveGames(games: Game[], isSeries = false, seriesId = ''): Promise<boolean> {
     if (!games.every((g) => this.isGameValid(g))) {
       this.hapticService.vibrate(ImpactStyle.Heavy);
@@ -611,15 +620,6 @@ export class AddGamePage implements OnInit {
     const countMatch = this.selectedMode().match(/\d+/);
     const count = countMatch ? parseInt(countMatch[0], 10) : 1;
     return Array.from({ length: count }, (_, i) => i);
-  }
-
-  onSeriesStatsClick(): void {
-    const active = new Set(this.getActiveTrackIndexes());
-    const games = this.games().filter((_, i) => active.has(i));
-    this.liveSeriesStats = this.gameStatsService.calculateLiveSeriesStats(games);
-    if (this.liveSeriesStats) {
-      this.isLiveStatsOpen = true;
-    }
   }
 
   private propagateMetadataToSeries(): void {

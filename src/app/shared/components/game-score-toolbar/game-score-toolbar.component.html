@@ -1,4 +1,4 @@
 <div class="score-toolbar" [class.show]="show()" [ngStyle]="{ bottom: offset() + 'px' }">
-  <ion-button (click)="onStrikeClick()" (mousedown)="$event.preventDefault()" [disabled]="strikeDisabled()"> X </ion-button>
-  <ion-button (click)="onSpareClick()" (mousedown)="$event.preventDefault()" [disabled]="spareDisabled()"> / </ion-button>
+  <ion-button [disabled]="strikeDisabled()" (click)="onStrikeClick()" (mousedown)="$event.preventDefault()"> X </ion-button>
+  <ion-button [disabled]="spareDisabled()" (click)="onSpareClick()" (mousedown)="$event.preventDefault()"> / </ion-button>
 </div>

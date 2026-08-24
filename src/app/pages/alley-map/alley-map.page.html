@@ -7,55 +7,55 @@
   </ion-toolbar>
   <ion-toolbar>
     <ion-searchbar
+      #search="appSearchHistory"
       appSearchBlur
       appSearchHistory
-      historyKey="alleys"
-      #search="appSearchHistory"
-      placeholder="Search city, address or alley"
-      inputmode="search"
       enterkeyhint="search"
+      historyKey="alleys"
+      inputmode="search"
+      placeholder="Search city, address or alley"
       [value]="searchTerm()"
       (ionInput)="onSearchInput($event)"
       (searchCommitted)="onSearch($event)"></ion-searchbar>
   </ion-toolbar>
   <ion-toolbar class="chips-toolbar">
-    <div class="filter-chips" role="group" aria-label="Filter alleys">
-      <ion-chip [class.active]="filters().openNow" (click)="toggleOpenNow()" [attr.aria-pressed]="filters().openNow"> Open now </ion-chip>
-      <ion-chip [class.active]="filters().favoritesOnly" (click)="toggleFavoritesOnly()" [attr.aria-pressed]="filters().favoritesOnly">
-        <ion-icon name="heart" aria-hidden="true"></ion-icon>
+    <div aria-label="Filter alleys" class="filter-chips" role="group">
+      <ion-chip [attr.aria-pressed]="filters().openNow" [class.active]="filters().openNow" (click)="toggleOpenNow()"> Open now </ion-chip>
+      <ion-chip [attr.aria-pressed]="filters().favoritesOnly" [class.active]="filters().favoritesOnly" (click)="toggleFavoritesOnly()">
+        <ion-icon aria-hidden="true" name="heart"></ion-icon>
         <ion-label> Favorites</ion-label>
       </ion-chip>
-      <ion-chip (click)="cycleRadius()" aria-label="Change search radius">Within {{ filters().radiusKm }} km</ion-chip>
+      <ion-chip aria-label="Change search radius" (click)="cycleRadius()">Within {{ filters().radiusKm }} km</ion-chip>
     </div>
   </ion-toolbar>
   <app-search-suggestions
     historyKey="alleys"
-    [searchTerm]="searchTerm()"
     [open]="search.focused()"
+    [searchTerm]="searchTerm()"
     (suggestionSelected)="search.recordSelection($event); onSearchSuggestionSelected($event)">
   </app-search-suggestions>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="map-wrapper">
-    <div #mapContainer id="map_canvas" role="application" aria-label="Map of bowling alleys"></div>
+    <div #mapContainer aria-label="Map of bowling alleys" id="map_canvas" role="application"></div>
 
     <div class="map-overlay-top">
       @if (isLoading()) {
-        <div class="map-pill" role="status" aria-live="polite">
+        <div aria-live="polite" class="map-pill" role="status">
           <ion-spinner name="crescent"></ion-spinner>
           Finding alleys…
         </div>
       } @else if (networkService.isOffline) {
         <div class="map-banner" role="alert">
-          <ion-icon name="cloud-offline-outline" aria-hidden="true"></ion-icon>
+          <ion-icon aria-hidden="true" name="cloud-offline-outline"></ion-icon>
           You're offline — showing last loaded results.
         </div>
       } @else if (hasError()) {
         <div class="map-banner" role="alert">
           {{ errorMessage() }}
-          <ion-button size="small" fill="clear" (click)="retry()">
-            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          <ion-button fill="clear" size="small" (click)="retry()">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
             Retry
           </ion-button>
         </div>
@@ -63,7 +63,7 @@
         <div class="map-banner">
           No bowling alleys within {{ filters().radiusKm }} km.
           @if (filters().radiusKm < 100) {
-            <ion-button size="small" fill="clear" (click)="expandRadius()">Expand radius</ion-button>
+            <ion-button fill="clear" size="small" (click)="expandRadius()">Expand radius</ion-button>
           }
         </div>
       } @else if (showEmptyState()) {
@@ -71,8 +71,8 @@
       } @else if (locationState() === "denied") {
         <div class="map-banner">
           Location is off — search a place or
-          <ion-button size="small" fill="clear" (click)="recenterOnUser()">
-            <ion-icon slot="start" name="locate-outline"></ion-icon>
+          <ion-button fill="clear" size="small" (click)="recenterOnUser()">
+            <ion-icon name="locate-outline" slot="start"></ion-icon>
             retry
           </ion-button>
         </div>
@@ -80,27 +80,27 @@
     </div>
 
     <ion-button
+      aria-label="Show alleys as list"
       class="list-button"
       shape="round"
-      (click)="isListOpen.set(true)"
       [disabled]="filteredAlleys().length === 0"
-      aria-label="Show alleys as list">
-      <ion-icon slot="start" name="list-outline"></ion-icon>
+      (click)="isListOpen.set(true)">
+      <ion-icon name="list-outline" slot="start"></ion-icon>
       List · {{ filteredAlleys().length }}
     </ion-button>
 
-    <ion-button class="locate-button" shape="round" (click)="recenterOnUser()" aria-label="Center map on my location">
-      <ion-icon slot="icon-only" name="locate-outline"></ion-icon>
+    <ion-button aria-label="Center map on my location" class="locate-button" shape="round" (click)="recenterOnUser()">
+      <ion-icon name="locate-outline" slot="icon-only"></ion-icon>
     </ion-button>
   </div>
 
   <ion-modal
     class="alley-sheet"
-    [isOpen]="selectedAlley() !== null"
+    handleBehavior="cycle"
+    [backdropBreakpoint]="0.5"
     [breakpoints]="[0, 0.45, 0.85]"
     [initialBreakpoint]="0.45"
-    [backdropBreakpoint]="0.5"
-    handleBehavior="cycle"
+    [isOpen]="selectedAlley() !== null"
     (didDismiss)="onSheetDismiss()">
     <ng-template>
       @if (selectedAlley(); as alley) {
@@ -111,11 +111,11 @@
 
   <ion-modal
     class="alley-sheet"
-    [isOpen]="isListOpen()"
+    handleBehavior="cycle"
+    [backdropBreakpoint]="0.5"
     [breakpoints]="[0, 0.5, 0.9]"
     [initialBreakpoint]="0.5"
-    [backdropBreakpoint]="0.5"
-    handleBehavior="cycle"
+    [isOpen]="isListOpen()"
     (didDismiss)="isListOpen.set(false)">
     <ng-template>
       <app-alley-list [alleys]="filteredAlleys()" (alleySelected)="onListSelect($event)"></app-alley-list>

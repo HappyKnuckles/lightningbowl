@@ -20,20 +20,20 @@
       <ion-label>Leagues</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button [class.active-tab]="activeMoreTab$ | async" id="more">
+    <ion-tab-button id="more" [class.active-tab]="activeMoreTab$ | async">
       <ion-icon name="ellipsis-horizontal"></ion-icon>
       <ion-label>More</ion-label>
     </ion-tab-button>
   </ion-tab-bar>
 </ion-tabs>
 
-<ion-modal #modal trigger="more" [initialBreakpoint]="0.45" [breakpoints]="[0, 0.35, 0.45, 0.5, 0.75]">
+<ion-modal #modal trigger="more" [breakpoints]="[0, 0.35, 0.45, 0.5, 0.75]" [initialBreakpoint]="0.45">
   <ng-template>
     <ion-content>
       <ion-list>
         @for (tab of moreTabs; track tab.path) {
-          <ion-item class="tab-btn" button [routerLink]="tab.path" routerLinkActive="active-tab" (click)="modal.dismiss()">
-            <ion-icon slot="start" [src]="tab.src" [name]="tab.src ? undefined : tab.icon"></ion-icon>
+          <ion-item button class="tab-btn" routerLinkActive="active-tab" [routerLink]="tab.path" (click)="modal.dismiss()">
+            <ion-icon slot="start" [name]="tab.src ? undefined : tab.icon" [src]="tab.src"></ion-icon>
             <ion-label>{{ tab.label }}</ion-label>
           </ion-item>
         }

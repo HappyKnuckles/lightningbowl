@@ -4,38 +4,38 @@
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
     <ion-title>Pattern Library</ion-title>
-    <ion-buttons slot="end" class="action-sheet">
+    <ion-buttons class="action-sheet" slot="end">
       <app-sort-header
         #sortHeader
-        [id]="'pattern-sort-header'"
-        [sortOptions]="sortService.PATTERN_SORT_OPTIONS"
-        [selectedSort]="currentSortOption()"
-        [storageKey]="'patterns-sort-option'"
         [favoritesFirst]="favoritesFirst()"
         [favoritesFirstStorageKey]="'patterns-favorites-first'"
-        (sortChanged)="onSortChanged($event)"
-        (favoritesFirstChanged)="onFavoritesFirstChange($event)">
+        [id]="'pattern-sort-header'"
+        [selectedSort]="currentSortOption()"
+        [sortOptions]="sortService.PATTERN_SORT_OPTIONS"
+        [storageKey]="'patterns-sort-option'"
+        (favoritesFirstChanged)="onFavoritesFirstChange($event)"
+        (sortChanged)="onSortChanged($event)">
       </app-sort-header>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar>
     <ion-searchbar
+      #search="appSearchHistory"
       appSearchBlur
       appSearchHistory
+      debounce="300"
       historyKey="patterns"
-      #search="appSearchHistory"
-      [value]="searchTerm()"
-      [disabled]="searchDisabled()"
-      (ionInput)="searchPatterns($event)"
       placeholder="Search for a pattern"
       showCancelButton="focus"
-      debounce="300"></ion-searchbar>
+      [disabled]="searchDisabled()"
+      [value]="searchTerm()"
+      (ionInput)="searchPatterns($event)"></ion-searchbar>
   </ion-toolbar>
   <app-search-suggestions
     historyKey="patterns"
+    [open]="search.focused()"
     [searchTerm]="searchTerm()"
     [suggestions]="searchSuggestions()"
-    [open]="search.focused()"
     (suggestionSelected)="search.recordSelection($event); onSearchSuggestionSelected($event)">
   </app-search-suggestions>
 </ion-header>
@@ -50,10 +50,10 @@
         <ion-skeleton-text style="width: 100%; height: 100px; margin: 0"></ion-skeleton-text>
         <ion-card-header>
           <ion-card-title>
-            <ion-skeleton-text [animated]="true" style="width: 80%; height: 20px; border-radius: 10px"></ion-skeleton-text>
+            <ion-skeleton-text style="width: 80%; height: 20px; border-radius: 10px" [animated]="true"></ion-skeleton-text>
           </ion-card-title>
           <ion-card-subtitle>
-            <ion-skeleton-text [animated]="true" style="width: 50%; border-radius: 10px"></ion-skeleton-text>
+            <ion-skeleton-text style="width: 50%; border-radius: 10px" [animated]="true"></ion-skeleton-text>
           </ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
@@ -61,32 +61,32 @@
             <!-- Stat chips -->
             <div class="stats">
               <div class="stat">
-                <ion-skeleton-text [animated]="true" style="width: 60%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 80%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 60%; height: 9px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 80%; height: 20px; border-radius: 4px; margin: 4px 0 0" [animated]="true"></ion-skeleton-text>
               </div>
               <div class="stat">
-                <ion-skeleton-text [animated]="true" style="width: 50%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 65%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 50%; height: 9px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 65%; height: 20px; border-radius: 4px; margin: 4px 0 0" [animated]="true"></ion-skeleton-text>
               </div>
               <div class="stat">
-                <ion-skeleton-text [animated]="true" style="width: 65%; height: 9px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 75%; height: 20px; border-radius: 4px; margin: 4px 0 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 65%; height: 9px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 75%; height: 20px; border-radius: 4px; margin: 4px 0 0" [animated]="true"></ion-skeleton-text>
               </div>
             </div>
 
             <!-- Detail rows -->
             <div class="detail-card">
               <div class="spec-row">
-                <ion-skeleton-text [animated]="true" style="width: 60px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 45px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 60px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 45px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
               </div>
               <div class="spec-row">
-                <ion-skeleton-text [animated]="true" style="width: 50px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 30px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 50px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 30px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
               </div>
               <div class="spec-row">
-                <ion-skeleton-text [animated]="true" style="width: 70px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
-                <ion-skeleton-text [animated]="true" style="width: 110px; height: 13px; border-radius: 4px; margin: 0"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 70px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
+                <ion-skeleton-text style="width: 110px; height: 13px; border-radius: 4px; margin: 0" [animated]="true"></ion-skeleton-text>
               </div>
             </div>
           </div>
@@ -100,28 +100,28 @@
     <ng-template #allPatterns>
       @for (pattern of displayedPatterns(); track pattern.url; let i = $index) {
         <ion-card
+          button
           [ngClass]="{
             'red-card': getRatioValue(pattern.ratio ?? '0') >= 1 && getRatioValue(pattern.ratio ?? '0') < 4,
             'yellow-card': getRatioValue(pattern.ratio ?? '0') >= 4 && getRatioValue(pattern.ratio ?? '0') < 8,
             'green-card': getRatioValue(pattern.ratio ?? '0') >= 8,
           }"
-          button
           (click)="selectedPattern.set(pattern)">
           <img
             *ngIf="pattern.chart_horizontal"
-            [src]="imagesUrl + pattern.chart_horizontal"
-            alt="{{ pattern.title }} Oil Pattern Chart"
             class="pattern-chart-image"
+            alt="{{ pattern.title }} Oil Pattern Chart"
+            [attr.fetchpriority]="i < 3 ? 'high' : 'auto'"
             [loading]="i < 10 ? 'eager' : 'lazy'"
-            [attr.fetchpriority]="i < 3 ? 'high' : 'auto'" />
+            [src]="imagesUrl + pattern.chart_horizontal" />
           <ion-card-header>
             <ion-card-title style="display: flex; align-items: center; justify-content: space-between">
               <span>{{ pattern.title }}</span>
-              <ion-button fill="clear" size="default" (click)="toggleFavorite($event, pattern)" style="margin: 0; height: auto; min-height: auto">
+              <ion-button fill="clear" size="default" style="margin: 0; height: auto; min-height: auto" (click)="toggleFavorite($event, pattern)">
                 <ion-icon
-                  [name]="favoritesService.isFavorite(pattern.url) ? 'heart' : 'heart-outline'"
                   slot="icon-only"
-                  style="color: var(--ion-color-primary); font-size: 24px">
+                  style="color: var(--ion-color-primary); font-size: 24px"
+                  [name]="favoritesService.isFavorite(pattern.url) ? 'heart' : 'heart-outline'">
                 </ion-icon>
               </ion-button>
             </ion-card-title>
@@ -131,35 +131,35 @@
             <div class="pattern-info">
               <!-- Stat chips -->
               <div class="stats">
-                <div class="stat" *ngIf="pattern.distance">
+                <div *ngIf="pattern.distance" class="stat">
                   <span class="stat-label">Distance</span>
                   <span class="stat-value">{{ pattern.distance }}<span class="stat-unit">ft</span></span>
                 </div>
-                <div class="stat" *ngIf="pattern.ratio">
+                <div *ngIf="pattern.ratio" class="stat">
                   <span class="stat-label">Ratio</span>
                   <span class="stat-value">{{ pattern.ratio }}</span>
                 </div>
-                <div class="stat" *ngIf="pattern.volume">
+                <div *ngIf="pattern.volume" class="stat">
                   <span class="stat-label">Volume</span>
                   <span class="stat-value">{{ pattern.volume }}<span class="stat-unit">mL</span></span>
                 </div>
               </div>
 
               <!-- Detail rows -->
-              <div class="detail-card" *ngIf="pattern.pump || pattern.tanks || pattern.forward || pattern.reverse">
-                <div class="spec-row" *ngIf="pattern.pump">
+              <div *ngIf="pattern.pump || pattern.tanks || pattern.forward || pattern.reverse" class="detail-card">
+                <div *ngIf="pattern.pump" class="spec-row">
                   <span class="spec-key">Pump</span>
                   <span class="spec-val">{{ pattern.pump }}µL</span>
                 </div>
-                <div class="spec-row" *ngIf="pattern.tanks">
+                <div *ngIf="pattern.tanks" class="spec-row">
                   <span class="spec-key">Tanks</span>
                   <span class="spec-val">{{ pattern.tanks }}</span>
                 </div>
-                <div class="spec-row" *ngIf="pattern.forward || pattern.reverse">
+                <div *ngIf="pattern.forward || pattern.reverse" class="spec-row">
                   <span class="spec-key">Oil load</span>
                   <span class="spec-val oil-load">
-                    <span class="dir" *ngIf="pattern.forward"> <ion-icon name="arrow-up-outline"></ion-icon>{{ pattern.forward }}mL </span>
-                    <span class="dir" *ngIf="pattern.reverse"> <ion-icon name="arrow-down-outline"></ion-icon>{{ pattern.reverse }}mL </span>
+                    <span *ngIf="pattern.forward" class="dir"> <ion-icon name="arrow-up-outline"></ion-icon>{{ pattern.forward }}mL </span>
+                    <span *ngIf="pattern.reverse" class="dir"> <ion-icon name="arrow-down-outline"></ion-icon>{{ pattern.reverse }}mL </span>
                   </span>
                 </div>
               </div>
@@ -168,7 +168,7 @@
         </ion-card>
       }
     </ng-template>
-    <ion-infinite-scroll threshold="100px" (ionInfinite)="loadPatterns($event)" *ngIf="hasMoreData">
+    <ion-infinite-scroll *ngIf="hasMoreData" threshold="100px" (ionInfinite)="loadPatterns($event)">
       <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more patterns..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
   }
@@ -188,7 +188,7 @@
             <ion-title>{{ pattern.title }}</ion-title>
             <ion-buttons slot="end">
               <ion-button id="download">
-                <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
+                <ion-icon name="ellipsis-vertical-outline" slot="icon-only"></ion-icon>
               </ion-button>
             </ion-buttons>
           </ion-toolbar>

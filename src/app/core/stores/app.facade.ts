@@ -34,29 +34,6 @@ export class AppFacade {
     return this.#initPromise;
   }
 
-  private async runInit(): Promise<void> {
-    try {
-      await this.storageRepository.create();
-
-      if (navigator.storage && navigator.storage.persist) {
-        const isPersisted = await navigator.storage.persisted();
-        if (!isPersisted) {
-          const requested = await navigator.storage.persist();
-          if (!requested) {
-            console.warn('Persistent storage request was denied or not granted.');
-          }
-        }
-      } else {
-        console.warn('Persistent Storage API is not supported by this browser.');
-      }
-
-      const weight = parseInt(this.ballFilterService.filters().weight, 10);
-      await this.loadInitialData(weight);
-    } catch (error) {
-      console.error('Error during AppFacade init:', error);
-    }
-  }
-
   async loadInitialData(weight: number): Promise<void> {
     try {
       this.settingsStore.loadPinInputMode();
@@ -106,6 +83,29 @@ export class AppFacade {
     } catch (error) {
       console.error('Error deleting all data:', error);
       throw error;
+    }
+  }
+
+  private async runInit(): Promise<void> {
+    try {
+      await this.storageRepository.create();
+
+      if (navigator.storage && navigator.storage.persist) {
+        const isPersisted = await navigator.storage.persisted();
+        if (!isPersisted) {
+          const requested = await navigator.storage.persist();
+          if (!requested) {
+            console.warn('Persistent storage request was denied or not granted.');
+          }
+        }
+      } else {
+        console.warn('Persistent Storage API is not supported by this browser.');
+      }
+
+      const weight = parseInt(this.ballFilterService.filters().weight, 10);
+      await this.loadInitialData(weight);
+    } catch (error) {
+      console.error('Error during AppFacade init:', error);
     }
   }
 }

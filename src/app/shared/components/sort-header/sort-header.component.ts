@@ -13,12 +13,12 @@ import { SortOption, SortField } from 'src/app/core/models/sort.model';
   imports: [CommonModule, FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
 })
 export class SortHeaderComponent<F extends SortField = SortField> implements OnInit {
-  sortOptions = model.required<SortOption<F>[]>();
-  selectedSort = model.required<SortOption<F>>();
-  id = model.required<string>();
   @Input() storageKey = '';
   @Input() favoritesFirst = false;
   @Input() favoritesFirstStorageKey = '';
+  sortOptions = model.required<SortOption<F>[]>();
+  selectedSort = model.required<SortOption<F>>();
+  id = model.required<string>();
   @Output() sortChanged = new EventEmitter<SortOption<F>>();
   @Output() favoritesFirstChanged = new EventEmitter<boolean>();
   @ViewChild('sortList', { read: ElementRef }) sortList!: ElementRef;
@@ -33,6 +33,41 @@ export class SortHeaderComponent<F extends SortField = SortField> implements OnI
     this.loadSortFromStorage();
     this.loadFavoritesFirstFromStorage();
     this.updateSelectedSortKey();
+  }
+
+  selectOption(option: SortOption<F>) {
+    this.selectedSort.set(option);
+    this.selectedSortKey = `${option.field}_${option.direction}`;
+    this.saveSortToStorage(option);
+    this.sortChanged.emit(option);
+  }
+
+  onSortChange(selectedKey: string) {
+    const selectedOption = this.sortOptions().find((option) => `${option.field}_${option.direction}` === selectedKey);
+
+    if (selectedOption) {
+      this.selectedSort.set(selectedOption);
+      this.selectedSortKey = selectedKey;
+      this.saveSortToStorage(selectedOption);
+      this.sortChanged.emit(selectedOption);
+    }
+  }
+
+  getSortKey(option: SortOption<F>): string {
+    return `${option.field}_${option.direction}`;
+  }
+
+  async onPopoverPresent() {
+    setTimeout(() => {
+      this.scrollToSelectedItem();
+    }, 50);
+  }
+
+  onFavoritesFirstChange(event: CustomEvent<{ checked: boolean }>) {
+    const checked = event.detail.checked;
+    this.favoritesFirst = checked;
+    this.saveFavoritesFirstToStorage(checked);
+    this.favoritesFirstChanged.emit(checked);
   }
 
   private loadSortFromStorage() {
@@ -70,34 +105,6 @@ export class SortHeaderComponent<F extends SortField = SortField> implements OnI
     }
   }
 
-  selectOption(option: SortOption<F>) {
-    this.selectedSort.set(option);
-    this.selectedSortKey = `${option.field}_${option.direction}`;
-    this.saveSortToStorage(option);
-    this.sortChanged.emit(option);
-  }
-
-  onSortChange(selectedKey: string) {
-    const selectedOption = this.sortOptions().find((option) => `${option.field}_${option.direction}` === selectedKey);
-
-    if (selectedOption) {
-      this.selectedSort.set(selectedOption);
-      this.selectedSortKey = selectedKey;
-      this.saveSortToStorage(selectedOption);
-      this.sortChanged.emit(selectedOption);
-    }
-  }
-
-  getSortKey(option: SortOption<F>): string {
-    return `${option.field}_${option.direction}`;
-  }
-
-  async onPopoverPresent() {
-    setTimeout(() => {
-      this.scrollToSelectedItem();
-    }, 50);
-  }
-
   private loadFavoritesFirstFromStorage() {
     if (this.favoritesFirstStorageKey && typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem(this.favoritesFirstStorageKey);
@@ -111,13 +118,6 @@ export class SortHeaderComponent<F extends SortField = SortField> implements OnI
     if (this.favoritesFirstStorageKey && typeof localStorage !== 'undefined') {
       localStorage.setItem(this.favoritesFirstStorageKey, value.toString());
     }
-  }
-
-  onFavoritesFirstChange(event: CustomEvent<{ checked: boolean }>) {
-    const checked = event.detail.checked;
-    this.favoritesFirst = checked;
-    this.saveFavoritesFirstToStorage(checked);
-    this.favoritesFirstChanged.emit(checked);
   }
 
   private scrollToSelectedItem() {

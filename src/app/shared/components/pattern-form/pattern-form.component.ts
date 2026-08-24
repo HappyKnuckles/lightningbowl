@@ -44,16 +44,6 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class PatternFormComponent implements OnInit {
-  constructor(
-    private fb: FormBuilder,
-    private patternService: PatternService,
-    private loadingService: LoadingService,
-    private toastService: ToastService,
-    private modalCtrl: ModalController,
-  ) {
-    addIcons({ chevronBack, trashOutline, close });
-  }
-
   patternForm = this.fb.group({
     title: ['', Validators.required],
     category: 'Custom Patterns',
@@ -67,6 +57,16 @@ export class PatternFormComponent implements OnInit {
     forwards_data: this.fb.array<FormControl<ForwardsData>>([]),
     reverse_data: this.fb.array<FormControl<ReverseData>>([]),
   });
+
+  constructor(
+    private fb: FormBuilder,
+    private patternService: PatternService,
+    private loadingService: LoadingService,
+    private toastService: ToastService,
+    private modalCtrl: ModalController,
+  ) {
+    addIcons({ chevronBack, trashOutline, close });
+  }
 
   ngOnInit(): void {
     this.addForwardData();

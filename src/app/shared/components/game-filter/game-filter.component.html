@@ -5,40 +5,40 @@
     </ion-buttons>
     <ion-title>Filter</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="reset()" [strong]="true">Reset</ion-button>
+      <ion-button [strong]="true" (click)="reset()">Reset</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <ion-list style="padding-top: 10px" lines="full">
+  <ion-list lines="full" style="padding-top: 10px">
     <ion-item>
       <ion-label>Score range</ion-label>
       <div class="range-group" slot="end">
         <ion-input
+          aria-label="Minimum score"
           class="range-input"
-          [ngModel]="gameFilterService.filters().minScore"
-          name="minScore"
+          clearOnEdit="true"
           inputmode="numeric"
           maxlength="3"
+          name="minScore"
           placeholder="0"
-          clearOnEdit="true"
-          aria-label="Minimum score"
+          [ngModel]="gameFilterService.filters().minScore"
           (ionChange)="updateNumericFilter('minScore', $event.detail.value)"></ion-input>
         <span class="range-separator">-</span>
         <ion-input
+          aria-label="Maximum score"
           class="range-input"
-          [ngModel]="gameFilterService.filters().maxScore"
-          name="maxScore"
+          clearOnEdit="true"
           inputmode="numeric"
           maxlength="3"
+          name="maxScore"
           placeholder="300"
-          clearOnEdit="true"
-          aria-label="Maximum score"
+          [ngModel]="gameFilterService.filters().maxScore"
           (ionChange)="updateNumericFilter('maxScore', $event.detail.value)"></ion-input>
       </div>
     </ion-item>
     <ion-item>
-      <ion-select name="timeRange" label="Time Range" (ionChange)="startDateChange($event)" [ngModel]="gameFilterService.filters().timeRange">
+      <ion-select label="Time Range" name="timeRange" [ngModel]="gameFilterService.filters().timeRange" (ionChange)="startDateChange($event)">
         <ion-select-option [value]="0">Today</ion-select-option>
         <ion-select-option [value]="1">Last week</ion-select-option>
         <ion-select-option [value]="2">Last month</ion-select-option>
@@ -64,6 +64,8 @@
         <ion-datetime
           id="datetime-min"
           locale="de-DE"
+          name="startDate"
+          presentation="date"
           [formatOptions]="{
             date: {
               month: '2-digit',
@@ -71,13 +73,11 @@
               year: 'numeric',
             },
           }"
-          [ngModel]="gameFilterService.filters().startDate"
-          name="startDate"
           [highlightedDates]="highlightedDates"
-          (ionChange)="updateDateFilter('startDate', $event.detail.value)"
-          presentation="date"
+          [max]="gameFilterService.filters().endDate"
           [min]="defaultFilters.startDate"
-          [max]="gameFilterService.filters().endDate"></ion-datetime>
+          [ngModel]="gameFilterService.filters().startDate"
+          (ionChange)="updateDateFilter('startDate', $event.detail.value)"></ion-datetime>
       </ng-template>
     </ion-modal>
     <ion-modal [keepContentsMounted]="true">
@@ -85,6 +85,8 @@
         <ion-datetime
           id="datetime-max"
           locale="de-DE"
+          name="endDate"
+          presentation="date"
           [formatOptions]="{
             date: {
               month: '2-digit',
@@ -92,38 +94,36 @@
               year: 'numeric',
             },
           }"
-          [ngModel]="gameFilterService.filters().endDate"
-          name="endDate"
           [highlightedDates]="highlightedDates"
-          (ionChange)="updateDateFilter('endDate', $event.detail.value)"
-          presentation="date"
-          [min]="gameFilterService.filters().startDate"></ion-datetime>
+          [min]="gameFilterService.filters().startDate"
+          [ngModel]="gameFilterService.filters().endDate"
+          (ionChange)="updateDateFilter('endDate', $event.detail.value)"></ion-datetime>
       </ng-template>
     </ion-modal>
     <ion-item>
       <ion-toggle
-        [ngModel]="gameFilterService.filters().excludePractice"
         name="isPractice"
+        [ngModel]="gameFilterService.filters().excludePractice"
         (ionChange)="updateFilter('excludePractice', $event.detail.checked)"
         >Exclude practice games</ion-toggle
       >
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="gameFilterService.filters().isPerfect" name="isPerfect" (ionChange)="updateFilter('isPerfect', $event.detail.checked)"
+      <ion-toggle name="isPerfect" [ngModel]="gameFilterService.filters().isPerfect" (ionChange)="updateFilter('isPerfect', $event.detail.checked)"
         >Only perfect games</ion-toggle
       >
     </ion-item>
     <ion-item>
-      <ion-toggle [ngModel]="gameFilterService.filters().isClean" name="isClean" (ionChange)="updateFilter('isClean', $event.detail.checked)"
+      <ion-toggle name="isClean" [ngModel]="gameFilterService.filters().isClean" (ionChange)="updateFilter('isClean', $event.detail.checked)"
         >Only clean games</ion-toggle
       >
     </ion-item>
     <ion-item>
       <ion-select
-        name="league"
-        [ngModel]="gameFilterService.filters().leagues"
         label="League"
         multiple="true"
+        name="league"
+        [ngModel]="gameFilterService.filters().leagues"
         (ionChange)="updateFilter('leagues', $event.detail.value)">
         <ion-select-option value="all">All</ion-select-option>
         <ion-select-option value="">None</ion-select-option>
@@ -131,29 +131,29 @@
       </ion-select>
     </ion-item>
     <ion-item
-      id="ball-filter"
-      class="ball-selector"
       button
+      class="ball-selector"
       detail="true"
       detailIcon="chevron-expand-outline"
+      id="ball-filter"
       [disabled]="ballsStore.arsenal().length === 0">
       <ion-label>Balls</ion-label>
       <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
     </ion-item>
-    <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal trigger="ball-filter" class="ball-modal">
+    <ion-modal #modal class="ball-modal" trigger="ball-filter" [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation">
       <ng-template>
         <app-ball-select
-          (ballSelect)="updateFilter('balls', $event); modal.dismiss()"
-          [selectedBalls]="gameFilterService.filters().balls"></app-ball-select>
+          [selectedBalls]="gameFilterService.filters().balls"
+          (ballSelect)="updateFilter('balls', $event); modal.dismiss()"></app-ball-select>
       </ng-template>
     </ion-modal>
 
     <ion-item>
       <ion-select
-        name="patterns"
-        [ngModel]="gameFilterService.filters().patterns"
         label="Patterns"
         multiple="true"
+        name="patterns"
+        [ngModel]="gameFilterService.filters().patterns"
         (ionChange)="updateFilter('patterns', $event.detail.value)">
         <ion-select-option value="all">All</ion-select-option>
         <ion-select-option value="">None</ion-select-option>

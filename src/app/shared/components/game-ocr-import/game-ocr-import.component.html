@@ -1,18 +1,18 @@
 <!-- Picked up by GameImageImportService via getElementById on web platforms. -->
-<input type="file" id="upload" class="ion-hide" accept="image/*" />
+<input accept="image/*" class="ion-hide" id="upload" type="file" />
 
-<ion-modal [isOpen]="isOpen()" (didDismiss)="isOpen.set(false)" #modal>
+<ion-modal #modal [isOpen]="isOpen()" (didDismiss)="isOpen.set(false)">
   <ng-template>
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start" style="padding: 4px">
           <ion-button color="medium" (click)="modal.dismiss()">
-            <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
           </ion-button>
         </ion-buttons>
         <ion-title>Your game</ion-title>
         <ion-buttons slot="end">
-          <ion-button (click)="confirm(modal)" [strong]="true" [disabled]="!isGameValid(gameData())">Save</ion-button>
+          <ion-button [disabled]="!isGameValid(gameData())" [strong]="true" (click)="confirm(modal)">Save</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -23,13 +23,13 @@
         [ballSelectorId]="gameData().gameId + '-modal-ball-selector'"
         [game]="gameData()"
         [isPinInputMode]="false"
-        (throwInput)="handleThrowInput($event)"
-        (leagueChanged)="onLeagueChange($event)"
-        (isPracticeChanged)="onIsPracticeChange($event)"
-        (noteChanged)="onNoteChange($event)"
+        [patternModalId]="gameData().gameId"
         (ballsChanged)="onBallsChange($event)"
+        (isPracticeChanged)="onIsPracticeChange($event)"
+        (leagueChanged)="onLeagueChange($event)"
+        (noteChanged)="onNoteChange($event)"
         (patternChanged)="onPatternChange($event)"
-        [patternModalId]="gameData().gameId">
+        (throwInput)="handleThrowInput($event)">
       </app-game>
     </ion-content>
   </ng-template>

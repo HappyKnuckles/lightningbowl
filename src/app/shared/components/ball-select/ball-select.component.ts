@@ -39,12 +39,12 @@ export class BallSelectComponent implements OnInit {
 
   #tempSelectedBalls = signal<string[]>([]);
 
-  get tempSelectedBalls() {
-    return this.#tempSelectedBalls();
-  }
-
   ngOnInit(): void {
     this.#tempSelectedBalls.set([...this.selectedBalls()!]);
+  }
+
+  get tempSelectedBalls() {
+    return this.#tempSelectedBalls();
   }
 
   toggleBallSelection(ballName: string): void {

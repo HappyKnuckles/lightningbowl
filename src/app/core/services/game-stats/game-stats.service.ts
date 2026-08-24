@@ -19,19 +19,6 @@ import { StatsPersistenceService } from './stats-persistance.service';
   providedIn: 'root',
 })
 export class GameStatsService {
-  constructor(
-    private gameFilterService: GameFilterService,
-    private gamesStore: GamesStore,
-    private overallStatsCalculatorService: OverallStatsCalculatorService,
-    private seriesStatsCalculatorService: SeriesStatsCalculatorService,
-    private ballStatsCalculatorService: BallStatsCalculatorService,
-    private patternStatsCalculatorService: PatternStatsCalculatorService,
-    private pinStatsCalculatorService: PinStatsCalculatorService,
-    private statsPersistenceService: StatsPersistenceService,
-  ) {}
-
-  public readonly prevStats: Signal<PrevStats> = this.statsPersistenceService.prevStats;
-
   public readonly allBallStats: Signal<HighlightItemStats[]> = computed(() => {
     return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
   });
@@ -86,6 +73,19 @@ export class GameStatsService {
     const games = this.gamesStore.games();
     return this.overallStatsCalculatorService.calculateBowlingStats(games, this.seriesStats()) as Stats;
   });
+
+  public readonly prevStats: Signal<PrevStats> = this.statsPersistenceService.prevStats;
+
+  constructor(
+    private gameFilterService: GameFilterService,
+    private gamesStore: GamesStore,
+    private overallStatsCalculatorService: OverallStatsCalculatorService,
+    private seriesStatsCalculatorService: SeriesStatsCalculatorService,
+    private ballStatsCalculatorService: BallStatsCalculatorService,
+    private patternStatsCalculatorService: PatternStatsCalculatorService,
+    private pinStatsCalculatorService: PinStatsCalculatorService,
+    private statsPersistenceService: StatsPersistenceService,
+  ) {}
 
   calculateBowlingStats(gameHistory: Game[]): Stats {
     const seriesStats = this.seriesStatsCalculatorService.calculateSeriesStats(gameHistory);

@@ -102,38 +102,26 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
 export class BallsPage implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
 
-  ballFilterConfigs = BALL_FILTER_CONFIGS;
-
-  readonly currentFilters = this.ballFilterService.filters;
-
-  readonly defaultFilters = this.ballFilterService.defaultFilters;
-
-  balls = signal<Ball[]>([]);
-  coreBalls = signal<Ball[]>([]);
-  coverstockBalls = signal<Ball[]>([]);
-  movementBalls = signal<Ball[]>([]);
-  searchSubject = new Subject<string>();
   searchTerm = signal('');
+
   searchSuggestions = computed(() =>
     buildSearchSuggestions(
       this.ballsStore.allBalls().map((ball) => ball.ball_name),
       this.searchTerm(),
     ),
   );
+
   searchDisabled = computed(() => this.ballsStore.allBalls().length === 0);
+
+  balls = signal<Ball[]>([]);
   favoritesFirst = signal(false);
-  currentPage = 0;
-  isPageLoading = signal(false);
-  hasMoreData = true;
-  filterDisplayCount = 100;
-  loadingWeightBallIds = signal<Set<string>>(new Set());
-  readonly availableWeights = ['12', '13', '14', '15', '16'];
   currentSortOption = signal<BallSortOption>({
     field: BallSortField.RELEASE_DATE,
     direction: SortDirection.DESC,
     label: 'Newest First',
   });
-
+  hasMoreData = true;
+  filterDisplayCount = 100;
   // Computed getter for displayed balls.
   // • If a search term exists, we build a Fuse instance over the correct data source and return results sorted by relevance.
   // • If filters are active and no search term exists, we display only a slice (up to filterDisplayCount) of the filtered list.
@@ -181,6 +169,18 @@ export class BallsPage implements OnInit {
 
     return this.sortService.sortBalls(result, this.currentSortOption(), this.favoritesFirst());
   });
+  coreBalls = signal<Ball[]>([]);
+  coverstockBalls = signal<Ball[]>([]);
+  movementBalls = signal<Ball[]>([]);
+  isPageLoading = signal(false);
+  loadingWeightBallIds = signal<Set<string>>(new Set());
+  ballFilterConfigs = BALL_FILTER_CONFIGS;
+  readonly currentFilters = this.ballFilterService.filters;
+  readonly defaultFilters = this.ballFilterService.defaultFilters;
+  searchSubject = new Subject<string>();
+  currentPage = 0;
+
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
 
   private lastLoadTime = 0;
   private debounceMs = 300;
@@ -225,21 +225,6 @@ export class BallsPage implements OnInit {
       console.error('Error loading balls:', error);
     } finally {
       this.isPageLoading.set(false);
-    }
-  }
-
-  private async waitForAllBalls(): Promise<void> {
-    const maxWaitTime = 10000;
-    const checkInterval = 100;
-    let elapsed = 0;
-
-    while (this.ballsStore.allBalls().length === 0 && elapsed < maxWaitTime) {
-      await new Promise((resolve) => setTimeout(resolve, checkInterval));
-      elapsed += checkInterval;
-    }
-
-    if (elapsed >= maxWaitTime) {
-      console.warn('Timeout waiting for allBalls to load');
     }
   }
 
@@ -477,21 +462,6 @@ export class BallsPage implements OnInit {
     }
   }
 
-  private loadFavoritesFirstSetting(): void {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('balls-favorites-first');
-      if (saved !== null) {
-        this.favoritesFirst.set(saved === 'true');
-      }
-    }
-  }
-
-  private saveFavoritesFirstSetting(value: boolean): void {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('balls-favorites-first', value.toString());
-    }
-  }
-
   async onWeightSelect(ball: Ball, weight: string, selectEl: IonSelect): Promise<void> {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
@@ -526,6 +496,36 @@ export class BallsPage implements OnInit {
       setTimeout(() => {
         this.content.scrollToTop(300);
       }, 300);
+    }
+  }
+
+  private async waitForAllBalls(): Promise<void> {
+    const maxWaitTime = 10000;
+    const checkInterval = 100;
+    let elapsed = 0;
+
+    while (this.ballsStore.allBalls().length === 0 && elapsed < maxWaitTime) {
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
+      elapsed += checkInterval;
+    }
+
+    if (elapsed >= maxWaitTime) {
+      console.warn('Timeout waiting for allBalls to load');
+    }
+  }
+
+  private loadFavoritesFirstSetting(): void {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('balls-favorites-first');
+      if (saved !== null) {
+        this.favoritesFirst.set(saved === 'true');
+      }
+    }
+  }
+
+  private saveFavoritesFirstSetting(value: boolean): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('balls-favorites-first', value.toString());
     }
   }
 }

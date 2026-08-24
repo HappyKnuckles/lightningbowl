@@ -9,7 +9,7 @@
           <div class="rate-wrap">
             <ion-text [id]="overallVm().triggerId">{{ overallVm().rateText }}%</ion-text>
             @if (overallVm().arrow) {
-              <ion-icon class="arrow-icon" [name]="overallVm().arrow" [color]="overallVm().diffColor"></ion-icon>
+              <ion-icon class="arrow-icon" [color]="overallVm().diffColor" [name]="overallVm().arrow"></ion-icon>
             }
           </div>
           @if (overallVm().diff) {
@@ -37,7 +37,7 @@
 
     @if (overallVm().hasAttempts) {
       <div class="spare-overall-track">
-        <div class="spare-overall-fill" [style.width.%]="overallVm().rate" [style.--fill]="overallVm().fillValue"></div>
+        <div class="spare-overall-fill" [style.--fill]="overallVm().fillValue" [style.width.%]="overallVm().rate"></div>
       </div>
     }
   </header>
@@ -58,23 +58,23 @@
 
       <thead>
         <tr>
-          <th scope="col" class="th-pin">
+          <th class="th-pin" scope="col">
             <span [id]="'tooltip' + id()"> Pins <ion-icon name="information-circle-outline"></ion-icon> </span>
             <ion-popover [trigger]="'tooltip' + id()">
               <ion-text class="tooltip">This is the pin count you left standing after your first throw.</ion-text>
             </ion-popover>
           </th>
-          <th scope="col" class="th-num">Hit</th>
-          <th scope="col" class="th-num">Miss</th>
-          <th scope="col" class="th-bar">hit / miss</th>
-          <th scope="col" class="th-num">Rate</th>
+          <th class="th-num" scope="col">Hit</th>
+          <th class="th-num" scope="col">Miss</th>
+          <th class="th-bar" scope="col">hit / miss</th>
+          <th class="th-num" scope="col">Rate</th>
         </tr>
       </thead>
 
       <tbody>
         @for (row of rowVms(); track row.pin) {
           <tr class="spare-row" [class.empty]="row.empty">
-            <th scope="row" class="spare-pin">{{ row.label }}</th>
+            <th class="spare-pin" scope="row">{{ row.label }}</th>
 
             <td class="spare-count spare-hit" [class.zero]="row.empty">{{ row.hit }}</td>
             <td class="spare-count spare-miss" [class.zero]="row.miss === 0">{{ row.miss }}</td>
@@ -93,9 +93,9 @@
             @if (!row.empty) {
               <td class="spare-rate" [style.color]="row.rateColor">
                 <div class="rate-wrap">
-                  <ion-text [id]="row.triggerId" class="stat-text">{{ row.rateText }}%</ion-text>
+                  <ion-text class="stat-text" [id]="row.triggerId">{{ row.rateText }}%</ion-text>
                   @if (row.arrow) {
-                    <ion-icon class="arrow-icon" [name]="row.arrow" [color]="row.diffColor"></ion-icon>
+                    <ion-icon class="arrow-icon" [color]="row.diffColor" [name]="row.arrow"></ion-icon>
                   }
                 </div>
                 @if (row.diff) {

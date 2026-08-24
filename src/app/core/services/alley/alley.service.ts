@@ -68,28 +68,6 @@ export class AlleyService {
   private inflight = new Map<string, Promise<Alley[]>>();
 
   /**
-   * Picks where map-data requests go. The public Overpass/Nominatim instances
-   * throttle/block browser requests unpredictably (HTTP 406/429/504) —
-   * observed for both the hosted *.vercel.app origin and the native app's
-   * capacitor://localhost origin, not just one of them (see api/overpass.mjs).
-   * So both the deployed web app and native route through the /api proxies,
-   * which call upstream server-side with a descriptive User-Agent and no
-   * browser-origin exposure. Native uses the proxies' full production URL
-   * (its own bundle has no live server behind a relative /api path); the
-   * proxies send Access-Control-Allow-Origin: * so that cross-origin call is
-   * actually readable. Local dev calls the upstreams directly since there's no
-   * local proxy running.
-   */
-  private resolveEndpoint(proxyPath: string, directUrl: string): string {
-    if (Capacitor.isNativePlatform()) {
-      return `${APP_ORIGIN}${proxyPath}`;
-    }
-    const host = typeof location !== 'undefined' ? location.hostname : '';
-    const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
-    return isLocalDev ? directUrl : proxyPath;
-  }
-
-  /**
    * Finds bowling alleys around the given origin in a single Overpass request.
    * Results are normalized, deduplicated, enriched with distance and sorted by it.
    * Identical concurrent calls share one request; the public Overpass API
@@ -110,6 +88,48 @@ export class AlleyService {
     const request = this.fetchNearby(lat, lon, radiusKm, cacheKey).finally(() => this.inflight.delete(cacheKey));
     this.inflight.set(cacheKey, request);
     return request;
+  }
+
+  async geocode(query: string): Promise<GeocodeResult | null> {
+    const url = `${this.nominatimUrl}?q=${encodeURIComponent(query)}&format=json&limit=1`;
+    const results = await firstValueFrom(this.http.get<NominatimResult[]>(url));
+    if (!results?.length) {
+      return null;
+    }
+    const { lat, lon, display_name } = results[0];
+    return { lat: parseFloat(lat), lon: parseFloat(lon), label: display_name };
+  }
+
+  calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLng = this.toRadians(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /**
+   * Picks where map-data requests go. The public Overpass/Nominatim instances
+   * throttle/block browser requests unpredictably (HTTP 406/429/504) —
+   * observed for both the hosted *.vercel.app origin and the native app's
+   * capacitor://localhost origin, not just one of them (see api/overpass.mjs).
+   * So both the deployed web app and native route through the /api proxies,
+   * which call upstream server-side with a descriptive User-Agent and no
+   * browser-origin exposure. Native uses the proxies' full production URL
+   * (its own bundle has no live server behind a relative /api path); the
+   * proxies send Access-Control-Allow-Origin: * so that cross-origin call is
+   * actually readable. Local dev calls the upstreams directly since there's no
+   * local proxy running.
+   */
+  private resolveEndpoint(proxyPath: string, directUrl: string): string {
+    if (Capacitor.isNativePlatform()) {
+      return `${APP_ORIGIN}${proxyPath}`;
+    }
+    const host = typeof location !== 'undefined' ? location.hostname : '';
+    const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+    return isLocalDev ? directUrl : proxyPath;
   }
 
   private async fetchNearby(lat: number, lon: number, radiusKm: number, cacheKey: string): Promise<Alley[]> {
@@ -144,16 +164,6 @@ out center;`;
     return alleys;
   }
 
-  async geocode(query: string): Promise<GeocodeResult | null> {
-    const url = `${this.nominatimUrl}?q=${encodeURIComponent(query)}&format=json&limit=1`;
-    const results = await firstValueFrom(this.http.get<NominatimResult[]>(url));
-    if (!results?.length) {
-      return null;
-    }
-    const { lat, lon, display_name } = results[0];
-    return { lat: parseFloat(lat), lon: parseFloat(lon), label: display_name };
-  }
-
   /** POSTs an Overpass query, retrying once after a pause when the instance throttles. */
   private async postWithRetry(query: string): Promise<OverpassResponse> {
     // 406/429/504 are the transient responses the overloaded public instance
@@ -168,16 +178,6 @@ out center;`;
       }
       throw error;
     }
-  }
-
-  calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371000; // Earth's radius in meters
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLng = this.toRadians(lng2 - lng1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   private toRadians(degrees: number): number {

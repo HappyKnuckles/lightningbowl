@@ -59,11 +59,11 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   @ViewChild('infiniteScroll') infiniteScroll!: IonInfiniteScroll;
 
   filteredItems = signal<T[]>([]);
-  selectedItems: T[] = [];
+  public loadedCount = signal(0);
   displayedItems = computed(() => this.filteredItems().slice(0, this.loadedCount()));
+  selectedItems: T[] = [];
   fuse!: Fuse<T>;
   private batchSize = 100;
-  public loadedCount = signal(0);
   private initialSelectedValues: string[] = [];
 
   constructor(
@@ -101,6 +101,22 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
 
     // Store initial selected state for comparison in ngOnDestroy
     this.initialSelectedValues = this.selectedItems.map((item) => this.getItemValue(item));
+  }
+
+  ngOnDestroy(): void {
+    // Get current selected values for comparison
+    const selectedValues = this.selectedItems.map((item) => this.getItemValue(item));
+
+    // Only emit if the current selection is different from the initial selection
+    // Compare values since we now store and emit values
+    const isDifferent =
+      selectedValues.length !== this.initialSelectedValues.length ||
+      selectedValues.some((value) => !this.initialSelectedValues.includes(value)) ||
+      this.initialSelectedValues.some((value) => !selectedValues.includes(value));
+
+    if (isDifferent) {
+      this.selectedItemsChange.emit(selectedValues);
+    }
   }
 
   loadData(event: InfiniteScrollCustomEvent): void {
@@ -239,21 +255,5 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
     const unselectedItems = this.filteredItems().filter((item) => !selectedIdentifiers.includes(this.getItemIdentifier(item)));
 
     this.filteredItems.set([...this.selectedItems, ...unselectedItems]);
-  }
-
-  ngOnDestroy(): void {
-    // Get current selected values for comparison
-    const selectedValues = this.selectedItems.map((item) => this.getItemValue(item));
-
-    // Only emit if the current selection is different from the initial selection
-    // Compare values since we now store and emit values
-    const isDifferent =
-      selectedValues.length !== this.initialSelectedValues.length ||
-      selectedValues.some((value) => !this.initialSelectedValues.includes(value)) ||
-      this.initialSelectedValues.some((value) => !selectedValues.includes(value));
-
-    if (isDifferent) {
-      this.selectedItemsChange.emit(selectedValues);
-    }
   }
 }

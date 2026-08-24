@@ -88,33 +88,20 @@ interface SavedEntry {
   ],
 })
 export class BallComparisonPage implements OnDestroy, OnInit {
+  private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
   protected readonly ballsStore = inject(BallsStore);
-  protected readonly url = this.ballsStore.url;
-  protected readonly allBalls = this.ballsStore.allBalls;
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly typeaheadConfigService = inject(TypeaheadConfigService);
+  readonly selectedSegment = model<'compare' | 'chart'>('compare');
 
   @ViewChild('addBallModal', { static: false }) addBallModal!: IonModal;
   @ViewChild('chartCanvas', { static: false }) chartCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('distChartCanvas', { static: false }) distChartCanvas?: ElementRef;
 
   readonly selectedBalls = signal<Ball[]>([]);
-  readonly selectedSegment = model<'compare' | 'chart'>('compare');
-  readonly loadingWeightBallIds = signal<Set<string>>(new Set());
-
-  presentingElement!: HTMLElement | null;
-
-  readonly maxBalls = 6;
-  ballTypeaheadConfig: TypeaheadConfig<Ball> = {
-    ...this.typeaheadConfigService.ball,
-    title: 'Select Balls to Compare',
-    maxSelections: this.maxBalls,
-  };
   readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
-  readonly availableWeights = ['12', '13', '14', '15', '16'];
-
   readonly displayBalls = computed(() =>
     this.selectedBalls().map((ball) => {
       const metrics = getBallMetrics(ball);
@@ -127,7 +114,20 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     }),
   );
 
-  private static readonly STORAGE_KEY = 'ball-compare-selected-ids';
+  readonly loadingWeightBallIds = signal<Set<string>>(new Set());
+
+  protected readonly url = this.ballsStore.url;
+  protected readonly allBalls = this.ballsStore.allBalls;
+  presentingElement!: HTMLElement | null;
+  readonly maxBalls = 6;
+
+  ballTypeaheadConfig: TypeaheadConfig<Ball> = {
+    ...this.typeaheadConfigService.ball,
+    title: 'Select Balls to Compare',
+    maxSelections: this.maxBalls,
+  };
+
+  readonly availableWeights = ['12', '13', '14', '15', '16'];
   private chartInstance: Chart | null = null;
   private distChartInstance: Chart | null = null;
   private hasRestored = false;

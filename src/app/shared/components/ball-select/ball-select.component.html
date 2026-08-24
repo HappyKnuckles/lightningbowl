@@ -8,7 +8,7 @@
     @for (ball of rankedArsenal(); track $index) {
       <ion-item [lines]="$last ? 'none' : ''">
         <ion-avatar slot="start" (click)="toggleBallSelection(ball.ball_name)">
-          <img [src]="ballsStore.url + ball.thumbnail_image" [alt]="ball.ball_name + 'image'" />
+          <img [alt]="ball.ball_name + 'image'" [src]="ballsStore.url + ball.thumbnail_image" />
         </ion-avatar>
         <ion-checkbox justify="space-between" [checked]="isBallSelected(ball.ball_name)" (ionChange)="toggleBallSelection(ball.ball_name)">
           <ion-label>
@@ -22,9 +22,9 @@
 </ion-content>
 <ion-footer>
   <ion-toolbar>
-    <ion-buttons slot="end" class="modal-buttons">
-      <ion-button (click)="cancelBallSelection()" fill="clear" class="modal-button cancel-button">Cancel</ion-button>
-      <ion-button (click)="confirmBallSelection()" fill="clear" class="modal-button ok-button">OK</ion-button>
+    <ion-buttons class="modal-buttons" slot="end">
+      <ion-button class="modal-button cancel-button" fill="clear" (click)="cancelBallSelection()">Cancel</ion-button>
+      <ion-button class="modal-button ok-button" fill="clear" (click)="confirmBallSelection()">OK</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-footer>

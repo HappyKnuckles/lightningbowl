@@ -12,11 +12,11 @@
         <ion-input
           class="ion-text-right"
           label="Your name"
+          style="margin-right: 21px"
           type="text"
-          [value]="userService.username()"
           placeholder="{{ userService.username() }}"
-          (ionChange)="changeName($event)"
-          style="margin-right: 21px">
+          [value]="userService.username()"
+          (ionChange)="changeName($event)">
         </ion-input>
       </ion-item>
 
@@ -49,8 +49,8 @@
       <ion-item>
         <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
         <ion-select
-          label="Pin Input Mode"
           interface="action-sheet"
+          label="Pin Input Mode"
           [value]="settingsStore.pinInputMode() ? 'hit' : 'missing'"
           (ionChange)="savePinInputMode($event.detail.value)">
           <ion-select-option value="missing">Missing Pins</ion-select-option>
@@ -62,12 +62,12 @@
 </ion-menu>
 
 <input
-  type="file"
-  id="import"
   #import
+  accept=".xlsx,.xls,.pinpal,.db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3,application/vnd.sqlite3"
   class="ion-hide"
-  (change)="handleFileUpload()"
+  id="import"
   placeholder="Upload file"
-  accept=".xlsx,.xls,.pinpal,.db,.sqlite,.sqlite3,application/octet-stream,application/x-sqlite3,application/vnd.sqlite3" />
+  type="file"
+  (change)="handleFileUpload()" />
 
 <app-game-ocr-import></app-game-ocr-import>

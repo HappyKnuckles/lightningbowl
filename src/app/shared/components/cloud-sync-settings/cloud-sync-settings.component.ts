@@ -75,13 +75,10 @@ export class CloudSyncSettingsComponent {
   modalCtrl = inject(ModalController);
   alertCtrl = inject(AlertController);
 
-  readonly CloudProvider = CloudProvider;
-  readonly SyncFrequency = SyncFrequency;
-
   selectedProvider = computed(() => this.cloudSyncService.settings().provider);
   selectedFrequency = computed(() => this.cloudSyncService.settings().frequency);
-  folderPath = computed(() => this.cloudSyncService.settings().folderPath || 'Lightningbowl Game-History');
 
+  folderPath = computed(() => this.cloudSyncService.settings().folderPath || 'Lightningbowl Game-History');
   providerDisplayName = computed(() => {
     const provider = this.selectedProvider();
     switch (provider) {
@@ -95,7 +92,6 @@ export class CloudSyncSettingsComponent {
         return provider;
     }
   });
-
   frequencyDisplayName = computed(() => {
     const frequency = this.selectedFrequency();
     switch (frequency) {
@@ -109,6 +105,10 @@ export class CloudSyncSettingsComponent {
         return frequency;
     }
   });
+
+  readonly CloudProvider = CloudProvider;
+
+  readonly SyncFrequency = SyncFrequency;
 
   constructor() {
     addIcons({

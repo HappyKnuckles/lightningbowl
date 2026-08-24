@@ -69,11 +69,11 @@ interface ToastData {
 })
 export class ToastComponent implements OnDestroy {
   activeToasts: ToastData[] = [];
+  readonly TOAST_DURATION = 3000;
   private toastQueue: ToastData[] = [];
   private nextId = 1;
   private toastSubscription: Subscription;
   private readonly MAX_ACTIVE = 5;
-  readonly TOAST_DURATION = 3000;
 
   private readonly GAP = 8;
   private heights = new Map<number, number>();

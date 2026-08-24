@@ -7,7 +7,7 @@
       History
       <ion-badge>{{ gameFilterService.filteredGames().length }}</ion-badge>
     </ion-title>
-    <ion-buttons slot="end" class="action-sheet">
+    <ion-buttons class="action-sheet" slot="end">
       <!-- <app-sort-header
         [id]="'game-sort-header'"
         [sortOptions]="sortService.GAME_SORT_OPTIONS"
@@ -15,14 +15,14 @@
         storageKey="games-sort-option"
         (sortChanged)="onSortChanged($event)">
       </app-sort-header> -->
-      <ion-button fill="clear" (click)="openFilterModal()" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()">
-        <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
-        <ion-text class="filter-indicator" *ngIf="gameFilterService.activeFilterCount() !== 0">{{ gameFilterService.activeFilterCount() }}</ion-text>
+      <ion-button fill="clear" [disabled]="gamesStore.games().length <= 0 && !loadingService.isLoading()" (click)="openFilterModal()">
+        <ion-icon name="filter-outline" slot="icon-only"></ion-icon>
+        <ion-text *ngIf="gameFilterService.activeFilterCount() !== 0" class="filter-indicator">{{ gameFilterService.activeFilterCount() }}</ion-text>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar *ngIf="gameFilterService.activeFilterCount() !== 0" style="text-align: center">
-    <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs">
+    <app-generic-filter-active [defaultFilters]="defaultFilters" [filterConfigs]="gameFilterConfigs" [filters]="currentFilters()">
     </app-generic-filter-active>
   </ion-toolbar>
 </ion-header>

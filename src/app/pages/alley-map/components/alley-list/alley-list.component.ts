@@ -14,10 +14,10 @@ import { DistancePipe } from 'src/app/shared/pipes/distance-pipe/distance.pipe';
   styleUrl: './alley-list.component.scss',
 })
 export class AlleyListComponent {
-  alleys = input.required<Alley[]>();
-  alleySelected = output<Alley>();
-
   private favoritesService = inject(AlleyFavoritesService);
+  alleys = input.required<Alley[]>();
+
+  alleySelected = output<Alley>();
 
   recents = computed(() => {
     const shownIds = new Set(this.alleys().map((a) => a.id));

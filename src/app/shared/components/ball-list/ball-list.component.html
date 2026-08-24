@@ -11,7 +11,7 @@
       <!-- Überlegen ob es nicht sinnvoller ist das mit router navigate und searchparams besser ist
         Falls jemals nochmal gebraucht 
       -->
-      <ion-item (click)="onBallClick(ball)" button>
+      <ion-item button (click)="onBallClick(ball)">
         <ion-avatar slot="start">
           <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
         </ion-avatar>

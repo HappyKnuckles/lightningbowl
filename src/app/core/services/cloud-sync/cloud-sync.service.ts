@@ -21,19 +21,19 @@ export class CloudSyncService {
     frequency: SyncFrequency.WEEKLY,
   });
 
+  readonly isConfigured = computed(() => {
+    const settings = this.#settings();
+    return settings.enabled && settings.connectedProvider !== undefined;
+  });
+
   #syncStatus = signal<CloudSyncStatus>({
     isAuthenticated: false,
     syncInProgress: false,
     disconnectInProgress: false,
   });
-
   readonly settings = this.#settings.asReadonly();
-  readonly syncStatus = this.#syncStatus.asReadonly();
 
-  readonly isConfigured = computed(() => {
-    const settings = this.#settings();
-    return settings.enabled && settings.connectedProvider !== undefined;
-  });
+  readonly syncStatus = this.#syncStatus.asReadonly();
 
   constructor(
     private storageRepository: StorageRepository,
@@ -53,56 +53,6 @@ export class CloudSyncService {
     // Fire-and-forget: startup sync runs in the background and should not
     // block other operations like handling the OAuth callback redirect.
     void this.checkAndSyncOnStartup();
-  }
-
-  /**
-   * The in-app browser used for OAuth on native platforms is a separate
-   * browsing context, so the backend can't redirect straight back into the
-   * app's own WebView like it does on web — it redirects to a custom URL
-   * scheme instead, which the OS hands to the app as an `appUrlOpen` event.
-   *
-   * Unlike the web flow (a full page reload that has to reconstruct UI state
-   * from query params, including reopening the sync modal), the native app
-   * never navigates away: authenticateWithProvider can only be triggered from
-   * the sync modal on the settings page, and that modal is still open
-   * underneath the in-app browser the whole time. So we just close the
-   * browser and update auth state directly — the modal picks it up reactively
-   * through the syncStatus/settings signals, no navigation needed.
-   */
-  private listenForNativeAuthCallback(): void {
-    void App.addListener('appUrlOpen', ({ url }) => {
-      if (!url.startsWith(NATIVE_AUTH_CALLBACK_URL)) return;
-
-      void Browser.close().catch(() => undefined);
-
-      const { searchParams } = new URL(url);
-      const provider = searchParams.get('provider');
-      const status = searchParams.get('status');
-      const error = searchParams.get('error');
-
-      if (provider && status) {
-        void this.handleAuthCallback(provider, status, error || undefined).catch((err) => {
-          console.error('Auth callback handling failed:', err);
-        });
-      }
-    });
-  }
-
-  private async loadSettings(): Promise<void> {
-    const savedSettings = await this.storageRepository.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
-    if (savedSettings) {
-      if (savedSettings.lastSyncDate && !savedSettings.lastSyncProvider) {
-        savedSettings.lastSyncProvider = savedSettings.connectedProvider ?? savedSettings.provider;
-      }
-
-      this.#settings.set(savedSettings);
-      this.#syncStatus.update((status) => ({
-        ...status,
-        isAuthenticated: !!savedSettings.connectedProvider,
-        lastSync: savedSettings.lastSyncDate ? new Date(savedSettings.lastSyncDate) : undefined,
-        nextSync: savedSettings.nextSyncDate ? new Date(savedSettings.nextSyncDate) : undefined,
-      }));
-    }
   }
 
   async updateSettings(settings: Partial<CloudSyncSettings>): Promise<void> {
@@ -203,23 +153,6 @@ export class CloudSyncService {
     }
   }
 
-  /**
-   * Fetch a fresh access token from the OAuth backend
-   */
-  private async getAccessToken(provider: CloudProvider): Promise<string> {
-    try {
-      return await this.cloudSyncApiService.getAccessToken(provider);
-    } catch (error) {
-      // Only a definitive auth rejection clears local state; transient
-      // failures keep the connection so the next sync can retry.
-      if (error instanceof CloudAuthRequiredError) {
-        await this.updateSettings({ connectedProvider: undefined, enabled: false });
-        this.#syncStatus.update((s) => ({ ...s, isAuthenticated: false }));
-      }
-      throw error;
-    }
-  }
-
   async disconnect(): Promise<void> {
     if (this.#syncStatus().disconnectInProgress) return;
 
@@ -314,6 +247,73 @@ export class CloudSyncService {
         error: errorMessage,
       }));
       this.toastService.showToast(`Sync failed. ${errorMessage}`, 'bug-outline', true);
+      throw error;
+    }
+  }
+
+  /**
+   * The in-app browser used for OAuth on native platforms is a separate
+   * browsing context, so the backend can't redirect straight back into the
+   * app's own WebView like it does on web — it redirects to a custom URL
+   * scheme instead, which the OS hands to the app as an `appUrlOpen` event.
+   *
+   * Unlike the web flow (a full page reload that has to reconstruct UI state
+   * from query params, including reopening the sync modal), the native app
+   * never navigates away: authenticateWithProvider can only be triggered from
+   * the sync modal on the settings page, and that modal is still open
+   * underneath the in-app browser the whole time. So we just close the
+   * browser and update auth state directly — the modal picks it up reactively
+   * through the syncStatus/settings signals, no navigation needed.
+   */
+  private listenForNativeAuthCallback(): void {
+    void App.addListener('appUrlOpen', ({ url }) => {
+      if (!url.startsWith(NATIVE_AUTH_CALLBACK_URL)) return;
+
+      void Browser.close().catch(() => undefined);
+
+      const { searchParams } = new URL(url);
+      const provider = searchParams.get('provider');
+      const status = searchParams.get('status');
+      const error = searchParams.get('error');
+
+      if (provider && status) {
+        void this.handleAuthCallback(provider, status, error || undefined).catch((err) => {
+          console.error('Auth callback handling failed:', err);
+        });
+      }
+    });
+  }
+
+  private async loadSettings(): Promise<void> {
+    const savedSettings = await this.storageRepository.get<CloudSyncSettings>(CLOUD_SYNC_STORAGE_KEY);
+    if (savedSettings) {
+      if (savedSettings.lastSyncDate && !savedSettings.lastSyncProvider) {
+        savedSettings.lastSyncProvider = savedSettings.connectedProvider ?? savedSettings.provider;
+      }
+
+      this.#settings.set(savedSettings);
+      this.#syncStatus.update((status) => ({
+        ...status,
+        isAuthenticated: !!savedSettings.connectedProvider,
+        lastSync: savedSettings.lastSyncDate ? new Date(savedSettings.lastSyncDate) : undefined,
+        nextSync: savedSettings.nextSyncDate ? new Date(savedSettings.nextSyncDate) : undefined,
+      }));
+    }
+  }
+
+  /**
+   * Fetch a fresh access token from the OAuth backend
+   */
+  private async getAccessToken(provider: CloudProvider): Promise<string> {
+    try {
+      return await this.cloudSyncApiService.getAccessToken(provider);
+    } catch (error) {
+      // Only a definitive auth rejection clears local state; transient
+      // failures keep the connection so the next sync can retry.
+      if (error instanceof CloudAuthRequiredError) {
+        await this.updateSettings({ connectedProvider: undefined, enabled: false });
+        this.#syncStatus.update((s) => ({ ...s, isAuthenticated: false }));
+      }
       throw error;
     }
   }

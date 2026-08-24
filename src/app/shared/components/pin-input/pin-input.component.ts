@@ -38,8 +38,8 @@ export class PinInputComponent {
   undoRequested = output<void>();
   statsClick = output<void>();
 
-  readonly hasSelection = computed(() => this.selectedPins().length > 0);
   readonly selectedPins = signal<number[]>([]);
+  readonly hasSelection = computed(() => this.selectedPins().length > 0);
 
   readonly pinRows = computed<PinView[][]>(() => {
     const standing = this.pinsLeftStanding();

@@ -34,11 +34,11 @@ export class StatHighlightItemComponent {
   roundImage = input<boolean>(true);
   allItems = input<HighlightItemStats[]>();
   sortMode = input<ItemSortMode>('gameCount');
-  isModalOpen = signal(false);
   allItemsSorted = computed(() => {
     const items = this.allItems();
     return items && sortGenericItems(items, this.sortMode());
   });
+  isModalOpen = signal(false);
   constructor(public ballsStore: BallsStore) {
     addIcons({ chevronForwardOutline, chevronBack });
   }

@@ -1,30 +1,30 @@
 <h2
   class="item-heading"
-  (click)="openModal()"
-  (keydown.enter)="openModal()"
-  [attr.tabindex]="allItems()?.length ? '0' : null"
   [attr.role]="allItems()?.length ? 'button' : null"
-  [style.cursor]="allItems()?.length ? 'pointer' : 'default'">
+  [attr.tabindex]="allItems()?.length ? '0' : null"
+  [style.cursor]="allItems()?.length ? 'pointer' : 'default'"
+  (click)="openModal()"
+  (keydown.enter)="openModal()">
   <span>{{ title() }}</span>
   <span class="divider-line"></span>
   @if (allItems()?.length) {
-    <ion-icon name="chevron-forward-outline" class="item-heading-chevron"></ion-icon>
+    <ion-icon class="item-heading-chevron" name="chevron-forward-outline"></ion-icon>
   }
 </h2>
 
 <article
   class="item-card"
+  [attr.aria-label]="allItems()?.length ? 'View all ' + title().toLowerCase() : null"
+  [attr.tabindex]="allItems()?.length ? '0' : null"
   [class.ion-activatable]="allItems()?.length"
   [class.ripple-parent]="allItems()?.length"
   (click)="openModal()"
-  (keydown.enter)="openModal()"
-  [attr.tabindex]="allItems()?.length ? '0' : null"
-  [attr.aria-label]="allItems()?.length ? 'View all ' + title().toLowerCase() : null">
+  (keydown.enter)="openModal()">
   @if (item().gameCount === 0) {
     <p class="empty-msg">{{ emptyMessage() }}</p>
   } @else {
     @if (item().image) {
-      <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
+      <ion-img [class.pattern-img]="!roundImage()" [class.round]="roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
     }
 
     <div class="item-meta">
@@ -71,7 +71,7 @@
         <ion-list style="background: none">
           @for (listItem of allItemsSorted(); track listItem.name) {
             <article class="item-card modal-card">
-              <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
+              <ion-img [class.pattern-img]="!roundImage()" [class.round]="roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
               </ion-img>
               <div class="item-meta">
                 <header class="item-top">

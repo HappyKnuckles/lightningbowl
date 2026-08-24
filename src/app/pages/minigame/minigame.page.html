@@ -4,15 +4,15 @@
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
     <ion-title>Minigame</ion-title>
-    <ion-buttons slot="end" class="action-sheet">
-      <ion-button expand="block" color="primary" (click)="resetGame()" class="reset-button">
+    <ion-buttons class="action-sheet" slot="end">
+      <ion-button class="reset-button" color="primary" expand="block" (click)="resetGame()">
         <ion-icon name="refresh" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="bowling-minigame-content">
+<ion-content class="bowling-minigame-content" [fullscreen]="true">
   <!-- Game Status (just the status, no score) -->
   <!-- <div class="game-status">
           <h2>{{ gameStatus }}</h2>

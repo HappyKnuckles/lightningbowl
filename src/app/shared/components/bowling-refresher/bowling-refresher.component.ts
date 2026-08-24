@@ -25,12 +25,12 @@ interface Pin {
           @for (p of pins; track $index) {
             <div
               class="pin"
-              [style.left]="p.x - 15 + 'px'"
-              [style.top]="p.y - 32 + 'px'"
               [style.--fx]="p.fx + 'px'"
               [style.--fy]="p.fy + 'px'"
-              [style.--r]="p.r + 'deg'">
-              <svg viewBox="0 0 28 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              [style.--r]="p.r + 'deg'"
+              [style.left]="p.x - 15 + 'px'"
+              [style.top]="p.y - 32 + 'px'">
+              <svg fill="none" viewBox="0 0 28 64" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M14 3.5C17 3.5 19.3 5.8 19.3 8.7C19.3 10.4 18.6 11.8 17.4 12.9
                    C19.1 14.4 20.2 16.5 20.2 18.9C20.2 20.8 19.4 22.5 18.2 23.7
@@ -40,40 +40,40 @@ interface Pin {
                    C9.4 11.8 8.7 10.4 8.7 8.7C8.7 5.8 11 3.5 14 3.5Z"
                   fill="#0d1217"
                   stroke="#f4f1ea"
-                  stroke-width="2.6"
-                  stroke-linejoin="round" />
-                <path d="M9.2 16.8C11 17.9 17 17.9 18.8 16.8" stroke="#e8453c" stroke-width="4" stroke-linecap="round" />
-                <path d="M8.4 21.6C10.6 22.8 17.4 22.8 19.6 21.6" stroke="#e8453c" stroke-width="2.6" stroke-linecap="round" />
+                  stroke-linejoin="round"
+                  stroke-width="2.6" />
+                <path d="M9.2 16.8C11 17.9 17 17.9 18.8 16.8" stroke="#e8453c" stroke-linecap="round" stroke-width="4" />
+                <path d="M8.4 21.6C10.6 22.8 17.4 22.8 19.6 21.6" stroke="#e8453c" stroke-linecap="round" stroke-width="2.6" />
               </svg>
             </div>
           }
         </div>
 
-        <svg class="burst" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g stroke="#5cc6f2" stroke-width="5" stroke-linecap="round">
-            <line x1="60" y1="60" x2="60" y2="20" />
-            <line x1="60" y1="60" x2="92" y2="28" />
-            <line x1="60" y1="60" x2="100" y2="60" />
-            <line x1="60" y1="60" x2="92" y2="92" />
-            <line x1="60" y1="60" x2="60" y2="100" />
-            <line x1="60" y1="60" x2="28" y2="92" />
-            <line x1="60" y1="60" x2="20" y2="60" />
-            <line x1="60" y1="60" x2="28" y2="28" />
+        <svg class="burst" fill="none" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#5cc6f2" stroke-linecap="round" stroke-width="5">
+            <line x1="60" x2="60" y1="60" y2="20" />
+            <line x1="60" x2="92" y1="60" y2="28" />
+            <line x1="60" x2="100" y1="60" y2="60" />
+            <line x1="60" x2="92" y1="60" y2="92" />
+            <line x1="60" x2="60" y1="60" y2="100" />
+            <line x1="60" x2="28" y1="60" y2="92" />
+            <line x1="60" x2="20" y1="60" y2="60" />
+            <line x1="60" x2="28" y1="60" y2="28" />
           </g>
-          <g stroke="#f4f1ea" stroke-width="3.5" stroke-linecap="round" opacity=".9">
-            <line x1="60" y1="60" x2="76" y2="44" />
-            <line x1="60" y1="60" x2="44" y2="44" />
-            <line x1="60" y1="60" x2="76" y2="76" />
-            <line x1="60" y1="60" x2="44" y2="76" />
+          <g opacity=".9" stroke="#f4f1ea" stroke-linecap="round" stroke-width="3.5">
+            <line x1="60" x2="76" y1="60" y2="44" />
+            <line x1="60" x2="44" y1="60" y2="44" />
+            <line x1="60" x2="76" y1="60" y2="76" />
+            <line x1="60" x2="44" y1="60" y2="76" />
           </g>
         </svg>
 
         <div class="ball-wrap">
-          <svg class="ball" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="36" cy="36" r="31" fill="#0d1217" stroke="#5cc6f2" stroke-width="5" />
-            <circle cx="30" cy="26" r="3.4" fill="#5cc6f2" />
-            <circle cx="42" cy="28" r="3.4" fill="#5cc6f2" />
-            <circle cx="35" cy="38" r="3.8" fill="#5cc6f2" />
+          <svg class="ball" fill="none" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="36" cy="36" fill="#0d1217" r="31" stroke="#5cc6f2" stroke-width="5" />
+            <circle cx="30" cy="26" fill="#5cc6f2" r="3.4" />
+            <circle cx="42" cy="28" fill="#5cc6f2" r="3.4" />
+            <circle cx="35" cy="38" fill="#5cc6f2" r="3.8" />
           </svg>
           <div class="speed"><i></i><i></i><i></i></div>
         </div>
@@ -349,14 +349,6 @@ export class BowlingRefresherComponent {
   refreshing = input<boolean>(false);
   align = input<'top' | 'middle'>('top');
 
-  @HostBinding('style.--bowl-scale') get bowlScaleVar(): number {
-    return this.size();
-  }
-
-  @HostBinding('style.background') get backgroundVar(): string {
-    return this.background();
-  }
-
   pins: Pin[] = [
     { x: 150, y: 120, fx: -200, fy: -18, r: -240 },
     { x: 112, y: 120 - 34, fx: -150, fy: -95, r: -280 },
@@ -369,4 +361,12 @@ export class BowlingRefresherComponent {
     { x: 36, y: 120 + 29, fx: -110, fy: 70, r: 230 },
     { x: 36, y: 120 + 85, fx: -95, fy: 185, r: 360 },
   ];
+
+  @HostBinding('style.--bowl-scale') get bowlScaleVar(): number {
+    return this.size();
+  }
+
+  @HostBinding('style.background') get backgroundVar(): string {
+    return this.background();
+  }
 }

@@ -7,7 +7,7 @@
       }
     </ion-text>
     @if (toolTip()) {
-      <ion-popover [trigger]="id() + '-tooltip'" size="cover" class="tooltip-popover">
+      <ion-popover class="tooltip-popover" size="cover" [trigger]="id() + '-tooltip'">
         <ion-text class="tooltip">{{ toolTip() }}</ion-text>
       </ion-popover>
     }
@@ -15,7 +15,7 @@
 
   <dd class="value-wrap">
     @if (vm().showDiff) {
-      <ion-icon class="diff-icon" [name]="vm().arrowIcon" [color]="vm().diffColor"></ion-icon>
+      <ion-icon class="diff-icon" [color]="vm().diffColor" [name]="vm().arrowIcon"></ion-icon>
     }
     <ion-text class="value" [id]="id()">
       @if (secondaryStat() !== undefined) {

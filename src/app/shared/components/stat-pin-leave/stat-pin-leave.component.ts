@@ -27,13 +27,13 @@ export class StatPinLeaveComponent {
   title = input<string>('Pin Leaves');
   allLeaves = input<LeaveStats[]>();
 
-  isModalOpen = signal(false);
-
   sortedAllLeaves = computed(() => {
     const leaves = this.allLeaves();
     if (!leaves) return [];
     return [...leaves].sort((a, b) => b.occurrences - a.occurrences);
   });
+
+  isModalOpen = signal(false);
 
   constructor() {
     addIcons({ chevronBack, chevronForwardOutline });

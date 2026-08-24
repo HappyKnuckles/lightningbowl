@@ -6,14 +6,14 @@
   </ion-toolbar>
 </ion-header>
 <ion-content [fullscreen]="true">
-  <ion-list lines="full" class="alley-list">
+  <ion-list class="alley-list" lines="full">
     @for (alley of alleys(); track alley.id) {
       <ion-item button detail="true" (click)="alleySelected.emit(alley)">
         <ion-label>
           <h2>
             {{ alley.name }}
             @if (isFavorite(alley)) {
-              <ion-icon name="heart" class="favorite-icon" aria-label="Favorite"></ion-icon>
+              <ion-icon aria-label="Favorite" class="favorite-icon" name="heart"></ion-icon>
             }
           </h2>
           @if (alley.address) {
@@ -33,7 +33,7 @@
             }
           </p>
         </ion-label>
-        <ion-note slot="end" class="distance-note">{{ alley.distanceMeters | distance }}</ion-note>
+        <ion-note class="distance-note" slot="end">{{ alley.distanceMeters | distance }}</ion-note>
       </ion-item>
     } @empty {
       <div class="empty-list ion-text-center">
@@ -43,7 +43,7 @@
 
     @if (recents().length > 0) {
       <div class="recents-header">
-        <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+        <ion-icon aria-hidden="true" name="time-outline"></ion-icon>
         Recently viewed
       </div>
       @for (alley of recents(); track alley.id) {

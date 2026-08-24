@@ -42,6 +42,117 @@ export class HighScoreAlertService {
   }
 
   /**
+   * Display congratulatory alert for new high score
+   */
+  public async displayHighScoreAlert(record: HighScoreRecord): Promise<void> {
+    const isNewRecord = record.previousRecord === 0;
+    const improvementText = isNewRecord ? 'Your first record!' : `Previous best: ${record.previousRecord}`;
+
+    let subHeaderText = record.type === 'single_game' ? 'Single Game Record' : 'Series Record';
+    if (record.type === 'series' && 'seriesType' in record.details) {
+      const gameCountMatch = record.details.seriesType.match(/(\d+)-Game Series/);
+      if (gameCountMatch) {
+        subHeaderText = `${gameCountMatch[1]}-Game Series Record`;
+      }
+    }
+
+    const alert = await this.alertController.create({
+      header: 'NEW HIGH SCORE!',
+      subHeader: subHeaderText,
+      message: `
+        <div style="text-align: center; padding: 10px;">
+          <h2 style="color: #4CAF50; margin: 10px 0;">${record.newRecord}</h2>
+          <p style="margin: 5px 0;"><strong>${improvementText}</strong></p>
+          <div style="margin: 5px 0; font-size: 0.9em;">${this.formatStructuredDetailsToHtml(record.details)}</div>
+        </div>
+      `,
+      buttons: [
+        {
+          text: 'Awesome!',
+          role: 'confirm',
+          cssClass: 'alert-button-confirm',
+        },
+      ],
+      cssClass: 'high-score-alert',
+    });
+
+    await alert.present();
+  }
+
+  /**
+   * Check if multiple new games achieve any new high scores and display alerts
+   * This method prevents duplicate alerts when saving multiple games (e.g., in a series)
+   */
+  async checkAndDisplayHighScoreAlertsForMultipleGames(newGames: Game[], allGames: Game[]): Promise<void> {
+    if (newGames.length === 0) return;
+
+    const allRecords: HighScoreRecord[] = [];
+    const processedSeriesIds = new Set<string>();
+
+    // Get previous stats (all games except the new ones)
+    const newGameIds = new Set(newGames.map((game) => game.gameId));
+    const previousGames = allGames.filter((game: Game) => !newGameIds.has(game.gameId));
+    const previousStats = this.calculateHighScores(previousGames);
+
+    // Check for single game high scores
+    for (const newGame of newGames) {
+      if (newGame.totalScore > (previousStats.highGame || 0)) {
+        // Only add if this is a new high game record (higher than any previous record we've found)
+        const existingGameRecord = allRecords.find((r) => r.type === 'single_game');
+        if (!existingGameRecord || newGame.totalScore > existingGameRecord.newRecord) {
+          // Remove any lower single game record
+          if (existingGameRecord) {
+            const index = allRecords.indexOf(existingGameRecord);
+            allRecords.splice(index, 1);
+          }
+
+          allRecords.push({
+            type: 'single_game',
+            newRecord: newGame.totalScore,
+            previousRecord: previousStats.highGame || 0,
+            details: this.getGameDetails(newGame),
+            gameOrSeries: newGame,
+          });
+        }
+      }
+    }
+
+    // Check for series high scores (only once per series)
+    for (const newGame of newGames) {
+      if (newGame.isSeries && newGame.seriesId && !processedSeriesIds.has(newGame.seriesId)) {
+        processedSeriesIds.add(newGame.seriesId);
+
+        const seriesGames = allGames.filter((game: Game) => game.seriesId === newGame.seriesId);
+        const seriesGameCount = seriesGames.length;
+
+        // Only alert for series of 3, 4, 5, or 6 games (standard series formats)
+        if (seriesGameCount >= 3 && seriesGameCount <= 6) {
+          const seriesTotal = seriesGames.reduce((total: number, game: Game) => total + game.totalScore, 0);
+
+          // Get previous best series of the same length
+          const previousSeriesScores = this.getPreviousSeriesScores(allGames, newGame.seriesId, seriesGameCount);
+          const previousBestSeries = Math.max(...previousSeriesScores, 0);
+
+          if (seriesTotal > previousBestSeries) {
+            allRecords.push({
+              type: 'series',
+              newRecord: seriesTotal,
+              previousRecord: previousBestSeries,
+              details: this.getSeriesDetails(seriesGames),
+              gameOrSeries: seriesGames,
+            });
+          }
+        }
+      }
+    }
+
+    // Display all unique records
+    for (const record of allRecords) {
+      await this.displayHighScoreAlert(record);
+    }
+  }
+
+  /**
    * Check for new high score records
    */
   private async checkForNewRecords(newGame: Game, allGames: Game[]): Promise<HighScoreRecord[]> {
@@ -88,44 +199,6 @@ export class HighScoreAlertService {
     }
 
     return records;
-  }
-
-  /**
-   * Display congratulatory alert for new high score
-   */
-  public async displayHighScoreAlert(record: HighScoreRecord): Promise<void> {
-    const isNewRecord = record.previousRecord === 0;
-    const improvementText = isNewRecord ? 'Your first record!' : `Previous best: ${record.previousRecord}`;
-
-    let subHeaderText = record.type === 'single_game' ? 'Single Game Record' : 'Series Record';
-    if (record.type === 'series' && 'seriesType' in record.details) {
-      const gameCountMatch = record.details.seriesType.match(/(\d+)-Game Series/);
-      if (gameCountMatch) {
-        subHeaderText = `${gameCountMatch[1]}-Game Series Record`;
-      }
-    }
-
-    const alert = await this.alertController.create({
-      header: 'NEW HIGH SCORE!',
-      subHeader: subHeaderText,
-      message: `
-        <div style="text-align: center; padding: 10px;">
-          <h2 style="color: #4CAF50; margin: 10px 0;">${record.newRecord}</h2>
-          <p style="margin: 5px 0;"><strong>${improvementText}</strong></p>
-          <div style="margin: 5px 0; font-size: 0.9em;">${this.formatStructuredDetailsToHtml(record.details)}</div>
-        </div>
-      `,
-      buttons: [
-        {
-          text: 'Awesome!',
-          role: 'confirm',
-          cssClass: 'alert-button-confirm',
-        },
-      ],
-      cssClass: 'high-score-alert',
-    });
-
-    await alert.present();
   }
 
   /**
@@ -241,78 +314,5 @@ export class HighScoreAlertService {
     htmlParts.push(`<p style="margin: 3px 0; font-size: 0.9em;"><strong>Date:</strong> ${details.date}</p>`);
 
     return htmlParts.join('');
-  }
-
-  /**
-   * Check if multiple new games achieve any new high scores and display alerts
-   * This method prevents duplicate alerts when saving multiple games (e.g., in a series)
-   */
-  async checkAndDisplayHighScoreAlertsForMultipleGames(newGames: Game[], allGames: Game[]): Promise<void> {
-    if (newGames.length === 0) return;
-
-    const allRecords: HighScoreRecord[] = [];
-    const processedSeriesIds = new Set<string>();
-
-    // Get previous stats (all games except the new ones)
-    const newGameIds = new Set(newGames.map((game) => game.gameId));
-    const previousGames = allGames.filter((game: Game) => !newGameIds.has(game.gameId));
-    const previousStats = this.calculateHighScores(previousGames);
-
-    // Check for single game high scores
-    for (const newGame of newGames) {
-      if (newGame.totalScore > (previousStats.highGame || 0)) {
-        // Only add if this is a new high game record (higher than any previous record we've found)
-        const existingGameRecord = allRecords.find((r) => r.type === 'single_game');
-        if (!existingGameRecord || newGame.totalScore > existingGameRecord.newRecord) {
-          // Remove any lower single game record
-          if (existingGameRecord) {
-            const index = allRecords.indexOf(existingGameRecord);
-            allRecords.splice(index, 1);
-          }
-
-          allRecords.push({
-            type: 'single_game',
-            newRecord: newGame.totalScore,
-            previousRecord: previousStats.highGame || 0,
-            details: this.getGameDetails(newGame),
-            gameOrSeries: newGame,
-          });
-        }
-      }
-    }
-
-    // Check for series high scores (only once per series)
-    for (const newGame of newGames) {
-      if (newGame.isSeries && newGame.seriesId && !processedSeriesIds.has(newGame.seriesId)) {
-        processedSeriesIds.add(newGame.seriesId);
-
-        const seriesGames = allGames.filter((game: Game) => game.seriesId === newGame.seriesId);
-        const seriesGameCount = seriesGames.length;
-
-        // Only alert for series of 3, 4, 5, or 6 games (standard series formats)
-        if (seriesGameCount >= 3 && seriesGameCount <= 6) {
-          const seriesTotal = seriesGames.reduce((total: number, game: Game) => total + game.totalScore, 0);
-
-          // Get previous best series of the same length
-          const previousSeriesScores = this.getPreviousSeriesScores(allGames, newGame.seriesId, seriesGameCount);
-          const previousBestSeries = Math.max(...previousSeriesScores, 0);
-
-          if (seriesTotal > previousBestSeries) {
-            allRecords.push({
-              type: 'series',
-              newRecord: seriesTotal,
-              previousRecord: previousBestSeries,
-              details: this.getSeriesDetails(seriesGames),
-              gameOrSeries: seriesGames,
-            });
-          }
-        }
-      }
-    }
-
-    // Display all unique records
-    for (const record of allRecords) {
-      await this.displayHighScoreAlert(record);
-    }
   }
 }

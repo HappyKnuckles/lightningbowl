@@ -29,16 +29,11 @@ interface ReadonlyFrameVm {
   imports: [NgIf, IonGrid, IonRow, IonCol, PinDeckComponent],
 })
 export class GameReadonlyComponent {
-  readonly game = input.required<Game>();
-  readonly pinScale = input<number>(0.3);
-
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
-  @ViewChild('captureRoot') private captureRoot?: ElementRef<HTMLElement>;
+  readonly game = input.required<Game>();
 
-  /** Element the share service should rasterize. */
-  get captureElement(): HTMLElement {
-    return this.captureRoot?.nativeElement ?? this.host.nativeElement;
-  }
+  readonly pinScale = input<number>(0.3);
+  @ViewChild('captureRoot') private captureRoot?: ElementRef<HTMLElement>;
 
   readonly isPinMode = computed(() => this.game()?.isPinMode ?? false);
 
@@ -73,4 +68,9 @@ export class GameReadonlyComponent {
       };
     });
   });
+
+  /** Element the share service should rasterize. */
+  get captureElement(): HTMLElement {
+    return this.captureRoot?.nativeElement ?? this.host.nativeElement;
+  }
 }

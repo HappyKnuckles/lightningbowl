@@ -9,14 +9,6 @@ import { ToastService } from '../toast/toast.service';
 export class NetworkService {
   private _isOnline = signal<boolean>(navigator.onLine);
 
-  get isOnline() {
-    return this._isOnline();
-  }
-
-  get isOffline() {
-    return !this._isOnline();
-  }
-
   constructor(private toastService: ToastService) {
     // Listen for online/offline events
     merge(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false)))
@@ -29,5 +21,13 @@ export class NetworkService {
           this.toastService.showToast('You are offline. Some features may not be available.', 'information-circle-outline');
         }
       });
+  }
+
+  get isOnline() {
+    return this._isOnline();
+  }
+
+  get isOffline() {
+    return !this._isOnline();
   }
 }

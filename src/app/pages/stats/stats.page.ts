@@ -140,17 +140,13 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
 })
 export class StatsPage implements OnInit {
   readonly content = viewChild.required<IonContent>(IonContent);
-  isRefreshing = signal(false);
-  OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
-  SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
-  THROW_STAT_DEFINITIONS = THROW_STAT_DEFINITIONS;
-  SESSION_STAT_DEFINITIONS = SESSION_STAT_DEFINITIONS;
-  PLAY_FREQUENCY_STAT_DEFINITIONS = PLAY_FREQUENCY_STAT_DEFINITIONS;
-  SPECIAL_STAT_DEFINITIONS = SPECIAL_STAT_DEFINITIONS;
-  STRIKE_STAT_DEFINITIONS = STRIKE_STAT_DEFINITIONS;
-  SPARE_STAT_DEFINITIONS = SPARE_STAT_DEFINITIONS;
-  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
-  imagesUrl = environment.imagesUrl;
+  // ViewChild signal queries — undefined when the @if block is not rendered
+  readonly scoreChart = viewChild<ElementRef>('scoreChart');
+  readonly averageScoreChart = viewChild<ElementRef>('averageScoreChart');
+  readonly pinChart = viewChild<ElementRef>('pinChart');
+  readonly throwChart = viewChild<ElementRef>('throwChart');
+  readonly scoreDistributionChart = viewChild<ElementRef>('scoreDistributionChart');
+  readonly spareDistributionChart = viewChild<ElementRef>('spareDistributionChart');
   uniqueSortedDates: Signal<number[]> = computed(() => {
     const dateSet = new Set<number>();
     this.gamesStore.games().forEach((game) => {
@@ -161,31 +157,30 @@ export class StatsPage implements OnInit {
 
     return Array.from(dateSet).sort((a, b) => b - a);
   });
-
   _selectedDate = signal<number | null>(null);
   selectedDate = computed(() => {
     return this._selectedDate() !== null ? this._selectedDate()! : this.uniqueSortedDates()[0];
   });
-
   gamesForSelectedSession = computed(() => {
     const selDate = this.selectedDate();
     const allGames = this.gamesStore.games();
 
     return allGames.filter((game) => this.utilsService.isSameDay(game.date, selDate));
   });
-
   sessionStats: Signal<Stats> = computed(() => this.statsService.calculateBowlingStats(this.gamesForSelectedSession()));
   sessionLeaves = computed(() => this.statsService.calculateLeaveAnalytics(this.gamesForSelectedSession()));
-  sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
 
+  sessionAllBallStats = computed(() => this.statsService.calculateAllBallStats(this.gamesForSelectedSession()));
   sessionBestBallStats = computed(() => pickTopFromList(this.sessionAllBallStats(), byAvg));
+
   sessionMostPlayedBallStats = computed(() => pickTopFromList(this.sessionAllBallStats(), byGameCount));
+
   sessionAllPatternStats = computed(() => this.statsService.calculateAllPatternStats(this.gamesForSelectedSession()));
   sessionBestPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byAvg));
   sessionMostPlayedPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byGameCount));
+
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
   readonly chartGames = computed(() => sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true));
-
   readonly hasGames = computed(
     () =>
       !(
@@ -194,7 +189,6 @@ export class StatsPage implements OnInit {
       ),
   );
   readonly hasFilteredGames = computed(() => this.gameFilterService.filteredGames().length > 0);
-
   readonly averageVm = computed(() => {
     const stats = this.statsService.currentStats();
     const prev = this.statsService.prevStats();
@@ -215,7 +209,6 @@ export class StatsPage implements OnInit {
       diffColor: this.utilsService.getDiffColor(curr, prevScore),
     };
   });
-
   readonly seriesRows = computed(() => {
     const stats = this.statsService.currentStats();
     return [3, 4, 5, 6].map((n) => ({
@@ -224,7 +217,6 @@ export class StatsPage implements OnInit {
       high: stats[`high${n}Series`] as number,
     }));
   });
-
   readonly accuracyRows = computed(() => {
     const stats = this.statsService.currentStats();
     return [
@@ -268,29 +260,37 @@ export class StatsPage implements OnInit {
       allPatterns: this.sessionAllPatternStats(),
     }),
   );
+
+  isRefreshing = signal(false);
+
+  OVERALL_STAT_DEFINITIONS = OVERALL_STAT_DEFINITIONS;
+
+  SERIES_STAT_DEFINITIONS = SERIES_STAT_DEFINITIONS;
+  THROW_STAT_DEFINITIONS = THROW_STAT_DEFINITIONS;
+
+  SESSION_STAT_DEFINITIONS = SESSION_STAT_DEFINITIONS;
+  PLAY_FREQUENCY_STAT_DEFINITIONS = PLAY_FREQUENCY_STAT_DEFINITIONS;
+  SPECIAL_STAT_DEFINITIONS = SPECIAL_STAT_DEFINITIONS;
+  STRIKE_STAT_DEFINITIONS = STRIKE_STAT_DEFINITIONS;
+  SPARE_STAT_DEFINITIONS = SPARE_STAT_DEFINITIONS;
+
+  PIN_STAT_DEFINITIONS = PIN_STAT_DEFINITIONS;
+  imagesUrl = environment.imagesUrl;
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Sessions'];
 
-  // ViewChild signal queries — undefined when the @if block is not rendered
-  readonly scoreChart = viewChild<ElementRef>('scoreChart');
-  readonly averageScoreChart = viewChild<ElementRef>('averageScoreChart');
-  readonly pinChart = viewChild<ElementRef>('pinChart');
-  readonly throwChart = viewChild<ElementRef>('throwChart');
-  readonly scoreDistributionChart = viewChild<ElementRef>('scoreDistributionChart');
-  readonly spareDistributionChart = viewChild<ElementRef>('spareDistributionChart');
-
-  private spareDistributionChartInstance: Chart | null = null;
-  private scoreDistributionChartInstance: Chart | null = null;
-  private pinChartInstance: Chart | null = null;
-  private throwChartInstance: Chart | null = null;
-  private scoreChartInstance: Chart | null = null;
-  private averageScoreChartInstance: Chart | null = null;
-
   gameFilterConfigs = GAME_FILTER_CONFIGS;
   readonly currentFilters = this.gameFilterService.filters;
   readonly defaultFilters = this.gameFilterService.defaultFilters;
+  private spareDistributionChartInstance: Chart | null = null;
+  private scoreDistributionChartInstance: Chart | null = null;
+  private pinChartInstance: Chart | null = null;
+
+  private throwChartInstance: Chart | null = null;
+  private scoreChartInstance: Chart | null = null;
+  private averageScoreChartInstance: Chart | null = null;
 
   constructor(
     public loadingService: LoadingService,

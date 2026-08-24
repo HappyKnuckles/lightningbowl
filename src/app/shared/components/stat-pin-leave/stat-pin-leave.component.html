@@ -1,24 +1,24 @@
 <h2
   class="pls-heading"
+  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
+  [attr.role]="allLeaves() ? 'button' : null"
+  [attr.tabindex]="allLeaves() ? '0' : null"
   (click)="openModal()"
   (keydown.enter)="openModal()"
-  (keydown.space)="openModal()"
-  [attr.tabindex]="allLeaves() ? '0' : null"
-  [attr.role]="allLeaves() ? 'button' : null"
-  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null">
+  (keydown.space)="openModal()">
   <span>{{ title() }}</span>
   <span class="divider-line"></span>
   @if (allLeaves()?.length) {
-    <ion-icon name="chevron-forward-outline" class="pls-chevron"></ion-icon>
+    <ion-icon class="pls-chevron" name="chevron-forward-outline"></ion-icon>
   }
 </h2>
 
 <div
   class="stat-container"
+  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
+  [attr.tabindex]="allLeaves() ? '0' : null"
   [class.ion-activatable]="allLeaves()"
   [class.ripple-parent]="allLeaves()"
-  [attr.tabindex]="allLeaves() ? '0' : null"
-  [attr.aria-label]="allLeaves() ? 'View all ' + title().toLowerCase() : null"
   (click)="openModal()"
   (keydown.enter)="openModal()"
   (keydown.space)="openModal()">
@@ -27,7 +27,7 @@
   } @else {
     @for (leave of leaveStats(); track $index) {
       <div class="leave-container">
-        <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
+        <app-pin-deck [activePins]="leave.pins" [isStatPage]="true" [scale]="0.7"></app-pin-deck>
         <div class="leave-stats">
           <ion-text>
             <h3>Occurrences</h3>
@@ -76,7 +76,7 @@
           } @else {
             @for (leave of sortedAllLeaves(); track $index) {
               <div class="leave-container">
-                <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
+                <app-pin-deck [activePins]="leave.pins" [isStatPage]="true" [scale]="0.7"></app-pin-deck>
                 <div class="leave-stats">
                   <ion-text>
                     <h3>Occurrences</h3>

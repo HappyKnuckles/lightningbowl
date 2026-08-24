@@ -11,14 +11,14 @@
   <ion-toolbar>
     <ion-searchbar
       appSearchBlur
-      (ionInput)="searchItems($event)"
-      [placeholder]="config().searchPlaceholder"
       debounce="300"
-      showCancelButton="focus"></ion-searchbar>
+      showCancelButton="focus"
+      [placeholder]="config().searchPlaceholder"
+      (ionInput)="searchItems($event)"></ion-searchbar>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" style="height: 85vh">
+<ion-content style="height: 85vh" [fullscreen]="true">
   <ng-container *ngIf="displayedItems().length <= 0 && config().noDataText; else itemsList">
     <ion-text class="no-game-text">{{ config().noDataText }}</ion-text>
   </ng-container>
@@ -26,24 +26,24 @@
   <ng-template #itemsList>
     <ion-list>
       @for (item of displayedItems(); track getItemIdentifier(item)) {
-        <ion-item role="article" [ngClass]="getCustomDisplayLogic(item).cssClass" lines="none">
-          <ion-avatar slot="start" *ngIf="config().showImages && config().imageShape !== 'rect'">
+        <ion-item lines="none" role="article" [ngClass]="getCustomDisplayLogic(item).cssClass">
+          <ion-avatar *ngIf="config().showImages && config().imageShape !== 'rect'" slot="start">
             <ion-img [src]="getImageUrl(item)"></ion-img>
           </ion-avatar>
           <img
-            slot="start"
-            class="typeahead-img-rect"
             *ngIf="config().showImages && config().imageShape === 'rect'"
-            [src]="getImageUrl(item)"
+            class="typeahead-img-rect"
+            slot="start"
             [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
+            [src]="getImageUrl(item)"
             (error)="onImageError($event)" />
 
           <ion-checkbox
-            [value]="getItemValue(item)"
+            justify="space-between"
             [checked]="isItemSelected(item)"
             [disabled]="(!isItemSelected(item) && !canSelectMoreItems()) || getCustomDisplayLogic(item).disabled"
-            (ionChange)="checkboxChange($event, item)"
-            justify="space-between">
+            [value]="getItemValue(item)"
+            (ionChange)="checkboxChange($event, item)">
             <ion-label>
               @for (field of config().displayFields; track field.key) {
                 @if (field.isSecondary) {
@@ -62,7 +62,7 @@
       }
     </ion-list>
 
-    <ion-infinite-scroll threshold="90%" (ionInfinite)="loadData($event)" #infiniteScroll>
+    <ion-infinite-scroll #infiniteScroll threshold="90%" (ionInfinite)="loadData($event)">
       <ion-infinite-scroll-content loadingSpinner="crescent" [loadingText]="config().loadingText"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
   </ng-template>

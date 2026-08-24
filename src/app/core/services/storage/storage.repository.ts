@@ -38,6 +38,10 @@ export class StorageRepository {
     return (buckets.get(prefix) ?? []) as T[];
   }
 
+  async clear(): Promise<void> {
+    await this.storage.clear();
+  }
+
   private scanAll(prefixes: string[]): Promise<Map<string, unknown[]>> {
     if (this.#scanInflight) {
       return this.#scanInflight;
@@ -69,9 +73,5 @@ export class StorageRepository {
       }
     });
     return data;
-  }
-
-  async clear(): Promise<void> {
-    await this.storage.clear();
   }
 }

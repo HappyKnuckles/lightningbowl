@@ -1,4 +1,4 @@
-<ion-modal [isOpen]="isOpen" (ionModalDidDismiss)="onDismiss()" [presentingElement]="presentingElement">
+<ion-modal [isOpen]="isOpen" [presentingElement]="presentingElement" (ionModalDidDismiss)="onDismiss()">
   <ng-template>
     <ion-header>
       <ion-toolbar>
@@ -7,7 +7,7 @@
           <ion-button fill="clear" type="reset" (click)="onDismiss()"> Cancel </ion-button>
         </ion-buttons>
         <ion-buttons slot="end">
-          <ion-button *ngIf="!isIOS" strong="true" (click)="onInstall()" [disabled]="!canInstall"> Install! </ion-button>
+          <ion-button *ngIf="!isIOS" strong="true" [disabled]="!canInstall" (click)="onInstall()"> Install! </ion-button>
           <ion-button *ngIf="isIOS" strong="true" type="submit" (click)="onDismiss()"> Got it! </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -16,7 +16,7 @@
     <ion-content class="ion-padding">
       <div class="install-content">
         <div class="app-header">
-          <img src="assets/icons/android/android-launchericon-192-192.png" alt="Lightning Bowl Icon" class="app-icon" />
+          <img alt="Lightning Bowl Icon" class="app-icon" src="assets/icons/android/android-launchericon-192-192.png" />
           <div class="app-info">
             <h2>Lightning Bowl</h2>
             <p>Your ultimate bowling companion</p>
@@ -27,31 +27,31 @@
           <h3>Why install Lightning Bowl?</h3>
           <div class="benefits-grid">
             <div class="benefit-item">
-              <ion-icon name="flash" color="primary"></ion-icon>
+              <ion-icon color="primary" name="flash"></ion-icon>
               <span>Quick Access</span>
             </div>
             <div class="benefit-item">
-              <ion-icon name="wifi-outline" color="primary"></ion-icon>
+              <ion-icon color="primary" name="wifi-outline"></ion-icon>
               <span>Works Offline</span>
             </div>
             <div class="benefit-item">
-              <ion-icon name="notifications" color="primary"></ion-icon>
+              <ion-icon color="primary" name="notifications"></ion-icon>
               <span>Push Notifications</span>
             </div>
             <div class="benefit-item">
-              <ion-icon name="phone-portrait" color="primary"></ion-icon>
+              <ion-icon color="primary" name="phone-portrait"></ion-icon>
               <span>Native Experience</span>
             </div>
           </div>
         </div>
 
         <!-- TODO Fix wrong image opening-->
-        <ion-modal [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false" class="image-modal">
+        <ion-modal class="image-modal" [isOpen]="isModalOpen" (didDismiss)="isModalOpen = false">
           <ng-template>
             <ion-header>
               <ion-segment class="ion-hide" scrollable="true" [value]="selectedImage" (ionChange)="onSegmentChange($event)">
                 @for (image of images; track image.id) {
-                  <ion-segment-button [value]="image.id" [contentId]="image.id">
+                  <ion-segment-button [contentId]="image.id" [value]="image.id">
                     <ion-label>{{ image.name }}</ion-label>
                   </ion-segment-button>
                 }
@@ -63,7 +63,7 @@
               <ion-segment-view>
                 @for (image of images; track image.id; let i = $index) {
                   <ion-segment-content [id]="image.id">
-                    <div style="background-image: url('{{ image.src }}');" class="modal-image" role="img" [attr.aria-label]="image.alt"></div>
+                    <div class="modal-image" role="img" [attr.aria-label]="image.alt" style="background-image: url('{{ image.src }}');"></div>
                   </ion-segment-content>
                 }
               </ion-segment-view>
@@ -76,8 +76,8 @@
           <div class="screenshots-carousel">
             @for (image of images; track image.id) {
               <div class="screenshot-container">
-                <button type="button" class="screenshot-button" (click)="openImageModal(image.id)" (keyup.enter)="openImageModal(image.id)">
-                  <img [src]="image.src" [alt]="image.alt" class="screenshot" />
+                <button class="screenshot-button" type="button" (click)="openImageModal(image.id)" (keyup.enter)="openImageModal(image.id)">
+                  <img class="screenshot" [alt]="image.alt" [src]="image.src" />
                 </button>
                 <p class="screenshot-caption">{{ image.caption }}</p>
               </div>
@@ -104,9 +104,9 @@
             </div>
           </div>
 
-          <div class="instruction-section" *ngIf="isIOS">
+          <div *ngIf="isIOS" class="instruction-section">
             <div class="ios-header">
-              <ion-icon name="phone-portrait" color="primary" class="ios-icon"></ion-icon>
+              <ion-icon class="ios-icon" color="primary" name="phone-portrait"></ion-icon>
               <h3>Install on iOS Safari</h3>
             </div>
             <p class="ios-description">Follow these simple steps to add Lightning Bowl to your home screen for the best mobile experience:</p>
@@ -115,7 +115,7 @@
               <div class="step">
                 <div class="step-visual">
                   <span class="step-number">1</span>
-                  <ion-icon name="share-outline" class="step-icon"></ion-icon>
+                  <ion-icon class="step-icon" name="share-outline"></ion-icon>
                 </div>
                 <div class="step-content">
                   <h4>Find the Share Button</h4>
@@ -127,8 +127,8 @@
                 <div class="step-visual">
                   <span class="step-number">2</span>
                   <ion-icon
-                    name="add"
                     class="step-icon"
+                    name="add"
                     style="border: 1px solid var(--ion-color-primary); border-radius: 4px; font-size: 1.2rem"></ion-icon>
                 </div>
                 <div class="step-content">

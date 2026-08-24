@@ -12,9 +12,9 @@
     <ion-select
       label="Filter by Labels"
       multiple="true"
+      placeholder="Select labels to filter"
       [(ngModel)]="selectedLabels"
-      (ionChange)="onLabelFilterChange()"
-      placeholder="Select labels to filter">
+      (ionChange)="onLabelFilterChange()">
       <ion-select-option value="">All</ion-select-option>
       <ion-select-option value="feature">Feature</ion-select-option>
       <ion-select-option value="bug">Bug</ion-select-option>
@@ -31,11 +31,11 @@
 
   <!-- Error State -->
   <div *ngIf="!loading && error" style="text-align: center; padding: 40px">
-    <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
+    <ion-icon color="warning" name="warning-outline" size="large"></ion-icon>
     <p style="color: var(--ion-color-warning); margin-top: 16px; font-weight: 500">
       {{ error }}
     </p>
-    <ion-button fill="clear" size="small" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" target="_blank" style="margin-top: 16px">
+    <ion-button fill="clear" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" size="small" style="margin-top: 16px" target="_blank">
       <ion-icon name="open-outline" slot="start"></ion-icon>
       View Issues on GitHub
     </ion-button>
@@ -43,7 +43,7 @@
 
   <!-- Empty State -->
   <div *ngIf="!loading && !error && issues.length === 0" style="text-align: center; padding: 40px">
-    <ion-icon name="document-outline" size="large" color="medium"></ion-icon>
+    <ion-icon color="medium" name="document-outline" size="large"></ion-icon>
     <p style="margin-top: 16px">No issues found for the selected filters.</p>
   </div>
 
@@ -66,7 +66,7 @@
             {{ label.name }}
           </ion-chip>
           <ion-avatar style="margin-left: auto; height: 32px; width: 32px; --border-radius: 0">
-            <img [src]="issue.user.avatar_url" alt="User Avatar" />
+            <img alt="User Avatar" [src]="issue.user.avatar_url" />
           </ion-avatar>
         </div>
       </ion-card-header>
@@ -81,7 +81,7 @@
 
         <div class="issue-meta">
           <span class="created-date">Created {{ getRelativeTime(issue.created_at) }}</span>
-          <ion-button fill="clear" size="small" [href]="issue.html_url" target="_blank">
+          <ion-button fill="clear" size="small" target="_blank" [href]="issue.html_url">
             <ion-icon name="open-outline" slot="start"></ion-icon>
             View on GitHub
           </ion-button>

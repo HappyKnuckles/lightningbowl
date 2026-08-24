@@ -8,8 +8,6 @@ import { ImpactStyle } from '@capacitor/haptics';
   standalone: true,
 })
 export class LongPressDirective implements OnDestroy {
-  private timerSub?: Subscription;
-
   /** how long (ms) until `longPressed` fires */
   @Input() delay = 500;
 
@@ -20,12 +18,18 @@ export class LongPressDirective implements OnDestroy {
   @Input() transitionDuration = '250ms';
 
   @Output() longPressed = new EventEmitter<PointerEvent>();
+
+  private timerSub?: Subscription;
   private scaleTimeout: ReturnType<typeof setTimeout> | null = null;
   constructor(
     private elementRef: ElementRef<HTMLElement>,
     private renderer: Renderer2,
     private hapticService: HapticService,
   ) {}
+
+  ngOnDestroy() {
+    this.clearTimer();
+  }
 
   @HostListener('pointerdown', ['$event'])
   onPointerDown(ev: PointerEvent) {
@@ -48,10 +52,6 @@ export class LongPressDirective implements OnDestroy {
     this.renderer.setStyle(this.elementRef.nativeElement, 'filter', 'none');
     this.renderer.removeStyle(this.elementRef.nativeElement, 'box-shadow');
     this.renderer.setStyle(this.elementRef.nativeElement, 'transform', 'translateY(0)');
-  }
-
-  ngOnDestroy() {
-    this.clearTimer();
   }
 
   private clearTimer() {

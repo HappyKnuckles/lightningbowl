@@ -23,7 +23,7 @@
               class="input-col"
               [class.current-throw]="currentFrameIndex() === frame.frameIndex && currentThrowIndex() === $index"
               (click)="onScoreCellClicked(frame.frameIndex, $index)">
-              <ion-input type="text" readonly="true" [disabled]="cell.disabled" [value]="cell.display" [class.is-split]="cell.isSplit"></ion-input>
+              <ion-input readonly="true" type="text" [class.is-split]="cell.isSplit" [disabled]="cell.disabled" [value]="cell.display"></ion-input>
             </ion-col>
           }
         </ion-row>
@@ -35,7 +35,7 @@
           @for (cell of frame.throws; track $index) {
             <ion-col class="input-col">
               @if (cell.showPinDeck) {
-                <app-pin-deck [scale]="0.3" [activePins]="cell.pinsStanding"></app-pin-deck>
+                <app-pin-deck [activePins]="cell.pinsStanding" [scale]="0.3"></app-pin-deck>
               }
             </ion-col>
           }
@@ -60,17 +60,17 @@
   <!-- Pin Input Component -->
   <app-pin-input
     style="display: flex; justify-content: center; align-items: center"
-    [pinsLeftStanding]="pinsLeftStanding()"
-    [canStrike]="canStrike()"
     [canSpare]="canSpare()"
+    [canStrike]="canStrike()"
     [canUndo]="canUndo()"
     [isGameComplete]="isGameComplete()"
+    [pinsLeftStanding]="pinsLeftStanding()"
     [selectHitPins]="settingsStore.pinInputMode()"
     [showStatsButton]="showStatsButton()"
-    (throwConfirmed)="onPinThrowConfirmed($event)"
-    (undoRequested)="onPinUndoRequested()"
+    [statsEnabled]="statsEnabled()"
     (statsClick)="seriesStatsClick.emit()"
-    [statsEnabled]="statsEnabled()">
+    (throwConfirmed)="onPinThrowConfirmed($event)"
+    (undoRequested)="onPinUndoRequested()">
   </app-pin-input>
 } @else {
   <!-- Standard Grid Mode -->
@@ -87,15 +87,15 @@
           @for (cell of frame.throws; track $index) {
             <ion-col class="input-col">
               <ion-input
-                type="text"
+                autocapitalize="on"
                 clearOnEdit="true"
                 inputmode="numeric"
-                autocapitalize="on"
+                type="text"
                 [debounce]="showMetadata() ? 0 : 500"
                 [disabled]="cell.disabled"
                 [value]="cell.display"
-                (ionInput)="onScoreInput($event, frame.frameIndex, $index)"
-                (ionFocus)="handleInputFocus(frame.frameIndex, $index)">
+                (ionFocus)="handleInputFocus(frame.frameIndex, $index)"
+                (ionInput)="onScoreInput($event, frame.frameIndex, $index)">
               </ion-input>
             </ion-col>
           }
@@ -141,31 +141,31 @@
         <ion-list lines="full">
           <ion-item>
             <ion-checkbox
-              [checked]="currentGame().isPractice"
-              name="isPractice"
               #checkbox
+              name="isPractice"
+              [checked]="currentGame().isPractice"
               (ionChange)="onIsPracticeChange($any($event.target).checked)"
               >Practice</ion-checkbox
             >
           </ion-item>
           <!-- TODO make this reset on save-->
-          <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
-          <ion-item [id]="ballSelectorId()" class="ball-selector" button detail="true" detailIcon="chevron-expand-outline">
+          <app-league-selector #leagueSelector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)"></app-league-selector>
+          <ion-item button class="ball-selector" detail="true" detailIcon="chevron-expand-outline" [id]="ballSelectorId()">
             <ion-label>Balls</ion-label>
             <span class="ion-text-right">{{ ballsText() || "None" }}</span>
           </ion-item>
           @if (ballsStore.arsenal().length > 0) {
-            <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal [trigger]="ballSelectorId()" class="ball-modal">
+            <ion-modal #modal class="ball-modal" [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" [trigger]="ballSelectorId()">
               <ng-template>
-                <app-ball-select (ballSelect)="onBallSelect($event, modal)" [selectedBalls]="currentGame().balls || []"></app-ball-select>
+                <app-ball-select [selectedBalls]="currentGame().balls || []" (ballSelect)="onBallSelect($event, modal)"></app-ball-select>
               </ng-template>
             </ion-modal>
           } @else {
-            <ion-modal [trigger]="ballSelectorId()" [presentingElement]="presentingElement">
+            <ion-modal [presentingElement]="presentingElement" [trigger]="ballSelectorId()">
               <ng-template>
                 <app-generic-typeahead
-                  [items]="ballsStore.allBalls()"
                   [config]="ballTypeaheadConfig"
+                  [items]="ballsStore.allBalls()"
                   [prevSelectedItems]="getBallIds(currentGame().balls)"
                   (selectedItemsChange)="onBallAdd($event)">
                 </app-generic-typeahead>
@@ -173,20 +173,20 @@
             </ion-modal>
           }
           <ion-item
-            class="pattern-selector"
-            [id]="patternModalId()"
             button
+            class="pattern-selector"
             detail="true"
             detailIcon="chevron-expand-outline"
-            [disabled]="patternsStore.allPatterns().length === 0">
+            [disabled]="patternsStore.allPatterns().length === 0"
+            [id]="patternModalId()">
             <ion-label>Patterns</ion-label>
             <span class="ion-text-right">{{ patternsText() || "None" }}</span>
           </ion-item>
           <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
             <ng-template>
               <app-generic-typeahead
-                [items]="rankedPatterns()"
                 [config]="patternTypeaheadConfig"
+                [items]="rankedPatterns()"
                 [prevSelectedItems]="currentGame().patterns || []"
                 (selectedItemsChange)="onPatternChanged($event)">
               </app-generic-typeahead>
@@ -195,12 +195,12 @@
           <ion-item lines="none">
             <ion-textarea
               label="Note"
-              type="text"
-              [value]="currentGame().note || ''"
-              (ionInput)="onNoteChange($any($event).detail.value)"
               name="note"
+              placeholder="today knee pain, lanes dry af, i fucking suck today"
+              type="text"
               [autoGrow]="true"
-              placeholder="today knee pain, lanes dry af, i fucking suck today"></ion-textarea>
+              [value]="currentGame().note || ''"
+              (ionInput)="onNoteChange($any($event).detail.value)"></ion-textarea>
           </ion-item>
         </ion-list>
       </div>

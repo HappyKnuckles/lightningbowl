@@ -63,33 +63,33 @@ const DEFAULT_ZOOM = 12;
   styleUrls: ['./alley-map.page.scss'],
 })
 export class AlleyMapPage implements OnInit, OnDestroy {
-  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
-
   private alleyService = inject(AlleyService);
+
   private analyticsService = inject(AnalyticsService);
   private toastService = inject(ToastService);
   favoritesService = inject(AlleyFavoritesService);
   networkService = inject(NetworkService);
+  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
 
   alleys = signal<Alley[]>([]);
-  searchTerm = signal('');
   filters = signal<AlleyFilters>({ ...DEFAULT_ALLEY_FILTERS });
-  selectedAlley = signal<Alley | null>(null);
-  isLoading = signal(false);
-  hasError = signal(false);
-  errorMessage = signal("Couldn't load alleys.");
-  isListOpen = signal(false);
-  locationState = signal<'pending' | 'granted' | 'denied'>('pending');
-  searchOrigin = signal<AlleySearchOrigin>({ lat: DEFAULT_COORDS[0], lon: DEFAULT_COORDS[1], source: 'user' });
-
   filteredAlleys = computed(() => {
     const { openNow, favoritesOnly } = this.filters();
     const favorites = this.favoritesService.favorites();
     return this.alleys().filter((alley) => (!openNow || getOpenState(alley.openingHours) === 'open') && (!favoritesOnly || favorites.has(alley.id)));
   });
-
+  isLoading = signal(false);
+  hasError = signal(false);
   showEmptyState = computed(() => !this.isLoading() && !this.hasError() && this.alleys().length > 0 && this.filteredAlleys().length === 0);
+  locationState = signal<'pending' | 'granted' | 'denied'>('pending');
   showNoResults = computed(() => !this.isLoading() && !this.hasError() && this.alleys().length === 0 && this.locationState() !== 'pending');
+  searchTerm = signal('');
+  selectedAlley = signal<Alley | null>(null);
+
+  errorMessage = signal("Couldn't load alleys.");
+
+  isListOpen = signal(false);
+  searchOrigin = signal<AlleySearchOrigin>({ lat: DEFAULT_COORDS[0], lon: DEFAULT_COORDS[1], source: 'user' });
 
   private map?: L.Map;
   private clusterGroup?: L.MarkerClusterGroup;
@@ -140,30 +140,6 @@ export class AlleyMapPage implements OnInit, OnDestroy {
   onSearchSuggestionSelected(term: string): void {
     this.searchTerm.set(term);
     void this.runPlaceSearch(term);
-  }
-
-  private async runPlaceSearch(query: string | undefined): Promise<void> {
-    if (!query) {
-      // Only jump back when clearing an active place search, not on a blur of an empty bar.
-      if (this.searchOrigin().source === 'search') {
-        await this.recenterOnUser(false);
-      }
-      return;
-    }
-
-    void this.analyticsService.trackAlleySearch(query);
-    try {
-      const result = await this.alleyService.geocode(query);
-      if (!result) {
-        this.toastService.showToast(`No place found for "${query}"`, 'search-outline');
-        return;
-      }
-      this.searchOrigin.set({ lat: result.lat, lon: result.lon, source: 'search', label: result.label });
-      this.map?.flyTo([result.lat, result.lon], DEFAULT_ZOOM, { duration: 0.8 });
-      await this.loadAlleys();
-    } catch {
-      this.toastService.showToast('Search failed. Check your connection.', 'cloud-offline-outline', true);
-    }
   }
 
   async recenterOnUser(showErrors = true): Promise<void> {
@@ -226,6 +202,30 @@ export class AlleyMapPage implements OnInit, OnDestroy {
 
   onSheetDismiss(): void {
     this.selectedAlley.set(null);
+  }
+
+  private async runPlaceSearch(query: string | undefined): Promise<void> {
+    if (!query) {
+      // Only jump back when clearing an active place search, not on a blur of an empty bar.
+      if (this.searchOrigin().source === 'search') {
+        await this.recenterOnUser(false);
+      }
+      return;
+    }
+
+    void this.analyticsService.trackAlleySearch(query);
+    try {
+      const result = await this.alleyService.geocode(query);
+      if (!result) {
+        this.toastService.showToast(`No place found for "${query}"`, 'search-outline');
+        return;
+      }
+      this.searchOrigin.set({ lat: result.lat, lon: result.lon, source: 'search', label: result.label });
+      this.map?.flyTo([result.lat, result.lon], DEFAULT_ZOOM, { duration: 0.8 });
+      await this.loadAlleys();
+    } catch {
+      this.toastService.showToast('Search failed. Check your connection.', 'cloud-offline-outline', true);
+    }
   }
 
   private async initializeMap(): Promise<void> {

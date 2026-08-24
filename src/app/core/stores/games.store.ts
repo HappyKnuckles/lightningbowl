@@ -52,27 +52,6 @@ export class GamesStore {
           needsUpdate = true;
         }
 
-        // Check for old string-format balls or new ThrowBall objects
-        const hasThrowLevelBalls = (game.frames || []).some((frame) =>
-          (frame.throws || []).some((throwData) => {
-            const ball = (throwData as LegacyThrow).ball;
-            return (typeof ball === 'string' && ball.trim().length > 0) || (typeof ball === 'object' && ball !== null && ball.name);
-          }),
-        );
-
-        // Seed per-throw balls from the legacy game-level selection
-        if (!hasThrowLevelBalls && game.balls && game.balls.length > 0) {
-          const fallbackBallName = game.balls[0];
-          (game.frames || []).forEach((frame) => {
-            (frame.throws || []).forEach((throwData) => {
-              if (!throwData.ball) {
-                throwData.ball = { name: fallbackBallName };
-                needsUpdate = true;
-              }
-            });
-          });
-        }
-
         // Migrate legacy string ball data to ThrowBall objects
         (game.frames || []).forEach((frame) => {
           (frame.throws || []).forEach((throwData) => {
@@ -88,6 +67,15 @@ export class GamesStore {
             }
           });
         });
+
+        // Tag how this game recorded its balls. Games that never had a ball picked per throw
+        // stay on game-level tracking. Their throws are deliberately left empty rather than
+        // backfilled, so per-throw stats never count balls the user did not actually record.
+        if (!game.ballTracking) {
+          const hasThrowLevelBalls = (game.frames || []).some((frame) => (frame.throws || []).some((throwData) => throwData.ball?.name));
+          game.ballTracking = hasThrowLevelBalls ? 'throw' : 'game';
+          needsUpdate = true;
+        }
       });
 
       if (needsUpdate) {

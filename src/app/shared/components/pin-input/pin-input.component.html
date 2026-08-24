@@ -4,15 +4,17 @@
       <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
     </ion-button>
   }
-  <div class="ball-selector-corner">
-    <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
-      @if (selectedBallThumbnail(); as thumbnail) {
-        <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
-      } @else {
-        <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
-      }
-    </ion-button>
-  </div>
+  @if (showBallSelector()) {
+    <div class="ball-selector-corner">
+      <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+        @if (selectedBallThumbnail(); as thumbnail) {
+          <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
+        } @else {
+          <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
+        }
+      </ion-button>
+    </div>
+  }
 
   @for (row of pinRows(); track $index) {
     <div class="pin-row">

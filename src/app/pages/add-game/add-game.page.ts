@@ -363,7 +363,7 @@ export class AddGamePage implements OnInit {
     this.updateSingleGameProperty('note', note, index);
   }
   onBallsChange(balls: string[], index = 0) {
-    this.updateSingleGameProperty('balls', balls, index);
+    this.games.update((games) => games.map((g, i) => (i === index ? { ...g, balls, ballTracking: 'game' as const } : g)));
   }
   onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, index = 0) {
     const { frameIndex, throwIndex, ball } = event;
@@ -372,7 +372,7 @@ export class AddGamePage implements OnInit {
         if (i !== index) return g;
         const frames = cloneFrames(g.frames);
         setThrowBall(frames, frameIndex, throwIndex, ball);
-        return { ...g, frames };
+        return { ...g, frames, ballTracking: 'throw' as const };
       }),
     );
   }

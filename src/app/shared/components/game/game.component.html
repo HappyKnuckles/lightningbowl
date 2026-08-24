@@ -68,6 +68,7 @@
     [selectHitPins]="settingsStore.pinInputMode()"
     [showStatsButton]="showStatsButton()"
     [selectedBall]="currentThrowBall()"
+    [showBallSelector]="isThrowTracking()"
     (throwConfirmed)="onPinThrowConfirmed($event)"
     (undoRequested)="onPinUndoRequested()"
     (ballSelected)="onPinBallSelected($event)"
@@ -152,7 +153,24 @@
           </ion-item>
           <!-- TODO make this reset on save-->
           <app-league-selector [isAddPage]="true" (leagueChanged)="onLeagueChanged($event)" #leagueSelector></app-league-selector>
-          @if (!isPinInputMode()) {
+          @if (isThrowTracking()) {
+            @let summary = throwBallSummary();
+            <ion-item class="ball-selector" lines="full">
+              <ion-label>Balls</ion-label>
+              <span class="ion-text-right ball-throw-summary">
+                @if (summary.balls.length) {
+                  @for (ball of summary.balls; track ball.label) {
+                    <span class="ball-throw-entry">{{ ball.label }} · {{ ball.throws }} throws</span>
+                  }
+                  @if (summary.untracked) {
+                    <span class="ball-throw-untracked">{{ summary.untracked }} throws untracked</span>
+                  }
+                } @else {
+                  Pick a ball on the pin pad
+                }
+              </span>
+            </ion-item>
+          } @else {
             <ion-item [id]="ballSelectorId()" class="ball-selector" button detail="true" detailIcon="chevron-expand-outline">
               <ion-label>Balls</ion-label>
               <span class="ion-text-right">{{ ballsText() || "None" }}</span>

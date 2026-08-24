@@ -1,4 +1,12 @@
 /**
+ * How a game records which ball was used.
+ * - `game`: one selection for the whole game (`Game.balls`), the quick way.
+ * - `throw`: a ball per throw (`Throw.ball`), the detailed way.
+ * Absent means `game`, which is how every game before per-throw tracking was recorded.
+ */
+export type BallTracking = 'game' | 'throw';
+
+/**
  * Minimized ball reference stored per throw
  */
 export interface ThrowBall {
@@ -71,5 +79,7 @@ export interface Game {
   note?: string;
   league?: string;
   patterns: string[];
+  /** Balls used. The user's selection in `game` tracking, derived from the throws in `throw` tracking. */
   balls?: string[];
+  ballTracking?: BallTracking;
 }

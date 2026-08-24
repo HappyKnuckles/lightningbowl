@@ -68,7 +68,7 @@ ion-item-divider {
   border: 1px solid var(--ion-border-color, #2b2828);
   width: auto;
 
-  >ion-item {
+  > ion-item {
     --padding-start: 0;
     --padding-end: 0;
     --inner-padding-start: 0;
@@ -84,7 +84,6 @@ ion-item-divider {
     }
 
     .content {
-
       ion-item.ball-selector,
       ion-item.pattern-selector,
       ion-item.note,
@@ -173,7 +172,6 @@ ion-item-divider {
 
 .ball-selector,
 .pattern-selector {
-
   &::part(detail-icon) {
     opacity: 1;
     color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
@@ -340,4 +338,10 @@ ion-item-divider {
 
 :host ::ng-deep app-pin-input .pin-input-container {
   background: var(--ion-card-background);
+}
+.ball-throw-summary {
+  white-space: pre-line;
+  text-align: right;
+  font-size: 0.875rem;
+  padding: 4px 0;
 }

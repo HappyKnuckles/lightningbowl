@@ -4,6 +4,7 @@ import { addIcons } from 'ionicons';
 import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { Ball } from 'src/app/core/models/ball.model';
 import { ThrowBall } from 'src/app/core/models/game.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
@@ -49,6 +50,8 @@ export class PinInputComponent {
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
   selectedBall = input<ThrowBall | undefined>(undefined);
+  /** Off when the game records one ball for the whole game. The picker then lives in the game details. */
+  showBallSelector = input<boolean>(true);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
@@ -118,20 +121,37 @@ export class PinInputComponent {
     this.isAddBallModalOpen.set(false);
   }
 
+  /**
+   * Balls picked from the full catalogue when the arsenal is still empty. Every pick is
+   * saved, not just the first: adding three balls and getting one is the kind of silent
+   * loss you only notice much later. A single ball is used for this throw straight away;
+   * with several there is no way to know which one is in hand, so the arsenal picker opens
+   * for the user to choose.
+   */
   async onBallAdd(ballIds: string[]): Promise<void> {
-    const ballId = ballIds[0];
-    const ball = ballId ? this.ballsStore.allBalls().find((b) => b.ball_id === ballId) : undefined;
     this.isAddBallModalOpen.set(false);
-    if (!ball) return;
 
-    const failed = await this.ballsStore.saveBallsToArsenal([ball]);
+    const allBalls = this.ballsStore.allBalls();
+    const balls = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    if (balls.length === 0) return;
+
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((ball) => !failed.includes(ball));
+
     if (failed.length) {
       this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    } else {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveSuccess, 'checkmark-outline');
+    }
+
+    if (saved.length === 0) return;
+
+    if (saved.length === 1) {
+      this.ballSelected.emit({ name: saved[0].ball_name, weight: saved[0].core_weight });
       return;
     }
 
-    this.toastService.showToast(TOAST_MESSAGES.ballSaveSuccess, 'checkmark-outline');
-    this.ballSelected.emit({ name: ball.ball_name, weight: ball.core_weight });
+    this.isBallModalOpen.set(true);
   }
 
   onBallSelection(selectedKeys: string[]): void {

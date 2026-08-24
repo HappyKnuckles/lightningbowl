@@ -195,3 +195,25 @@ export function numberArraysToFrames(numberArrays: number[][]): Frame[] {
     throws: frameArray.map((value, throwIndex) => createThrow(value, throwIndex + 1)),
   }));
 }
+
+/**
+ * Whether a throw is a first ball at a full rack, the only kind of throw that can strike.
+ * In frames 1-9 that is throw 1. The tenth frame racks again after a strike or a spare,
+ * so its second and third throws can be first balls too.
+ */
+export function isFirstBallThrow(frame: Frame, frameIndex: number, throwIndex: number): boolean {
+  if (throwIndex === 0) return true;
+  if (frameIndex !== 9) return false;
+
+  const first = frame.throws?.[0]?.value;
+  const second = frame.throws?.[1]?.value;
+
+  if (throwIndex === 1) return first === 10;
+  if (throwIndex === 2) {
+    if (first === undefined || second === undefined) return false;
+    const afterDouble = first === 10 && second === 10;
+    const afterSpare = first !== 10 && first + second === 10;
+    return afterDouble || afterSpare;
+  }
+  return false;
+}

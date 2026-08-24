@@ -11,6 +11,7 @@ import {
   getThrowValue,
   getThrowValues,
   isAllFramesComplete,
+  isFirstBallThrow,
   isFrameComplete,
   isSpare,
   isStrike,
@@ -321,5 +322,74 @@ describe('frame.utils', () => {
         },
       ]);
     });
+  });
+});
+
+describe('isFirstBallThrow', () => {
+  it('treats the opening throw of any frame as a first ball', () => {
+    expect(isFirstBallThrow({ frameIndex: 0, throws: [] }, 0, 0)).toBe(true);
+    expect(isFirstBallThrow({ frameIndex: 9, throws: [] }, 9, 0)).toBe(true);
+  });
+
+  it('never treats the second throw of frames 1-9 as a first ball', () => {
+    const frame = {
+      frameIndex: 1,
+      throws: [
+        { value: 0, throwIndex: 1 },
+        { value: 10, throwIndex: 2 },
+      ],
+    };
+    expect(isFirstBallThrow(frame, 1, 1)).toBe(false);
+  });
+
+  it('treats the tenth frame second throw as a first ball only after a strike', () => {
+    const afterStrike = {
+      frameIndex: 9,
+      throws: [
+        { value: 10, throwIndex: 1 },
+        { value: 5, throwIndex: 2 },
+      ],
+    };
+    const afterOpen = {
+      frameIndex: 9,
+      throws: [
+        { value: 3, throwIndex: 1 },
+        { value: 4, throwIndex: 2 },
+      ],
+    };
+
+    expect(isFirstBallThrow(afterStrike, 9, 1)).toBe(true);
+    expect(isFirstBallThrow(afterOpen, 9, 1)).toBe(false);
+  });
+
+  it('treats the tenth frame third throw as a first ball after a double or a spare', () => {
+    const double = {
+      frameIndex: 9,
+      throws: [
+        { value: 10, throwIndex: 1 },
+        { value: 10, throwIndex: 2 },
+        { value: 7, throwIndex: 3 },
+      ],
+    };
+    const spare = {
+      frameIndex: 9,
+      throws: [
+        { value: 3, throwIndex: 1 },
+        { value: 7, throwIndex: 2 },
+        { value: 9, throwIndex: 3 },
+      ],
+    };
+    const strikeThenOpen = {
+      frameIndex: 9,
+      throws: [
+        { value: 10, throwIndex: 1 },
+        { value: 3, throwIndex: 2 },
+        { value: 4, throwIndex: 3 },
+      ],
+    };
+
+    expect(isFirstBallThrow(double, 9, 2)).toBe(true);
+    expect(isFirstBallThrow(spare, 9, 2)).toBe(true);
+    expect(isFirstBallThrow(strikeThenOpen, 9, 2)).toBe(false);
   });
 });

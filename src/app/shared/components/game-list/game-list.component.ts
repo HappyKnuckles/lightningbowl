@@ -40,7 +40,7 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import { getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
+import { formatThrowBall, getBallTracking, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -518,10 +518,41 @@ export class GameListComponent implements OnInit {
   onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
     modal.dismiss();
     game.balls = selectedBalls;
+    game.ballTracking = 'game';
+    this.ballNamesCache.delete(game);
+  }
+
+  /** Games recorded per throw show a read-only summary; the picker lives on the pin pad. */
+  isThrowTracked(game: Game): boolean {
+    return getBallTracking(game) === 'throw';
+  }
+
+  /** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
+  getThrowBallSummary(game: Game): string {
+    let summary = this.throwBallSummaryCache.get(game);
+    if (summary === undefined) {
+      const counts = new Map<string, number>();
+      for (const frame of game.frames ?? []) {
+        for (const t of frame.throws ?? []) {
+          if (!t.ball?.name) continue;
+          const label = formatThrowBall(t.ball);
+          counts.set(label, (counts.get(label) ?? 0) + 1);
+        }
+      }
+      summary = [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, throws]) => `${label} · ${throws} throws`)
+        .join('\n');
+      this.throwBallSummaryCache.set(game, summary);
+    }
+    return summary;
   }
 
   onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
     this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
+    game.ballTracking = 'throw';
+    this.ballNamesCache.delete(game);
+    this.throwBallSummaryCache.delete(game);
   }
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
@@ -586,6 +617,7 @@ export class GameListComponent implements OnInit {
   // Resolved per game object; called from the template on every CD pass, so the
   // frames scan must not repeat. Edits replace the game object, invalidating naturally.
   private ballNamesCache = new WeakMap<Game, string[]>();
+  private throwBallSummaryCache = new WeakMap<Game, string>();
 
   getGameBalls(game: Game): string[] {
     let names = this.ballNamesCache.get(game);

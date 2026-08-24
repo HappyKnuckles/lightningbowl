@@ -33,7 +33,7 @@ import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import { BallTracking, Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -45,7 +45,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { getCarryOverThrowBall, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
+import { formatThrowBall, getCarryOverThrowBall, getGameBallNames, hasThrowLevelBalls } from 'src/app/core/utils/game-utils/ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -189,6 +189,44 @@ export class GameComponent implements OnInit {
   });
 
   ballsText = computed(() => getGameBallNames(this.currentGame(), this.ballsStore.arsenal()).join(', '));
+
+  /**
+   * Which ball UI this game gets. A game that already carries ball data keeps its own mode;
+   * an untouched one follows the user's default. Per-throw picking lives on the pin pad,
+   * so it is only offered while pin input is on.
+   */
+  ballTracking = computed<BallTracking>(() => {
+    const game = this.currentGame();
+    if (game.ballTracking) return game.ballTracking;
+    if (hasThrowLevelBalls(game.frames ?? [])) return 'throw';
+    if ((game.balls ?? []).length > 0) return 'game';
+    return this.settingsStore.ballTracking();
+  });
+
+  /** Per-throw picking needs the pin pad; everything else falls back to the game-level selection. */
+  isThrowTracking = computed(() => this.ballTracking() === 'throw' && this.isPinInputMode());
+
+  /** Read-only summary of the balls used per throw: "IQ Tour · 34 throws". */
+  throwBallSummary = computed(() => {
+    const counts = new Map<string, { label: string; throws: number }>();
+    let untracked = 0;
+    for (const frame of this.currentGame().frames ?? []) {
+      for (const t of frame.throws ?? []) {
+        if (!t.ball?.name) {
+          untracked++;
+          continue;
+        }
+        const label = formatThrowBall(t.ball);
+        const entry = counts.get(label) ?? { label, throws: 0 };
+        entry.throws++;
+        counts.set(label, entry);
+      }
+    }
+    return {
+      balls: [...counts.values()].sort((a, b) => b.throws - a.throws),
+      untracked,
+    };
+  });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
   /** Ball for the throw the pin input is currently on, falling back to the carried-over ball */

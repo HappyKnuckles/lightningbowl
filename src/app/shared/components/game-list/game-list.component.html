@@ -193,35 +193,42 @@
                 [leagues]="leagues()"
                 [selectedLeague]="game.league ?? ''"
                 (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
-              @if (!game.isPinMode) {}
-              <ion-item class="ball-selector" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
-                <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                <ion-label>Balls</ion-label>
-                <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
-              </ion-item>
-
-              @if (ballsStore.arsenal().length > 0) {
-                <ion-modal
-                  [enterAnimation]="enterAnimation"
-                  [leaveAnimation]="leaveAnimation"
-                  #modal
-                  trigger="ball-selector-{{ game.gameId }}"
-                  class="ball-modal">
-                  <ng-template>
-                    <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
-                  </ng-template>
-                </ion-modal>
+              @if (isThrowTracked(game)) {
+                <ion-item class="ball-selector" lines="full">
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                  <ion-label>Balls</ion-label>
+                  <span class="ion-text-right ball-throw-summary">{{ getThrowBallSummary(game) || "Pick a ball on the pin pad" }}</span>
+                </ion-item>
               } @else {
-                <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
-                  <ng-template>
-                    <app-generic-typeahead
-                      [items]="ballsStore.allBalls()"
-                      [config]="ballTypeaheadConfig"
-                      [prevSelectedItems]="getBallIds(game.balls)"
-                      (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
-                    </app-generic-typeahead>
-                  </ng-template>
-                </ion-modal>
+                <ion-item class="ball-selector" id="ball-selector-{{ game.gameId }}" button detail="true" detailIcon="chevron-expand-outline">
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                  <ion-label>Balls</ion-label>
+                  <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
+                </ion-item>
+
+                @if (ballsStore.arsenal().length > 0) {
+                  <ion-modal
+                    [enterAnimation]="enterAnimation"
+                    [leaveAnimation]="leaveAnimation"
+                    #modal
+                    trigger="ball-selector-{{ game.gameId }}"
+                    class="ball-modal">
+                    <ng-template>
+                      <app-ball-select (ballSelect)="onBallSelect($event, game, modal)" [selectedBalls]="game.balls || []"></app-ball-select>
+                    </ng-template>
+                  </ion-modal>
+                } @else {
+                  <ion-modal #allBallsModal trigger="ball-selector-{{ game.gameId }}" [presentingElement]="presentingElement">
+                    <ng-template>
+                      <app-generic-typeahead
+                        [items]="ballsStore.allBalls()"
+                        [config]="ballTypeaheadConfig"
+                        [prevSelectedItems]="getBallIds(game.balls)"
+                        (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                      </app-generic-typeahead>
+                    </ng-template>
+                  </ion-modal>
+                }
               }
             }
             @if (!inSeries) {

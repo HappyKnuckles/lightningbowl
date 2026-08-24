@@ -1,17 +1,78 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
-import { HighlightItemStats } from 'src/app/core/models/stats.model';
+import { BallDetailStats, BallStats, HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { formatThrowBall, getGameBalls } from 'src/app/core/utils/game-utils/ball.utils';
+import { formatThrowBall, getBallTracking, getGameBalls, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { isFirstBallThrow } from 'src/app/core/utils/game-utils/frame.utils';
 import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
 import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
+import { BallDetailStatsCalculatorService } from './ball-detail-stats-calculator.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BallStatsCalculatorService {
+  #detailCalculator = inject(BallDetailStatsCalculatorService);
+
   constructor(private ballsStore: BallsStore) {}
+
+  /**
+   * Full per-ball stats: the game-level numbers every game can provide, plus a `detail`
+   * block for balls that were tracked per throw. The two tiers are kept separate on
+   * purpose: a game-tracked game credits its whole score to every ball it used, which
+   * is fine as a game-level statement but is not a claim about the ball's own throws.
+   */
+  calculateBallStats(gameHistory: Game[]): BallStats[] {
+    const byDisplayName = this._calculateAllBallStats(gameHistory);
+    const detailByKey = this.#detailCalculator.calculate(gameHistory);
+
+    // Stored ball keys and arsenal display names spell the same ball differently
+    // ("Hammer15" vs "Hammer 15lbs"), so every lookup goes through the normalized form.
+    const detailedGameCounts = new Map<string, number>();
+    const lastUsed = new Map<string, number>();
+    for (const game of gameHistory) {
+      const isDetailed = getBallTracking(game) === 'throw';
+      for (const key of new Set(getGameBalls(game))) {
+        const normalized = this.normalizeBallKey(key);
+        if (isDetailed) detailedGameCounts.set(normalized, (detailedGameCounts.get(normalized) ?? 0) + 1);
+        lastUsed.set(normalized, Math.max(lastUsed.get(normalized) ?? 0, game.date));
+      }
+    }
+
+    return Object.values(byDisplayName).map((item) => {
+      const resolved = this.resolveBallReference(item.name);
+      const key = resolved ? getThrowBallKey({ name: resolved.ball_name, weight: resolved.core_weight }) : item.name;
+      const normalized = this.normalizeBallKey(key);
+      const detail = detailByKey.get(key) ?? this.findDetailByName(detailByKey, item.name);
+
+      return {
+        key,
+        name: resolved?.ball_name ?? item.name,
+        displayName: item.name,
+        weight: resolved?.core_weight,
+        image: item.image,
+        tier: detail ? ('detailed' as const) : ('basic' as const),
+        gameCount: item.gameCount,
+        detailedGameCount: detailedGameCounts.get(normalized) ?? 0,
+        avg: item.avg,
+        highestGame: item.highestGame,
+        lowestGame: item.lowestGame,
+        cleanGameCount: item.cleanGameCount ?? 0,
+        lastUsed: lastUsed.get(normalized) ?? 0,
+        detail,
+      } satisfies BallStats;
+    });
+  }
+
+  /** Falls back to fuzzy name matching when a stored ball never resolved to an arsenal entry. */
+  private findDetailByName(detailByKey: Map<string, BallDetailStats>, displayName: string): BallDetailStats | undefined {
+    const wanted = this.normalizeBallKey(displayName);
+    for (const [key, detail] of detailByKey) {
+      if (this.normalizeBallKey(key) === wanted) return detail;
+    }
+    return undefined;
+  }
 
   calculateAllBallStats(gameHistory: Game[]): HighlightItemStats[] {
     return Object.values(this._calculateAllBallStats(gameHistory));
@@ -127,19 +188,23 @@ export class BallStatsCalculatorService {
     gameHistory.forEach((game) => {
       // Collect per-throw ball data from frames
       const throwBallStrikes = new Map<string, number>(); // ballName -> strike count in this game
-      const throwBallCounts = new Map<string, number>(); // ballName -> throw count in this game
+      const throwBallCounts = new Map<string, number>(); // ballName -> first-ball count in this game
       let hasThrowLevelBalls = false;
 
-      game.frames.forEach((frame) => {
-        frame.throws.forEach((throwData) => {
-          if (throwData.ball) {
-            hasThrowLevelBalls = true;
-            const ball = this.formatBallDisplayName(formatThrowBall(throwData.ball));
-            if (!ball) return;
-            throwBallCounts.set(ball, (throwBallCounts.get(ball) || 0) + 1);
-            if (throwData.value === 10) {
-              throwBallStrikes.set(ball, (throwBallStrikes.get(ball) || 0) + 1);
-            }
+      game.frames.forEach((frame, frameIndex) => {
+        frame.throws.forEach((throwData, throwIndex) => {
+          if (!throwData.ball) return;
+          hasThrowLevelBalls = true;
+          const ball = this.formatBallDisplayName(formatThrowBall(throwData.ball));
+          if (!ball) return;
+
+          // Strike rate is a first-ball stat: only a first ball on a full rack can strike.
+          // A 10 thrown at a leave is a spare, and counting it inflates the rate.
+          if (!isFirstBallThrow(frame, frameIndex, throwIndex)) return;
+
+          throwBallCounts.set(ball, (throwBallCounts.get(ball) || 0) + 1);
+          if (throwData.value === 10) {
+            throwBallStrikes.set(ball, (throwBallStrikes.get(ball) || 0) + 1);
           }
         });
       });

@@ -1,0 +1,186 @@
+<h2 class="item-heading">
+  <span>{{ title() }}</span>
+  @if (scopeLabel(); as scope) {
+    <span class="scope-label">{{ scope }}</span>
+  }
+  <span class="divider-line"></span>
+</h2>
+
+@if (rows().length === 0) {
+  <article class="item-card">
+    <p class="empty-msg">No balls saved for these games.</p>
+  </article>
+} @else {
+  @for (row of rows(); track row.ball.key) {
+    <article
+      class="item-card"
+      [class.ion-activatable]="row.hasDetail"
+      [class.ripple-parent]="row.hasDetail"
+      [attr.tabindex]="row.hasDetail ? '0' : null"
+      [attr.role]="row.hasDetail ? 'button' : null"
+      [attr.aria-label]="row.hasDetail ? 'View detailed stats for ' + row.ball.displayName : null"
+      (click)="openDetail(row)"
+      (keydown.enter)="openDetail(row)">
+      @if (row.ball.image) {
+        <ion-img class="round" [src]="ballsStore.url + row.ball.image" [alt]="row.ball.displayName"></ion-img>
+      }
+
+      <div class="item-meta">
+        <header class="item-top">
+          <h3 class="item-name">{{ row.ball.displayName }}</h3>
+          <span class="item-use">{{ row.tierLabel }}</span>
+        </header>
+        <dl class="item-stats">
+          @for (metric of row.metrics; track metric.label) {
+            <div class="item-line">
+              <dt class="item-label">{{ metric.label }}</dt>
+              <dd class="item-value">{{ metric.value }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      @if (row.hasDetail) {
+        <ion-icon name="chevron-forward-outline" class="card-chevron"></ion-icon>
+        <ion-ripple-effect></ion-ripple-effect>
+      }
+    </article>
+  }
+
+  @if (basicCount() > 0) {
+    <p class="tier-note">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        Average, high and low cover every game a ball played. Games tracked per game credit their whole score to each ball used, so they cannot say
+        what a single ball did. Strike, carry and the projection come only from games tracked <em>per throw</em>, counted next to the ball name.
+      </span>
+    </p>
+  }
+}
+
+<ion-modal [isOpen]="!!selected()" (ionModalDidDismiss)="closeDetail()">
+  <ng-template>
+    @if (selected(); as ball) {
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start" style="padding: 4px">
+            <ion-button color="medium" (click)="closeDetail()">
+              <ion-icon name="chevron-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ ball.displayName }}</ion-title>
+        </ion-toolbar>
+        <ion-toolbar>
+          <ion-segment [value]="detailSegment()" (ionChange)="onSegmentChange($event.detail.value)" scrollable="true">
+            <ion-segment-button value="overview"><ion-label>Overview</ion-label></ion-segment-button>
+            <ion-segment-button value="leaves"><ion-label>Leaves</ion-label></ion-segment-button>
+            <ion-segment-button value="spares"><ion-label>Spares</ion-label></ion-segment-button>
+            <ion-segment-button value="patterns"><ion-label>Patterns</ion-label></ion-segment-button>
+          </ion-segment>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        @if (ball.detail; as detail) {
+          @if (selectionDetailScope(); as scope) {
+            <p class="tier-note">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <span>
+                Everything below the games card comes from the {{ scope.detailed }} of {{ scope.total }} games that recorded a ball per throw. The
+                other {{ scope.total - scope.detailed }} only recorded balls per game.
+              </span>
+            </p>
+          }
+          @if (isSelectionThin()) {
+            <p class="tier-note">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <span>Only {{ detail.firstBalls }} first balls so far. Rates settle down from about {{ minFirstBalls }} onwards.</span>
+            </p>
+          }
+
+          @switch (detailSegment()) {
+            @case ("overview") {
+              <h2 class="item-heading">
+                <span>Games with this ball</span>
+                <span class="scope-label">All games</span>
+                <span class="divider-line"></span>
+              </h2>
+              <div class="stat-grid-3">
+                <dl class="stat-chip">
+                  <dt class="chip-key">Games</dt>
+                  <dd class="chip-val">{{ ball.gameCount }}</dd>
+                </dl>
+                <dl class="stat-chip">
+                  <dt class="chip-key">High</dt>
+                  <dd class="chip-val">{{ ball.highestGame }}</dd>
+                </dl>
+                <dl class="stat-chip">
+                  <dt class="chip-key">Low</dt>
+                  <dd class="chip-val">{{ ball.lowestGame }}</dd>
+                </dl>
+              </div>
+
+              <app-stat-display title="Usage" [statDefinitions]="USAGE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-display title="First ball" [statDefinitions]="FIRST_BALL_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-display title="Scoring" [statDefinitions]="SCORING_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+            }
+
+            @case ("leaves") {
+              <app-stat-display title="Leave signature" [statDefinitions]="LEAVE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-pin-leave title="Most common leaves" [leaveStats]="topLeaves()" [allLeaves]="detail.leaves"></app-stat-pin-leave>
+            }
+
+            @case ("spares") {
+              <app-stat-display title="Spare shooting" [statDefinitions]="SPARE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+
+              <h2 class="item-heading"><span>Single pin conversions</span><span class="divider-line"></span></h2>
+              @if (pinConversions().length === 0) {
+                <article class="item-card"><p class="empty-msg">No single pin spares shot with this ball yet.</p></article>
+              } @else {
+                <ul class="pin-grid">
+                  @for (pin of pinConversions(); track pin.pin) {
+                    <li class="pin-card">
+                      <app-pin-deck [activePins]="[pin.pin]" [scale]="0.55" [isStatPage]="true"></app-pin-deck>
+                      <span class="pin-rate" [style.color]="rateColor(pin.pickupPercentage)">{{ pin.pickupPercentage | number: "1.0-0" }}%</span>
+                      <span class="pin-count">{{ pin.pickups }} / {{ pin.occurrences }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+
+            @case ("patterns") {
+              <h2 class="item-heading"><span>By oil pattern</span><span class="divider-line"></span></h2>
+              @if (patternRows().length === 0) {
+                <article class="item-card"><p class="empty-msg">Not enough games on any one pattern yet.</p></article>
+              } @else {
+                <table class="pattern-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Pattern</th>
+                      <th scope="col">Balls</th>
+                      <th scope="col">Strike</th>
+                      <th scope="col">Carry</th>
+                      <th scope="col">Frame</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of patternRows(); track row.pattern) {
+                      <tr>
+                        <th scope="row" class="pattern-name">{{ row.pattern }}</th>
+                        <td>{{ row.firstBalls }}</td>
+                        <td>{{ row.strikePercentage | number: "1.0-0" }}%</td>
+                        <td>{{ row.carryPercentage | number: "1.0-0" }}%</td>
+                        <td>{{ row.averageFrameValue | number: "1.1-1" }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            }
+          }
+        }
+      </ion-content>
+    }
+  </ng-template>
+</ion-modal>

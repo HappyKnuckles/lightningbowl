@@ -6,8 +6,15 @@ import {
   calculateSplit,
   getAvailablePins,
   isCellAccessible,
+  isCornerPinLeave,
+  isFlatCornerLeave,
+  isHighLeave,
+  isLightLeave,
   isMakeableSplit,
+  isPocketHit,
+  isSolidLeave,
   isSplit,
+  isWashout,
   processPinThrow,
 } from './pin.utils';
 
@@ -365,6 +372,81 @@ describe('pin.utils', () => {
       applyPinModeUndo(frames, 0, 0);
 
       expect(frames[0].throws).toHaveLength(1);
+    });
+  });
+});
+
+describe('leave classification', () => {
+  describe('isCornerPinLeave', () => {
+    it('recognises a lone corner pin per hand', () => {
+      expect(isCornerPinLeave([10])).toBe(true);
+      expect(isCornerPinLeave([7])).toBe(false);
+      expect(isCornerPinLeave([7], true)).toBe(true);
+      expect(isCornerPinLeave([10], true)).toBe(false);
+    });
+
+    it('is not a corner pin leave once another pin stands', () => {
+      expect(isCornerPinLeave([6, 10])).toBe(false);
+    });
+  });
+
+  describe('isFlatCornerLeave', () => {
+    it('recognises the corner pin with its neighbour still up', () => {
+      expect(isFlatCornerLeave([6, 10])).toBe(true);
+      expect(isFlatCornerLeave([4, 7], true)).toBe(true);
+      expect(isFlatCornerLeave([6, 10], true)).toBe(false);
+    });
+  });
+
+  describe('isSolidLeave', () => {
+    it('recognises a connected cluster after a pocket hit', () => {
+      expect(isSolidLeave([2, 4, 5])).toBe(true);
+      expect(isSolidLeave([3, 6, 9])).toBe(true);
+    });
+
+    it('excludes the head pin, splits and the flat corner', () => {
+      expect(isSolidLeave([1, 2, 4])).toBe(false);
+      expect(isSolidLeave([7, 10])).toBe(false);
+      expect(isSolidLeave([6, 10])).toBe(false);
+    });
+  });
+
+  describe('isWashout', () => {
+    it('needs the head pin standing next to a corner pin', () => {
+      expect(isWashout([1, 2, 10])).toBe(true);
+      expect(isWashout([1, 3, 7])).toBe(true);
+      expect(isWashout([1, 2, 4])).toBe(false);
+      expect(isWashout([2, 4, 10])).toBe(false);
+    });
+  });
+
+  describe('isLightLeave / isHighLeave', () => {
+    it('reads a leave on the bowler’s side as light and the far side as high', () => {
+      expect(isLightLeave([2, 4, 5, 8])).toBe(true);
+      expect(isHighLeave([2, 4, 5, 8])).toBe(false);
+      expect(isHighLeave([3, 6, 9, 10])).toBe(true);
+      expect(isLightLeave([3, 6, 9, 10])).toBe(false);
+    });
+
+    it('mirrors for a left-handed bowler', () => {
+      expect(isLightLeave([3, 6, 9, 10], true)).toBe(true);
+      expect(isHighLeave([2, 4, 5, 8], true)).toBe(true);
+    });
+
+    it('is neither when pins stand on both sides or the head pin is up', () => {
+      expect(isLightLeave([2, 3])).toBe(false);
+      expect(isHighLeave([2, 3])).toBe(false);
+      expect(isLightLeave([1, 2, 4])).toBe(false);
+    });
+  });
+
+  describe('isPocketHit', () => {
+    it('needs the head pin down plus a 2 or 3', () => {
+      expect(isPocketHit([])).toBe(true);
+      expect(isPocketHit([10])).toBe(true);
+      expect(isPocketHit([2, 4, 5])).toBe(true);
+      expect(isPocketHit([1, 2, 4])).toBe(false);
+      expect(isPocketHit([2, 3, 4])).toBe(false);
     });
   });
 });

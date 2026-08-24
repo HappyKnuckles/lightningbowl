@@ -1,5 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
-import { Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { BallTracking, Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { isFirstBallThrow } from './frame.utils';
 
 // Keys & formatting
 
@@ -46,26 +47,42 @@ export function findBallInArsenal<T extends Pick<Ball, 'ball_name' | 'core_weigh
 // Game-level accessors
 
 /**
- * Get all unique ball keys used in a game (from throw-level data, falling back to game.balls)
+ * How a game records its balls. Games saved before per-throw tracking carry no flag,
+ * so fall back to whether any throw actually has a ball on it.
  */
-export function getGameBalls(game: Game): string[] {
+export function getBallTracking(game: Pick<Game, 'ballTracking' | 'frames'>): BallTracking {
+  if (game.ballTracking) return game.ballTracking;
+  return hasThrowLevelBalls(game.frames ?? []) ? 'throw' : 'game';
+}
+
+/** Whether any throw carries a ball, i.e. whether per-throw data exists at all. */
+export function hasThrowLevelBalls(frames: Frame[]): boolean {
+  return frames.some((frame) => (frame.throws ?? []).some((t) => t.ball?.name));
+}
+
+/** Unique ball keys taken strictly from the throws, in first-use order. */
+export function getThrowBallKeys(frames: Frame[]): string[] {
   const seen = new Set<string>();
   const keys: string[] = [];
-  for (const frame of game.frames) {
-    for (const t of frame.throws) {
-      if (t.ball?.name) {
-        const key = getThrowBallKey(t.ball);
-        if (!seen.has(key)) {
-          seen.add(key);
-          keys.push(key);
-        }
+  for (const frame of frames) {
+    for (const t of frame.throws ?? []) {
+      if (!t.ball?.name) continue;
+      const key = getThrowBallKey(t.ball);
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
       }
     }
   }
-  if (keys.length > 0) {
-    return keys;
-  }
-  return game.balls || [];
+  return keys;
+}
+
+/**
+ * Get all unique ball keys used in a game (from throw-level data, falling back to game.balls)
+ */
+export function getGameBalls(game: Game): string[] {
+  const keys = getThrowBallKeys(game.frames ?? []);
+  return keys.length > 0 ? keys : (game.balls ?? []);
 }
 
 /**
@@ -105,25 +122,33 @@ export function getGameBallNames(game: Game, arsenal?: Pick<Ball, 'ball_name' | 
 // Carry-over logic
 
 /**
- * Ball carried over from earlier throws, strictly by throw index: the last ball used
- * on a first throw defaults the next first throw, the last ball used on a second/third
- * throw defaults the next second/third throw. Falls back to the last ball used at all
- * when that throw index never had a ball yet.
- * Only throws before the given position (in play order) are considered.
+ * Ball carried over from earlier throws, matched by what the throw is for: the last ball
+ * used on a first ball at a full rack defaults the next first ball, and the last ball used
+ * on a spare shot defaults the next spare shot. Falls back to the last ball used at all
+ * when that kind of throw has not happened yet.
+ *
+ * The tenth frame racks again after a strike or a spare, so its second and third throws can
+ * be first balls too: a 10/10/10 tenth carries the first ball throughout, while a 9/-/X
+ * tenth carries first ball, spare ball, first ball.
+ *
+ * Only throws before the given position, in play order, are considered.
  */
 export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throwIndex: number): ThrowBall | undefined {
-  const wantFirstThrow = throwIndex === 0;
+  const targetFrame = frames[frameIndex];
+  const wantFirstBall = targetFrame ? isFirstBallThrow(targetFrame, frameIndex, throwIndex) : throwIndex === 0;
+
   let sameKindBall: ThrowBall | undefined;
   let latestBall: ThrowBall | undefined;
 
   for (let f = 0; f <= Math.min(frameIndex, frames.length - 1); f++) {
-    const throws = frames[f]?.throws ?? [];
+    const frame = frames[f];
+    const throws = frame?.throws ?? [];
     for (let t = 0; t < throws.length; t++) {
       if (f === frameIndex && t >= throwIndex) break;
       const ball = throws[t]?.ball;
       if (!ball?.name) continue;
       latestBall = ball;
-      if ((t === 0) === wantFirstThrow) {
+      if (isFirstBallThrow(frame, f, t) === wantFirstBall) {
         sameKindBall = ball;
       }
     }
@@ -137,7 +162,7 @@ export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throw
 /**
  * Assign a ball to a throw within a frames array (mutates).
  * If that throw hasn't been recorded yet, the ball is stashed on the frame as `pendingBall`
- * instead of fabricating a placeholder throw — it's applied once the throw is actually recorded.
+ * instead of fabricating a placeholder throw. It is applied once the throw is actually recorded.
  */
 export function setThrowBall(frames: Frame[], frameIndex: number, throwIndex: number, ball: ThrowBall | undefined): void {
   const frame = frames[frameIndex];

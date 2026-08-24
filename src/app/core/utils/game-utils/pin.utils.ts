@@ -305,3 +305,85 @@ function validateOrClearThrow(targetThrow: Throw, availablePins: number[], frame
     targetThrow.pinsLeftStanding = availablePins.filter((p) => !targetThrow.pinsKnockedDown!.includes(p));
   }
 }
+
+// Leave classification
+//
+// Names a leave the way a bowler would, from the pins left standing after a first ball.
+// All of these are about first balls only. A leave after a spare shot says nothing
+// about ball reaction. `isLeft` mirrors the deck for a left-handed bowler, so "light"
+// and "high" mean the same thing physically for both hands.
+
+/** Corner pins for the bowler's hand: the 10 for a righty, the 7 for a lefty. */
+export function getCornerPin(isLeft: boolean): number {
+  return isLeft ? 7 : 10;
+}
+
+/** The opposite corner: the 7 for a righty, the 10 for a lefty. */
+export function getOppositeCornerPin(isLeft: boolean): number {
+  return isLeft ? 10 : 7;
+}
+
+/**
+ * A single corner pin left standing: the "ringing 10" for a righty, the "ringing 7"
+ * for a lefty. Everything in front of it fell, so this is a carry problem, not a miss.
+ */
+export function isCornerPinLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  return pinsLeftStanding.length === 1 && pinsLeftStanding[0] === getCornerPin(isLeft);
+}
+
+/**
+ * A corner pin left with the 6 (righty) or 4 (lefty) still standing next to it, meaning
+ * the ball never got to the corner at all, as opposed to ringing it out.
+ */
+export function isFlatCornerLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  const corner = getCornerPin(isLeft);
+  const neighbour = isLeft ? 4 : 6;
+  return pinsLeftStanding.length === 2 && pinsLeftStanding.includes(corner) && pinsLeftStanding.includes(neighbour);
+}
+
+/**
+ * A solid leave: the pocket was hit but a cluster of two or more connected pins stands.
+ * Typically 2-4-5 / 3-6-9 style, where the ball hit light or deflected off the pocket.
+ * The flat corner (6-10 / 4-7) is excluded because it is reported on its own.
+ */
+export function isSolidLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  if (pinsLeftStanding.length < 2 || pinsLeftStanding.includes(1)) return false;
+  if (isSplit(pinsLeftStanding)) return false;
+  return !isFlatCornerLeave(pinsLeftStanding, isLeft);
+}
+
+/** Washout: the head pin still stands with corner pins around it, a badly missed line. */
+export function isWashout(pinsLeftStanding: number[]): boolean {
+  if (!pinsLeftStanding.includes(1)) return false;
+  return pinsLeftStanding.includes(10) || pinsLeftStanding.includes(7);
+}
+
+/**
+ * Light hit: the ball came in weak on the pocket side and left pins on the bowler's side
+ * of the deck (2-4-5-8 for a righty, 3-6-9 for a lefty).
+ */
+export function isLightLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  if (pinsLeftStanding.length === 0 || pinsLeftStanding.includes(1)) return false;
+  const lightPins = isLeft ? [3, 6, 9, 10] : [2, 4, 5, 7, 8];
+  const highPins = isLeft ? [2, 4, 5, 7, 8] : [3, 6, 9, 10];
+  return pinsLeftStanding.some((p) => lightPins.includes(p)) && !pinsLeftStanding.some((p) => highPins.includes(p));
+}
+
+/**
+ * High hit: the ball crossed over the head pin's far side and left pins on the other
+ * side of the deck (3-6-9-10 for a righty, 2-4-5-7-8 for a lefty).
+ */
+export function isHighLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  return isLightLeave(pinsLeftStanding, !isLeft);
+}
+
+/**
+ * Pocket hit: head pin down and at least one of the 2/3 pins down.
+ * An empty array (a strike) counts, which is correct.
+ */
+export function isPocketHit(pinsLeftStanding: number[]): boolean {
+  const pin1Down = !pinsLeftStanding.includes(1);
+  const pin2Down = !pinsLeftStanding.includes(2);
+  const pin3Down = !pinsLeftStanding.includes(3);
+  return pin1Down && (pin2Down || pin3Down);
+}

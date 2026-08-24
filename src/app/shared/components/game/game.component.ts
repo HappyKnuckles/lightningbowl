@@ -21,6 +21,7 @@ import {
   IonCheckbox,
   IonCol,
   IonGrid,
+  IonIcon,
   IonInput,
   IonItem,
   IonLabel,
@@ -30,7 +31,7 @@ import {
   IonTextarea,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronExpandOutline } from 'ionicons/icons';
+import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallTracking, Game, ThrowBall } from 'src/app/core/models/game.model';
@@ -45,7 +46,14 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { formatThrowBall, getCarryOverThrowBall, getGameBallNames, hasThrowLevelBalls } from 'src/app/core/utils/game-utils/ball.utils';
+import {
+  findBallInArsenal,
+  formatThrowBall,
+  getCarryOverThrowBall,
+  getGameBallNames,
+  getThrowBallKey,
+  hasThrowLevelBalls,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -63,6 +71,9 @@ interface ThrowCellView {
   pinsStanding: number[];
   showPinDeck: boolean;
   disabled: boolean;
+  hasBall: boolean;
+  ballThumb: string | undefined;
+  ballLabel: string;
 }
 
 interface FrameView {
@@ -88,6 +99,7 @@ interface FrameView {
     IonGrid,
     IonRow,
     IonCol,
+    IonIcon,
     IonInput,
     FormsModule,
     LeagueSelectorComponent,
@@ -153,6 +165,40 @@ export class GameComponent implements OnInit {
   frameVms: Signal<FrameView[]> = computed(() => {
     const frames = this.game()?.frames ?? [];
     const frameScores = this.game()?.frameScores ?? [];
+    const arsenal = this.ballsStore.arsenal();
+
+    // A throw's own recorded ball is shown as-is — no carry-over guessing for display, so a
+    // throw the user explicitly left without a ball renders empty rather than borrowing a
+    // neighbor's. Per-throw indicators only appear once the game shows some real variation:
+    // more than one distinct ball, or at least one recorded throw with no ball alongside others
+    // that do have one. A game bowled with a single ball and no gaps skips them — the header
+    // already names it.
+    const seenBalls = new Set<string>();
+    let throwsWithBall = 0;
+    let totalThrows = 0;
+
+    for (let f = 0; f < Math.min(frames.length, 10); f++) {
+      for (const t of frames[f]?.throws ?? []) {
+        totalThrows++;
+        if (t?.ball?.name) {
+          throwsWithBall++;
+          seenBalls.add(getThrowBallKey(t.ball));
+        }
+      }
+    }
+
+    const showBalls = seenBalls.size > 1 || (throwsWithBall > 0 && throwsWithBall < totalThrows);
+
+    // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
+    const thumbCache = new Map<string, string | undefined>();
+    const resolveThumb = (ball: ThrowBall): string | undefined => {
+      const key = getThrowBallKey(ball);
+      if (!thumbCache.has(key)) {
+        const arsenalBall = findBallInArsenal(ball, arsenal);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+      }
+      return thumbCache.get(key);
+    };
 
     return Array.from({ length: 10 }, (_, frameIndex): FrameView => {
       const frame = frames[frameIndex];
@@ -162,6 +208,8 @@ export class GameComponent implements OnInit {
 
       const throws = Array.from({ length: isTenth ? 3 : 2 }, (_, throwIndex): ThrowCellView => {
         const value = getThrowValue(frame, throwIndex);
+        const storedBall = frame?.throws?.[throwIndex]?.ball;
+        const ball = showBalls && storedBall?.name ? storedBall : undefined;
         return {
           value,
           display: formatThrowDisplay(frame, throwIndex, isTenth),
@@ -169,6 +217,9 @@ export class GameComponent implements OnInit {
           pinsStanding: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
           showPinDeck: value !== undefined && (throwIndex !== 1 || isTenth || first !== 10),
           disabled: (throwIndex === 1 && !isTenth && first === 10) || (throwIndex === 2 && first !== 10 && (first ?? 0) + (second ?? 0) !== 10),
+          hasBall: !!ball,
+          ballThumb: ball ? resolveThumb(ball) : undefined,
+          ballLabel: formatThrowBall(ball),
         };
       });
 
@@ -229,13 +280,19 @@ export class GameComponent implements OnInit {
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
-  /** Ball for the throw the pin input is currently on, falling back to the carried-over ball */
+  /**
+   * Ball for the throw the pin input is currently on, falling back to the carried-over ball.
+   * `pendingBall === null` means the user explicitly cleared the pick for this throw, so that
+   * must not fall through to the carry-over default the way an untouched `undefined` does.
+   */
   currentThrowBall = computed<ThrowBall | undefined>(() => {
     const frames = this.game()?.frames ?? [];
     const frameIndex = this.currentFrameIndex();
     const throwIndex = this.currentThrowIndex();
     const frame = frames[frameIndex];
-    return frame?.throws?.[throwIndex]?.ball ?? frame?.pendingBall ?? getCarryOverThrowBall(frames, frameIndex, throwIndex);
+    if (frame?.throws?.[throwIndex]?.ball) return frame.throws[throwIndex].ball;
+    if (frame?.pendingBall !== undefined) return frame.pendingBall ?? undefined;
+    return getCarryOverThrowBall(frames, frameIndex, throwIndex);
   });
 
   /** Patterns sorted by how often they were played, most used first. */
@@ -269,7 +326,7 @@ export class GameComponent implements OnInit {
     private toastService: ToastService,
     private typeaheadConfigService: TypeaheadConfigService,
   ) {
-    addIcons({ chevronExpandOutline });
+    addIcons({ bowlingBallOutline, chevronExpandOutline });
     effect(() => this.toolbarStateChanged.emit(this.toolbarState()));
   }
 

@@ -60,33 +60,21 @@ export class GameReadonlyComponent {
     const scores = game?.frameScores ?? [];
     const arsenal = this.ballsStore.arsenal();
 
-    // One pass over all throws: resolve each throw's effective ball (its stored
-    // ball, else the carried-over one — same by-index rule as during input) and
-    // count how many distinct balls the game used. A game bowled with a single
-    // ball skips the per-throw indicators; the header already names it.
-    const ballByThrow: (ThrowBall | undefined)[][] = [];
-    const distinctBalls = new Set<string>();
-    let lastFirst: ThrowBall | undefined;
-    let lastOther: ThrowBall | undefined;
-    let lastAny: ThrowBall | undefined;
+    const seenBalls = new Set<string>();
+    let throwsWithBall = 0;
+    let totalThrows = 0;
 
     for (let f = 0; f < Math.min(frames.length, 10); f++) {
-      ballByThrow.push(
-        (frames[f]?.throws ?? []).map((t, throwIndex) => {
-          const stored = t?.ball?.name ? t.ball : undefined;
-          const effective = stored ?? (throwIndex === 0 ? lastFirst : lastOther) ?? lastAny;
-          if (stored) {
-            distinctBalls.add(getThrowBallKey(stored));
-            lastAny = stored;
-            if (throwIndex === 0) lastFirst = stored;
-            else lastOther = stored;
-          }
-          return effective;
-        }),
-      );
+      for (const t of frames[f]?.throws ?? []) {
+        totalThrows++;
+        if (t?.ball?.name) {
+          throwsWithBall++;
+          seenBalls.add(getThrowBallKey(t.ball));
+        }
+      }
     }
 
-    const showBalls = distinctBalls.size > 1;
+    const showBalls = seenBalls.size > 1 || (throwsWithBall > 0 && throwsWithBall < totalThrows);
 
     // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
     const thumbCache = new Map<string, string | undefined>();
@@ -108,7 +96,8 @@ export class GameReadonlyComponent {
       const v2 = getThrowValue(frame, 2);
 
       const cell = (throwIndex: 0 | 1 | 2, pinShow: boolean): ReadonlyThrowVm => {
-        const ball = showBalls ? ballByThrow[frameIndex]?.[throwIndex] : undefined;
+        const storedBall = frame?.throws?.[throwIndex]?.ball;
+        const ball = showBalls && storedBall?.name ? storedBall : undefined;
         return {
           display: formatThrowDisplay(frame, throwIndex, isTenth),
           isSplit: frame?.throws?.[throwIndex]?.isSplit ?? false,

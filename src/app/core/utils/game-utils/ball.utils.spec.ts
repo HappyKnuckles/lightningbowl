@@ -26,6 +26,14 @@ describe('ball.utils', () => {
       expect(frames[0].throws[0].ball).toEqual({ name: 'Storm IQ Tour', weight: '15' });
       expect(frames[0].pendingBall).toBeUndefined();
     });
+
+    it('stores an explicit clear as null, not undefined, when the throw has not been recorded yet', () => {
+      const frames = emptyFrames();
+
+      setThrowBall(frames, 0, 0, undefined);
+
+      expect(frames[0].pendingBall).toBeNull();
+    });
   });
 });
 

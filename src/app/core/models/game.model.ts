@@ -33,8 +33,12 @@ export interface Frame {
   frameIndex: number;
   throws: Throw[];
   isInvalid?: boolean;
-  /** Ball selected for the next throw in this frame, before that throw has actually been recorded. */
-  pendingBall?: ThrowBall;
+  /**
+   * Ball selected for the next throw in this frame, before that throw has actually been recorded.
+   * `undefined` means nothing was picked yet (the ball carries over from earlier throws as a default);
+   * `null` means the user explicitly cleared the pick, so no ball should carry over onto this throw.
+   */
+  pendingBall?: ThrowBall | null;
 }
 
 /**

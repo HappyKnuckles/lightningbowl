@@ -163,6 +163,8 @@ export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throw
  * Assign a ball to a throw within a frames array (mutates).
  * If that throw hasn't been recorded yet, the ball is stashed on the frame as `pendingBall`
  * instead of fabricating a placeholder throw. It is applied once the throw is actually recorded.
+ * Picking "no ball" for an unrecorded throw stores `null`, not `undefined`, so the carry-over
+ * default in `processPinThrow` knows this was a deliberate clear rather than an untouched pick.
  */
 export function setThrowBall(frames: Frame[], frameIndex: number, throwIndex: number, ball: ThrowBall | undefined): void {
   const frame = frames[frameIndex];
@@ -171,6 +173,6 @@ export function setThrowBall(frames: Frame[], frameIndex: number, throwIndex: nu
   if (throwIndex < frame.throws.length) {
     frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
   } else {
-    frame.pendingBall = ball;
+    frame.pendingBall = ball ?? null;
   }
 }

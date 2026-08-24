@@ -2,8 +2,6 @@
   display: block;
 }
 
-// Headings and cards follow the same shapes the other stat cards use, so a ball card
-// sits next to a highlight card without looking like a different app.
 .item-heading {
   display: flex;
   align-items: center;
@@ -14,14 +12,6 @@
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ion-color-medium, #7c7c7a);
-
-  .scope-label {
-    flex: none;
-    padding: 4px 8px;
-    border-radius: 8px;
-    letter-spacing: 0.08em;
-    background: color-mix(in srgb, var(--ion-color-medium) 16%, transparent);
-  }
 }
 
 .item-card {
@@ -65,9 +55,9 @@
 
   .item-top {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
 
   .item-name {
@@ -76,6 +66,7 @@
     color: var(--ion-text-color, #f3f1ec);
     letter-spacing: -0.01em;
     margin: 0;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -85,7 +76,6 @@
     font-size: 11px;
     font-weight: 700;
     color: var(--ion-color-medium, #7c7c7a);
-    flex: none;
   }
 
   .item-stats {
@@ -131,27 +121,6 @@
     width: 100%;
     text-align: center;
     margin: 0;
-  }
-}
-
-.tier-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0 16px 20px;
-  font-size: 0.75rem;
-  line-height: 1.5;
-  color: var(--ion-color-medium, #7c7c7a);
-
-  ion-icon {
-    flex: 0 0 auto;
-    font-size: 1rem;
-    margin-top: 1px;
-  }
-
-  em {
-    font-style: normal;
-    font-weight: 600;
   }
 }
 

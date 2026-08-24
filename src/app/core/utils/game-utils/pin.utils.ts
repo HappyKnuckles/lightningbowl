@@ -176,16 +176,15 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
     isSplit: isSplitThrow,
   };
 
-  // Apply a ball picked before this throw was recorded, if any
+  // Apply a ball picked before this throw was recorded, if any. `pendingBall === null` means the
+  // user explicitly cleared the pick, so leave the throw without a ball instead of carrying one
+  // over; `undefined` means it was never touched, so fall back to the carry-over default.
   if (frame.pendingBall) {
     frame.throws[throwIndex].ball = frame.pendingBall;
-    frame.pendingBall = undefined;
-  }
-
-  // Carry the ball over from earlier throws of the same kind when none was explicitly selected
-  if (!frame.throws[throwIndex].ball) {
+  } else if (frame.pendingBall === undefined) {
     frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);
   }
+  frame.pendingBall = undefined;
 
   cleanupSubsequentThrows(frame, frameIndex, throwIndex, value, pinsStandingAfter);
 

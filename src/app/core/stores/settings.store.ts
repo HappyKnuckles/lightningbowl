@@ -8,7 +8,7 @@ export class SettingsStore {
   readonly pinInputMode = signal<boolean>(true);
 
   /** Default ball tracking for new games. Per-throw tracking needs pin input mode. */
-  readonly ballTracking = signal<BallTracking>('game');
+  readonly ballTracking = signal<BallTracking>('throw');
 
   /** Used to name leaves relative to the bowler ("light" vs "high"), not to change any math. */
   readonly handedness = signal<Handedness>('right');
@@ -26,7 +26,7 @@ export class SettingsStore {
   }
 
   loadBallTracking(): void {
-    this.ballTracking.set(localStorage.getItem('ball-tracking') === 'throw' ? 'throw' : 'game');
+    this.ballTracking.set(localStorage.getItem('ball-tracking') === 'game' ? 'game' : 'throw');
   }
 
   saveBallTracking(tracking: string): void {

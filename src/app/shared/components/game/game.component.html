@@ -37,6 +37,12 @@
               @if (cell.showPinDeck) {
                 <app-pin-deck [scale]="0.3" [activePins]="cell.pinsStanding"></app-pin-deck>
               }
+              @if (cell.ballThumb; as thumb) {
+                <img class="throw-ball-thumb" [src]="thumb" [alt]="cell.ballLabel + ' thumbnail'" />
+              } @else if (cell.hasBall) {
+                hi
+                <ion-icon class="throw-ball-thumb throw-ball-fallback-icon" name="bowling-ball-outline"></ion-icon>
+              }
             </ion-col>
           }
         </ion-row>

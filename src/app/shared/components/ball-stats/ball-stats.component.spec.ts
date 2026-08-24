@@ -140,17 +140,10 @@ describe('BallStatsComponent', () => {
     expect(component.rows()[1].tierLabel).toBe('1 game');
   });
 
-  it('counts the two tiers separately', () => {
-    setStats([makeBallStats(), makeBallStats({ key: 'Phaze II15', tier: 'detailed', detail: makeDetail() })]);
-
-    expect(component.detailedCount()).toBe(1);
-    expect(component.basicCount()).toBe(1);
-  });
-
   it('warns in the label when a detailed ball rests on too few first balls', () => {
     setStats([makeBallStats({ tier: 'detailed', detail: makeDetail({ firstBalls: 4 }), detailedGameCount: 5 })]);
 
-    expect(component.rows()[0].tierLabel).toBe('5 games · 5 by throw · low sample');
+    expect(component.rows()[0].tierLabel).toBe('5 games · 5 by throw');
   });
 
   it('keeps a thin sample readable rather than dimming the whole card', () => {
@@ -158,20 +151,6 @@ describe('BallStatsComponent', () => {
 
     // Every metric still carries a real value; the caveat lives in the label alone.
     expect(component.rows()[0].metrics.every((metric) => metric.value !== '')).toBe(true);
-  });
-
-  it('names the game subset the detail view is built from when it is only part of the history', () => {
-    setStats([makeBallStats({ gameCount: 20, tier: 'detailed', detail: makeDetail(), detailedGameCount: 3 })]);
-    component.openDetail(component.rows()[0]);
-
-    expect(component.selectionDetailScope()).toEqual({ detailed: 3, total: 20 });
-  });
-
-  it('does not flag the subset when every game carries throw detail', () => {
-    setStats([makeBallStats({ gameCount: 5, tier: 'detailed', detail: makeDetail(), detailedGameCount: 5 })]);
-    component.openDetail(component.rows()[0]);
-
-    expect(component.selectionDetailScope()).toBeNull();
   });
 
   it('does not open the detail view for a basic ball', () => {

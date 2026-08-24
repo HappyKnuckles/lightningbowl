@@ -10,13 +10,15 @@ import {
   IonRippleEffect,
   IonSegment,
   IonSegmentButton,
+  IonSegmentContent,
+  IonSegmentView,
   IonLabel,
   IonModal,
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForwardOutline, informationCircleOutline } from 'ionicons/icons';
+import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import {
   BALL_FIRST_BALL_STAT_DEFINITIONS,
   BALL_LEAVE_STAT_DEFINITIONS,
@@ -60,6 +62,8 @@ interface BallRowVm {
     IonRippleEffect,
     IonSegment,
     IonSegmentButton,
+    IonSegmentContent,
+    IonSegmentView,
     IonTitle,
     IonToolbar,
     PinDeckComponent,
@@ -93,10 +97,6 @@ export class BallStatsComponent {
       const detail = ball.detail;
       const hasDetail = ball.tier === 'detailed' && !!detail;
 
-      // The game average always leads, because it is the one number that covers every game
-      // this ball played. Where per-throw history exists the projection sits next to it
-      // rather than replacing it: the two describe different sets of games, and hiding the
-      // wider one behind the narrower one is how a mixed ball ends up looking mislabelled.
       const metrics = hasDetail
         ? [
             { label: 'Avg', value: this.formatNumber(ball.avg) },
@@ -119,9 +119,6 @@ export class BallStatsComponent {
     }),
   );
 
-  readonly detailedCount = computed(() => this.rows().filter((row) => row.hasDetail).length);
-  readonly basicCount = computed(() => this.rows().length - this.detailedCount());
-
   readonly selected = computed(() => this.ballStats().find((ball) => ball.key === this.selectedKey()));
 
   /** Single-pin conversions ordered the way the deck reads, so the grid is scannable. */
@@ -133,47 +130,8 @@ export class BallStatsComponent {
     (this.selected()?.detail?.patternBreakdown ?? []).filter((row) => row.firstBalls >= BALL_STAT_MIN_SAMPLES.leave),
   );
 
-  /** Games behind the open ball's per-throw numbers, when that is only part of its history. */
-  readonly selectionDetailScope = computed(() => {
-    const ball = this.selected();
-    if (!ball?.detail || ball.detailedGameCount >= ball.gameCount) return null;
-    return { detailed: ball.detailedGameCount, total: ball.gameCount };
-  });
-
-  /** True when the open ball has too few first balls for its rates to mean much. */
-  readonly isSelectionThin = computed(() => {
-    const detail = this.selected()?.detail;
-    return !!detail && detail.firstBalls < BALL_STAT_MIN_SAMPLES.firstBall;
-  });
-
-  readonly minFirstBalls = BALL_STAT_MIN_SAMPLES.firstBall;
-
-  /**
-   * Games played, plus a warning when the rates rest on too few first balls to settle.
-   * The numbers themselves stay in the normal colour: dimming a whole card of values is
-   * how the sample size ends up looking like a rendering fault rather than a caveat.
-   */
-  private tierLabel(ball: BallStats, hasDetail: boolean): string {
-    const games = `${ball.gameCount} ${ball.gameCount === 1 ? 'game' : 'games'}`;
-    if (!hasDetail) return games;
-
-    // Say how much of the history the per-throw numbers actually rest on. A ball with
-    // 30 games but 3 tracked per throw is a very different claim from one with 30 of 30.
-    const parts = [games, `${ball.detailedGameCount} by throw`];
-    if (ball.detail!.firstBalls < BALL_STAT_MIN_SAMPLES.firstBall) parts.push('low sample');
-    return parts.join(' · ');
-  }
-
-  private formatNumber(value: number): string {
-    return value ? String(value) : '-';
-  }
-
-  private formatPercentage(value: number): string {
-    return `${Math.round(value * 10) / 10}%`;
-  }
-
   constructor() {
-    addIcons({ chevronBack, chevronForwardOutline, informationCircleOutline });
+    addIcons({ chevronBack, chevronForwardOutline });
   }
 
   openDetail(row: BallRowVm): void {
@@ -199,5 +157,27 @@ export class BallStatsComponent {
     if (rate > 50) return '#809300';
     if (rate > 33) return '#FFA500';
     return '#ff0000';
+  }
+
+  /**
+   * Games played, plus a warning when the rates rest on too few first balls to settle.
+   * The numbers themselves stay in the normal colour: dimming a whole card of values is
+   * how the sample size ends up looking like a rendering fault rather than a caveat.
+   */
+  private tierLabel(ball: BallStats, hasDetail: boolean): string {
+    const games = `${ball.gameCount} ${ball.gameCount === 1 ? 'game' : 'games'}`;
+    if (!hasDetail) return games;
+
+    const parts = [games, `${ball.detailedGameCount} by throw`];
+
+    return parts.join(' · ');
+  }
+
+  private formatNumber(value: number): string {
+    return value ? String(value) : '-';
+  }
+
+  private formatPercentage(value: number): string {
+    return `${Math.round(value * 10) / 10}%`;
   }
 }

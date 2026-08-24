@@ -1,8 +1,5 @@
 <h2 class="item-heading">
   <span>{{ title() }}</span>
-  @if (scopeLabel(); as scope) {
-    <span class="scope-label">{{ scope }}</span>
-  }
   <span class="divider-line"></span>
 </h2>
 
@@ -46,16 +43,6 @@
       }
     </article>
   }
-
-  @if (basicCount() > 0) {
-    <p class="tier-note">
-      <ion-icon name="information-circle-outline"></ion-icon>
-      <span>
-        Average, high and low cover every game a ball played. Games tracked per game credit their whole score to each ball used, so they cannot say
-        what a single ball did. Strike, carry and the projection come only from games tracked <em>per throw</em>, counted next to the ball name.
-      </span>
-    </p>
-  }
 }
 
 <ion-modal [isOpen]="!!selected()" (ionModalDidDismiss)="closeDetail()">
@@ -72,37 +59,20 @@
         </ion-toolbar>
         <ion-toolbar>
           <ion-segment [value]="detailSegment()" (ionChange)="onSegmentChange($event.detail.value)" scrollable="true">
-            <ion-segment-button value="overview"><ion-label>Overview</ion-label></ion-segment-button>
-            <ion-segment-button value="leaves"><ion-label>Leaves</ion-label></ion-segment-button>
-            <ion-segment-button value="spares"><ion-label>Spares</ion-label></ion-segment-button>
-            <ion-segment-button value="patterns"><ion-label>Patterns</ion-label></ion-segment-button>
+            <ion-segment-button value="overview" contentId="overview"><ion-label class="segment-label">Overview</ion-label></ion-segment-button>
+            <ion-segment-button value="leaves" contentId="leaves"><ion-label class="segment-label">Leaves</ion-label></ion-segment-button>
+            <ion-segment-button value="spares" contentId="spares"><ion-label class="segment-label">Spares</ion-label></ion-segment-button>
+            <ion-segment-button value="patterns" contentId="patterns"><ion-label class="segment-label">Patterns</ion-label></ion-segment-button>
           </ion-segment>
         </ion-toolbar>
       </ion-header>
 
       <ion-content>
         @if (ball.detail; as detail) {
-          @if (selectionDetailScope(); as scope) {
-            <p class="tier-note">
-              <ion-icon name="information-circle-outline"></ion-icon>
-              <span>
-                Everything below the games card comes from the {{ scope.detailed }} of {{ scope.total }} games that recorded a ball per throw. The
-                other {{ scope.total - scope.detailed }} only recorded balls per game.
-              </span>
-            </p>
-          }
-          @if (isSelectionThin()) {
-            <p class="tier-note">
-              <ion-icon name="information-circle-outline"></ion-icon>
-              <span>Only {{ detail.firstBalls }} first balls so far. Rates settle down from about {{ minFirstBalls }} onwards.</span>
-            </p>
-          }
-
-          @switch (detailSegment()) {
-            @case ("overview") {
+          <ion-segment-view>
+            <ion-segment-content id="overview">
               <h2 class="item-heading">
                 <span>Games with this ball</span>
-                <span class="scope-label">All games</span>
                 <span class="divider-line"></span>
               </h2>
               <div class="stat-grid-3">
@@ -123,14 +93,14 @@
               <app-stat-display title="Usage" [statDefinitions]="USAGE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
               <app-stat-display title="First ball" [statDefinitions]="FIRST_BALL_DEFINITIONS" [currentStats]="detail"></app-stat-display>
               <app-stat-display title="Scoring" [statDefinitions]="SCORING_DEFINITIONS" [currentStats]="detail"></app-stat-display>
-            }
+            </ion-segment-content>
 
-            @case ("leaves") {
+            <ion-segment-content id="leaves">
               <app-stat-display title="Leave signature" [statDefinitions]="LEAVE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
               <app-stat-pin-leave title="Most common leaves" [leaveStats]="topLeaves()" [allLeaves]="detail.leaves"></app-stat-pin-leave>
-            }
+            </ion-segment-content>
 
-            @case ("spares") {
+            <ion-segment-content id="spares">
               <app-stat-display title="Spare shooting" [statDefinitions]="SPARE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
 
               <h2 class="item-heading"><span>Single pin conversions</span><span class="divider-line"></span></h2>
@@ -147,9 +117,9 @@
                   }
                 </ul>
               }
-            }
+            </ion-segment-content>
 
-            @case ("patterns") {
+            <ion-segment-content id="patterns">
               <h2 class="item-heading"><span>By oil pattern</span><span class="divider-line"></span></h2>
               @if (patternRows().length === 0) {
                 <article class="item-card"><p class="empty-msg">Not enough games on any one pattern yet.</p></article>
@@ -177,8 +147,8 @@
                   </tbody>
                 </table>
               }
-            }
-          }
+            </ion-segment-content>
+          </ion-segment-view>
         }
       </ion-content>
     }

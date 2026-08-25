@@ -1,5 +1,6 @@
-import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, ViewChild } from '@angular/core';
 import { IonCol, IonGrid, IonRow } from '@ionic/angular/standalone';
+
 import { Game } from 'src/app/core/models/game.model';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
@@ -9,17 +10,17 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 interface ReadonlyThrowVm {
   display: string;
   isSplit: boolean;
-  pinShow: boolean;
   pinPins: number[];
+  pinShow: boolean;
 }
 
 interface ReadonlyFrameVm {
   frameNumber: number;
   isTenth: boolean;
+  score: number;
   throw0: ReadonlyThrowVm;
   throw1: ReadonlyThrowVm;
   throw2: ReadonlyThrowVm | null; // 10th frame only
-  score: number;
 }
 
 @Component({

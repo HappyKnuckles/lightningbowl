@@ -19,13 +19,13 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonMenuButton,
   IonModal,
   IonNote,
   IonSelect,
   IonSelectOption,
   IonTextarea,
   IonTitle,
-  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -42,6 +42,7 @@ import {
   refreshCircleOutline,
   sendOutline,
 } from 'ionicons/icons';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
@@ -94,7 +95,7 @@ export class SettingsPage implements OnInit, AfterViewInit {
   private modalCtrl = inject(ModalController);
   private router = inject(Router);
   currentColor: string | null = '';
-  optionsWithClasses: { name: string; class: string }[] = [
+  optionsWithClasses: { class: string; name: string }[] = [
     { name: 'Blue', class: 'blue-option' },
     { name: 'Lila', class: 'lila-option' },
     { name: 'Green', class: 'green-option' },

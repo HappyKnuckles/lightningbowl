@@ -1,25 +1,26 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, EventEmitter, input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core';
 import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import {
-  IonToolbar,
-  IonTitle,
-  IonHeader,
-  IonInfiniteScrollContent,
-  IonInfiniteScroll,
-  IonContent,
-  IonItem,
-  IonCheckbox,
-  IonLabel,
-  IonSearchbar,
-  IonList,
-  IonButtons,
-  IonButton,
   IonAvatar,
+  IonButton,
+  IonButtons,
+  IonCheckbox,
+  IonContent,
+  IonHeader,
   IonImg,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonSearchbar,
   IonText,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import Fuse from 'fuse.js';
+
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';

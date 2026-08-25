@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
@@ -453,7 +454,7 @@ export class OverallStatsCalculatorService {
     };
   }
 
-  calculateGamesForTargetAverage(targetAvg: number, stats: Stats, steps = 15): { score: number; gamesNeeded: number }[] {
+  calculateGamesForTargetAverage(targetAvg: number, stats: Stats, steps = 15): { gamesNeeded: number; score: number }[] {
     const N0 = stats.totalGames;
     const A0 = stats.averageScore;
     const MAX_SCORE = 300;
@@ -469,7 +470,7 @@ export class OverallStatsCalculatorService {
     }
 
     const L = allScores.length;
-    const results: { score: number; gamesNeeded: number }[] = [];
+    const results: { gamesNeeded: number; score: number }[] = [];
     for (let j = 0; j < steps; j++) {
       const idx = Math.round((j * (L - 1)) / (steps - 1));
       const S = allScores[idx];

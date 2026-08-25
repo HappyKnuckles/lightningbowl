@@ -1,25 +1,26 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, OnDestroy, OnInit, signal, untracked, ViewChild } from '@angular/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { SearchbarCustomEvent } from '@ionic/angular';
 import {
   IonButton,
+  IonButtons,
   IonChip,
   IonContent,
   IonHeader,
   IonIcon,
   IonLabel,
+  IonMenuButton,
   IonModal,
   IonSearchbar,
   IonSpinner,
   IonTitle,
-  IonButtons,
-  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline } from 'ionicons/icons';
 import * as L from 'leaflet';
+
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';
 import { Alley, AlleyFilters, AlleySearchOrigin, DEFAULT_ALLEY_FILTERS } from 'src/app/core/models/alley.model';

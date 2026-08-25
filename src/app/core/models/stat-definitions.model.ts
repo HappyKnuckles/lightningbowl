@@ -1,9 +1,9 @@
 export interface StatDefinition {
-  label: string;
-  key: string;
   id: string;
   isPercentage?: boolean;
-  toolTip?: string;
+  key: string;
+  label: string;
   prevKey?: string;
   secondaryKey?: string;
+  toolTip?: string;
 }

@@ -1,16 +1,16 @@
 import {
-  CUSTOM_ELEMENTS_SCHEMA,
   Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  inject,
+  input,
   OnInit,
+  output,
   QueryList,
   Signal,
   ViewChild,
   ViewChildren,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -31,6 +31,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
+
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
@@ -57,22 +58,22 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 
 interface ThrowCellView {
-  value: number | undefined;
+  disabled: boolean;
   display: string;
   isSplit: boolean;
   pinsStanding: number[];
   showPinDeck: boolean;
-  disabled: boolean;
+  value: number | undefined;
 }
 
 interface FrameView {
   frameIndex: number;
   frameNumber: number;
   isTenth: boolean;
-  throws: ThrowCellView[];
   score: number | undefined;
   showScore: boolean;
   showZeroPlaceholder: boolean;
+  throws: ThrowCellView[];
 }
 
 @Component({
@@ -133,7 +134,7 @@ export class GameComponent implements OnInit {
   noteChanged = output<string>();
 
   ballsChanged = output<string[]>();
-  toolbarStateChanged = output<{ show: boolean; offset: number }>();
+  toolbarStateChanged = output<{ offset: number; show: boolean }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
   // Pin Input Mode - Events from Child to Parent
   pinThrowConfirmed = output<ThrowConfirmedEvent>();

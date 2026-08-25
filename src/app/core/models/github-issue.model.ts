@@ -1,24 +1,24 @@
 export interface GitHubIssue {
-  id: number;
-  number: number;
-  title: string;
   body: string;
-  state: 'open' | 'closed';
-  labels: GitHubLabel[];
-  created_at: string;
-  updated_at: string;
   closed_at?: string;
+  created_at: string;
   html_url: string;
-  user: {
-    login: string;
-    avatar_url: string;
-  };
+  id: number;
+  labels: GitHubLabel[];
+  number: number;
   pull_request?: string;
+  state: 'open' | 'closed';
+  title: string;
+  updated_at: string;
+  user: {
+    avatar_url: string;
+    login: string;
+  };
 }
 
 export interface GitHubLabel {
-  id: number;
-  name: string;
   color: string;
   description: string | null;
+  id: number;
+  name: string;
 }

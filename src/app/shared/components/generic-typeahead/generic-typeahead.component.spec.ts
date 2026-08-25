@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModalController } from '@ionic/angular';
 import { IonContent } from '@ionic/angular/standalone';
+import { vi } from 'vitest';
+
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { vi } from 'vitest';
 
 import { createSpyObj } from '../../../../testing/spy-obj';
 import { GenericTypeaheadComponent } from './generic-typeahead.component';

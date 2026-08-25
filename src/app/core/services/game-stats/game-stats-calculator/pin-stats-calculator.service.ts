@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { Frame, Game } from 'src/app/core/models/game.model';
 import { LeaveStats } from 'src/app/core/models/stats.model';
 
@@ -8,7 +9,7 @@ import { LeaveStats } from 'src/app/core/models/stats.model';
 export class PinStatsCalculatorService {
   calculateAllLeaves(games: Game[]): LeaveStats[] {
     const pinModeGames = games.filter((game) => game.isPinMode);
-    const leaveMap = new Map<string, { pins: number[]; occurrences: number; pickups: number }>();
+    const leaveMap = new Map<string, { occurrences: number; pickups: number; pins: number[] }>();
 
     pinModeGames.forEach((game) => {
       game.frames.forEach((frame: Frame, idx: number) => {
@@ -42,8 +43,8 @@ export class PinStatsCalculatorService {
   }
 
   getLeaveAnalytics(games: Game[]): {
-    common: LeaveStats[];
     best: LeaveStats[];
+    common: LeaveStats[];
     worst: LeaveStats[];
   } {
     const allLeaves = this.calculateAllLeaves(games);
@@ -77,7 +78,7 @@ export class PinStatsCalculatorService {
   }
 
   private processThrow(
-    map: Map<string, { pins: number[]; occurrences: number; pickups: number }>,
+    map: Map<string, { occurrences: number; pickups: number; pins: number[] }>,
     pinsLeft: number[],
     nextThrowValue: number | undefined,
     currentThrowValue: number,

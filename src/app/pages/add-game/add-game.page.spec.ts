@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GamesStore } from 'src/app/core/stores/games.store';
 import { vi } from 'vitest';
+
+import { GamesStore } from 'src/app/core/stores/games.store';
 
 import { AddGamePage } from './add-game.page';
 

@@ -18,24 +18,24 @@ export interface Ball {
   coverstock_type: string;
   factory_finish: string;
   last_update: string;
+  position?: number;
   release_date: string;
   thumbnail_image: string;
   us_int: string;
-  position?: number;
 }
 
 export interface Core {
-  core_name: string;
-  brand: string;
-  id: string;
   api_filter_url: string;
+  brand: string;
+  core_name: string;
+  id: string;
 }
 
 export interface Coverstock {
-  coverstock_name: string;
-  brand: string;
-  id: string;
   api_filter_url: string;
+  brand: string;
+  coverstock_name: string;
+  id: string;
 }
 
 export interface Brand {
@@ -45,24 +45,24 @@ export interface Brand {
 }
 
 export interface BallMetrics {
-  hookScore: number;
-  lengthScore: number;
+  flareLabel: string;
   flareScore: number;
   hookLabel: string;
-  lengthLabel: string;
-  flareLabel: string;
+  hookScore: number;
   laneCondition: string;
   laneConditionColor: string;
+  lengthLabel: string;
+  lengthScore: number;
 }
 
 export interface BallTraits {
-  isPlastic: boolean;
-  isUrethane: boolean;
-  isSolid: boolean;
+  diff: number;
+  finishGrit: number | null;
   isHybrid: boolean;
   isPearl: boolean;
-  finishGrit: number | null;
+  isPlastic: boolean;
   isPolished: boolean;
+  isSolid: boolean;
+  isUrethane: boolean;
   rg: number;
-  diff: number;
 }

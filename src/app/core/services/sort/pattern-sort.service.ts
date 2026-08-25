@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { Pattern } from '../../models/pattern.model';
-import { PatternSortOption, PatternSortField, SortDirection } from '../../models/sort.model';
+import { PatternSortField, PatternSortOption, SortDirection } from '../../models/sort.model';
 import { FavoritesService } from '../favorites/favorites.service';
 
 @Injectable({

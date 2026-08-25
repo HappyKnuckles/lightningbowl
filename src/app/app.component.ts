@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { Router, NavigationEnd } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+
 import { environment } from 'src/environments/environment';
 
 import { AnalyticsService } from './core/services/analytics/analytics.service';

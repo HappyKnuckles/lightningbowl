@@ -1,27 +1,27 @@
 import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonItem, IonLabel, IonList, IonModal, IonTabBar, IonTabButton, IonTabs } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   add,
-  statsChartOutline,
-  receipt,
+  bagAddOutline,
   bowlingBallOutline,
   ellipsisHorizontal,
-  bagAddOutline,
-  settingsOutline,
-  mapOutline,
   gameControllerOutline,
+  mapOutline,
+  receipt,
   scaleOutline,
+  settingsOutline,
+  statsChartOutline,
   trophyOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 interface MoreTab {
-  path: string;
-  label: string;
   icon?: string;
+  label: string;
+  path: string;
   src?: string;
 }
 @Component({

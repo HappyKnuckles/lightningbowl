@@ -4,6 +4,7 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
 import type { Workbook, Worksheet } from 'exceljs';
+
 import { Game, Throw } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -132,7 +133,7 @@ export class ExcelService {
 
         for (let j = 1; j <= 10; j++) {
           const frameIndex = j;
-          const frame: { frameIndex: number; throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean }[] } = {
+          const frame: { frameIndex: number; throws: { isSplit?: boolean; pinsLeftStanding?: number[]; throwIndex: number; value: number }[] } = {
             frameIndex: frameIndex,
             throws: [],
           };
@@ -156,7 +157,7 @@ export class ExcelService {
           const maxThrowsInFrame = frameIndex === 10 ? 3 : 2;
 
           for (let k = 0; k < throwValues.length && k < maxThrowsInFrame; k++) {
-            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean } = {
+            const throwObj: { isSplit?: boolean; pinsLeftStanding?: number[]; throwIndex: number; value: number } = {
               value: throwValues[k],
               throwIndex: k + 1,
             };

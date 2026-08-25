@@ -1,50 +1,51 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonButtons } from '@ionic/angular/standalone';
+import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonMenuButton, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { refresh } from 'ionicons/icons';
+
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 
 interface Particle {
-  x: number;
-  y: number;
-  velocityX: number;
-  velocityY: number;
+  color: string;
   life: number;
   maxLife: number;
-  color: string;
+  velocityX: number;
+  velocityY: number;
+  x: number;
+  y: number;
 }
 
 interface Pin {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
   fallen: boolean;
   fallingAngle: number;
+  height: number;
   velocityX: number;
   velocityY: number;
+  width: number;
+  x: number;
+  y: number;
 }
 
 interface Ball {
-  x: number;
-  y: number;
+  curve: number;
+  curveStartDistance: number; // Distance at which curve starts to take effect
+  distanceTraveled: number; // Track how far the ball has traveled
+  inGutter: boolean; // Track if ball is in the gutter
   radius: number;
+  spinning: boolean;
+  trail: { alpha: number; x: number; y: number }[];
   velocityX: number;
   velocityY: number;
-  spinning: boolean;
-  curve: number;
-  trail: { x: number; y: number; alpha: number }[];
-  distanceTraveled: number; // Track how far the ball has traveled
-  curveStartDistance: number; // Distance at which curve starts to take effect
-  inGutter: boolean; // Track if ball is in the gutter
+  x: number;
+  y: number;
 }
 
 interface Arrow {
-  x: number;
-  y: number;
   direction: number; // Angle in radians
   visible: boolean;
+  x: number;
+  y: number;
 }
 
 @Component({

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { environment } from 'src/environments/environment';
 
 const MAX_OCR_IMAGE_DIMENSION = 1600;

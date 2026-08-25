@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit, model, ViewChild, ElementRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, model, OnInit, Output, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox } from '@ionic/angular/standalone';
+import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel, IonList, IonPopover, IonRadio, IonRadioGroup } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { swapVertical } from 'ionicons/icons';
-import { SortOption, SortField } from 'src/app/core/models/sort.model';
+
+import { SortField, SortOption } from 'src/app/core/models/sort.model';
 
 @Component({
   selector: 'app-sort-header',

@@ -1,7 +1,8 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
-import { makeBall } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
+import { makeBall } from 'src/testing/fixtures';
 
 import { generateBallComparisonChart } from './ball-compare-chart-generator';
 

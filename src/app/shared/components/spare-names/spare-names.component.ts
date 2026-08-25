@@ -2,15 +2,15 @@ import { Component, computed, signal, Signal } from '@angular/core';
 import { IonButton } from '@ionic/angular/standalone';
 
 enum SpareNames {
-  BigFour = 'Big Four',
-  GreekChurch = 'Greek Church',
-  GoalPost = 'Goal Posts',
-  Washout = 'Washout',
-  Bucket = 'Bucket',
   BabySplit = 'Baby Split',
-  DimeStore = 'Dime Store',
   BabySplitWithCompany = 'Baby Split with Company',
+  BigFour = 'Big Four',
+  Bucket = 'Bucket',
+  DimeStore = 'Dime Store',
+  GoalPost = 'Goal Posts',
+  GreekChurch = 'Greek Church',
   Lily = 'Lily',
+  Washout = 'Washout',
 }
 
 @Component({

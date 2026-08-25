@@ -1,41 +1,23 @@
 type StatValue = number | number[] | string;
 
 export interface Stats {
-  totalGames: number;
-  totalPins: number;
-  perfectGameCount: number;
-  cleanGameCount: number;
-  cleanGamePercentage: number;
-  totalStrikes: number;
-  totalSpares: number;
-  totalSparesMissed: number;
-  totalSparesConverted: number;
-  pinCounts: number[];
-  missedCounts: number[];
-  averageStrikesPerGame: number;
-  averageSparesPerGame: number;
-  averageOpensPerGame: number;
-  markPercentage: number;
-  strikePercentage: number;
-  sparePercentage: number;
-  openPercentage: number;
+  [key: string]: StatValue | undefined;
+  allSparesGameCount?: number;
+  average3SeriesScore?: number;
+  average4SeriesScore?: number;
+  average5SeriesScore?: number;
+  average6SeriesScore?: number;
   averageFirstCount: number;
-  averageScore: number;
-  highGame: number;
-  lowGame: number;
-  spareRates: number[];
-  overallSpareRate: number;
-  overallMissedRate: number;
-  longesStrikeStreak?: number;
-  longestOpenStreak?: number;
-  dutch200Count?: number;
-  varipapa300Count?: number;
+  averageGamesPerMonth?: number;
   averageGamesPerSession?: number;
-  averageSessionsPerWeek?: number;
+  averageGamesPerWeek?: number;
+  averageGamesPerYear?: number;
+  averageOpensPerGame: number;
+  averageScore: number;
   averageSessionsPerMonth?: number;
-  strikeoutCount?: number;
-  strikeToStrikePercentage?: number;
-  turkeyCount?: number;
+  averageSessionsPerWeek?: number;
+  averageSparesPerGame: number;
+  averageStrikesPerGame: number;
   bagger4Count?: number;
   bagger5Count?: number;
   bagger6Count?: number;
@@ -44,117 +26,135 @@ export interface Stats {
   bagger9Count?: number;
   bagger10Count?: number;
   bagger11Count?: number;
-  allSparesGameCount?: number;
-  averageGamesPerMonth?: number;
-  averageGamesPerWeek?: number;
-  averageGamesPerYear?: number;
-  average3SeriesScore?: number;
+  cleanGameCount: number;
+  cleanGamePercentage: number;
+  dutch200Count?: number;
   high3Series?: number;
-  average4SeriesScore?: number;
   high4Series?: number;
-  average5SeriesScore?: number;
   high5Series?: number;
-  average6SeriesScore?: number;
   high6Series?: number;
+  highGame: number;
+  longesStrikeStreak?: number;
+  longestOpenStreak?: number;
+  lowGame: number;
+  makeableSplitOpportunities?: number;
+  makeableSplitPercentage?: number;
+  makeableSplits?: number;
+  markPercentage: number;
+  missedCounts: number[];
+  multiPinSpareOpportunities?: number;
+  multiPinSparePercentage?: number;
+  multiPinSpares?: number;
+  nonSplitSpareOpportunities?: number;
+  nonSplitSparePercentage?: number;
+  nonSplitSpares?: number;
+  openPercentage: number;
+  overallMissedRate: number;
+  overallSpareRate: number;
+  perfectGameCount: number;
+  pinCounts: number[];
+  pocketHitPercentage?: number;
   // Pin-specific stats (only calculated if isPinMode is true)
   // TODO add most left/hit single/multi pins stats and maybe add a separate PinStats interface
   pocketHits?: number;
-  totalFirstBalls?: number;
-  pocketHitPercentage?: number;
-  singlePinSpares?: number;
   singlePinSpareOpportunities?: number;
-  multiPinSpares?: number;
-  multiPinSpareOpportunities?: number;
-  nonSplitSpares?: number;
-  nonSplitSpareOpportunities?: number;
-  splits?: number;
-  splitOpportunities?: number;
   singlePinSparePercentage?: number;
-  multiPinSparePercentage?: number;
-  nonSplitSparePercentage?: number;
+  singlePinSpares?: number;
+  sparePercentage: number;
+  spareRates: number[];
   splitConversionPercentage?: number;
-  makeableSplits?: number;
-  makeableSplitOpportunities?: number;
-  makeableSplitPercentage?: number;
-  [key: string]: StatValue | undefined;
+  splitOpportunities?: number;
+  splits?: number;
+  strikeoutCount?: number;
+  strikePercentage: number;
+  strikeToStrikePercentage?: number;
+  totalFirstBalls?: number;
+  totalGames: number;
+  totalPins: number;
+  totalSpares: number;
+  totalSparesConverted: number;
+  totalSparesMissed: number;
+  totalStrikes: number;
+  turkeyCount?: number;
+  varipapa300Count?: number;
 }
 
 // TODO think of what these need
 export interface SeriesStats extends Stats {
-  seriesTotal: number;
   seriesDate: string;
+  seriesTotal: number;
 }
 
 export interface LiveSeriesStats {
-  stats: Stats;
-  leaves: { best: LeaveStats[]; worst: LeaveStats[]; common: LeaveStats[] };
   allLeaves: LeaveStats[];
   context: { complete: number; total: number };
+  leaves: { best: LeaveStats[]; common: LeaveStats[]; worst: LeaveStats[] };
+  stats: Stats;
 }
 
 export interface OverallSeriesStats {
-  seriesCount: number;
-  averageSeriesScore: number;
-  averageSrtrikesPerSeries: number;
-  averageSparesPerSeries: number;
   averageOpensPerSeries: number;
+  averageSeriesScore: number;
+  averageSparesPerSeries: number;
+  averageSrtrikesPerSeries: number;
   highSeries: number;
   lowSeries: number;
+  seriesCount: number;
 }
 
 export interface PrevStats {
-  cleanGamePercentage: number;
-  markPercentage: number;
-  strikePercentage: number;
-  sparePercentage: number;
-  openPercentage: number;
-  averageStrikesPerGame: number;
-  averageSparesPerGame: number;
-  averageOpensPerGame: number;
+  [key: string]: StatValue | undefined;
+  average3SeriesScore?: number;
+  average4SeriesScore?: number;
+  average5SeriesScore?: number;
   averageFirstCount: number;
-  cleanGameCount: number;
-  perfectGameCount: number;
+  averageOpensPerGame: number;
   averageScore: number;
-  strikeToStrikePercentage?: number;
-  overallSpareRate: number;
-  overallMissedRate: number;
-  spareRates: number[];
-  pocketHitPercentage?: number;
-  singlePinSparePercentage?: number;
+  averageSparesPerGame: number;
+  averageStrikesPerGame: number;
+  cleanGameCount: number;
+  cleanGamePercentage: number;
+  high3Series?: number;
+  high4Series?: number;
+  makeableSplitPercentage?: number;
+  markPercentage: number;
   multiPinSparePercentage?: number;
   nonSplitSparePercentage?: number;
+  openPercentage: number;
+  overallMissedRate: number;
+  overallSpareRate: number;
+  perfectGameCount: number;
+  pocketHitPercentage?: number;
+  singlePinSparePercentage?: number;
+  sparePercentage: number;
+  spareRates: number[];
   splitConversionPercentage?: number;
-  makeableSplitPercentage?: number;
-  average3SeriesScore?: number;
-  high3Series?: number;
-  average4SeriesScore?: number;
-  high4Series?: number;
-  average5SeriesScore?: number;
-  [key: string]: StatValue | undefined;
+  strikePercentage: number;
+  strikeToStrikePercentage?: number;
 }
 
 export interface HighlightItemStats {
-  name: string;
-  image: string;
   avg: number;
-  highestGame: number;
-  lowestGame: number;
-  gameCount: number;
-  strikeRate?: number;
   cleanGameCount?: number;
+  gameCount: number;
+  highestGame: number;
+  image: string;
+  lowestGame: number;
+  name: string;
+  strikeRate?: number;
 }
 
 export interface LeaveStats {
-  pins: number[];
   occurrences: number;
-  pickups: number;
   pickupPercentage: number;
+  pickups: number;
+  pins: number[];
 }
 
 export interface LeagueLeaveStats {
   all: LeaveStats[];
-  common: LeaveStats[];
   best: LeaveStats[];
+  common: LeaveStats[];
   worst: LeaveStats[];
 }
 

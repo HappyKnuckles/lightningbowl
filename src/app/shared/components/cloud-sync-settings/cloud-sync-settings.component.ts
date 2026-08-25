@@ -36,6 +36,7 @@ import {
   unlinkOutline,
   warningOutline,
 } from 'ionicons/icons';
+
 import { CloudProvider, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
 import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.service';
 

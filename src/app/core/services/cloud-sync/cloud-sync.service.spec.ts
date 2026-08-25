@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
+
 import { CloudProvider, CloudSyncSettings, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
-import { vi } from 'vitest';
 
 import { ExcelService } from '../excel/excel.service';
 import { StorageRepository } from '../storage/storage.repository';

@@ -2,11 +2,11 @@
  * Represents a single throw/ball in a bowling frame
  */
 export interface Throw {
-  value: number;
-  throwIndex: number;
   isSplit?: boolean;
-  pinsLeftStanding?: number[];
   pinsKnockedDown?: number[];
+  pinsLeftStanding?: number[];
+  throwIndex: number;
+  value: number;
 }
 
 /**
@@ -14,8 +14,8 @@ export interface Throw {
  */
 export interface Frame {
   frameIndex: number;
-  throws: Throw[];
   isInvalid?: boolean;
+  throws: Throw[];
 }
 
 /**
@@ -31,34 +31,34 @@ export interface PinModeState {
  * Represents a draft of a game or series being tracked, used for auto-saving and restoring in-progress data
  */
 export interface GameDraft {
-  timestamp: number;
-  games: Game[];
-  pinModeState: PinModeState[];
-  totalScores: number[];
-  maxScores: number[];
-  isPinInputMode: boolean;
-  selectedMode: string;
   gameIndex: string;
+  games: Game[];
+  isPinInputMode: boolean;
+  maxScores: number[];
+  pinModeState: PinModeState[];
   segments: string[];
+  selectedMode: string;
+  timestamp: number;
+  totalScores: number[];
 }
 
 /**
  * Represents a complete bowling game
  */
 export interface Game {
-  gameId: string;
+  balls?: string[];
   date: number;
   frames: Frame[];
-  totalScore: number;
   frameScores: number[];
+  gameId: string;
   isClean: boolean;
   isPerfect: boolean;
-  isPractice: boolean;
   isPinMode: boolean;
+  isPractice: boolean;
   isSeries?: boolean;
-  seriesId?: string;
-  note?: string;
   league?: string;
+  note?: string;
   patterns: string[];
-  balls?: string[];
+  seriesId?: string;
+  totalScore: number;
 }

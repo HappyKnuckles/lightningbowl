@@ -1,8 +1,8 @@
 export interface TypeaheadDisplayField {
-  key: string;
-  label?: string;
   isPrimary?: boolean;
   isSecondary?: boolean;
+  key: string;
+  label?: string;
 }
 
 export interface TypeaheadSearchKey {
@@ -11,20 +11,20 @@ export interface TypeaheadSearchKey {
 }
 
 export interface TypeaheadConfig<T> {
-  title: string;
-  searchPlaceholder: string;
-  loadingText: string;
-  noDataText?: string;
+  apiSearchFn?: (searchTerm: string) => Promise<{ items: T[] }>;
+  customDisplayFormatter?: (item: T, fieldKey: string) => string;
+  customDisplayLogic?: (item: T) => { cssClass?: string; disabled?: boolean };
   displayFields: TypeaheadDisplayField[];
-  searchKeys: TypeaheadSearchKey[];
   identifierKey: keyof T;
-  valueKey?: keyof T;
-  maxSelections?: number;
-  showImages?: boolean;
   imageShape?: 'round' | 'rect';
   imageUrlGenerator?: (item: T) => string;
-  customDisplayLogic?: (item: T) => { cssClass?: string; disabled?: boolean };
-  customDisplayFormatter?: (item: T, fieldKey: string) => string;
+  loadingText: string;
+  maxSelections?: number;
+  noDataText?: string;
+  searchKeys: TypeaheadSearchKey[];
   searchMode: 'local' | 'api';
-  apiSearchFn?: (searchTerm: string) => Promise<{ items: T[] }>;
+  searchPlaceholder: string;
+  showImages?: boolean;
+  title: string;
+  valueKey?: keyof T;
 }

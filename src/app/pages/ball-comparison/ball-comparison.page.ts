@@ -1,4 +1,4 @@
-import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, model, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import {
@@ -16,6 +16,7 @@ import {
   IonHeader,
   IonIcon,
   IonImg,
+  IonMenuButton,
   IonModal,
   IonRow,
   IonSegment,
@@ -26,12 +27,12 @@ import {
   IonSelectOption,
   IonText,
   IonTitle,
-  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';

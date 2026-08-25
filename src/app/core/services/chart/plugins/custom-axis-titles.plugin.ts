@@ -1,6 +1,6 @@
 const customAxisTitlesPlugin = {
   id: 'customAxisTitles',
-  afterDraw(chart: { ctx: any; chartArea: any; }) {
+  afterDraw(chart: { chartArea: any; ctx: any; }) {
     const { ctx, chartArea } = chart;
     if (!chartArea) return;
 

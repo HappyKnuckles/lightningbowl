@@ -15,6 +15,7 @@ import {
   IonItemOptions,
   IonItemSliding,
   IonLabel,
+  IonMenuButton,
   IonModal,
   IonRefresher,
   IonSegment,
@@ -23,7 +24,6 @@ import {
   IonSegmentView,
   IonText,
   IonTitle,
-  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import Chart from 'chart.js/auto';
@@ -40,6 +40,7 @@ import {
   trashOutline,
   trophyOutline,
 } from 'ionicons/icons';
+
 import { LEAGUE_STAT_DEFINITIONS, PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';

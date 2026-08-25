@@ -26,6 +26,7 @@ import {
   warning,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
+
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 
 const TOAST_ICONS = {
@@ -55,10 +56,10 @@ const TOAST_ICONS = {
 const toKebabCase = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
 interface ToastData {
-  id: number;
-  message: string;
   icon: string;
+  id: number;
   isError?: boolean;
+  message: string;
 }
 
 @Component({

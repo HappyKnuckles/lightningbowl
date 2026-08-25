@@ -1,5 +1,6 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
+
 import { Stats } from 'src/app/core/models/stats.model';
 
 import { calculateThrowChartDataPercentages } from '../data-calculation/chart-data-calculators';

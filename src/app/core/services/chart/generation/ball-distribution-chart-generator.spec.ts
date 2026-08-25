@@ -1,8 +1,9 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
+import { vi } from 'vitest';
+
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { makeBall } from 'src/testing/fixtures';
-import { vi } from 'vitest';
 
 import { generateBallDistributionChart } from './ball-distribution-chart-generator';
 
@@ -10,11 +11,11 @@ import { generateBallDistributionChart } from './ball-distribution-chart-generat
 const withoutJitter = () => vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
 interface BallPoint {
+  cover: string;
+  imageUrl: string;
+  name: string;
   x: number;
   y: number;
-  name: string;
-  imageUrl: string;
-  cover: string;
 }
 
 /** `config` is a union that only carries `type` on some arms; at runtime it is always set. */

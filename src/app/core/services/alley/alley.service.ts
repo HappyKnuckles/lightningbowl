@@ -1,37 +1,38 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { firstValueFrom } from 'rxjs';
+
 import { environment } from 'src/environments/environment';
 
 import { Alley } from '../../models/alley.model';
 
 interface OverpassTags {
-  name?: string;
-  leisure?: string;
-  sport?: string;
+  [key: string]: string | undefined;
+  'addr:city'?: string;
+  'addr:housenumber'?: string;
+  'addr:postcode'?: string;
+  'addr:street'?: string;
   amenity?: string;
-  tourism?: string;
+  'contact:phone'?: string;
+  'contact:website'?: string;
   lanes?: string;
+  leisure?: string;
+  name?: string;
   opening_hours?: string;
   phone?: string;
-  'contact:phone'?: string;
+  sport?: string;
+  tourism?: string;
   website?: string;
-  'contact:website'?: string;
-  'addr:housenumber'?: string;
-  'addr:street'?: string;
-  'addr:city'?: string;
-  'addr:postcode'?: string;
-  [key: string]: string | undefined;
 }
 
 interface OverpassElement {
-  type: 'node' | 'way' | 'relation';
+  center?: { lat: number; lon: number };
   id: number;
   lat?: number;
   lon?: number;
-  center?: { lat: number; lon: number };
   tags?: OverpassTags;
+  type: 'node' | 'way' | 'relation';
 }
 
 interface OverpassResponse {
@@ -41,15 +42,15 @@ interface OverpassResponse {
 }
 
 export interface GeocodeResult {
+  label: string;
   lat: number;
   lon: number;
-  label: string;
 }
 
 interface NominatimResult {
+  display_name: string;
   lat: string;
   lon: string;
-  display_name: string;
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -65,7 +66,7 @@ export class AlleyService {
   private http = inject(HttpClient);
   private readonly overpassUrl = this.resolveEndpoint('/api/overpass', 'https://overpass-api.de/api/interpreter');
   private readonly nominatimUrl = this.resolveEndpoint('/api/nominatim', 'https://nominatim.openstreetmap.org/search');
-  private cache = new Map<string, { timestamp: number; alleys: Alley[] }>();
+  private cache = new Map<string, { alleys: Alley[]; timestamp: number }>();
   private inflight = new Map<string, Promise<Alley[]>>();
 
   /**

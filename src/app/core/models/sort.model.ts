@@ -6,40 +6,40 @@ export enum SortDirection {
 export enum BallSortField {
   BALL_NAME = 'ball_name',
   BRAND_NAME = 'brand_name',
-  RELEASE_DATE = 'release_date',
-  CORE_RG = 'core_rg',
   CORE_DIFF = 'core_diff',
   CORE_INT_DIFF = 'core_int_diff',
+  CORE_RG = 'core_rg',
   CORE_TYPE = 'core_type',
   COVERSTOCK_TYPE = 'coverstock_type',
   FACTORY_FINISH = 'factory_finish',
+  RELEASE_DATE = 'release_date',
 }
 
 export enum PatternSortField {
-  TITLE = 'title',
   CATEGORY = 'category',
   DISTANCE = 'distance',
-  RATIO = 'ratio',
-  VOLUME = 'volume',
   FORWARD = 'forward',
-  REVERSE = 'reverse',
   PUMP = 'pump',
+  RATIO = 'ratio',
+  REVERSE = 'reverse',
+  TITLE = 'title',
+  VOLUME = 'volume',
 }
 
 export enum GameSortField {
-  TOTAL_SCORE = 'totalScore',
   DATE = 'date',
-  LEAGUE = 'league',
-  IS_PRACTICE = 'isPractice',
   IS_CLEAN = 'isClean',
   IS_PERFECT = 'isPerfect',
+  IS_PRACTICE = 'isPractice',
+  LEAGUE = 'league',
+  TOTAL_SCORE = 'totalScore',
 }
 
 export type SortField = BallSortField | PatternSortField | GameSortField;
 
 export interface SortOption<T extends SortField = SortField> {
-  field: T;
   direction: SortDirection;
+  field: T;
   label: string;
 }
 

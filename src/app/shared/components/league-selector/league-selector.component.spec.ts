@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
+
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { vi } from 'vitest';
 
 import { LeagueSelectorComponent } from './league-selector.component';
 

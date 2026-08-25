@@ -20,6 +20,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { addOutline, checkmarkOutline, createOutline, trashOutline, trophyOutline } from 'ionicons/icons';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';

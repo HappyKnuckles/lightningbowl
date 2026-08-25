@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';

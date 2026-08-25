@@ -2,14 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, i
 import { IonIcon, IonText } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
+
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { ConditionalNumberPipe } from 'src/app/shared/pipes/number-pipe/conditional-number.pipe';
 
 interface StatRowVm {
-  showDiff: boolean;
-  difference: string;
   arrowIcon: string;
   diffColor: string;
+  difference: string;
+  showDiff: boolean;
 }
 
 @Component({

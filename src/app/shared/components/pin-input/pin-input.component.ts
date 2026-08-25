@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+
 import { PINS } from 'src/app/core/constants/app.constants';
 
 export interface ThrowConfirmedEvent {
@@ -9,10 +10,10 @@ export interface ThrowConfirmedEvent {
 }
 
 interface PinView {
-  number: number;
   active: boolean;
-  knockedDown: boolean;
   disabled: boolean;
+  knockedDown: boolean;
+  number: number;
 }
 
 const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];

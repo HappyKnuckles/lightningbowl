@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
 
 import { PinpalService } from '../pinpal/pinpal.service';
@@ -10,8 +11,8 @@ export type ImportResult =
       type: 'excel';
     }
   | {
-      type: 'pinpal';
       importedGames: number;
+      type: 'pinpal';
     };
 
 @Injectable({

@@ -20,6 +20,7 @@ import {
   IonInfiniteScrollContent,
   IonItem,
   IonLabel,
+  IonMenuButton,
   IonModal,
   IonPopover,
   IonRefresher,
@@ -27,7 +28,6 @@ import {
   IonSkeletonText,
   IonText,
   IonTitle,
-  IonMenuButton,
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
@@ -44,6 +44,7 @@ import {
   heartOutline,
   linkOutline,
 } from 'ionicons/icons';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostListener, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, HostListener, inject, OnDestroy } from '@angular/core';
 
 @Directive({
   selector: '[appAccordionDelayedClose]',

@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Camera, CameraPermissionState, CameraResultType, CameraSource } from '@capacitor/camera';
 import { AlertController, isPlatform } from '@ionic/angular/standalone';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
@@ -11,7 +12,7 @@ import { UserService } from 'src/app/core/services/user/user.service';
 
 import { Game } from '../../models/game.model';
 import { numberArraysToFrames } from '../../utils/game-utils/frame.utils';
-import { ScoreSheetPlayerNotFoundError, parseBowlingScores } from '../../utils/game-utils/score-input.utils';
+import { parseBowlingScores, ScoreSheetPlayerNotFoundError } from '../../utils/game-utils/score-input.utils';
 
 const WARNING_STORAGE_KEY = 'alert';
 const WARNING_TTL_DAYS = 7;

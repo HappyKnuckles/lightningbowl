@@ -20,10 +20,10 @@ import {
   IonModal,
   IonRefresher,
   IonRippleEffect,
-  IonSkeletonText,
   IonSearchbar,
   IonSelect,
   IonSelectOption,
+  IonSkeletonText,
   IonText,
   IonTitle,
   IonToolbar,
@@ -32,6 +32,7 @@ import Fuse from 'fuse.js';
 import { addIcons } from 'ionicons';
 import { addOutline, camera, chevronDownOutline, closeCircle, filterOutline, globeOutline, heart, heartOutline, openOutline } from 'ionicons/icons';
 import { Subject } from 'rxjs';
+
 import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';

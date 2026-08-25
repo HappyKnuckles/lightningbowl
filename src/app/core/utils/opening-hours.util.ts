@@ -3,17 +3,17 @@ import { AlleyOpenState } from '../models/alley.model';
 const DAY_KEYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as const;
 
 interface TimeRange {
-  /** Minutes since midnight. */
-  start: number;
   /** Minutes since midnight; may exceed 1440 when the range crosses midnight. */
   end: number;
+  /** Minutes since midnight. */
+  start: number;
 }
 
 interface OpeningRule {
+  closed: boolean;
   /** Day indices (0 = Monday … 6 = Sunday) the rule applies to. */
   days: number[];
   ranges: TimeRange[];
-  closed: boolean;
 }
 
 /**

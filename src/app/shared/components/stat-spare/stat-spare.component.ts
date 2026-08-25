@@ -2,38 +2,39 @@ import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, i
 import { IonIcon, IonText } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
+
 import { PINS } from 'src/app/core/constants/app.constants';
 import { PrevStats, Stats } from 'src/app/core/models/stats.model';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 
 interface SpareRow {
-  pin: number;
-  label: string;
-  hit: number;
-  miss: number;
-  empty: boolean;
-  barWidth: number;
-  rate: number;
-  rateText: string;
-  rateColor: string;
   arrow: string; // '' = no arrow
-  diffColor: string;
+  barWidth: number;
   diff: string; // '' = "0", hide popover
+  diffColor: string;
+  empty: boolean;
+  hit: number;
+  label: string;
+  miss: number;
+  pin: number;
+  rate: number;
+  rateColor: string;
+  rateText: string;
   triggerId: string;
 }
 
 interface SpareSummary {
+  arrow: string;
+  attempts: number;
+  diff: string;
+  diffColor: string;
+  fillValue: number;
   hasAttempts: boolean;
-  rate: number;
-  rateText: string;
-  rateColor: string;
   hit: number;
   miss: number;
-  attempts: number;
-  arrow: string;
-  diffColor: string;
-  diff: string;
-  fillValue: number;
+  rate: number;
+  rateColor: string;
+  rateText: string;
   triggerId: string;
 }
 

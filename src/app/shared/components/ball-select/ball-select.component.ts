@@ -1,18 +1,19 @@
-import { Component, computed, inject, input, output, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import {
-  IonButtons,
-  IonFooter,
-  IonToolbar,
+  IonAvatar,
   IonButton,
+  IonButtons,
   IonCheckbox,
   IonContent,
+  IonFooter,
   IonHeader,
-  IonTitle,
+  IonItem,
   IonLabel,
   IonList,
-  IonAvatar,
-  IonItem,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
+
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';

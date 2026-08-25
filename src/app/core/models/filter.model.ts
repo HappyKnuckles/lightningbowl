@@ -1,33 +1,33 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 export type GameFilter = {
+  balls: string[];
+  endDate?: string;
   excludePractice: boolean;
-  minScore: number;
-  maxScore: number;
   isClean: boolean;
   isPerfect: boolean;
   leagues: string[];
-  balls: string[];
+  maxScore: number;
+  minScore: number;
   patterns: string[];
-  timeRange: TimeRange;
   startDate?: string;
-  endDate?: string;
+  timeRange: TimeRange;
 };
 
 export type BallFilter = {
+  availability: boolean;
   brands: string[];
+  cores: string[];
+  coreType: CoreType;
   coverstocks: string[];
   coverstockTypes: CoverstockType[];
-  cores: string[];
+  inArsenal: boolean;
   market: Market;
-  weight: string;
-  coreType: CoreType;
-  availability: boolean;
-  releaseDate: string;
-  minRg: number;
+  maxDiff: number;
   maxRg: number;
   minDiff: number;
-  maxDiff: number;
-  inArsenal: boolean;
+  minRg: number;
+  releaseDate: string;
+  weight: string;
 };
 
 export enum TimeRange {
@@ -42,24 +42,24 @@ export enum TimeRange {
 
 export enum Market {
   ALL = 'All',
-  US = 'US',
   INT = 'Overseas',
+  US = 'US',
 }
 
 export enum CoverstockType {
   HYBRID_REACTIVE = 'Hybrid Reactive',
-  PEARL_REACTIVE = 'Pearl Reactive',
-  SOLID_REACTIVE = 'Solid Reactive',
-  PARTICLE_REACTIVE = 'Particle Reactive',
-  URETHANE_PEARL = 'Urethane Pearl',
-  POLYESTER = 'Polyester',
-  URETHANE_SOLID = 'Urethane Solid',
-  NOT_URETHANE = 'Not Urethane',
   MICROCELL_POLYMER = 'Microcell Polymer',
-  URETHANE_HYBRID = 'Urethane Hybrid',
+  NOT_URETHANE = 'Not Urethane',
   PARTICLE_PEARL_REACTIVE = 'Particle/Pearl Reactive',
-  URETHANE_PARTICLE = 'Urethane Particle',
+  PARTICLE_REACTIVE = 'Particle Reactive',
+  PEARL_REACTIVE = 'Pearl Reactive',
+  POLYESTER = 'Polyester',
   RUBBER = 'Rubber',
+  SOLID_REACTIVE = 'Solid Reactive',
+  URETHANE_HYBRID = 'Urethane Hybrid',
+  URETHANE_PARTICLE = 'Urethane Particle',
+  URETHANE_PEARL = 'Urethane Pearl',
+  URETHANE_SOLID = 'Urethane Solid',
 }
 
 export enum CoreType {
@@ -75,18 +75,18 @@ export type FilterRecord = Record<string, FilterValue>;
 export type IndexableFilter = AppFilter & FilterRecord;
 
 export interface FilterConfig {
+  displayValue?: (value: FilterValue) => string;
+  enumValues?: Record<string, string>;
+  isRange?: boolean;
   key: string;
   label?: string;
-  type: 'boolean' | 'string' | 'number' | 'array' | 'date' | 'range' | 'enum';
-  displayValue?: (value: FilterValue) => string;
-  isRange?: boolean;
+  prefix?: string;
   rangeKeys?: {
-    min: string;
     max: string;
+    min: string;
   };
   suffix?: string;
-  prefix?: string;
-  enumValues?: Record<string, string>;
+  type: 'boolean' | 'string' | 'number' | 'array' | 'date' | 'range' | 'enum';
 }
 // export enum Availability{
 //   ALL = 'all',

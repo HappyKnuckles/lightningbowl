@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { AlertController } from '@ionic/angular';
+import { vi } from 'vitest';
+
 import { Game } from 'src/app/core/models/game.model';
 import { makeGame } from 'src/testing/fixtures';
-import { vi } from 'vitest';
 
 import { HighScoreAlertService, HighScoreRecord } from './high-score-alert.service';
 

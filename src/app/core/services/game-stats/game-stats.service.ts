@@ -1,4 +1,5 @@
 import { computed, Injectable, Signal } from '@angular/core';
+
 import { HighlightItemStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 import { GamesStore } from 'src/app/core/stores/games.store';
 
@@ -92,8 +93,8 @@ export class GameStatsService {
   }
 
   calculateLeaveAnalytics(gameHistory: Game[]): {
-    common: LeaveStats[];
     best: LeaveStats[];
+    common: LeaveStats[];
     worst: LeaveStats[];
   } {
     return this.pinStatsCalculatorService.getLeaveAnalytics(gameHistory);
@@ -163,7 +164,7 @@ export class GameStatsService {
     return this.patternStatsCalculatorService.calculateAllPatternStats(gameHistory);
   }
 
-  calculateGamesForTargetAverage(targetAvg: number, steps = 15): { score: number; gamesNeeded: number }[] {
+  calculateGamesForTargetAverage(targetAvg: number, steps = 15): { gamesNeeded: number; score: number }[] {
     return this.overallStatsCalculatorService.calculateGamesForTargetAverage(targetAvg, this.overallStats(), steps);
   }
 }

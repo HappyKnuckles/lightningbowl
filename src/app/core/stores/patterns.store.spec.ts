@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
@@ -8,7 +9,7 @@ import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { PatternsStore } from './patterns.store';
 
 /** Chart payload shape returned by `PatternService.getAllPatternCharts`. */
-function charts(patterns: { url?: string; title: string; chart_standard: string; chart_horizontal?: string }[]) {
+function charts(patterns: { chart_horizontal?: string; chart_standard: string; title: string; url?: string }[]) {
   return { count: patterns.length, patterns: patterns.map((p) => ({ url: '', chart_horizontal: '', ...p })) };
 }
 

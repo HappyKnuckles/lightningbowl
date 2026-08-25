@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom, retry } from 'rxjs';
+
 import { environment } from 'src/environments/environment';
 
 import { Pattern } from '../../models/pattern.model';
@@ -8,27 +9,27 @@ import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
 
 interface SearchResult {
-  patterns: Pattern[];
   count: number;
-  query: string;
   numeric_query: boolean;
+  patterns: Pattern[];
+  query: string;
   threshold: number;
 }
 
 interface AllPatternsResult {
-  total: number;
-  patterns: Pattern[];
   page?: number;
+  patterns: Pattern[];
   per_page?: number;
+  total: number;
 }
 
 interface PatternChartsResult {
   count: number;
   patterns: {
-    url: string;
-    title: string;
-    chart_standard: string;
     chart_horizontal: string;
+    chart_standard: string;
+    title: string;
+    url: string;
   }[];
 }
 

@@ -65,9 +65,16 @@ module.exports = tseslint.config(
         {
           type: "natural",
           newlinesBetween: 1,
+          internalPattern: ["^src/", "^@app/", "^@core/", "^@shared/", "^@env/"],
           groups: ["type-import", ["builtin", "external"], "internal", ["parent", "sibling", "index"], "side-effect"],
         },
       ],
+      "perfectionist/sort-named-imports": ["warn", { type: "natural" }],
+      "perfectionist/sort-named-exports": ["warn", { type: "natural" }],
+      "perfectionist/sort-exports": ["warn", { type: "natural" }],
+      "perfectionist/sort-interfaces": ["warn", { type: "natural" }],
+      "perfectionist/sort-object-types": ["warn", { type: "natural" }],
+      "perfectionist/sort-enums": ["warn", { type: "natural" }],
       "@angular-eslint/directive-selector": [
         "error",
         {

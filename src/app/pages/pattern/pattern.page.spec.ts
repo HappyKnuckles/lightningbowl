@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModalController } from '@ionic/angular/standalone';
+
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';

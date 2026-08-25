@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Game } from '../../models/game.model';
-import { GameSortOption, GameSortField, SortDirection } from '../../models/sort.model';
+import { GameSortField, GameSortOption, SortDirection } from '../../models/sort.model';
 
 @Injectable({
   providedIn: 'root',

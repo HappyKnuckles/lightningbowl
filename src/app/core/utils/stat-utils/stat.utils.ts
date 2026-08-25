@@ -25,12 +25,12 @@ export function pickTopFromList(items: HighlightItemStats[], cmp: (a: HighlightI
 }
 
 export function buildHighlights(src: {
-  mostPlayedBall: HighlightItemStats;
-  bestBall: HighlightItemStats;
   allBalls: HighlightItemStats[];
-  mostPlayedPattern: HighlightItemStats;
-  bestPattern: HighlightItemStats;
   allPatterns: HighlightItemStats[];
+  bestBall: HighlightItemStats;
+  bestPattern: HighlightItemStats;
+  mostPlayedBall: HighlightItemStats;
+  mostPlayedPattern: HighlightItemStats;
 }) {
   return [
     {

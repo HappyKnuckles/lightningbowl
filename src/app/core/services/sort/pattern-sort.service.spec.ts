@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { PatternSortField, PatternSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';

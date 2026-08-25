@@ -1,6 +1,7 @@
 import { ElementRef } from '@angular/core';
 import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
+
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 
@@ -31,7 +32,7 @@ export function generateBallDistributionChart(
 
     const jitter = () => (Math.random() - 0.5) * 0.004;
 
-    const dataPoints: (ScatterDataPoint & { name: string; imageUrl: string; cover: string })[] = [];
+    const dataPoints: (ScatterDataPoint & { cover: string; imageUrl: string; name: string })[] = [];
     const pointImages: HTMLImageElement[] = [];
     for (const ball of balls) {
       const xRaw = parseFloat(ball.core_diff);

@@ -1,32 +1,32 @@
 export interface CloudSyncSettings {
+  connectedProvider?: CloudProvider; // which provider is connected via backend
   enabled: boolean;
-  provider: CloudProvider;
+  folderId?: string; // Google Drive folder ID
+  folderPath?: string; // User-selectable folder path
   frequency: SyncFrequency;
   lastSyncDate?: number;
   lastSyncProvider?: CloudProvider; // which provider lastSyncDate belongs to
   nextSyncDate?: number;
-  connectedProvider?: CloudProvider; // which provider is connected via backend
-  folderPath?: string; // User-selectable folder path
-  folderId?: string; // Google Drive folder ID
+  provider: CloudProvider;
 }
 
 export enum CloudProvider {
+  DROPBOX = 'dropbox',
   GOOGLE_DRIVE = 'google-drive',
   ONEDRIVE = 'onedrive',
-  DROPBOX = 'dropbox',
 }
 
 export enum SyncFrequency {
   DAILY = 'daily',
-  WEEKLY = 'weekly',
   MONTHLY = 'monthly',
+  WEEKLY = 'weekly',
 }
 
 export interface CloudSyncStatus {
+  disconnectInProgress: boolean;
+  error?: string;
   isAuthenticated: boolean;
   lastSync?: Date;
   nextSync?: Date;
   syncInProgress: boolean;
-  disconnectInProgress: boolean;
-  error?: string;
 }

@@ -1,21 +1,21 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import {
-  IonModal,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonSegmentContent,
-  IonSegmentView,
-  IonButtons,
   IonButton,
-  IonIcon,
+  IonButtons,
   IonContent,
+  IonHeader,
+  IonIcon,
+  IonLabel,
+  IonModal,
   IonSegment,
   IonSegmentButton,
-  IonLabel,
+  IonSegmentContent,
+  IonSegmentView,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { close, flash, wifiOutline, notifications, phonePortrait, download, shareOutline, checkmark, add, checkmarkCircle } from 'ionicons/icons';
+import { add, checkmark, checkmarkCircle, close, download, flash, notifications, phonePortrait, shareOutline, wifiOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-pwa-install-prompt',

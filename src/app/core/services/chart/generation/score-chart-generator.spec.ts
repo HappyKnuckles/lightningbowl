@@ -1,7 +1,8 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
-import { makeGame } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
+import { makeGame } from 'src/testing/fixtures';
 
 import { generateAverageScoreChart, generateScoreChart, generateScoreDistributionChart } from './score-chart-generator';
 

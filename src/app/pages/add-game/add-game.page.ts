@@ -26,6 +26,7 @@ import {
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { bowlingBall, bowlingBallOutline, chevronDown, chevronUp } from 'ionicons/icons';
+
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
@@ -58,11 +59,11 @@ import { StatDisplayComponent } from 'src/app/shared/components/stat-display/sta
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 
 const enum SeriesMode {
-  Single = 'Single',
   Series3 = '3-Series',
   Series4 = '4-Series',
   Series5 = '5-Series',
   Series6 = '6-Series',
+  Single = 'Single',
 }
 
 defineCustomElements(window);
@@ -420,7 +421,7 @@ export class AddGamePage implements OnInit {
     this.updateToolbarDisabledState(index);
   }
 
-  onToolbarStateChange(state: { show: boolean; offset: number }): void {
+  onToolbarStateChange(state: { offset: number; show: boolean }): void {
     this.showScoreToolbar = state.show;
     this.toolbarOffset = state.offset;
   }
@@ -433,7 +434,7 @@ export class AddGamePage implements OnInit {
   }
 
   async presentActionSheet(): Promise<void> {
-    const buttons: { text: string; handler?: () => void; role?: string }[] = [];
+    const buttons: { handler?: () => void; role?: string; text: string }[] = [];
     this.hapticService.vibrate(ImpactStyle.Medium);
     this.sheetOpen = true;
 

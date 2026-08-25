@@ -1,5 +1,5 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal, viewChild, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal, viewChild, viewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -37,6 +37,7 @@ import {
   trashOutline,
   trophyOutline,
 } from 'ionicons/icons';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
 import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
@@ -65,30 +66,30 @@ import { LeagueSelectorComponent } from '../league-selector/league-selector.comp
 import { GameCardTemplateDirective } from './game-card-template.directive';
 
 interface MonthRow {
-  kind: 'month';
-  id: string;
-  name: string;
   count: number;
+  id: string;
+  kind: 'month';
+  name: string;
 }
 
 interface SingleRow {
-  kind: 'single';
-  id: string;
   game: Game;
-  title: string;
+  id: string;
+  kind: 'single';
   meta: string;
   numberTag: string;
+  title: string;
 }
 
 interface SeriesRow {
-  kind: 'series';
-  id: string;
-  games: Game[];
-  count: number;
-  total: number;
   avg: number;
+  count: number;
   firstNumber: number;
+  games: Game[];
+  id: string;
+  kind: 'series';
   lastNumber: number;
+  total: number;
 }
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;

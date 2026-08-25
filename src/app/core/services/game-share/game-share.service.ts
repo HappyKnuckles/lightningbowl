@@ -3,6 +3,7 @@ import { inject, Injectable, LOCALE_ID, Renderer2, RendererFactory2 } from '@ang
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { toPng } from 'html-to-image';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
 

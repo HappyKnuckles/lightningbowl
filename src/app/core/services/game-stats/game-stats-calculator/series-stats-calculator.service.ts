@@ -1,6 +1,7 @@
 // src/app/core/services/series-stats/series-stats.service.ts
 
 import { Injectable } from '@angular/core';
+
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 
 import { SeriesStats, Stats } from '../../../models/stats.model';
@@ -51,14 +52,14 @@ export class SeriesStatsCalculatorService {
     let totalSpares = 0;
     let totalOpens = 0;
     const seriesSpecificStats: {
+      averageOpens: number;
+      averageSpares: number;
+      averageStrikes: number;
       seriesId: string;
       seriesScore: number;
-      totalStrikes: number;
-      totalSpares: number;
       totalOpens: number;
-      averageStrikes: number;
-      averageSpares: number;
-      averageOpens: number;
+      totalSpares: number;
+      totalStrikes: number;
     }[] = [];
 
     // Group games by series ID

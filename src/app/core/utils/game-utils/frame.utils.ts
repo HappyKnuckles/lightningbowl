@@ -1,4 +1,4 @@
-import { Throw, Frame, Game } from 'src/app/core/models/game.model';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 
 // Constructors
 

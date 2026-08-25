@@ -1,7 +1,7 @@
 export interface CacheMetadata {
+  expires: number;
   lastUpdated: number;
   version: string;
-  expires: number;
 }
 
 export interface CacheEntry<T> {

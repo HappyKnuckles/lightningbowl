@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { makePattern } from 'src/testing/fixtures';
 
 import { PatternInfoComponent } from './pattern-info.component';

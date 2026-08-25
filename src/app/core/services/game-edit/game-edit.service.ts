@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { GamesStore } from 'src/app/core/stores/games.store';
 

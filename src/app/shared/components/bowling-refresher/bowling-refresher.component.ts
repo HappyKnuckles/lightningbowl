@@ -1,11 +1,11 @@
 import { Component, HostBinding, input } from '@angular/core';
 
 interface Pin {
-  x: number;
-  y: number;
   fx: number;
   fy: number;
   r: number;
+  x: number;
+  y: number;
 }
 
 @Component({

@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
+
 import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { Game } from 'src/app/core/models/game.model';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
@@ -8,7 +10,6 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { makeGame } from 'src/testing/fixtures';
-import { vi } from 'vitest';
 
 import { LeaguePage } from './league.page';
 

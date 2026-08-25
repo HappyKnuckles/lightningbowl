@@ -6,9 +6,9 @@ import { Subject } from 'rxjs';
 })
 export class ToastService {
   private toastSubject = new Subject<{
-    message: string;
-    icon: string;
     error?: boolean;
+    icon: string;
+    message: string;
   }>();
   toastState$ = this.toastSubject.asObservable();
 

@@ -1,9 +1,10 @@
 import { Component, computed, input } from '@angular/core';
+
 import { isSplit } from 'src/app/core/utils/game-utils/pin.utils';
 
 interface Pin {
-  id: number;
   active: boolean;
+  id: number;
 }
 
 const PIN_SIZE = 8;

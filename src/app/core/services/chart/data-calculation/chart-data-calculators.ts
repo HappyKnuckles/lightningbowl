@@ -49,7 +49,7 @@ export function calculatePerGameScoreChartData(gameHistory: Game[]) {
 
 export function calculateSessionScoreChartData(gameHistory: Game[]) {
   // Group games by date (session = all games on the same day)
-  const sessionData: Record<string, { scores: number[]; count: number; date: number }> = {};
+  const sessionData: Record<string, { count: number; date: number; scores: number[] }> = {};
 
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -98,7 +98,7 @@ export function calculateSessionScoreChartData(gameHistory: Game[]) {
 }
 
 export function calculateWeeklyScoreChartData(gameHistory: Game[]) {
-  const weeklyData: Record<string, { scores: number[]; count: number }> = {};
+  const weeklyData: Record<string, { count: number; scores: number[] }> = {};
 
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -143,7 +143,7 @@ export function calculateWeeklyScoreChartData(gameHistory: Game[]) {
 }
 
 export function calculateMonthlyScoreChartData(gameHistory: Game[]) {
-  const monthlyData: Record<string, { scores: number[]; count: number }> = {};
+  const monthlyData: Record<string, { count: number; scores: number[] }> = {};
 
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -190,7 +190,7 @@ export function calculateMonthlyScoreChartData(gameHistory: Game[]) {
 }
 
 export function calculateYearlyScoreChartData(gameHistory: Game[]) {
-  const yearlyData: Record<string, { scores: number[]; count: number }> = {};
+  const yearlyData: Record<string, { count: number; scores: number[] }> = {};
 
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -250,7 +250,7 @@ export function calculateAverageScoreChartData(gameHistory: Game[], viewMode: 's
 
 export function calculateSessionAverageScoreData(gameHistory: Game[]) {
   // Group games by date (session = all games on the same day)
-  const sessionData: Record<string, { scores: number[]; date: number }> = {};
+  const sessionData: Record<string, { date: number; scores: number[] }> = {};
 
   gameHistory.forEach((game) => {
     const gameDate = new Date(game.date);
@@ -384,7 +384,7 @@ export function calculateThrowChartData(stats: Stats) {
   return { throwLabels, throwCounts };
 }
 
-export function calculatePinChartDataForRadar(stats: Stats): { filteredSpareRates: number[]; filteredMissedCounts: number[] } {
+export function calculatePinChartDataForRadar(stats: Stats): { filteredMissedCounts: number[]; filteredSpareRates: number[] } {
   const filteredSpareRates: number[] = stats.spareRates.slice(1).map((rate) => {
     const numRate = Number(rate);
     return Math.round(numRate * 100) / 100;

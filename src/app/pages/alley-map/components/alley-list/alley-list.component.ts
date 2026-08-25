@@ -1,7 +1,8 @@
 import { Component, computed, inject, input, output } from '@angular/core';
-import { IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, IonBadge } from '@ionic/angular/standalone';
+import { IonBadge, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { heart, timeOutline } from 'ionicons/icons';
+
 import { Alley } from 'src/app/core/models/alley.model';
 import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
 import { getOpenState } from 'src/app/core/utils/opening-hours.util';

@@ -7,7 +7,7 @@ import { getThrowValue } from '../../utils/game-utils/frame.utils';
   providedIn: 'root',
 })
 export class GameScoreCalculatorService {
-  calculateScoreFromFrames(frames: Frame[]): { totalScore: number; frameScores: number[] } {
+  calculateScoreFromFrames(frames: Frame[]): { frameScores: number[]; totalScore: number } {
     if (!frames || frames.length === 0) {
       return { totalScore: 0, frameScores: [] };
     }

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { firstValueFrom } from 'rxjs';
 
@@ -13,21 +13,21 @@ export interface AnalyticsEvent {
 }
 
 export interface AnalyticsResponse {
-  success: boolean;
   id: string;
+  success: boolean;
 }
 
 export interface PerformanceMetrics {
   appStartDuration?: number;
-  firstContentfulPaint?: number;
-  largestContentfulPaint?: number;
-  firstInputDelay?: number;
+  connectionType?: string;
   cumulativeLayoutShift?: number;
+  deviceType?: string;
+  firstContentfulPaint?: number;
+  firstInputDelay?: number;
+  largestContentfulPaint?: number;
+  memoryUsage?: number;
   timeToInteractive?: number;
   totalBlockingTime?: number;
-  memoryUsage?: number;
-  connectionType?: string;
-  deviceType?: string;
 }
 
 interface QueuedEvent {
@@ -104,7 +104,7 @@ export class AnalyticsService {
    * Track a game being saved
    * @param gameData - Optional game statistics
    */
-  async trackGameSaved(gameData?: { score?: number; pins?: number }): Promise<void> {
+  async trackGameSaved(gameData?: { pins?: number; score?: number }): Promise<void> {
     await this.trackEvent('game_saved', gameData);
   }
 
@@ -132,7 +132,7 @@ export class AnalyticsService {
   /**
    * Track league creation
    */
-  async trackLeagueCreated(leagueData?: { name?: string; gameCount?: number }): Promise<void> {
+  async trackLeagueCreated(leagueData?: { gameCount?: number; name?: string }): Promise<void> {
     await this.trackEvent('league_created', leagueData);
   }
 
@@ -509,7 +509,7 @@ export class AnalyticsService {
 
       try {
         // Send batch
-        const response = await firstValueFrom(this.http.post<{ success: boolean; count: number }>(this.analyticsBatchEndpoint, { events }));
+        const response = await firstValueFrom(this.http.post<{ count: number; success: boolean }>(this.analyticsBatchEndpoint, { events }));
 
         if (response.success) {
           // Remove successfully sent events from queue

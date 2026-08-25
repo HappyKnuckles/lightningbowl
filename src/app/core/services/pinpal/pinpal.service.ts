@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
+
 import { Ball } from 'src/app/core/models/ball.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
@@ -13,18 +14,18 @@ import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
 
 interface GameRow {
+  ballName: string | null;
+  leagueName: string | null;
+  notes: string | null;
+  patternName: string | null;
   pk: number;
   totalScore: number | null;
-  notes: string | null;
-  leagueName: string | null;
-  ballName: string | null;
-  patternName: string | null;
   weekDate: number | null;
 }
 interface RawFrameRow {
   frameNum: number;
-  scores: number | null;
   pins: number | null;
+  scores: number | null;
 }
 @Injectable({
   providedIn: 'root',

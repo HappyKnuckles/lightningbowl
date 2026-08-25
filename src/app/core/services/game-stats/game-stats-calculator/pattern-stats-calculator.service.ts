@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { Frame, Game } from 'src/app/core/models/game.model';
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
@@ -27,7 +28,7 @@ export class PatternStatsCalculatorService {
     const gamesWithPatterns = gameHistory.filter((game) => game.patterns && game.patterns.length > 0);
     const tempStats: Record<
       string,
-      { totalScore: number; gameCount: number; highestGame: number; lowestGame: number; cleanGames: number; totalStrikes: number }
+      { cleanGames: number; gameCount: number; highestGame: number; lowestGame: number; totalScore: number; totalStrikes: number }
     > = {};
 
     gamesWithPatterns.forEach((game) => {

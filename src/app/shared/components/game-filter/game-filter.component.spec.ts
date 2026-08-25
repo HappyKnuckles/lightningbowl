@@ -1,11 +1,12 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModalController } from '@ionic/angular';
+import { vi } from 'vitest';
+
 import { TimeRange } from 'src/app/core/models/filter.model';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { makeGame } from 'src/testing/fixtures';
-import { vi } from 'vitest';
 
 import { GameFilterComponent } from './game-filter.component';
 

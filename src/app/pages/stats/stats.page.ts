@@ -37,6 +37,7 @@ import {
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
+
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
 import {
   OVERALL_STAT_DEFINITIONS,

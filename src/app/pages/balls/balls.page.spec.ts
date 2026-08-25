@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ModalController } from '@ionic/angular/standalone';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
+
 import { Ball } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
@@ -14,7 +16,6 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { vi } from 'vitest';
 
 import { createSpyObj, SpyObj } from '../../../testing/spy-obj';
 import { BallsPage } from './balls.page';

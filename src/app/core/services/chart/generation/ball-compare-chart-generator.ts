@@ -1,6 +1,7 @@
 import { ElementRef } from '@angular/core';
 import type { Chart } from 'chart.js';
 import ChartJs from 'chart.js/auto';
+
 import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 

@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { IonChip } from '@ionic/angular/standalone';
+
 import { FilterConfig, IndexableFilter } from 'src/app/core/models/filter.model';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 

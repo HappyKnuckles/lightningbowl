@@ -22,6 +22,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
+
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
@@ -72,7 +73,7 @@ export class GameFilterComponent implements OnInit {
       .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index);
   });
   defaultFilters = this.gameFilterService.defaultFilters;
-  highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
+  highlightedDates: { backgroundColor: string; date: string; textColor: string }[] = [];
   leagues: string[] = [];
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;

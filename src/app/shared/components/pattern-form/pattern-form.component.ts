@@ -16,6 +16,7 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronBack, close, trashOutline } from 'ionicons/icons';
 import { combineLatestWith, startWith } from 'rxjs';
+
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ForwardsData, Pattern, ReverseData } from 'src/app/core/models/pattern.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';

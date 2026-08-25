@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { vi } from 'vitest';
+
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 
 import { SettingsPage } from './settings.page';
 

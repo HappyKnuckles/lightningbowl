@@ -1,10 +1,10 @@
-import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
+import { PIN_TO_COLUMN, PINS, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
 
 export interface PinThrowResult {
-  updatedFrames: Frame[];
   nextFrameIndex: number;
   nextThrowIndex: number;
+  updatedFrames: Frame[];
 }
 
 // Cell accessibility & navigation

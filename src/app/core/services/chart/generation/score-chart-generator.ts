@@ -1,8 +1,9 @@
 import { ElementRef } from '@angular/core';
-import Chart, { Plugin, ChartEvent, LegendItem, ChartOptions, LegendElement, ChartDataset } from 'chart.js/auto';
+import Chart, { ChartDataset, ChartEvent, ChartOptions, LegendElement, LegendItem, Plugin } from 'chart.js/auto';
+
 import { Game } from 'src/app/core/models/game.model';
 
-import { calculateScoreChartData, calculateAverageScoreChartData } from '../data-calculation/chart-data-calculators';
+import { calculateAverageScoreChartData, calculateScoreChartData } from '../data-calculation/chart-data-calculators';
 
 /**
  * Generate score chart showing average over time and difference from average
@@ -427,7 +428,7 @@ function attachToggleButtonClickHandler(chartInstance: Chart, onToggleView: () =
     const rect = chartInstance.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    const buttonBounds = (chartInstance as { toggleButtonBounds?: { x: number; y: number; width: number; height: number } }).toggleButtonBounds;
+    const buttonBounds = (chartInstance as { toggleButtonBounds?: { height: number; width: number; x: number; y: number } }).toggleButtonBounds;
     if (
       buttonBounds &&
       x >= buttonBounds.x &&

@@ -1,6 +1,6 @@
 const ballDistributionZonePlugin = {
   id: 'ballDistributionZones',
-  beforeDatasetsDraw(chart: { ctx: any; chartArea: any; scales: any; }) {
+  beforeDatasetsDraw(chart: { chartArea: any; ctx: any; scales: any; }) {
     const { ctx, chartArea, scales } = chart;
     if (!chartArea || !scales['x'] || !scales['y']) return;
     ctx.save();

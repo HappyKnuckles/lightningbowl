@@ -4,25 +4,25 @@ import { AlertController } from '@ionic/angular';
 import { Game } from '../../models/game.model';
 
 export interface GameDetails {
-  league?: string;
-  patterns?: string[];
   balls?: string[];
   date: string;
+  league?: string;
+  patterns?: string[];
 }
 
 export interface SeriesDetails {
-  seriesType: string;
-  scores: number[];
-  league?: string;
   date: string;
+  league?: string;
+  scores: number[];
+  seriesType: string;
 }
 
 export interface HighScoreRecord {
-  type: 'single_game' | 'series';
-  newRecord: number;
-  previousRecord: number;
   details: GameDetails | SeriesDetails;
   gameOrSeries: Game | Game[];
+  newRecord: number;
+  previousRecord: number;
+  type: 'single_game' | 'series';
 }
 
 @Injectable({

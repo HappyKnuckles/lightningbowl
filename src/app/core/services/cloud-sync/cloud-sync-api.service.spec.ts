@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { MockInstance, vi } from 'vitest';
+
 import { CloudProvider, CloudSyncSettings, SyncFrequency } from 'src/app/core/models/cloud-sync.model';
 import { environment } from 'src/environments/environment';
-import { MockInstance, vi } from 'vitest';
 
 import { CloudAuthRequiredError, CloudSyncApiService } from './cloud-sync-api.service';
 

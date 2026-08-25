@@ -1,6 +1,6 @@
 import { Directive, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, Renderer2 } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { timer, Subscription } from 'rxjs';
+import { Subscription, timer } from 'rxjs';
 
 import { HapticService } from '../../services/haptic/haptic.service';
 

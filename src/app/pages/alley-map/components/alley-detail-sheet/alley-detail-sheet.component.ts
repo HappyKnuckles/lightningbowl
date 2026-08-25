@@ -27,6 +27,7 @@ import {
   shareSocialOutline,
   timeOutline,
 } from 'ionicons/icons';
+
 import { Alley } from 'src/app/core/models/alley.model';
 import { AlleyFavoritesService } from 'src/app/core/services/alley/alley-favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';

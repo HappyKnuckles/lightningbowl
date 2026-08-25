@@ -21,6 +21,7 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { createOutline, documentTextOutline, filterOutline, shareOutline, swapVertical, trashOutline, trophyOutline } from 'ionicons/icons';
+
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';

@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
+
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
+import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 
 @Injectable({ providedIn: 'root' })

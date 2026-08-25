@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+import { vi } from 'vitest';
+
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
-import { vi } from 'vitest';
 
 import { PwaInstallService } from './pwa-install.service';
 

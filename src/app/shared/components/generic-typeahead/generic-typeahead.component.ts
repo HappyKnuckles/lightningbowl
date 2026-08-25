@@ -1,6 +1,6 @@
+import { NgClass } from '@angular/common';
 import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
-import Fuse from 'fuse.js';
 import {
   IonToolbar,
   IonTitle,
@@ -19,10 +19,10 @@ import {
   IonImg,
   IonText,
 } from '@ionic/angular/standalone';
-import { NgClass } from '@angular/common';
+import Fuse from 'fuse.js';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
 
 @Component({
   selector: 'app-generic-typeahead',

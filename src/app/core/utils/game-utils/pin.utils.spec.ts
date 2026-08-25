@@ -1,5 +1,6 @@
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
+
 import {
   applyPinModeUndo,
   calculateNextPosition,

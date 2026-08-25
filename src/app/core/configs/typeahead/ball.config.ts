@@ -1,6 +1,7 @@
 import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
-import { TypeaheadConfig } from '../../models/typeahead-config.model';
+
 import { BOWWWL_URL } from '../../constants/app.constants';
+import { TypeaheadConfig } from '../../models/typeahead-config.model';
 
 export const BALL_BRAND_TYPEAHEAD_CONFIG: TypeaheadConfig<Brand> = {
   title: 'Select Brands',

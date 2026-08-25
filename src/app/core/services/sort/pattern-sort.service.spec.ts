@@ -4,6 +4,7 @@ import { PatternSortField, PatternSortOption, SortDirection } from 'src/app/core
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { makePattern } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { PatternSortService } from './pattern-sort.service';
 
 function option(field: PatternSortField, direction = SortDirection.ASC): PatternSortOption {

@@ -60,6 +60,14 @@ module.exports = tseslint.config(
           customGroups: angularClassGroups,
         },
       ],
+      "perfectionist/sort-imports": [
+        "warn",
+        {
+          type: "natural",
+          newlinesBetween: 1,
+          groups: ["type-import", ["builtin", "external"], "internal", ["parent", "sibling", "index"], "side-effect"],
+        },
+      ],
       "@angular-eslint/directive-selector": [
         "error",
         {

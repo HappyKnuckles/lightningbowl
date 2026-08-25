@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SettingsPage } from './settings.page';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { vi } from 'vitest';
+
+import { SettingsPage } from './settings.page';
 
 const mockSettingsStore = {
   pinInputMode: vi.fn().mockReturnValue(true),

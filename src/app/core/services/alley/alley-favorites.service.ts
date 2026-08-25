@@ -1,4 +1,5 @@
 import { Injectable, Signal, signal } from '@angular/core';
+
 import { Alley } from '../../models/alley.model';
 
 const FAVORITES_KEY = 'favoriteAlleys';

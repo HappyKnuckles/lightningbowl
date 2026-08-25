@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { fromEvent, merge } from 'rxjs';
 import { map, pairwise, startWith } from 'rxjs/operators';
+
 import { ToastService } from '../toast/toast.service';
 
 @Injectable({

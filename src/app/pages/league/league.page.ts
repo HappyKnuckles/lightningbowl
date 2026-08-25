@@ -57,14 +57,15 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { sortGameHistoryByDate, sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
+import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
+import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
-import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
-import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { environment } from 'src/environments/environment';
-import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
+
+import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-league',

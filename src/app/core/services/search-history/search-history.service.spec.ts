@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 import { StorageRepository } from '../storage/storage.repository';
 import { SearchHistoryService } from './search-history.service';
-import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 /** Lets pending storage promises (load/persist) settle. */
 const flushAsync = (): Promise<void> => new Promise((resolve) => setTimeout(resolve));

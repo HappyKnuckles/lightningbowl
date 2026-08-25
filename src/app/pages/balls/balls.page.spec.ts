@@ -14,9 +14,10 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { BallsPage } from './balls.page';
 import { vi } from 'vitest';
+
 import { createSpyObj, SpyObj } from '../../../testing/spy-obj';
+import { BallsPage } from './balls.page';
 
 describe('BallsPage', () => {
   let component: BallsPage;

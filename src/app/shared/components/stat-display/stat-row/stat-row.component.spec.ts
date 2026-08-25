@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { StatRowComponent } from './stat-row.component';
 
 describe('StatRowComponent', () => {

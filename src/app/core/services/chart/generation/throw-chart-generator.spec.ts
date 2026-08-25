@@ -2,6 +2,7 @@ import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
 import { makeStats } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
 import { generateThrowChart } from './throw-chart-generator';
 
 /** `config` is a union that only carries `type` on some arms; at runtime it is always set. */

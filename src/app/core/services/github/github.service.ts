@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+
 import { GitHubIssue } from '../../models/github-issue.model';
 
 @Injectable({

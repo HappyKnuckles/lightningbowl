@@ -1,4 +1,5 @@
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
+
 import { sortGenericItems } from './sort.utils';
 
 describe('sortGenericItems', () => {

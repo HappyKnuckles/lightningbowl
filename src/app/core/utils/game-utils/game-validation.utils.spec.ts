@@ -1,5 +1,6 @@
 import { Frame } from 'src/app/core/models/game.model';
 import { makeGame } from 'src/testing/fixtures';
+
 import { canRecordSpare, canRecordStrike, canUndoLastThrow, isGameValid, isValidFrameScore } from './game-validation.utils';
 
 /** Frame built from raw throw values, throwIndex assigned 1-based like the app does. */

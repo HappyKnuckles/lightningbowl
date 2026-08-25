@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Pattern } from '../../models/pattern.model';
 import { firstValueFrom, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
+import { Pattern } from '../../models/pattern.model';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
 

@@ -1,7 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { SqlJsStatic } from 'sql.js';
-import { vi } from 'vitest';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Throw } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
@@ -13,6 +12,8 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { makeBall, makePattern } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+import { vi } from 'vitest';
+
 import { PinpalService } from './pinpal.service';
 
 /** Pin mask Pinpal writes for a frame it has no pin data for. */

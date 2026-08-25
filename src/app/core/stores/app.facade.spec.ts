@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { makeGame } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+import { vi } from 'vitest';
+
 import { AppFacade } from './app.facade';
 import { BallsStore } from './balls.store';
 import { GamesStore } from './games.store';

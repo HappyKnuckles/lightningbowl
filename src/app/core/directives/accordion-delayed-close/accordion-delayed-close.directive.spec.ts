@@ -1,5 +1,6 @@
 import { ElementRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
 import { AccordionDelayedCloseDirective } from './accordion-delayed-close.directive';
 
 describe('AccordionDelayedCloseDirective', () => {

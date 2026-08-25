@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+
 import {
   BALL_BRAND_TYPEAHEAD_CONFIG,
   BALL_CORE_TYPEAHEAD_CONFIG,

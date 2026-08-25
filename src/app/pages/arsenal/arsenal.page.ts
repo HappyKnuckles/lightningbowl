@@ -39,16 +39,16 @@ import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
-import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 
 @Component({
   selector: 'app-arsenal',

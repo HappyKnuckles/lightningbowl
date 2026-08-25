@@ -37,20 +37,6 @@ import {
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
-import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
-import { LoadingService } from 'src/app/core/services/loader/loading.service';
-import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { UtilsService } from 'src/app/core/utils/utils.service';
-import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
-import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
-
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';
 import {
   OVERALL_STAT_DEFINITIONS,
@@ -63,13 +49,27 @@ import {
   STRIKE_STAT_DEFINITIONS,
   THROW_STAT_DEFINITIONS,
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Stats } from 'src/app/core/models/stats.model';
+import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
+import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { byAvg, byGameCount, sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
 import { buildHighlights, pickTopFromList } from 'src/app/core/utils/stat-utils/stat.utils';
+import { UtilsService } from 'src/app/core/utils/utils.service';
+import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
+import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
+import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
 import { environment } from 'src/environments/environment';
+
 import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({

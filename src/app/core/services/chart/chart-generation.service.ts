@@ -1,14 +1,14 @@
 import { ElementRef, Injectable } from '@angular/core';
+import { Chart } from 'chart.js';
 import { Game } from 'src/app/core/models/game.model';
 import { Stats } from 'src/app/core/models/stats.model';
-import { Ball } from '../../models/ball.model';
 
-import { generateScoreChart, generateScoreDistributionChart, generateAverageScoreChart } from './generation/score-chart-generator';
-import { generatePinChart, generateSpareDistributionChart } from './generation/pin-spare-chart-generator';
-import { generateThrowChart } from './generation/throw-chart-generator';
-import { generateBallDistributionChart } from './generation/ball-distribution-chart-generator';
-import { Chart } from 'chart.js';
+import { Ball } from '../../models/ball.model';
 import { generateBallComparisonChart } from './generation/ball-compare-chart-generator';
+import { generateBallDistributionChart } from './generation/ball-distribution-chart-generator';
+import { generatePinChart, generateSpareDistributionChart } from './generation/pin-spare-chart-generator';
+import { generateScoreChart, generateScoreDistributionChart, generateAverageScoreChart } from './generation/score-chart-generator';
+import { generateThrowChart } from './generation/throw-chart-generator';
 
 @Injectable({
   providedIn: 'root',

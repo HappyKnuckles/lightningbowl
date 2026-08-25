@@ -1,10 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonButtons } from '@ionic/angular/standalone';
-
-import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
+import { IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonButtons } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { refresh } from 'ionicons/icons';
+import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 
 interface Particle {
   x: number;

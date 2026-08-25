@@ -1,13 +1,12 @@
 import { computed, Injectable, Signal } from '@angular/core';
 import { HighlightItemStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
-
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { GameFilterService } from '../game-filter/game-filter.service';
 
 import { Game } from '../../models/game.model';
 import { isAllFramesComplete, toCompletedFramesGame } from '../../utils/game-utils/frame.utils';
 import { byAvg, byGameCount } from '../../utils/sort-utils/sort.utils';
 import { pickTopFromList } from '../../utils/stat-utils/stat.utils';
+import { GameFilterService } from '../game-filter/game-filter.service';
 import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-calculator.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { PatternStatsCalculatorService } from './game-stats-calculator/pattern-stats-calculator.service';

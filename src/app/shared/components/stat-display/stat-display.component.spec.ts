@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { StatDisplayComponent } from './stat-display.component';
 
 describe('StatDisplayComponent', () => {

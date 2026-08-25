@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { LeaveStats } from 'src/app/core/models/stats.model';
 import { Frame, Game } from 'src/app/core/models/game.model';
+import { LeaveStats } from 'src/app/core/models/stats.model';
 
 @Injectable({
   providedIn: 'root',

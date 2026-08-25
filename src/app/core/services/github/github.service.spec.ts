@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
+
 import { GitHubService } from './github.service';
 
 const ISSUES_URL = 'https://api.github.com/repos/HappyKnuckles/Lightning-Bowl/issues';

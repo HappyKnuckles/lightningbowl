@@ -3,8 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { IonSearchbar } from '@ionic/angular/standalone';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
-import { SearchHistoryDirective } from './search-history.directive';
+
 import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
+import { SearchHistoryDirective } from './search-history.directive';
 
 @Component({
   template: `<ion-searchbar appSearchHistory historyKey="balls" (searchCommitted)="committed.push($event)"></ion-searchbar>`,

@@ -4,6 +4,7 @@ import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/model
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { makeBall } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { BallSortService } from './ball-sort.service';
 
 function option(field: BallSortField, direction = SortDirection.ASC): BallSortOption {

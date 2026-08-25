@@ -6,6 +6,7 @@ import { GameScoreCalculatorService } from 'src/app/core/services/game-score-cal
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
+
 import { Frame, Game, Throw } from '../../models/game.model';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';

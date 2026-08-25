@@ -31,10 +31,10 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 import { GameFilterComponent } from 'src/app/shared/components/game-filter/game-filter.component';
 import { GameListComponent } from 'src/app/shared/components/game-list/game-list.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
-import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-history',

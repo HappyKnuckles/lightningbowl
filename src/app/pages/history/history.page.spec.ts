@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HistoryPage } from './history.page';
-import { GamesStore } from 'src/app/core/stores/games.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import { AngularDelegate } from '@ionic/angular';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import { GamesStore } from 'src/app/core/stores/games.store';
 import { vi } from 'vitest';
+
+import { HistoryPage } from './history.page';
 
 const mockGamesStore = {
   games: vi.fn().mockReturnValue([]),

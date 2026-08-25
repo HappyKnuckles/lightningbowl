@@ -1,6 +1,7 @@
 import { ElementRef } from '@angular/core';
 import Chart, { Plugin, ChartEvent, LegendItem, ChartOptions, LegendElement, ChartDataset } from 'chart.js/auto';
 import { Game } from 'src/app/core/models/game.model';
+
 import { calculateScoreChartData, calculateAverageScoreChartData } from '../data-calculation/chart-data-calculators';
 
 /**

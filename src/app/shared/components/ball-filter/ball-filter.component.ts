@@ -21,15 +21,16 @@ import {
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
-import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 
 @Component({
   selector: 'app-ball-filter',

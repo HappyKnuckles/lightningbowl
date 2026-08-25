@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
+import { StorageKeys, STORAGE_PREFIX } from 'src/app/core/services/storage/storage-keys';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 
 @Injectable({ providedIn: 'root' })
 export class LeaguesStore {

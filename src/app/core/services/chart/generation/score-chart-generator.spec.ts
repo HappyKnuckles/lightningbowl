@@ -2,6 +2,7 @@ import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
 import { makeGame } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
 import { generateAverageScoreChart, generateScoreChart, generateScoreDistributionChart } from './score-chart-generator';
 
 const at = (year: number, month: number, day: number) => new Date(year, month - 1, day).getTime();

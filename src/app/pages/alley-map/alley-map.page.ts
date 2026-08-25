@@ -30,6 +30,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { getOpenState } from 'src/app/core/utils/opening-hours.util';
 import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
+
 import { AlleyDetailSheetComponent } from './components/alley-detail-sheet/alley-detail-sheet.component';
 import { AlleyListComponent } from './components/alley-list/alley-list.component';
 

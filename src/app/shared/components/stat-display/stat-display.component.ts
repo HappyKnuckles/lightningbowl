@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { GameStats } from 'src/app/core/models/stats.model';
+
 import { StatRowComponent } from './stat-row/stat-row.component';
 
 interface StatRowVm {

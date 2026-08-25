@@ -1,4 +1,5 @@
 import { makeGame, makeStats } from 'src/testing/fixtures';
+
 import {
   calculateAverageScoreChartData,
   calculateMonthlyAverageScoreData,

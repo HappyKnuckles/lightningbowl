@@ -8,6 +8,7 @@ import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalo
 import { IonicStorageModule } from '@ionic/storage-angular';
 import { inject as injectVercelAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
+
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { CloudSyncService } from './app/core/services/cloud-sync/cloud-sync.service';

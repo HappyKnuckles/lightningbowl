@@ -2,8 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { makeGame } from 'src/testing/fixtures';
+import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { GamesStore } from './games.store';
 
 describe('GamesStore', () => {

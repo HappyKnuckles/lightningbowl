@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SortOption } from 'src/app/core/models/sort.model';
 
 import { SortHeaderComponent } from './sort-header.component';
-import { SortOption } from 'src/app/core/models/sort.model';
 
 const SORT_OPTION: SortOption = { field: 'date', direction: 'desc', label: 'Date' } as SortOption;
 

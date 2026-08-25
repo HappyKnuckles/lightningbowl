@@ -7,6 +7,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { makeBall } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { BallsStore } from './balls.store';
 
 describe('BallsStore', () => {

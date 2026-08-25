@@ -1,4 +1,7 @@
+import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   add,
@@ -14,10 +17,7 @@ import {
   trophyOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular/standalone';
-import { AsyncPipe } from '@angular/common';
 interface MoreTab {
   path: string;
   label: string;

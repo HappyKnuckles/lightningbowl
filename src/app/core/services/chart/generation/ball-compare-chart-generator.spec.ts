@@ -2,6 +2,7 @@ import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
 import { makeBall } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
 import { generateBallComparisonChart } from './ball-compare-chart-generator';
 
 /** `config` is a union that only carries `type` on some arms; at runtime it is always set. */

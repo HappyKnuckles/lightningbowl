@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
+
 import { CloudProvider, CloudSyncSettings, CloudSyncStatus, SyncFrequency } from '../../models/cloud-sync.model';
 import { AppFacade } from '../../stores/app.facade';
 import { ExcelService } from '../excel/excel.service';

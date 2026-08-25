@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Alley } from 'src/app/core/models/alley.model';
+
 import { AlleyFavoritesService } from './alley-favorites.service';
 
 function alley(id: string, name = `Alley ${id}`): Alley {

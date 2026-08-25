@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { Frame } from '../../models/game.model';
 import { getThrowValue } from '../../utils/game-utils/frame.utils';
 

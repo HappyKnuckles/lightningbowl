@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { LeaguesStore } from './leagues.store';
 
 describe('LeaguesStore', () => {

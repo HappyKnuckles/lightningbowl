@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AppFacade } from 'src/app/core/stores/app.facade';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { vi } from 'vitest';
 
 import { LeagueSelectorComponent } from './league-selector.component';
-import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { AppFacade } from 'src/app/core/stores/app.facade';
-import { vi } from 'vitest';
 
 const mockLeaguesStore = {
   leagues: vi.fn().mockReturnValue([]),

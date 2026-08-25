@@ -3,6 +3,7 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { SwUpdate } from '@angular/service-worker';
 import { EMPTY } from 'rxjs';
+
 import { AppComponent } from './app.component';
 
 const mockSwUpdate = {

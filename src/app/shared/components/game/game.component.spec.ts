@@ -2,9 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { GameComponent } from './game.component';
 import { makeGame } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
+import { GameComponent } from './game.component';
 
 const mockSettingsStore = {
   pinInputMode: vi.fn().mockReturnValue(true),

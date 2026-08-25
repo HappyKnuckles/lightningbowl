@@ -11,8 +11,9 @@ import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { PatternPage } from './pattern.page';
+
 import { createSpyObj } from '../../../testing/spy-obj';
+import { PatternPage } from './pattern.page';
 
 describe('PatternPage', () => {
   let component: PatternPage;

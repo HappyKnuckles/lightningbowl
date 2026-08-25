@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { CacheService } from './cache.service';
 import { Storage } from '@ionic/storage-angular';
-import { DEFAULT_CACHE_CONFIG } from '../../models/cache.model';
+
 import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
+import { DEFAULT_CACHE_CONFIG } from '../../models/cache.model';
+import { CacheService } from './cache.service';
 
 describe('CacheService', () => {
   let service: CacheService;

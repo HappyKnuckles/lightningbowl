@@ -1,7 +1,8 @@
 import { effect, inject, Injectable, signal, Signal } from '@angular/core';
-import { PrevStats, Stats } from 'src/app/core/models/stats.model';
 import { Game } from 'src/app/core/models/game.model';
+import { PrevStats, Stats } from 'src/app/core/models/stats.model';
 import { GamesStore } from 'src/app/core/stores/games.store';
+
 import { UtilsService } from '../../utils/utils.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { SeriesStatsCalculatorService } from './game-stats-calculator/series-stats-calculator.service';

@@ -1,5 +1,6 @@
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { environment } from 'src/environments/environment';
+
 import { buildHighlights, pickTop, pickTopFromList } from './stat.utils';
 
 function highlight(overrides: Partial<HighlightItemStats> = {}): HighlightItemStats {

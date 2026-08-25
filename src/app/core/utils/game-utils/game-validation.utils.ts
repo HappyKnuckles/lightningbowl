@@ -1,4 +1,5 @@
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
+
 import { getThrowValue } from './frame.utils';
 
 export function canRecordStrike(frameIndex: number, throwIndex: number, frames: Frame[]): boolean {

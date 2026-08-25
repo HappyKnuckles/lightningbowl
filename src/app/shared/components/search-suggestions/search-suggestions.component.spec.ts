@@ -2,8 +2,9 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
-import { SearchSuggestionsComponent } from './search-suggestions.component';
+
 import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
+import { SearchSuggestionsComponent } from './search-suggestions.component';
 
 describe('SearchSuggestionsComponent', () => {
   let component: SearchSuggestionsComponent;

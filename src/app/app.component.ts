@@ -1,22 +1,23 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular/standalone';
-import { Subscription } from 'rxjs';
-import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, NavigationEnd } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
+import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular/standalone';
+import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+
+import { AnalyticsService } from './core/services/analytics/analytics.service';
 import { LoadingService } from './core/services/loader/loading.service';
+import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
+import { ThemeChangerService } from './core/services/theme-changer/theme-changer.service';
 import { ToastService } from './core/services/toast/toast.service';
 import { UserService } from './core/services/user/user.service';
-import { ToastComponent } from './shared/components/toast/toast.component';
-import { ThemeChangerService } from './core/services/theme-changer/theme-changer.service';
-import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
-import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
-import { AnalyticsService } from './core/services/analytics/analytics.service';
 import { BowlingRefresherComponent } from './shared/components/bowling-refresher/bowling-refresher.component';
+import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { SideMenuComponent } from './shared/components/side-menu/side-menu.component';
+import { ToastComponent } from './shared/components/toast/toast.component';
 
 @Component({
   selector: 'app-root',

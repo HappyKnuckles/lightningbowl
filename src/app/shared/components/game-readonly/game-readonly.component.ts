@@ -1,10 +1,10 @@
 import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
-
 import { IonCol, IonGrid, IonRow } from '@ionic/angular/standalone';
-import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { Game } from 'src/app/core/models/game.model';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+
+import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 
 interface ReadonlyThrowVm {
   display: string;

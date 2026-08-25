@@ -1,4 +1,5 @@
 import { Frame } from 'src/app/core/models/game.model';
+
 import { getThrowValue } from './frame.utils';
 
 /** Thrown when a scanned scoresheet holds no score lines for the given player. */

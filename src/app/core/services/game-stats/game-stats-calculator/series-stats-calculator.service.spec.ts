@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Frame, Game } from 'src/app/core/models/game.model';
 import { Stats } from 'src/app/core/models/stats.model';
 import { makeGame } from 'src/testing/fixtures';
+
 import { SeriesStatsCalculatorService } from './series-stats-calculator.service';
 
 /** Frames built from raw throw values, 1-based frameIndex like the rest of the app. */

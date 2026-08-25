@@ -45,15 +45,16 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
+import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
+
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
-import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 
 interface ThrowCellView {
   value: number | undefined;

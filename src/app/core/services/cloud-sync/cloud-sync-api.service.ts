@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { environment } from 'src/environments/environment';
+
 import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
 
 /**

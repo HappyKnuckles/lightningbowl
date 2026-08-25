@@ -4,6 +4,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { makePattern } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+
 import { PatternsStore } from './patterns.store';
 
 /** Chart payload shape returned by `PatternService.getAllPatternCharts`. */

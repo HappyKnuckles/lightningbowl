@@ -52,10 +52,10 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
+import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 import { GenericFilterActiveComponent } from 'src/app/shared/components/generic-filter-active/generic-filter-active.component';
 import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
-import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-refresher/bowling-refresher.component';
 
 @Component({
   selector: 'app-balls',

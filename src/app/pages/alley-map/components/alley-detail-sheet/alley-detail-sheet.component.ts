@@ -1,4 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { ImpactStyle } from '@capacitor/haptics';
+import { Share } from '@capacitor/share';
 import {
   IonButton,
   IonButtons,
@@ -12,9 +15,6 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular/standalone';
-import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
-import { ImpactStyle } from '@capacitor/haptics';
 import { addIcons } from 'ionicons';
 import {
   callOutline,

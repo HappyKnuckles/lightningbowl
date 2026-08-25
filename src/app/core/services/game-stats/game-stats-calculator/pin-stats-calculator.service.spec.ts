@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { LeaveStats } from 'src/app/core/models/stats.model';
 import { makeGame } from 'src/testing/fixtures';
+
 import { PinStatsCalculatorService } from './pin-stats-calculator.service';
 
 /** One recorded throw with the pin data pin mode writes. */

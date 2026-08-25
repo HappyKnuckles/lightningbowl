@@ -3,6 +3,7 @@ import Chart from 'chart.js/auto';
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { makeBall } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
 import { generateBallDistributionChart } from './ball-distribution-chart-generator';
 
 /** Each point is nudged by ±0.002 so identical balls stay distinguishable; 0.5 cancels it out. */

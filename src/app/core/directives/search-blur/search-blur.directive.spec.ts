@@ -1,4 +1,5 @@
 import { ElementRef } from '@angular/core';
+
 import { SearchBlurDirective } from './search-blur.directive';
 
 describe('SearchBlurDirective', () => {

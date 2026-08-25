@@ -5,6 +5,7 @@ import { Share } from '@capacitor/share';
 import { toPng } from 'html-to-image';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
+
 import { LoadingService } from '../loader/loading.service';
 import { ToastService } from '../toast/toast.service';
 

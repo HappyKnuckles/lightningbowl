@@ -37,14 +37,18 @@ import {
   trashOutline,
   trophyOutline,
 } from 'ionicons/icons';
-
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
+import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
+import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
@@ -52,18 +56,13 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { isGameValid } from 'src/app/core/utils/game-utils/game-validation.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 
-import { AccordionDelayedCloseDirective } from 'src/app/core/directives/accordion-delayed-close/accordion-delayed-close.directive';
-import { LongPressDirective } from 'src/app/core/directives/long-press/long-press.directive';
-import { Ball } from 'src/app/core/models/ball.model';
-import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
-import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GameReadonlyComponent } from '../game-readonly/game-readonly.component';
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
-import { GameCardTemplateDirective } from './game-card-template.directive';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
+import { GameCardTemplateDirective } from './game-card-template.directive';
 
 interface MonthRow {
   kind: 'month';

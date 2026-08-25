@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { Filesystem } from '@capacitor/filesystem';
+import { InputCustomEvent } from '@ionic/angular';
 import {
   AlertController,
   IonContent,
@@ -27,13 +28,13 @@ import { ExcelService } from 'src/app/core/services/excel/excel.service';
 import { ImportDispatcherService } from 'src/app/core/services/import/import-dispatcher.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { UserService } from 'src/app/core/services/user/user.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+
 import { GameOcrImportComponent } from '../game-ocr-import/game-ocr-import.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
-import { UserService } from 'src/app/core/services/user/user.service';
-import { InputCustomEvent } from '@ionic/angular';
 
 /** Pages that own their toolbar start slot and therefore get no menu. */
 const MENULESS_ROUTES = ['/tabs/arsenal', '/tabs/balls'];

@@ -63,8 +63,9 @@ import { PatternInfoComponent } from 'src/app/shared/components/pattern-info/pat
 import { SearchSuggestionsComponent } from 'src/app/shared/components/search-suggestions/search-suggestions.component';
 import { SortHeaderComponent } from 'src/app/shared/components/sort-header/sort-header.component';
 import { environment } from 'src/environments/environment';
-import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
+
 import { BowlingRefresherComponent } from '../../shared/components/bowling-refresher/bowling-refresher.component';
+import { PatternFormComponent } from '../../shared/components/pattern-form/pattern-form.component';
 
 @Component({
   selector: 'app-pattern',

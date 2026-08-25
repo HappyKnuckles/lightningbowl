@@ -1,7 +1,8 @@
 import { ElementRef, Renderer2 } from '@angular/core';
+
+import { createSpyObj } from '../../../../testing/spy-obj';
 import { HapticService } from '../../services/haptic/haptic.service';
 import { LongPressDirective } from './long-press.directive';
-import { createSpyObj } from '../../../../testing/spy-obj';
 
 describe('LongPressDirective', () => {
   it('should create an instance', () => {

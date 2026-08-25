@@ -1,6 +1,6 @@
+import { NgStyle } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { IonButton } from '@ionic/angular/standalone';
-import { NgStyle } from '@angular/common';
 
 @Component({
   selector: 'app-game-score-toolbar',

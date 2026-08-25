@@ -1,15 +1,16 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Game } from 'src/app/core/models/game.model';
 import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
+import { Game } from 'src/app/core/models/game.model';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { LeaguePage } from './league.page';
 import { makeGame } from 'src/testing/fixtures';
 import { vi } from 'vitest';
+
+import { LeaguePage } from './league.page';
 
 // `games` must be a real signal: the page derives per-league stats with `computed`,
 // which only recomputes when a signal it read actually changes.

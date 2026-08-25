@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
 import { SeriesStats, Stats } from 'src/app/core/models/stats.model';
+
 import { isMakeableSplit, isSplit } from '../../../utils/game-utils/pin.utils';
 
 const MAX_FRAMES = 10;

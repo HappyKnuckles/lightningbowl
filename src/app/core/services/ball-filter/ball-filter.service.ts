@@ -8,7 +8,6 @@ import { UtilsService } from '../../utils/utils.service';
   providedIn: 'root',
 })
 export class BallFilterService {
-  readonly filters = signal<BallFilter>(this.loadInitialFilters());
   defaultFilters: BallFilter = {
     brands: [],
     coverstocks: [],
@@ -25,6 +24,7 @@ export class BallFilterService {
     maxDiff: 0.1,
     inArsenal: false,
   };
+  readonly filters = signal<BallFilter>(this.loadInitialFilters());
 
   activeFilterCount: Signal<number> = computed(() => {
     return Object.keys(this.filters()).reduce((count, key) => {

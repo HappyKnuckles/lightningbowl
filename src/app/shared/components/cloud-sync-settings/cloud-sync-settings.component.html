@@ -18,39 +18,41 @@
     </ion-badge>
     <ion-label>
       <h1>{{ cloudSyncService.syncStatus().isAuthenticated ? "Connected" : "Not Connected" }}</h1>
-      <p *ngIf="cloudSyncService.syncStatus().isAuthenticated">Linked to {{ providerDisplayName() }}</p>
+      @if (cloudSyncService.syncStatus().isAuthenticated) {
+        <p>Linked to {{ providerDisplayName() }}</p>
+      }
     </ion-label>
-    <ion-button *ngIf="cloudSyncService.syncStatus().isAuthenticated" slot="end" fill="clear" color="danger" (click)="disconnect()"
-      >Disconnect</ion-button
-    >
+    @if (cloudSyncService.syncStatus().isAuthenticated) {
+      <ion-button slot="end" fill="clear" color="danger" (click)="disconnect()">Disconnect</ion-button>
+    }
   </ion-item>
 
-  <div *ngIf="!cloudSyncService.syncStatus().isAuthenticated" class="ion-padding-top" style="display: flex; flex-direction: column">
-    <ion-item lines="none">
-      <ion-select
-        [ngModel]="selectedProvider()"
-        interface="popover"
-        (ionChange)="updateProvider($event)"
-        label="Provider"
-        label-placement="stacked"
-        placeholder="Select Provider">
-        <ion-select-option [value]="CloudProvider.GOOGLE_DRIVE">Google Drive</ion-select-option>
-        <ion-select-option [value]="CloudProvider.ONEDRIVE">OneDrive</ion-select-option>
-        <ion-select-option [value]="CloudProvider.DROPBOX">Dropbox</ion-select-option>
-      </ion-select>
-    </ion-item>
+  @if (!cloudSyncService.syncStatus().isAuthenticated) {
+    <div class="ion-padding-top" style="display: flex; flex-direction: column">
+      <ion-item lines="none">
+        <ion-select
+          [ngModel]="selectedProvider()"
+          interface="popover"
+          (ionChange)="updateProvider($event)"
+          label="Provider"
+          label-placement="stacked"
+          placeholder="Select Provider">
+          <ion-select-option [value]="CloudProvider.GOOGLE_DRIVE">Google Drive</ion-select-option>
+          <ion-select-option [value]="CloudProvider.ONEDRIVE">OneDrive</ion-select-option>
+          <ion-select-option [value]="CloudProvider.DROPBOX">Dropbox</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-button class="connect-btn" (click)="connectProvider()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
+        <ion-icon slot="start" name="link-outline"></ion-icon>
+        Connect {{ providerDisplayName() }}
+      </ion-button>
+      <p class="helper-text ion-text-center ion-margin-top">Connect to automatically backup your game history securely to the cloud.</p>
+    </div>
+  }
 
-    <ion-button class="connect-btn" (click)="connectProvider()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
-      <ion-icon slot="start" name="link-outline"></ion-icon>
-      Connect {{ providerDisplayName() }}
-    </ion-button>
-    <p class="helper-text ion-text-center ion-margin-top">Connect to automatically backup your game history securely to the cloud.</p>
-  </div>
-
-  <ng-container *ngIf="cloudSyncService.syncStatus().isAuthenticated">
+  @if (cloudSyncService.syncStatus().isAuthenticated) {
     <ion-list>
       <ion-list-header style="margin-bottom: 4px"> Configuration </ion-list-header>
-
       <ion-item>
         <ion-icon name="sync-outline" slot="start"></ion-icon>
         <ion-label>
@@ -59,7 +61,6 @@
         </ion-label>
         <ion-toggle slot="end" [checked]="cloudSyncService.settings().enabled" (ionChange)="toggleSync($event)"> </ion-toggle>
       </ion-item>
-
       <ion-item [disabled]="!cloudSyncService.settings().enabled">
         <ion-icon name="calendar-outline" slot="start"></ion-icon>
         <ion-select [ngModel]="selectedFrequency()" interface="action-sheet" label="Sync Frequency" (ionChange)="updateFrequency($event)">
@@ -68,7 +69,6 @@
           <ion-select-option [value]="SyncFrequency.MONTHLY">Monthly</ion-select-option>
         </ion-select>
       </ion-item>
-
       <ion-item lines="none">
         <ion-icon name="folder-outline" slot="start"></ion-icon>
         <ion-input
@@ -79,39 +79,41 @@
           placeholder="e.g. Game-History">
         </ion-input>
       </ion-item>
-
       <ion-list-header style="margin-bottom: 4px"> Activity </ion-list-header>
       <div class="sync-container">
         <div class="stat-card">
           <span>Last Sync</span>
           <strong>{{ (cloudSyncService.syncStatus().lastSync | date: "MMM d, h:mm a") || "Never" }}</strong>
         </div>
-
         <div class="stat-card">
           <span>Next Sync</span>
           <strong>{{ (cloudSyncService.syncStatus().nextSync | date: "MMM d, h:mm a") || "--" }}</strong>
         </div>
       </div>
     </ion-list>
-
-    <ion-card class="error-card" *ngIf="cloudSyncService.syncStatus().error">
-      <ion-card-content>
-        <ion-icon name="warning-outline" color="danger"></ion-icon>
-        Last sync failed.
-      </ion-card-content>
-    </ion-card>
-  </ng-container>
+    @if (cloudSyncService.syncStatus().error) {
+      <ion-card class="error-card">
+        <ion-card-content>
+          <ion-icon name="warning-outline" color="danger"></ion-icon>
+          Last sync failed.
+        </ion-card-content>
+      </ion-card>
+    }
+  }
 </ion-content>
 
-<ion-footer *ngIf="cloudSyncService.syncStatus().isAuthenticated">
-  <ion-toolbar>
-    <ion-button class="confirm-btn" expand="block" (click)="syncNow()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
-      <ng-container *ngIf="!cloudSyncService.syncStatus().syncInProgress"> Sync Now </ng-container>
-
-      <ng-container *ngIf="cloudSyncService.syncStatus().syncInProgress">
-        <ion-spinner name="crescent"></ion-spinner>
-        <span style="margin-left: 10px">Syncing...</span>
-      </ng-container>
-    </ion-button>
-  </ion-toolbar>
-</ion-footer>
+@if (cloudSyncService.syncStatus().isAuthenticated) {
+  <ion-footer>
+    <ion-toolbar>
+      <ion-button class="confirm-btn" expand="block" (click)="syncNow()" [disabled]="cloudSyncService.syncStatus().syncInProgress">
+        @if (!cloudSyncService.syncStatus().syncInProgress) {
+          Sync Now
+        }
+        @if (cloudSyncService.syncStatus().syncInProgress) {
+          <ion-spinner name="crescent"></ion-spinner>
+          <span style="margin-left: 10px">Syncing...</span>
+        }
+      </ion-button>
+    </ion-toolbar>
+  </ion-footer>
+}

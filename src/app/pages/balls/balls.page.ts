@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, OnInit, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -88,7 +87,6 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     IonToolbar,
     IonSelect,
     IonSelectOption,
-    CommonModule,
     FormsModule,
     BallListComponent,
     GenericFilterActiveComponent,

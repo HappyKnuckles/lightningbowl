@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, HostListener, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular';
@@ -95,7 +94,6 @@ defineCustomElements(window);
     IonSegmentView,
     IonFooter,
     IonLabel,
-    NgIf,
     GameComponent,
     PinInputComponent,
     GameScoreToolbarComponent,

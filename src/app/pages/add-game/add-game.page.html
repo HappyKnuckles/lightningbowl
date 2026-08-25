@@ -17,9 +17,11 @@
   @if (selectedMode() !== "Single") {
     <ion-toolbar>
       <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
-        <ion-segment-button *ngFor="let segment of segments" [value]="segment" [contentId]="segment">
-          <ion-label class="segment-label">{{ segment }}</ion-label>
-        </ion-segment-button>
+        @for (segment of segments; track segment) {
+          <ion-segment-button [value]="segment" [contentId]="segment">
+            <ion-label class="segment-label">{{ segment }}</ion-label>
+          </ion-segment-button>
+        }
       </ion-segment>
     </ion-toolbar>
   }
@@ -37,22 +39,23 @@
   (spareClick)="onToolbarButtonClick('/')">
 </app-game-score-toolbar>
 
-<div
-  *ngIf="is300"
-  style="
-    position: absolute;
-    background-color: rgba(0, 0, 0, 0.5);
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 500;
-  ">
-  <lottie-player slot="end" autoplay loop src="https://lottie.host/7b3bdd2a-221b-463e-9f59-d95964639389/duMcnXopMJ.json"></lottie-player>
-</div>
+@if (is300) {
+  <div
+    style="
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.5);
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 500;
+    ">
+    <lottie-player slot="end" autoplay loop src="https://lottie.host/7b3bdd2a-221b-463e-9f59-d95964639389/duMcnXopMJ.json"></lottie-player>
+  </div>
+}
 
 <ion-content [fullscreen]="true">
   <ion-segment-view>
@@ -104,31 +107,35 @@
     }
   </ion-segment-view>
 
-  <ion-grid *ngIf="selectedMode() === 'Single'">
-    <ion-row class="button-row">
-      <ion-col>
-        <ion-button (click)="clearFrames()">Clear Score</ion-button>
-      </ion-col>
-      <ion-col>
-        <ion-button (click)="calculateScore()">Save Score</ion-button>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+  @if (selectedMode() === "Single") {
+    <ion-grid>
+      <ion-row class="button-row">
+        <ion-col>
+          <ion-button (click)="clearFrames()">Clear Score</ion-button>
+        </ion-col>
+        <ion-col>
+          <ion-button (click)="calculateScore()">Save Score</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  }
 
-  <ion-grid *ngIf="selectedMode() !== 'Single'">
-    <ion-row>
-      <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
-      <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>
-    </ion-row>
-    <ion-row class="button-row">
-      <ion-col>
-        <ion-button (click)="clearFrames()">Clear All</ion-button>
-      </ion-col>
-      <ion-col>
-        <ion-button (click)="calculateScore()">Save Series</ion-button>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+  @if (selectedMode() !== "Single") {
+    <ion-grid>
+      <ion-row>
+        <ion-col class="middle count">Score Series: {{ seriesCurrentScore() }}</ion-col>
+        <ion-col class="middle count">Max Series: {{ seriesMaxscore() }}</ion-col>
+      </ion-row>
+      <ion-row class="button-row">
+        <ion-col>
+          <ion-button (click)="clearFrames()">Clear All</ion-button>
+        </ion-col>
+        <ion-col>
+          <ion-button (click)="calculateScore()">Save Series</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  }
 </ion-content>
 
 @if (dockPinInput && isPinInputMode) {

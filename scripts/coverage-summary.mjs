@@ -1,13 +1,11 @@
 /**
- * Renders coverage/coverage-summary.json as markdown, for the CI job summary and
+ * Renders coverage/app/coverage-summary.json as markdown, for the CI job summary and
  * the pull request comment. Produced by `npm run test:coverage`.
  */
 import { readFileSync } from "node:fs";
 
-import { coveragePipelineStatus } from "./coverage-pipeline-status.mjs";
-
 const MARKER = "<!-- lightning-bowl-coverage -->";
-const SUMMARY = "coverage/coverage-summary.json";
+const SUMMARY = "coverage/app/coverage-summary.json";
 
 let total;
 try {
@@ -31,18 +29,15 @@ const rows = [
   .map(([label, m]) => `| ${label} | **${m.pct}%** | ${m.covered} / ${m.total} | ${bar(m.pct)} |`)
   .join("\n");
 
-const status = coveragePipelineStatus();
-const banner = status.obsolete ? `> [!NOTE]\n> ${status.headline} See \`scripts/coverage-pipeline-status.mjs\` for the cleanup steps.\n\n` : "";
-
 process.stdout.write(
   `${MARKER}
-${banner}
+
 ### Coverage — ${total.lines.pct}% of lines
 
 | Metric | % | Covered | |
 | --- | --- | --- | --- |
 ${rows}
 
-<sub>From \`npm run test:coverage\`. Line coverage must stay above the threshold in \`vitest.coverage.config.ts\`.</sub>
+<sub>From \`npm run test:coverage\`. Line coverage must stay above the \`coverageThresholds\` floor on the \`test\` target in \`angular.json\`.</sub>
 `,
 );

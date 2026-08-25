@@ -1,4 +1,4 @@
-import { DecimalPipe, NgIf } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -91,7 +91,6 @@ import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
-    NgIf,
     DecimalPipe,
     StatDisplayComponent,
     IonSegmentButton,

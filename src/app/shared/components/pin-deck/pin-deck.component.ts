@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { isSplit } from 'src/app/core/utils/game-utils/pin.utils';
 
@@ -13,7 +12,7 @@ const DECK_SPAN = 4 * PIN_SIZE + 3 * PIN_GAP;
 
 @Component({
   selector: 'app-pin-deck',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './pin-deck.component.html',
   styleUrl: './pin-deck.component.scss',
   host: {

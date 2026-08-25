@@ -1,4 +1,4 @@
-import { DatePipe, NgIf } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AlertController, ModalController } from '@ionic/angular';
@@ -52,7 +52,6 @@ import { CloudSyncService } from 'src/app/core/services/cloud-sync/cloud-sync.se
     IonList,
     IonToolbar,
     IonFooter,
-    NgIf,
     DatePipe,
     FormsModule,
     IonCard,

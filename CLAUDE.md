@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Lightning Bowl — an offline-first bowling score tracker shipped as a PWA and as native Android/iOS apps via Capacitor. Users log games (pin-by-pin input is the headline feature), view statistics, manage leagues, track their ball arsenal, browse oil patterns, and find alleys on a map. This repo is the app; sibling repos in `../` (`lightningbowl-bowwwl-proxy`, `lightningbowl-oauth`, `lightningbowl-ocr`, `lightningbowl-patterns`) provide the backend services it calls.
 
-**Stack**: Angular 20 (standalone components, signals), Ionic 8, Capacitor 8, TypeScript 5.9 (strict), RxJS 7.8, Chart.js, Leaflet, ExcelJS, sql.js, Ionic Storage (IndexedDB). Hosted on Vercel; [api/](api/) holds two Vercel serverless functions proxying Nominatim/Overpass for the alley map. Unit tests: Vitest (browser mode, headless Chromium) via the `@angular/build:unit-test` builder; e2e: Playwright.
+**Stack**: Angular 21 (standalone components, signals), Ionic 8, Capacitor 8, TypeScript 5.9 (strict), RxJS 7.8, Chart.js, Leaflet, ExcelJS, sql.js, Ionic Storage (IndexedDB). Hosted on Vercel; [api/](api/) holds two Vercel serverless functions proxying Nominatim/Overpass for the alley map. Builders come from `@angular/build` (not the legacy `@angular-devkit/build-angular`). Unit tests: Vitest 4 (browser mode, headless Chromium via `@vitest/browser-playwright`) through the `@angular/build:unit-test` builder; e2e: Playwright.
 
 ## Commands
 
@@ -26,8 +26,8 @@ npx ng test --configuration=ci        # explicit non-watch, for scripts
 # Single spec:
 npx ng test --include='**/league-selector/*.spec.ts'
 
-# Line coverage — separate pipeline, see Gotchas
-npm run test:coverage
+# Line coverage
+npm run test:coverage                 # = ng test --configuration=coverage
 ```
 
 ```bash
@@ -43,7 +43,9 @@ npx cap sync             # copy www/ into android/ and ios/
 npx cap open android     # requires Android SDK
 ```
 
-Playwright drives three separate configs — [playwright.e2e.config.ts](playwright.e2e.config.ts) (the e2e suite, 10 spec files under [playwright/e2e/](playwright/e2e/)), [playwright.config.ts](playwright.config.ts) and [playwright.capture.config.ts](playwright.capture.config.ts) (screenshot tooling). No CI. Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
+Playwright drives three separate configs — [playwright.e2e.config.ts](playwright.e2e.config.ts) (the e2e suite, 10 spec files under [playwright/e2e/](playwright/e2e/)), [playwright.config.ts](playwright.config.ts) and [playwright.capture.config.ts](playwright.capture.config.ts) (screenshot tooling). Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
+
+CI lives in [.github/workflows/](.github/workflows/): [ci.yml](.github/workflows/ci.yml) on PRs and pushes to `main`/`master`/`test` — a `verify` job (lint → `tsc -p tsconfig.spec.json --noEmit` → `ng test` → build) and a `coverage` job that runs `npm run test:coverage` and posts a sticky PR comment via [scripts/coverage-summary.mjs](scripts/coverage-summary.mjs); [e2e.yml](.github/workflows/e2e.yml) on PRs only (slower, kept off CI's critical path); [issue-triage.yml](.github/workflows/issue-triage.yml) on issue events. Both install jobs pin npm 11 first — npm 10 rejects the npm-11-written lockfile as out of sync over nested `chokidar` subtrees.
 
 ## Architecture
 
@@ -107,7 +109,7 @@ src/app/
 ## Gotchas
 
 - `@angular/build:unit-test` is marked EXPERIMENTAL by its own builder; its option shape may shift in a future Angular minor. Karma is still reachable on the same builder via `runner: "karma"` if it needs walking back.
-- Coverage does **not** come from `ng test`. `@angular/build:unit-test` accepts `codeCoverage` but reports `0/0` — its v8 integration collects nothing from the bundles it hands to Vitest (verified on 20.3.23; the Karma runner is not an option since specs use `vi` from `vitest`). `npm run test:coverage` runs the *same* spec files through Vitest directly via [vitest.coverage.config.ts](vitest.coverage.config.ts), compiling with `@analogjs/vite-plugin-angular` against [tsconfig.coverage.json](tsconfig.coverage.json) and bootstrapping TestBed in [src/testing/vitest-setup.ts](src/testing/vitest-setup.ts) (keep that file in sync with `test-providers.ts`). Line coverage has a floor set in the config; raise it as coverage climbs. Angular 22 fixes the builder, so [scripts/coverage-pipeline-status.mjs](scripts/coverage-pipeline-status.mjs) runs before every coverage run and prints the cleanup steps once `@angular/build` reaches 22 — the whole parallel pipeline is meant to be deleted then.
+- Coverage comes from the same builder as `ng test`: the `coverage` configuration on the `test` target in [angular.json](angular.json) sets `coverage`, `coverageInclude`/`coverageExclude`, reporters, and a `coverageThresholds` line floor — raise the floor as coverage climbs so it can't silently regress. Output lands in `coverage/app/` (the _project_ name, not the repo root), which is what [scripts/coverage-summary.mjs](scripts/coverage-summary.mjs) reads for the CI job summary and PR comment. This needs `@angular/build` ≥ 21.2 and Vitest 4; on Angular 20 the builder's v8 integration collected nothing (`0/0`) and a parallel Vitest pipeline stood in for it, now deleted.
 - `--include` filters which specs _run_, but the test build still compiles **all** spec/source files, so one broken file blocks every test run.
 - Specs are typechecked by the editor and `npx tsc -p tsconfig.spec.json --noEmit`, not by the test run itself — the builder transpiles without type errors failing the run.
 - `src/app/core/services/ad/ad.service.ts` is dead code (nothing injects `AdService`), and its `@capacitor-community/admob` dep drags a nested Capacitor 6 core into `node_modules`. It never reaches the app bundle; its spec runs and passes.
@@ -118,5 +120,5 @@ src/app/
 
 ## Open questions
 
-- No CI or deploy config found (`.github/` has no workflows; `.vercel/` is empty) — deployment is presumably Vercel Git integration, unverified.
+- No deploy config found (`.vercel/` is empty) — deployment is presumably Vercel Git integration, unverified.
 - No `engines` field in package.json; copilot-instructions claims Node 20+; Node 22.19 works locally.

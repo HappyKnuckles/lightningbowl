@@ -1,7 +1,6 @@
-import { NgFor, NgIf } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, HostListener, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { ModalController, SegmentCustomEvent } from '@ionic/angular';
+import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular';
 import {
   ActionSheetController,
   AlertController,
@@ -23,6 +22,7 @@ import {
   IonSegmentView,
   IonTitle,
   IonToolbar,
+  IonFooter,
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
@@ -41,6 +41,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -54,7 +55,7 @@ import { parseInputValue } from 'src/app/core/utils/game-utils/score-input.utils
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { PinInputComponent, ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 
@@ -91,10 +92,10 @@ defineCustomElements(window);
     IonSegment,
     IonSegmentContent,
     IonSegmentView,
+    IonFooter,
     IonLabel,
-    NgIf,
-    NgFor,
     GameComponent,
+    PinInputComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
     StatPinLeaveComponent,
@@ -158,6 +159,25 @@ export class AddGamePage implements OnInit {
   private seriesId = '';
   private activeGameIndex = 0;
 
+  /**
+   * Dock the pin input in the page footer instead of inside each app-game.
+   * Native shell only — the web build keeps the inline layout it always had.
+   */
+  readonly dockPinInput = this.platform.is('hybrid');
+
+  /**
+   * Whether the docked pin input is up. It behaves like a keyboard: raised by
+   * tapping a score cell, kept up while throws advance through the game, and
+   * dismissed once the game is complete or the user closes it by hand.
+   */
+  readonly pinDockOpen = signal(false);
+
+  /** Index of the game the segment view is currently showing. */
+  get activeSegmentIndex(): number {
+    const index = this.segments.indexOf(this.selectedSegment);
+    return index === -1 ? 0 : index;
+  }
+
   constructor(
     private actionSheetCtrl: ActionSheetController,
     private alertController: AlertController,
@@ -171,6 +191,8 @@ export class AddGamePage implements OnInit {
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameStatsService: GameStatsService,
+    public settingsStore: SettingsStore,
+    private platform: Platform,
   ) {
     addIcons({
       bowlingBallOutline,
@@ -270,6 +292,22 @@ export class AddGamePage implements OnInit {
     });
 
     this.updateGameState(result.updatedFrames, gameIndex);
+
+    if (this.isGameComplete(gameIndex)) {
+      this.pinDockOpen.set(false);
+    }
+  }
+
+  @HostListener('document:focusin', ['$event'])
+  @HostListener('document:pointerdown', ['$event'])
+  onInteractionOutsidePinDock(event: Event): void {
+    if (!this.pinDockOpen()) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest) return;
+    if (target.closest('.pin-input-footer') || target.closest('.score-cell')) return;
+
+    this.pinDockOpen.set(false);
   }
 
   handlePinUndoRequested(gameIndex: number): void {
@@ -312,6 +350,8 @@ export class AddGamePage implements OnInit {
         };
         return newStates;
       });
+      this.activeGameIndex = gameIndex;
+      this.pinDockOpen.set(true);
     }
   }
 
@@ -402,6 +442,8 @@ export class AddGamePage implements OnInit {
   // UI INTERACTION
   onSegmentChange(event: SegmentCustomEvent): void {
     this.selectedSegment = event.detail.value as string;
+    // A different game's grid is showing now — wait for a cell tap there.
+    this.pinDockOpen.set(false);
   }
 
   togglePinInputMode(): void {

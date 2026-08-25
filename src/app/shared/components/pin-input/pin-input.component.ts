@@ -33,6 +33,11 @@ export class PinInputComponent {
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
+  /**
+   * Render flat and full-bleed for use as a docked keyboard surface, instead of
+   * the rounded, inset card the component uses inside page flow.
+   */
+  docked = input<boolean>(false);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();

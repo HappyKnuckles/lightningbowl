@@ -25,3 +25,19 @@ ion-grid {
     color: white;
   }
 }
+
+.pin-input-footer {
+  background: transparent;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+
+  > * {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  &.open {
+    grid-template-rows: 1fr;
+  }
+}

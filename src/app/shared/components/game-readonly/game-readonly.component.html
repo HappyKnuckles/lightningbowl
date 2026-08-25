@@ -1,4 +1,4 @@
-<div class="grid-container" #captureRoot>
+<div class="grid-container" [class.reserve-ball-slot]="showBalls()" #captureRoot>
   @for (f of frameVms(); track f.frameNumber) {
     <ion-grid fixed="true">
       <ion-row>

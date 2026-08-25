@@ -40,7 +40,7 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import { formatThrowBall, getBallTracking, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getBallTracking, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -618,6 +618,7 @@ export class GameListComponent implements OnInit {
   // frames scan must not repeat. Edits replace the game object, invalidating naturally.
   private ballNamesCache = new WeakMap<Game, string[]>();
   private throwBallSummaryCache = new WeakMap<Game, string>();
+  private singleBallThumbCache = new WeakMap<Game, string | null>();
 
   getGameBalls(game: Game): string[] {
     let names = this.ballNamesCache.get(game);
@@ -631,6 +632,22 @@ export class GameListComponent implements OnInit {
   getSelectedBallsText(game: Game): string {
     const balls = this.getGameBalls(game);
     return balls.length > 0 ? balls.join(', ') : 'None';
+  }
+
+  /**
+   * Thumbnail for a game bowled with a single ball, so the row shows the ball itself instead
+   * of the generic icon. Two or more balls keep the icon: there is only one slot, and picking
+   * one of them to stand for the game would misrepresent it. `null` means fall back to the icon.
+   */
+  getSingleBallThumbnail(game: Game): string | null {
+    let thumb = this.singleBallThumbCache.get(game);
+    if (thumb === undefined) {
+      const names = this.getGameBalls(game);
+      const arsenalBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, this.ballsStore.arsenal()) : undefined;
+      thumb = arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : null;
+      this.singleBallThumbCache.set(game, thumb);
+    }
+    return thumb;
   }
 
   getBallIds(names: string[] | undefined): string[] {

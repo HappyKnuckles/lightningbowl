@@ -173,7 +173,11 @@
             } -->
             @if (getSelectedBallsText(game) !== "None") {
               <ion-item class="arsenal" [lines]="game.note ? '' : 'none'" button (click)="navigateToBallsPage(getGameBalls(game))">
-                <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                @if (getSingleBallThumbnail(game); as thumb) {
+                  <img class="arsenal-thumb" slot="start" [src]="thumb" [alt]="getSelectedBallsText(game) + ' thumbnail'" />
+                } @else {
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                }
                 <ion-text>{{ getSelectedBallsText(game) }}</ion-text>
               </ion-item>
             }

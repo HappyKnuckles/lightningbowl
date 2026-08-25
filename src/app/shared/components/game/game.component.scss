@@ -31,6 +31,10 @@
   }
 }
 
+.grid-container.reserve-ball-slot .pin-deck-row {
+  min-height: 42px;
+}
+
 .ball-selector,
 .pattern-selector {
   &::part(detail-icon) {

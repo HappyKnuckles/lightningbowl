@@ -8,8 +8,8 @@
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="togglePinInputMode()">
-        <ion-icon slot="icon-only" [name]="isPinInputMode ? 'bowling-ball' : 'bowling-ball-outline'"></ion-icon>
+      <ion-button fill="clear" [color]="isPinInputMode ? 'primary' : 'medium'" (click)="togglePinInputMode()">
+        <ion-icon slot="icon-only" src="/assets/svg/pin.svg"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

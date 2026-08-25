@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal, viewChild } from '@angular/core';
 import {
   IonButton,
   IonButtons,
@@ -89,6 +89,8 @@ export class BallStatsComponent {
   readonly SPARE_DEFINITIONS = BALL_SPARE_STAT_DEFINITIONS;
   readonly SCORING_DEFINITIONS = BALL_SCORING_STAT_DEFINITIONS;
 
+  private readonly detailContent = viewChild(IonContent);
+
   readonly selectedKey = signal<string | null>(null);
   readonly detailSegment = signal<'overview' | 'leaves' | 'spares' | 'patterns'>('overview');
 
@@ -147,6 +149,7 @@ export class BallStatsComponent {
   onSegmentChange(value: unknown): void {
     if (value === 'overview' || value === 'leaves' || value === 'spares' || value === 'patterns') {
       this.detailSegment.set(value);
+      setTimeout(() => this.detailContent()?.scrollToTop(300), 300);
     }
   }
 

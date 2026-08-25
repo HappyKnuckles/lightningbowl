@@ -6,7 +6,7 @@
   }
   @if (showBallSelector()) {
     <div class="ball-selector-corner">
-      <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()" [disabled]="isGameComplete()">
+      <ion-button fill="clear" class="ball-icon-button" (click)="openBallSelector()">
         @if (selectedBallThumbnail(); as thumbnail) {
           <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
         } @else {
@@ -32,17 +32,17 @@
   }
 
   <div class="quick-actions">
-    <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
-    <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
-    <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+    <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || inputLocked()"> X </ion-button>
+    <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || inputLocked()"> / </ion-button>
+    <ion-button size="small" (click)="recordGutter()" [disabled]="inputLocked()"> - </ion-button>
 
-    <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
+    <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || inputLocked()">
       <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
     </ion-button>
     <ion-button size="small" (click)="undoLastThrow()" [disabled]="!canUndo()">
       <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
     </ion-button>
-    <ion-button size="small" (click)="confirmThrow()" [disabled]="isGameComplete()">
+    <ion-button size="small" (click)="confirmThrow()" [disabled]="inputLocked()">
       <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
     </ion-button>
   </div>

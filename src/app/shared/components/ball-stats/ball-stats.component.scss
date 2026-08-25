@@ -70,6 +70,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    &.wrap {
+      overflow: visible;
+      white-space: normal;
+      line-height: 1.25;
+    }
   }
 
   .item-use {
@@ -190,38 +196,3 @@
   }
 }
 
-.pattern-table {
-  width: calc(100% - 32px);
-  margin: 0 16px 20px;
-  border-collapse: collapse;
-  background: var(--ion-card-background, #141414);
-  border: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-  border-radius: var(--card-border-radius, 14px);
-  overflow: hidden;
-  font-size: 0.875rem;
-
-  th,
-  td {
-    padding: 12px 8px;
-    text-align: right;
-    color: var(--ion-text-color, #ece4d4);
-  }
-
-  thead th {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ion-color-medium, #7c7c7a);
-  }
-
-  .pattern-name {
-    text-align: left;
-    font-weight: 700;
-    color: var(--ion-text-color, #f3f1ec);
-  }
-
-  tbody tr + tr {
-    border-top: 1px solid var(--ion-thin-border-color, rgba(255, 255, 255, 0.07));
-  }
-}

@@ -124,28 +124,30 @@
               @if (patternRows().length === 0) {
                 <article class="item-card"><p class="empty-msg">Not enough games on any one pattern yet.</p></article>
               } @else {
-                <table class="pattern-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Pattern</th>
-                      <th scope="col">Balls</th>
-                      <th scope="col">Strike</th>
-                      <th scope="col">Carry</th>
-                      <th scope="col">Frame</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of patternRows(); track row.pattern) {
-                      <tr>
-                        <th scope="row" class="pattern-name">{{ row.pattern }}</th>
-                        <td>{{ row.firstBalls }}</td>
-                        <td>{{ row.strikePercentage | number: "1.0-0" }}%</td>
-                        <td>{{ row.carryPercentage | number: "1.0-0" }}%</td>
-                        <td>{{ row.averageFrameValue | number: "1.1-1" }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                @for (row of patternRows(); track row.pattern) {
+                  <article class="item-card">
+                    <div class="item-meta">
+                      <header class="item-top">
+                        <h3 class="item-name wrap">{{ row.pattern }}</h3>
+                        <span class="item-use">{{ row.firstBalls }} first balls</span>
+                      </header>
+                      <dl class="item-stats">
+                        <div class="item-line">
+                          <dt class="item-label">Strike</dt>
+                          <dd class="item-value">{{ row.strikePercentage | number: "1.0-0" }}%</dd>
+                        </div>
+                        <div class="item-line">
+                          <dt class="item-label">Carry</dt>
+                          <dd class="item-value">{{ row.carryPercentage | number: "1.0-0" }}%</dd>
+                        </div>
+                        <div class="item-line">
+                          <dt class="item-label">Avg frame</dt>
+                          <dd class="item-value">{{ row.averageFrameValue | number: "1.1-1" }}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </article>
+                }
               }
             </ion-segment-content>
           </ion-segment-view>

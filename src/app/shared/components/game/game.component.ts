@@ -169,26 +169,10 @@ export class GameComponent implements OnInit {
 
     // A throw's own recorded ball is shown as-is — no carry-over guessing for display, so a
     // throw the user explicitly left without a ball renders empty rather than borrowing a
-    // neighbor's. Per-throw indicators only appear once the game shows some real variation:
-    // more than one distinct ball, or at least one recorded throw with no ball alongside others
-    // that do have one. A game bowled with a single ball and no gaps skips them — the header
-    // already names it.
-    const seenBalls = new Set<string>();
-    let throwsWithBall = 0;
-    let totalThrows = 0;
-
-    for (let f = 0; f < Math.min(frames.length, 10); f++) {
-      for (const t of frames[f]?.throws ?? []) {
-        totalThrows++;
-        if (t?.ball?.name) {
-          throwsWithBall++;
-          seenBalls.add(getThrowBallKey(t.ball));
-        }
-      }
-    }
-
-    const showBalls = seenBalls.size > 1 || (throwsWithBall > 0 && throwsWithBall < totalThrows);
-
+    // neighbor's. Every recorded ball gets its indicator here: while a game is being entered
+    // the thumbnail is the confirmation that the pick landed on the throw, so it has to appear
+    // from the first throw on, even for a game bowled with one ball. The saved view thins them
+    // out again (see GameReadonlyComponent).
     // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
     const thumbCache = new Map<string, string | undefined>();
     const resolveThumb = (ball: ThrowBall): string | undefined => {
@@ -209,7 +193,7 @@ export class GameComponent implements OnInit {
       const throws = Array.from({ length: isTenth ? 3 : 2 }, (_, throwIndex): ThrowCellView => {
         const value = getThrowValue(frame, throwIndex);
         const storedBall = frame?.throws?.[throwIndex]?.ball;
-        const ball = showBalls && storedBall?.name ? storedBall : undefined;
+        const ball = storedBall?.name ? storedBall : undefined;
         return {
           value,
           display: formatThrowDisplay(frame, throwIndex, isTenth),
@@ -257,6 +241,30 @@ export class GameComponent implements OnInit {
   /** Per-throw picking needs the pin pad; everything else falls back to the game-level selection. */
   isThrowTracking = computed(() => this.ballTracking() === 'throw' && this.isPinInputMode());
 
+  /**
+   * The pad locks only while a finished game's cursor rests on its very last throw, where a
+   * stray confirm would silently overwrite the score just bowled. Tapping any earlier cell
+   * moves the cursor off that spot and reopens the pad, which is how a finished game gets
+   * corrected — pins and ball alike.
+   */
+  isPinPadLocked = computed(() => {
+    if (!this.isGameComplete()) return false;
+
+    const frames = this.game()?.frames ?? [];
+    for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
+      const throwCount = frames[frameIndex]?.throws?.length ?? 0;
+      if (throwCount > 0) {
+        return this.currentFrameIndex() === frameIndex && this.currentThrowIndex() === throwCount - 1;
+      }
+    }
+    return true;
+  });
+
+  /**
+   * Whether the deck row keeps room for the per-throw ball indicator.
+   */
+  reservesBallSlot = computed(() => this.isThrowTracking() || hasThrowLevelBalls(this.game()?.frames ?? []));
+
   /** Read-only summary of the balls used per throw: "IQ Tour · 34 throws". */
   throwBallSummary = computed(() => {
     const counts = new Map<string, { label: string; throws: number }>();
@@ -282,15 +290,18 @@ export class GameComponent implements OnInit {
 
   /**
    * Ball for the throw the pin input is currently on, falling back to the carried-over ball.
-   * `pendingBall === null` means the user explicitly cleared the pick for this throw, so that
-   * must not fall through to the carry-over default the way an untouched `undefined` does.
+   * A throw that is already recorded answers for itself, absence included — carrying a ball
+   * over onto it would undo the user clearing the pick. Only a throw not yet recorded takes a
+   * default, and there `pendingBall === null` marks a deliberate clear, which must not fall
+   * through to the carry-over the way an untouched `undefined` does.
    */
   currentThrowBall = computed<ThrowBall | undefined>(() => {
     const frames = this.game()?.frames ?? [];
     const frameIndex = this.currentFrameIndex();
     const throwIndex = this.currentThrowIndex();
     const frame = frames[frameIndex];
-    if (frame?.throws?.[throwIndex]?.ball) return frame.throws[throwIndex].ball;
+    const recordedThrow = frame?.throws?.[throwIndex];
+    if (recordedThrow) return recordedThrow.ball;
     if (frame?.pendingBall !== undefined) return frame.pendingBall ?? undefined;
     return getCarryOverThrowBall(frames, frameIndex, throwIndex);
   });

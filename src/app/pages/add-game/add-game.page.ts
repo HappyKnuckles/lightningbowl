@@ -26,7 +26,7 @@ import {
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
-import { bowlingBall, bowlingBallOutline, chevronDown, chevronUp } from 'ionicons/icons';
+import { chevronDown, chevronUp } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Frame, Game, GameDraft, PinModeState, ThrowBall } from 'src/app/core/models/game.model';
@@ -174,8 +174,6 @@ export class AddGamePage implements OnInit {
     private gameStatsService: GameStatsService,
   ) {
     addIcons({
-      bowlingBallOutline,
-      bowlingBall,
       chevronDown,
       chevronUp,
     });

@@ -13,6 +13,10 @@
   }
 }
 
+.grid-container.reserve-ball-slot .pin-deck-row {
+  min-height: 42px;
+}
+
 .pin-deck-row .input-col {
   flex-direction: column;
   justify-content: flex-start;

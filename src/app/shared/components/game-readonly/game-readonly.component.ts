@@ -54,27 +54,23 @@ export class GameReadonlyComponent {
 
   readonly isPinMode = computed(() => this.game()?.isPinMode ?? false);
 
+  readonly showBalls = computed(() => {
+    const seen = new Set<string>();
+    for (const frame of (this.game()?.frames ?? []).slice(0, 10)) {
+      for (const t of frame?.throws ?? []) {
+        if (t?.ball?.name) seen.add(getThrowBallKey(t.ball));
+      }
+    }
+    return seen.size > 1;
+  });
+
   readonly frameVms = computed<ReadonlyFrameVm[]>(() => {
     const game = this.game();
     const frames = game?.frames ?? [];
     const scores = game?.frameScores ?? [];
     const arsenal = this.ballsStore.arsenal();
 
-    const seenBalls = new Set<string>();
-    let throwsWithBall = 0;
-    let totalThrows = 0;
-
-    for (let f = 0; f < Math.min(frames.length, 10); f++) {
-      for (const t of frames[f]?.throws ?? []) {
-        totalThrows++;
-        if (t?.ball?.name) {
-          throwsWithBall++;
-          seenBalls.add(getThrowBallKey(t.ball));
-        }
-      }
-    }
-
-    const showBalls = seenBalls.size > 1 || (throwsWithBall > 0 && throwsWithBall < totalThrows);
+    const showBalls = this.showBalls();
 
     // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
     const thumbCache = new Map<string, string | undefined>();

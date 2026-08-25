@@ -8,7 +8,7 @@
 </app-game-score-toolbar> -->
 @if (isPinInputMode()) {
   <!-- Pin Input Mode: Score Grid + Pin Deck -->
-  <div class="grid-container">
+  <div class="grid-container" [class.reserve-ball-slot]="reservesBallSlot()">
     @for (frame of frameVms(); track frame.frameIndex) {
       <ion-grid fixed="true">
         <ion-row>
@@ -40,7 +40,6 @@
               @if (cell.ballThumb; as thumb) {
                 <img class="throw-ball-thumb" [src]="thumb" [alt]="cell.ballLabel + ' thumbnail'" />
               } @else if (cell.hasBall) {
-                hi
                 <ion-icon class="throw-ball-thumb throw-ball-fallback-icon" name="bowling-ball-outline"></ion-icon>
               }
             </ion-col>
@@ -70,7 +69,7 @@
     [canStrike]="canStrike()"
     [canSpare]="canSpare()"
     [canUndo]="canUndo()"
-    [isGameComplete]="isGameComplete()"
+    [inputLocked]="isPinPadLocked()"
     [selectHitPins]="settingsStore.pinInputMode()"
     [showStatsButton]="showStatsButton()"
     [selectedBall]="currentThrowBall()"

@@ -45,7 +45,8 @@ export class PinInputComponent {
   canStrike = input<boolean>(false);
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
-  isGameComplete = input<boolean>(false);
+  /** Pad is read-only: the cursor sits on a finished game's last throw and there is nothing left to record. */
+  inputLocked = input<boolean>(false);
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
@@ -83,7 +84,7 @@ export class PinInputComponent {
   readonly pinRows = computed<PinView[][]>(() => {
     const standing = this.pinsLeftStanding();
     const selected = this.selectedPins();
-    const complete = this.isGameComplete();
+    const locked = this.inputLocked();
     const hitMode = this.selectHitPins();
 
     return PIN_LAYOUT.map((row) =>
@@ -95,7 +96,7 @@ export class PinInputComponent {
           knockedDown: !available,
           // "active" = lit/standing; only meaningful for available pins
           active: available && (hitMode ? !isSelected : isSelected),
-          disabled: !available || complete,
+          disabled: !available || locked,
         };
       }),
     );
@@ -172,7 +173,7 @@ export class PinInputComponent {
   }
 
   togglePin(pinNumber: number): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
     if (!this.pinsLeftStanding().includes(pinNumber)) return;
 
     this.selectedPins.update((pins) => (pins.includes(pinNumber) ? pins.filter((p) => p !== pinNumber) : [...pins, pinNumber]));
@@ -188,7 +189,7 @@ export class PinInputComponent {
   }
 
   confirmThrow(): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
 
     const available = this.pinsLeftStanding();
     const selected = this.selectedPins();
@@ -199,19 +200,19 @@ export class PinInputComponent {
   }
 
   recordStrike(): void {
-    if (!this.canStrike() || this.isGameComplete()) return;
+    if (!this.canStrike() || this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [...this.pinsLeftStanding()] });
     this.selectedPins.set([]);
   }
 
   recordSpare(): void {
-    if (!this.canSpare() || this.isGameComplete()) return;
+    if (!this.canSpare() || this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [...this.pinsLeftStanding()] });
     this.selectedPins.set([]);
   }
 
   recordGutter(): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [] });
     this.selectedPins.set([]);
   }

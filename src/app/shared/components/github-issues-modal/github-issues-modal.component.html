@@ -24,69 +24,75 @@
 </ion-header>
 <ion-content>
   <!-- Loading State -->
-  <div *ngIf="loading" style="text-align: center; padding: 40px">
-    <ion-spinner></ion-spinner>
-    <p>Loading issues...</p>
-  </div>
+  @if (loading) {
+    <div style="text-align: center; padding: 40px">
+      <ion-spinner></ion-spinner>
+      <p>Loading issues...</p>
+    </div>
+  }
 
   <!-- Error State -->
-  <div *ngIf="!loading && error" style="text-align: center; padding: 40px">
-    <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
-    <p style="color: var(--ion-color-warning); margin-top: 16px; font-weight: 500">
-      {{ error }}
-    </p>
-    <ion-button fill="clear" size="small" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" target="_blank" style="margin-top: 16px">
-      <ion-icon name="open-outline" slot="start"></ion-icon>
-      View Issues on GitHub
-    </ion-button>
-  </div>
+  @if (!loading && error) {
+    <div style="text-align: center; padding: 40px">
+      <ion-icon name="warning-outline" size="large" color="warning"></ion-icon>
+      <p style="color: var(--ion-color-warning); margin-top: 16px; font-weight: 500">
+        {{ error }}
+      </p>
+      <ion-button fill="clear" size="small" href="https://github.com/HappyKnuckles/Lightning-Bowl/issues" target="_blank" style="margin-top: 16px">
+        <ion-icon name="open-outline" slot="start"></ion-icon>
+        View Issues on GitHub
+      </ion-button>
+    </div>
+  }
 
   <!-- Empty State -->
-  <div *ngIf="!loading && !error && issues.length === 0" style="text-align: center; padding: 40px">
-    <ion-icon name="document-outline" size="large" color="medium"></ion-icon>
-    <p style="margin-top: 16px">No issues found for the selected filters.</p>
-  </div>
+  @if (!loading && !error && issues.length === 0) {
+    <div style="text-align: center; padding: 40px">
+      <ion-icon name="document-outline" size="large" color="medium"></ion-icon>
+      <p style="margin-top: 16px">No issues found for the selected filters.</p>
+    </div>
+  }
 
   <!-- Issues List -->
-  <div *ngIf="!loading && issues.length > 0" style="padding: 16px">
-    <ion-card *ngFor="let issue of issues" class="issue-card">
-      <ion-card-header>
-        <div class="issue-header">
-          <ion-card-title>{{ issue.title }}</ion-card-title>
-          <span class="issue-number">#{{ issue.number }}</span>
-        </div>
-
-        <!-- Labels -->
-        <div class="labels-container">
-          <ion-chip
-            *ngFor="let label of issue.labels"
-            class="issue-label"
-            [style.background-color]="'#' + label.color"
-            [style.color]="getTextColor(label.color)">
-            {{ label.name }}
-          </ion-chip>
-          <ion-avatar style="margin-left: auto; height: 32px; width: 32px; --border-radius: 0">
-            <img [src]="issue.user.avatar_url" alt="User Avatar" />
-          </ion-avatar>
-        </div>
-      </ion-card-header>
-
-      <ion-card-content>
-        <p *ngIf="issue.body && issue.body.trim(); else noDescription">
-          {{ issue.body }}
-        </p>
-        <ng-template #noDescription>
-          <p style="font-style: italic; color: var(--ion-color-medium)">No description provided.</p>
-        </ng-template>
-
-        <div class="issue-meta">
-          <span class="created-date">Created {{ getRelativeTime(issue.created_at) }}</span>
-          <ion-button fill="clear" size="small" [href]="issue.html_url" target="_blank">
-            <ion-icon name="open-outline" slot="start"></ion-icon>
-            View on GitHub
-          </ion-button>
-        </div>
-      </ion-card-content>
-    </ion-card>
-  </div>
+  @if (!loading && issues.length > 0) {
+    <div style="padding: 16px">
+      @for (issue of issues; track issue) {
+        <ion-card class="issue-card">
+          <ion-card-header>
+            <div class="issue-header">
+              <ion-card-title>{{ issue.title }}</ion-card-title>
+              <span class="issue-number">#{{ issue.number }}</span>
+            </div>
+            <!-- Labels -->
+            <div class="labels-container">
+              @for (label of issue.labels; track label) {
+                <ion-chip class="issue-label" [style.background-color]="'#' + label.color" [style.color]="getTextColor(label.color)">
+                  {{ label.name }}
+                </ion-chip>
+              }
+              <ion-avatar style="margin-left: auto; height: 32px; width: 32px; --border-radius: 0">
+                <img [src]="issue.user.avatar_url" alt="User Avatar" />
+              </ion-avatar>
+            </div>
+          </ion-card-header>
+          <ion-card-content>
+            @if (issue.body && issue.body.trim()) {
+              <p>
+                {{ issue.body }}
+              </p>
+            } @else {
+              <p style="font-style: italic; color: var(--ion-color-medium)">No description provided.</p>
+            }
+            <div class="issue-meta">
+              <span class="created-date">Created {{ getRelativeTime(issue.created_at) }}</span>
+              <ion-button fill="clear" size="small" [href]="issue.html_url" target="_blank">
+                <ion-icon name="open-outline" slot="start"></ion-icon>
+                View on GitHub
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      }
+    </div>
+  }
 </ion-content>

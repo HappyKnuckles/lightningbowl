@@ -82,8 +82,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Unit tests with coverage
-        # Fails on its own if line coverage drops below the threshold in
-        # vitest.coverage.config.ts.
+        # Fails on its own if line coverage drops below the coverageThresholds
+        # floor on the "test" target in angular.json.
         run: npm run test:coverage
 
       - name: Summarise coverage

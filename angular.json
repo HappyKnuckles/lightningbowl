@@ -152,6 +152,14 @@
           "configurations": {
             "ci": {
               "watch": false
+            },
+            "coverage": {
+              "watch": false,
+              "coverage": true,
+              "coverageInclude": ["src/app/**/*.ts"],
+              "coverageExclude": ["src/**/*.spec.ts", "src/**/*.model.ts", "src/app/core/constants/**"],
+              "coverageReporters": ["text-summary", "json-summary", "lcov"],
+              "coverageThresholds": { "lines": 50 }
             }
           }
         },

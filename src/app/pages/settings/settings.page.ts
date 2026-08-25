@@ -1,4 +1,4 @@
-import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { AfterViewInit, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
@@ -83,8 +83,6 @@ import { environment } from 'src/environments/environment';
     IonSelectOption,
     IonNote,
     NgClass,
-    NgFor,
-    NgIf,
     DatePipe,
     FormsModule,
     ReactiveFormsModule,

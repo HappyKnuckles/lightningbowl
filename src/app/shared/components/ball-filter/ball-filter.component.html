@@ -32,7 +32,9 @@
         [ngModel]="ballFilterService.filters().coverstockTypes"
         (ionChange)="updateFilter('coverstockTypes', $event.detail.value)"
         multiple="true">
-        <ion-select-option *ngFor="let coverstockType of coverstockTypes" [value]="coverstockType">{{ coverstockType }}</ion-select-option>
+        @for (coverstockType of coverstockTypes; track coverstockType) {
+          <ion-select-option [value]="coverstockType">{{ coverstockType }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item class="core-selector" detail="true" detailIcon="chevron-expand-outline" button id="select-cores">
@@ -48,7 +50,9 @@
         placeholder="All"
         [ngModel]="ballFilterService.filters().coreType"
         (ionChange)="updateFilter('coreType', $event.detail.value)">
-        <ion-select-option *ngFor="let coreType of coreTypes" [value]="coreType">{{ coreType }}</ion-select-option>
+        @for (coreType of coreTypes; track coreType) {
+          <ion-select-option [value]="coreType">{{ coreType }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item>
@@ -58,7 +62,9 @@
         placeholder="All"
         [ngModel]="ballFilterService.filters().market"
         (ionChange)="updateFilter('market', $event.detail.value)">
-        <ion-select-option *ngFor="let market of markets" [value]="market">{{ market }}</ion-select-option>
+        @for (market of markets; track market) {
+          <ion-select-option [value]="market">{{ market }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item>
@@ -68,7 +74,9 @@
         placeholder="15"
         [ngModel]="ballFilterService.filters().weight"
         (ionChange)="updateFilter('weight', $event.detail.value)">
-        <ion-select-option *ngFor="let weight of weights" [value]="weight">{{ weight }}</ion-select-option>
+        @for (weight of weights; track weight) {
+          <ion-select-option [value]="weight">{{ weight }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item>

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Lightning Bowl — an offline-first bowling score tracker shipped as a PWA and as native Android/iOS apps via Capacitor. Users log games (pin-by-pin input is the headline feature), view statistics, manage leagues, track their ball arsenal, browse oil patterns, and find alleys on a map. This repo is the app; sibling repos in `../` (`lightningbowl-bowwwl-proxy`, `lightningbowl-oauth`, `lightningbowl-ocr`, `lightningbowl-patterns`) provide the backend services it calls.
 
-**Stack**: Angular 20 (standalone components, signals), Ionic 8, Capacitor 8, TypeScript 5.9 (strict), RxJS 7.8, Chart.js, Leaflet, ExcelJS, sql.js, Ionic Storage (IndexedDB). Hosted on Vercel; [api/](api/) holds two Vercel serverless functions proxying Nominatim/Overpass for the alley map. Unit tests: Vitest (browser mode, headless Chromium) via the `@angular/build:unit-test` builder; e2e: Playwright.
+**Stack**: Angular 21 (standalone components, signals), Ionic 8, Capacitor 8, TypeScript 5.9 (strict), RxJS 7.8, Chart.js, Leaflet, ExcelJS, sql.js, Ionic Storage (IndexedDB). Hosted on Vercel; [api/](api/) holds two Vercel serverless functions proxying Nominatim/Overpass for the alley map. Builders come from `@angular/build` (not the legacy `@angular-devkit/build-angular`). Unit tests: Vitest 4 (browser mode, headless Chromium via `@vitest/browser-playwright`) through the `@angular/build:unit-test` builder; e2e: Playwright.
 
 ## Commands
 
@@ -43,7 +43,9 @@ npx cap sync             # copy www/ into android/ and ios/
 npx cap open android     # requires Android SDK
 ```
 
-Playwright drives three separate configs — [playwright.e2e.config.ts](playwright.e2e.config.ts) (the e2e suite, 10 spec files under [playwright/e2e/](playwright/e2e/)), [playwright.config.ts](playwright.config.ts) and [playwright.capture.config.ts](playwright.capture.config.ts) (screenshot tooling). No CI. Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
+Playwright drives three separate configs — [playwright.e2e.config.ts](playwright.e2e.config.ts) (the e2e suite, 10 spec files under [playwright/e2e/](playwright/e2e/)), [playwright.config.ts](playwright.config.ts) and [playwright.capture.config.ts](playwright.capture.config.ts) (screenshot tooling). Husky pre-commit runs lint-staged (Prettier on staged files + ESLint on `*.ts`).
+
+CI lives in [.github/workflows/](.github/workflows/): [ci.yml](.github/workflows/ci.yml) on PRs and pushes to `main`/`master`/`test` — a `verify` job (lint → `tsc -p tsconfig.spec.json --noEmit` → `ng test` → build) and a `coverage` job that runs `npm run test:coverage` and posts a sticky PR comment via [scripts/coverage-summary.mjs](scripts/coverage-summary.mjs); [e2e.yml](.github/workflows/e2e.yml) on PRs only (slower, kept off CI's critical path); [issue-triage.yml](.github/workflows/issue-triage.yml) on issue events. Both install jobs pin npm 11 first — npm 10 rejects the npm-11-written lockfile as out of sync over nested `chokidar` subtrees.
 
 ## Architecture
 
@@ -118,5 +120,5 @@ src/app/
 
 ## Open questions
 
-- No CI or deploy config found (`.github/` has no workflows; `.vercel/` is empty) — deployment is presumably Vercel Git integration, unverified.
+- No deploy config found (`.vercel/` is empty) — deployment is presumably Vercel Git integration, unverified.
 - No `engines` field in package.json; copilot-instructions claims Node 20+; Node 22.19 works locally.

@@ -5,14 +5,18 @@
 <ion-popover alignment="center" dismissOnSelect="true" side="bottom" [trigger]="id()" (didPresent)="onPopoverPresent()">
   <ng-template>
     <ion-list #sortList>
-      <ion-item *ngIf="favoritesFirstStorageKey" lines="full">
-        <ion-checkbox justify="space-between" [checked]="favoritesFirst" (ionChange)="onFavoritesFirstChange($event)">Favorites first</ion-checkbox>
-      </ion-item>
-      <ion-radio-group [(ngModel)]="selectedSortKey" (ngModelChange)="onSortChange($event)">
-        <ion-item *ngFor="let option of sortOptions()" [id]="'sort-item-' + getSortKey(option)" (click)="selectOption(option)">
-          <ion-radio slot="start" [value]="getSortKey(option)"></ion-radio>
-          <ion-label>{{ option.label }}</ion-label>
+      @if (favoritesFirstStorageKey) {
+        <ion-item lines="full">
+          <ion-checkbox justify="space-between" [checked]="favoritesFirst" (ionChange)="onFavoritesFirstChange($event)">Favorites first</ion-checkbox>
         </ion-item>
+      }
+      <ion-radio-group [(ngModel)]="selectedSortKey" (ngModelChange)="onSortChange($event)">
+        @for (option of sortOptions(); track option) {
+          <ion-item [id]="'sort-item-' + getSortKey(option)" (click)="selectOption(option)">
+            <ion-radio slot="start" [value]="getSortKey(option)"></ion-radio>
+            <ion-label>{{ option.label }}</ion-label>
+          </ion-item>
+        }
       </ion-radio-group>
     </ion-list>
   </ng-template>

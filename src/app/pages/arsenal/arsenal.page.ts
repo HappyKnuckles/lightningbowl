@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -81,7 +80,6 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
     IonHeader,
     IonTitle,
     IonToolbar,
-    CommonModule,
     FormsModule,
     BallListComponent,
     GenericTypeaheadComponent,

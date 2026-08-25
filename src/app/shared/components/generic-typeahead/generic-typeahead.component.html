@@ -19,25 +19,25 @@
 </ion-header>
 
 <ion-content style="height: 85vh" [fullscreen]="true">
-  <ng-container *ngIf="displayedItems().length <= 0 && config().noDataText; else itemsList">
+  @if (displayedItems().length <= 0 && config().noDataText) {
     <ion-text class="no-game-text">{{ config().noDataText }}</ion-text>
-  </ng-container>
-
-  <ng-template #itemsList>
+  } @else {
     <ion-list>
       @for (item of displayedItems(); track getItemIdentifier(item)) {
         <ion-item lines="none" role="article" [ngClass]="getCustomDisplayLogic(item).cssClass">
-          <ion-avatar *ngIf="config().showImages && config().imageShape !== 'rect'" slot="start">
-            <ion-img [src]="getImageUrl(item)"></ion-img>
-          </ion-avatar>
-          <img
-            *ngIf="config().showImages && config().imageShape === 'rect'"
-            class="typeahead-img-rect"
-            slot="start"
-            [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
-            [src]="getImageUrl(item)"
-            (error)="onImageError($event)" />
-
+          @if (config().showImages && config().imageShape !== "rect") {
+            <ion-avatar slot="start">
+              <ion-img [src]="getImageUrl(item)"></ion-img>
+            </ion-avatar>
+          }
+          @if (config().showImages && config().imageShape === "rect") {
+            <img
+              class="typeahead-img-rect"
+              slot="start"
+              [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
+              [src]="getImageUrl(item)"
+              (error)="onImageError($event)" />
+          }
           <ion-checkbox
             justify="space-between"
             [checked]="isItemSelected(item)"
@@ -61,9 +61,8 @@
         </ion-item>
       }
     </ion-list>
-
     <ion-infinite-scroll #infiniteScroll threshold="90%" (ionInfinite)="loadData($event)">
       <ion-infinite-scroll-content loadingSpinner="crescent" [loadingText]="config().loadingText"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
-  </ng-template>
+  }
 </ion-content>

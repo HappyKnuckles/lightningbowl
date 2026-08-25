@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, model, ViewChild, ElementRef } from '@angular/core';
 import { IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox } from '@ionic/angular/standalone';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
 import { swapVertical } from 'ionicons/icons';
@@ -10,7 +10,7 @@ import { SortOption, SortField } from 'src/app/core/models/sort.model';
   selector: 'app-sort-header',
   templateUrl: './sort-header.component.html',
   styleUrls: ['./sort-header.component.scss'],
-  imports: [CommonModule, FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
+  imports: [FormsModule, IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox],
 })
 export class SortHeaderComponent<F extends SortField = SortField> implements OnInit {
   @Input() storageKey = '';

@@ -94,10 +94,9 @@
       </ion-card>
     }
   } @else {
-    <ng-container *ngIf="patterns().length <= 0; else allPatterns">
+    @if (patterns().length <= 0) {
       <ion-text class="no-game-text"> No patterns found! </ion-text>
-    </ng-container>
-    <ng-template #allPatterns>
+    } @else {
       @for (pattern of displayedPatterns(); track pattern.url; let i = $index) {
         <ion-card
           button
@@ -107,13 +106,14 @@
             'green-card': getRatioValue(pattern.ratio ?? '0') >= 8,
           }"
           (click)="selectedPattern.set(pattern)">
-          <img
-            *ngIf="pattern.chart_horizontal"
-            class="pattern-chart-image"
-            alt="{{ pattern.title }} Oil Pattern Chart"
-            [attr.fetchpriority]="i < 3 ? 'high' : 'auto'"
-            [loading]="i < 10 ? 'eager' : 'lazy'"
-            [src]="imagesUrl + pattern.chart_horizontal" />
+          @if (pattern.chart_horizontal) {
+            <img
+              class="pattern-chart-image"
+              alt="{{ pattern.title }} Oil Pattern Chart"
+              [attr.fetchpriority]="i < 3 ? 'high' : 'auto'"
+              [loading]="i < 10 ? 'eager' : 'lazy'"
+              [src]="imagesUrl + pattern.chart_horizontal" />
+          }
           <ion-card-header>
             <ion-card-title style="display: flex; align-items: center; justify-content: space-between">
               <span>{{ pattern.title }}</span>
@@ -131,46 +131,65 @@
             <div class="pattern-info">
               <!-- Stat chips -->
               <div class="stats">
-                <div *ngIf="pattern.distance" class="stat">
-                  <span class="stat-label">Distance</span>
-                  <span class="stat-value">{{ pattern.distance }}<span class="stat-unit">ft</span></span>
-                </div>
-                <div *ngIf="pattern.ratio" class="stat">
-                  <span class="stat-label">Ratio</span>
-                  <span class="stat-value">{{ pattern.ratio }}</span>
-                </div>
-                <div *ngIf="pattern.volume" class="stat">
-                  <span class="stat-label">Volume</span>
-                  <span class="stat-value">{{ pattern.volume }}<span class="stat-unit">mL</span></span>
-                </div>
+                @if (pattern.distance) {
+                  <div class="stat">
+                    <span class="stat-label">Distance</span>
+                    <span class="stat-value">{{ pattern.distance }}<span class="stat-unit">ft</span></span>
+                  </div>
+                }
+                @if (pattern.ratio) {
+                  <div class="stat">
+                    <span class="stat-label">Ratio</span>
+                    <span class="stat-value">{{ pattern.ratio }}</span>
+                  </div>
+                }
+                @if (pattern.volume) {
+                  <div class="stat">
+                    <span class="stat-label">Volume</span>
+                    <span class="stat-value">{{ pattern.volume }}<span class="stat-unit">mL</span></span>
+                  </div>
+                }
               </div>
-
               <!-- Detail rows -->
-              <div *ngIf="pattern.pump || pattern.tanks || pattern.forward || pattern.reverse" class="detail-card">
-                <div *ngIf="pattern.pump" class="spec-row">
-                  <span class="spec-key">Pump</span>
-                  <span class="spec-val">{{ pattern.pump }}µL</span>
+              @if (pattern.pump || pattern.tanks || pattern.forward || pattern.reverse) {
+                <div class="detail-card">
+                  @if (pattern.pump) {
+                    <div class="spec-row">
+                      <span class="spec-key">Pump</span>
+                      <span class="spec-val">{{ pattern.pump }}µL</span>
+                    </div>
+                  }
+                  @if (pattern.tanks) {
+                    <div class="spec-row">
+                      <span class="spec-key">Tanks</span>
+                      <span class="spec-val">{{ pattern.tanks }}</span>
+                    </div>
+                  }
+                  @if (pattern.forward || pattern.reverse) {
+                    <div class="spec-row">
+                      <span class="spec-key">Oil load</span>
+                      <span class="spec-val oil-load">
+                        @if (pattern.forward) {
+                          <span class="dir"> <ion-icon name="arrow-up-outline"></ion-icon>{{ pattern.forward }}mL </span>
+                        }
+                        @if (pattern.reverse) {
+                          <span class="dir"> <ion-icon name="arrow-down-outline"></ion-icon>{{ pattern.reverse }}mL </span>
+                        }
+                      </span>
+                    </div>
+                  }
                 </div>
-                <div *ngIf="pattern.tanks" class="spec-row">
-                  <span class="spec-key">Tanks</span>
-                  <span class="spec-val">{{ pattern.tanks }}</span>
-                </div>
-                <div *ngIf="pattern.forward || pattern.reverse" class="spec-row">
-                  <span class="spec-key">Oil load</span>
-                  <span class="spec-val oil-load">
-                    <span *ngIf="pattern.forward" class="dir"> <ion-icon name="arrow-up-outline"></ion-icon>{{ pattern.forward }}mL </span>
-                    <span *ngIf="pattern.reverse" class="dir"> <ion-icon name="arrow-down-outline"></ion-icon>{{ pattern.reverse }}mL </span>
-                  </span>
-                </div>
-              </div>
+              }
             </div>
           </ion-card-content>
         </ion-card>
       }
-    </ng-template>
-    <ion-infinite-scroll *ngIf="hasMoreData" threshold="100px" (ionInfinite)="loadPatterns($event)">
-      <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more patterns..."></ion-infinite-scroll-content>
-    </ion-infinite-scroll>
+    }
+    @if (hasMoreData) {
+      <ion-infinite-scroll threshold="100px" (ionInfinite)="loadPatterns($event)">
+        <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more patterns..."></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+    }
   }
 </ion-content>
 

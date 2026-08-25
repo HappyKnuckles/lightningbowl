@@ -6,7 +6,9 @@
       </ion-row>
 
       <ion-row>
-        <ion-col *ngIf="!f.isTenth" class="input-col"></ion-col>
+        @if (!f.isTenth) {
+          <ion-col class="input-col"></ion-col>
+        }
 
         <ion-col class="input-col">
           <div class="cell" [class.is-split]="f.throw0.isSplit">{{ f.throw0.display }}</div>
@@ -25,7 +27,9 @@
 
       @if (isPinMode()) {
         <ion-row class="pin-deck-row">
-          <ion-col *ngIf="!f.isTenth" class="input-col"></ion-col>
+          @if (!f.isTenth) {
+            <ion-col class="input-col"></ion-col>
+          }
 
           <ion-col class="input-col">
             @if (f.throw0.pinShow) {

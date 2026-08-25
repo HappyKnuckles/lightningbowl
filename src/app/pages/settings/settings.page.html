@@ -18,9 +18,11 @@
         placeholder="{{ currentColor }}"
         [(ngModel)]="currentColor"
         (ionChange)="changeColor()">
-        <ion-select-option *ngFor="let color of optionsWithClasses; let i = index" [ngClass]="color.class" [value]="color.name">
-          {{ color.name }}
-        </ion-select-option>
+        @for (color of optionsWithClasses; track color; let i = $index) {
+          <ion-select-option [ngClass]="color.class" [value]="color.name">
+            {{ color.name }}
+          </ion-select-option>
+        }
       </ion-select>
     </ion-item>
     <ion-item button id="spare-names-modal">
@@ -61,11 +63,13 @@
       }
     </ion-item>
 
-    <ion-item *ngIf="updateAvailable" button [detail]="false" (click)="updateApp()">
-      <ion-icon name="refresh-circle-outline" slot="start"></ion-icon>
-      <ion-label>Load update</ion-label>
-      <ion-button slot="end"> Update </ion-button>
-    </ion-item>
+    @if (updateAvailable) {
+      <ion-item button [detail]="false" (click)="updateApp()">
+        <ion-icon name="refresh-circle-outline" slot="start"></ion-icon>
+        <ion-label>Load update</ion-label>
+        <ion-button slot="end"> Update </ion-button>
+      </ion-item>
+    }
   </ion-list>
 
   @if (isTestEnvironment) {

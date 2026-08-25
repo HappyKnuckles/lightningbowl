@@ -122,37 +122,46 @@
       </ion-item-option>
     </ion-item-options>
 
-    <ion-item-options
-      *ngIf="!editService.isEditMode(game.gameId)"
-      side="start"
-      (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
-      <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
-        <ion-icon class="title" name="create-outline" style="transform: translateY(-2px)"></ion-icon>
-      </ion-item-option>
-      <ion-item-option *ngIf="!editService.isEditMode(game.gameId)" (click)="takeScreenshotAndShare(game); slidingItem.closeOpened()">
-        <ion-icon class="title" name="share-outline" style="transform: translateY(-2px)"></ion-icon>
-      </ion-item-option>
-    </ion-item-options>
+    @if (!editService.isEditMode(game.gameId)) {
+      <ion-item-options side="start" (ionSwipe)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+        <ion-item-option expandable (click)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
+          <ion-icon class="title" name="create-outline" style="transform: translateY(-2px)"></ion-icon>
+        </ion-item-option>
+        @if (!editService.isEditMode(game.gameId)) {
+          <ion-item-option (click)="takeScreenshotAndShare(game); slidingItem.closeOpened()">
+            <ion-icon class="title" name="share-outline" style="transform: translateY(-2px)"></ion-icon>
+          </ion-item-option>
+        }
+      </ion-item-options>
+    }
 
-    <ion-item-options *ngIf="editService.isEditMode(game.gameId)" side="start" (ionSwipe)="cancelEdit(game); slidingItem.closeOpened()">
-      <ion-item-option expandable (click)="cancelEdit(game); slidingItem.closeOpened()">
-        <ion-icon class="title" name="create-outline" style="transform: translateY(-2px)"></ion-icon>
-      </ion-item-option>
-    </ion-item-options>
+    @if (editService.isEditMode(game.gameId)) {
+      <ion-item-options side="start" (ionSwipe)="cancelEdit(game); slidingItem.closeOpened()">
+        <ion-item-option expandable (click)="cancelEdit(game); slidingItem.closeOpened()">
+          <ion-icon class="title" name="create-outline" style="transform: translateY(-2px)"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    }
 
     <ion-item appLongPress lines="none" [delay]="1000" (longPressed)="saveOriginalStateAndEnableEdit(game); slidingItem.closeOpened()">
       <ion-accordion #accordionRef [id]="game.gameId" [value]="game.gameId">
         <ion-item class="expansion-header" lines="none" slot="header">
           <ion-label class="game-info">
-            <p *ngIf="!inSeries" class="game-date">
-              <span>{{ game.date | date: "MM.dd.yyyy" }}</span>
-              <span *ngIf="numberTag">{{ numberTag }}</span>
-            </p>
+            @if (!inSeries) {
+              <p class="game-date">
+                <span>{{ game.date | date: "MM.dd.yyyy" }}</span>
+                @if (numberTag) {
+                  <span>{{ numberTag }}</span>
+                }
+              </p>
+            }
             <h2 class="title">{{ title }}</h2>
-            <p *ngIf="meta" class="score">
-              <ion-icon src="assets/svg/lane.svg"></ion-icon>
-              <span>{{ meta }}</span>
-            </p>
+            @if (meta) {
+              <p class="score">
+                <ion-icon src="assets/svg/lane.svg"></ion-icon>
+                <span>{{ meta }}</span>
+              </p>
+            }
           </ion-label>
           <div class="score-badge" slot="end">
             <div class="score-text">
@@ -163,108 +172,116 @@
             </div>
           </div>
         </ion-item>
-        <div *ngIf="delayedClose.isVisible(game.gameId)" class="content" slot="content">
-          @if (!editService.isEditMode(game.gameId)) {
-            <!-- @if (game.pattern) {
+        @if (delayedClose.isVisible(game.gameId)) {
+          <div class="content" slot="content">
+            @if (!editService.isEditMode(game.gameId)) {
+              <!-- @if (game.pattern) {
               <ion-item class="pattern" [lines]="game.note ? '' : 'none'">
                 <ion-icon src="assets/svg/lane.svg" slot="start"></ion-icon>
                 <ion-text>{{ game.pattern }}</ion-text>
               </ion-item>
-            } -->
-            @if (game.balls && game.balls.length > 0) {
-              <ion-item button class="arsenal" [lines]="game.note ? '' : 'none'" (click)="navigateToBallsPage(game.balls)">
+              } -->
+              @if (game.balls && game.balls.length > 0) {
+                <ion-item button class="arsenal" [lines]="game.note ? '' : 'none'" (click)="navigateToBallsPage(game.balls)">
+                  <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+                  <ion-text>{{ game.balls.join(", ") }}</ion-text>
+                </ion-item>
+              }
+              @if (game.note) {
+                <ion-item class="note" lines="none">
+                  <ion-icon name="document-text-outline" slot="start"> </ion-icon>
+                  <ion-textarea readonly="true" type="text" [autoGrow]="true" [value]="game.note"></ion-textarea>
+                </ion-item>
+              }
+              @if (!editService.isEditMode(game.gameId)) {
+                <app-game-readonly [game]="game"></app-game-readonly>
+              }
+            } @else {
+              @if (!inSeries) {
+                <app-league-selector
+                  class="league"
+                  icon="trophy-outline"
+                  [isAddPage]="true"
+                  [leagues]="leagues()"
+                  [selectedLeague]="game.league ?? ''"
+                  (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
+              }
+              <ion-item button class="ball-selector" detail="true" detailIcon="chevron-expand-outline" id="ball-selector-{{ game.gameId }}">
                 <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-                <ion-text>{{ game.balls.join(", ") }}</ion-text>
+                <ion-label>Balls</ion-label>
+                <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
               </ion-item>
-            }
-            @if (game.note) {
+              @if (ballsStore.arsenal().length > 0) {
+                <ion-modal
+                  #modal
+                  class="ball-modal"
+                  [enterAnimation]="enterAnimation"
+                  [leaveAnimation]="leaveAnimation"
+                  trigger="ball-selector-{{ game.gameId }}">
+                  <ng-template>
+                    <app-ball-select [selectedBalls]="game.balls || []" (ballSelect)="onBallSelect($event, game, modal)"></app-ball-select>
+                  </ng-template>
+                </ion-modal>
+              } @else {
+                <ion-modal #allBallsModal [presentingElement]="presentingElement" trigger="ball-selector-{{ game.gameId }}">
+                  <ng-template>
+                    <app-generic-typeahead
+                      [config]="ballTypeaheadConfig"
+                      [items]="ballsStore.allBalls()"
+                      [prevSelectedItems]="getBallIds(game.balls)"
+                      (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                    </app-generic-typeahead>
+                  </ng-template>
+                </ion-modal>
+              }
+              @if (!inSeries) {
+                <ion-item
+                  button
+                  class="pattern-selector"
+                  detail="true"
+                  detailIcon="chevron-expand-outline"
+                  [id]="'selectPatternHistory' + game.gameId">
+                  <ion-icon slot="start" src="assets/svg/lane.svg"></ion-icon>
+                  <ion-label>Patterns</ion-label>
+                  <span class="ion-text-right"> {{ game.patterns.join(", ") || "None" }}</span>
+                </ion-item>
+                <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + game.gameId">
+                  <ng-template>
+                    <app-generic-typeahead
+                      [config]="patternTypeaheadConfig"
+                      [items]="patternsStore.allPatterns()"
+                      [prevSelectedItems]="game.patterns"
+                      (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
+                    </app-generic-typeahead>
+                  </ng-template>
+                </ion-modal>
+              }
               <ion-item class="note" lines="none">
                 <ion-icon name="document-text-outline" slot="start"> </ion-icon>
-                <ion-textarea readonly="true" type="text" [autoGrow]="true" [value]="game.note"></ion-textarea>
+                <ion-textarea type="text" [autoGrow]="true" [(ngModel)]="game.note"></ion-textarea>
               </ion-item>
+              <app-game
+                [canSpare]="canRecordSpare(game)"
+                [canStrike]="canRecordStrike(game)"
+                [canUndo]="canUndoForPinMode(game)"
+                [currentFrameIndex]="editService.getFocus(game.gameId)?.frameIndex ?? 0"
+                [currentThrowIndex]="editService.getFocus(game.gameId)?.throwIndex ?? 0"
+                [game]="editService.getEditedGame(game.gameId)!"
+                [isPinInputMode]="game.isPinMode"
+                [patternModalId]="game.gameId"
+                [pinsLeftStanding]="getPinsLeftStandingForEditedGame(game)"
+                [showMetadata]="false"
+                (pinThrowConfirmed)="onPinThrowConfirmed($event, game)"
+                (pinUndoRequested)="handlePinUndoRequested(game)"
+                (scoreCellClick)="onScoreCellClick(game, $event.frameIndex, $event.throwIndex)"
+                (throwInput)="onEditThrowInput($event, game)"></app-game>
+              <div class="action-row">
+                <ion-button class="left-button" size="small" (click)="cancelEdit(game)">Cancel</ion-button>
+                <ion-button class="right-button" size="small" [disabled]="!isGameValid(game)" (click)="saveEdit(game)">Save</ion-button>
+              </div>
             }
-            <app-game-readonly *ngIf="!editService.isEditMode(game.gameId)" [game]="game"></app-game-readonly>
-          } @else {
-            @if (!inSeries) {
-              <app-league-selector
-                class="league"
-                icon="trophy-outline"
-                [isAddPage]="true"
-                [leagues]="leagues()"
-                [selectedLeague]="game.league ?? ''"
-                (leagueChanged)="onEditLeagueChanged(game, $event)"></app-league-selector>
-            }
-            <ion-item button class="ball-selector" detail="true" detailIcon="chevron-expand-outline" id="ball-selector-{{ game.gameId }}">
-              <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
-              <ion-label>Balls</ion-label>
-              <span class="ion-text-right">{{ getSelectedBallsText(game) }}</span>
-            </ion-item>
-
-            @if (ballsStore.arsenal().length > 0) {
-              <ion-modal
-                #modal
-                class="ball-modal"
-                [enterAnimation]="enterAnimation"
-                [leaveAnimation]="leaveAnimation"
-                trigger="ball-selector-{{ game.gameId }}">
-                <ng-template>
-                  <app-ball-select [selectedBalls]="game.balls || []" (ballSelect)="onBallSelect($event, game, modal)"></app-ball-select>
-                </ng-template>
-              </ion-modal>
-            } @else {
-              <ion-modal #allBallsModal [presentingElement]="presentingElement" trigger="ball-selector-{{ game.gameId }}">
-                <ng-template>
-                  <app-generic-typeahead
-                    [config]="ballTypeaheadConfig"
-                    [items]="ballsStore.allBalls()"
-                    [prevSelectedItems]="getBallIds(game.balls)"
-                    (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
-                  </app-generic-typeahead>
-                </ng-template>
-              </ion-modal>
-            }
-            @if (!inSeries) {
-              <ion-item button class="pattern-selector" detail="true" detailIcon="chevron-expand-outline" [id]="'selectPatternHistory' + game.gameId">
-                <ion-icon slot="start" src="assets/svg/lane.svg"></ion-icon>
-                <ion-label>Patterns</ion-label>
-                <span class="ion-text-right"> {{ game.patterns.join(", ") || "None" }}</span>
-              </ion-item>
-              <ion-modal [presentingElement]="presentingElement" [trigger]="'selectPatternHistory' + game.gameId">
-                <ng-template>
-                  <app-generic-typeahead
-                    [config]="patternTypeaheadConfig"
-                    [items]="patternsStore.allPatterns()"
-                    [prevSelectedItems]="game.patterns"
-                    (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
-                  </app-generic-typeahead>
-                </ng-template>
-              </ion-modal>
-            }
-            <ion-item class="note" lines="none">
-              <ion-icon name="document-text-outline" slot="start"> </ion-icon>
-              <ion-textarea type="text" [autoGrow]="true" [(ngModel)]="game.note"></ion-textarea>
-            </ion-item>
-            <app-game
-              [canSpare]="canRecordSpare(game)"
-              [canStrike]="canRecordStrike(game)"
-              [canUndo]="canUndoForPinMode(game)"
-              [currentFrameIndex]="editService.getFocus(game.gameId)?.frameIndex ?? 0"
-              [currentThrowIndex]="editService.getFocus(game.gameId)?.throwIndex ?? 0"
-              [game]="editService.getEditedGame(game.gameId)!"
-              [isPinInputMode]="game.isPinMode"
-              [patternModalId]="game.gameId"
-              [pinsLeftStanding]="getPinsLeftStandingForEditedGame(game)"
-              [showMetadata]="false"
-              (pinThrowConfirmed)="onPinThrowConfirmed($event, game)"
-              (pinUndoRequested)="handlePinUndoRequested(game)"
-              (scoreCellClick)="onScoreCellClick(game, $event.frameIndex, $event.throwIndex)"
-              (throwInput)="onEditThrowInput($event, game)"></app-game>
-            <div class="action-row">
-              <ion-button class="left-button" size="small" (click)="cancelEdit(game)">Cancel</ion-button>
-              <ion-button class="right-button" size="small" [disabled]="!isGameValid(game)" (click)="saveEdit(game)">Save</ion-button>
-            </div>
-          }
-        </div>
+          </div>
+        }
       </ion-accordion>
     </ion-item>
   </ion-item-sliding>

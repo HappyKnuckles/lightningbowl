@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -59,7 +58,6 @@ interface SavedEntry {
     IonCol,
     IonRow,
     IonGrid,
-    CommonModule,
     FormsModule,
     IonContent,
     IonHeader,

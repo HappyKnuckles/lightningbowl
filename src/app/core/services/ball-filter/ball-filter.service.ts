@@ -4,27 +4,29 @@ import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/model
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { UtilsService } from '../../utils/utils.service';
 
+const DEFAULT_BALL_FILTER: BallFilter = {
+  brands: [],
+  coverstocks: [],
+  coverstockTypes: [],
+  cores: [],
+  market: Market.ALL,
+  coreType: CoreType.ALL,
+  availability: false,
+  releaseDate: 'all',
+  weight: '15',
+  minRg: 0,
+  maxRg: 3,
+  minDiff: 0,
+  maxDiff: 0.1,
+  inArsenal: false,
+};
+
 @Injectable({
   providedIn: 'root',
 })
 export class BallFilterService {
-  defaultFilters: BallFilter = {
-    brands: [],
-    coverstocks: [],
-    coverstockTypes: [],
-    cores: [],
-    market: Market.ALL,
-    coreType: CoreType.ALL,
-    availability: false,
-    releaseDate: 'all',
-    weight: '15',
-    minRg: 0,
-    maxRg: 3,
-    minDiff: 0,
-    maxDiff: 0.1,
-    inArsenal: false,
-  };
   readonly filters = signal<BallFilter>(this.loadInitialFilters());
+  defaultFilters: BallFilter = { ...DEFAULT_BALL_FILTER };
 
   activeFilterCount: Signal<number> = computed(() => {
     return Object.keys(this.filters()).reduce((count, key) => {
@@ -61,7 +63,7 @@ export class BallFilterService {
   }
 
   resetFilters(): void {
-    this.filters.update(() => ({ ...this.defaultFilters }));
+    this.filters.update(() => ({ ...DEFAULT_BALL_FILTER }));
   }
 
   filterBalls(balls: Ball[], filters: BallFilter): Ball[] {
@@ -87,6 +89,6 @@ export class BallFilterService {
 
   loadInitialFilters(): BallFilter {
     const storedFilter = localStorage.getItem('ball-filter');
-    return storedFilter ? JSON.parse(storedFilter) : { ...this.defaultFilters };
+    return storedFilter ? JSON.parse(storedFilter) : { ...DEFAULT_BALL_FILTER };
   }
 }

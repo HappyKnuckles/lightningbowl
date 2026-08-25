@@ -1,10 +1,9 @@
 <div class="pin-deck-container" [class.stat-mode]="isStatPage()" [style.transform]="'scale(' + scale() + ')'">
-  <div *ngFor="let row of pinDeck(); trackBy: trackByRow" class="pin-row">
-    <div
-      *ngFor="let pin of row; trackBy: trackByPinId"
-      aria-hidden="true"
-      class="pin"
-      [class.active]="pin.active"
-      [class.is-split]="isSplit() && pin.active && isStatPage()"></div>
-  </div>
+  @for (row of pinDeck(); track trackByRow($index)) {
+    <div class="pin-row">
+      @for (pin of row; track trackByPinId($index, pin)) {
+        <div aria-hidden="true" class="pin" [class.active]="pin.active" [class.is-split]="isSplit() && pin.active && isStatPage()"></div>
+      }
+    </div>
+  }
 </div>

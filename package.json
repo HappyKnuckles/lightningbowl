@@ -14,6 +14,7 @@
     "pretty": "npx prettier --write .",
     "prepare": "husky install || echo 'Skipping husky install'",
     "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
     "stylelint": "npx stylelint \"src/**/*.scss\"",
     "update:screenshots": "playwright test --config=playwright.config.ts",
     "update:screenshots:mobile": "playwright test --config=playwright.config.ts --project=mobile",
@@ -95,6 +96,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "angular-eslint": "19.1.0",
     "eslint": "^9.20.0",
+    "eslint-plugin-perfectionist": "5.10.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "prettier": "3.5.2",
@@ -116,7 +118,14 @@
     "iOS >=17"
   ],
   "lint-staged": {
-    "*.{js,ts,css,md,html}": "prettier --write",
-    "*.ts": "eslint"
+    "*.{js,css,md}": "prettier --write",
+    "*.html": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.ts": [
+      "eslint",
+      "prettier --write"
+    ]
   }
 }

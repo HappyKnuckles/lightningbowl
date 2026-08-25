@@ -19,7 +19,7 @@ import {
   IonImg,
   IonText,
 } from '@ionic/angular/standalone';
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
@@ -45,7 +45,6 @@ import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
     IonText,
     SearchBlurDirective,
     NgClass,
-    NgIf,
   ],
   templateUrl: './generic-typeahead.component.html',
   styleUrl: './generic-typeahead.component.scss',

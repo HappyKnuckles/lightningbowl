@@ -27,10 +27,10 @@ jobs:
           cache: npm
 
       - name: Use npm 11
-        # package-lock.json is written by npm 11, which nests webpack-dev-server's
-        # chokidar@3.6.0 subtree under it. npm 10 (what Node 22 ships) expects those
-        # four packages hoisted to the root instead and rejects the lockfile as out
-        # of sync. Predates this pipeline — it just had no CI to surface it.
+        # package-lock.json is written by npm 11, which nests the chokidar subtrees
+        # of @angular-devkit/core (chokidar@5) and sass (chokidar@3). npm 10 (what
+        # Node 22 ships) expects them hoisted to the root instead and rejects the
+        # lockfile as "out of sync". Verified still required on Angular 21.
         run: npm install -g npm@11
 
       - name: Install dependencies
@@ -69,10 +69,10 @@ jobs:
           cache: npm
 
       - name: Use npm 11
-        # package-lock.json is written by npm 11, which nests webpack-dev-server's
-        # chokidar@3.6.0 subtree under it. npm 10 (what Node 22 ships) expects those
-        # four packages hoisted to the root instead and rejects the lockfile as out
-        # of sync. Predates this pipeline — it just had no CI to surface it.
+        # package-lock.json is written by npm 11, which nests the chokidar subtrees
+        # of @angular-devkit/core (chokidar@5) and sass (chokidar@3). npm 10 (what
+        # Node 22 ships) expects them hoisted to the root instead and rejects the
+        # lockfile as "out of sync". Verified still required on Angular 21.
         run: npm install -g npm@11
 
       - name: Install dependencies
@@ -82,8 +82,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Unit tests with coverage
-        # Fails on its own if line coverage drops below the threshold in
-        # vitest.coverage.config.ts.
+        # Fails on its own if line coverage drops below the coverageThresholds
+        # floor on the "test" target in angular.json.
         run: npm run test:coverage
 
       - name: Summarise coverage

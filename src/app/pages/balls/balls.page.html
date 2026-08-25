@@ -25,7 +25,9 @@
       </app-sort-header>
       <ion-button fill="clear" (click)="openFilterModal()">
         <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
-        <ion-text class="filter-indicator" *ngIf="isFilterActive()">{{ ballFilterService.activeFilterCount() }}</ion-text>
+        @if (isFilterActive()) {
+          <ion-text class="filter-indicator">{{ ballFilterService.activeFilterCount() }}</ion-text>
+        }
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -42,10 +44,12 @@
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
   </ion-toolbar>
-  <ion-toolbar style="text-align: center" *ngIf="ballFilterService.activeFilterCount() !== 0">
-    <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="ballFilterConfigs">
-    </app-generic-filter-active>
-  </ion-toolbar>
+  @if (ballFilterService.activeFilterCount() !== 0) {
+    <ion-toolbar style="text-align: center">
+      <app-generic-filter-active [filters]="currentFilters()" [defaultFilters]="defaultFilters" [filterConfigs]="ballFilterConfigs">
+      </app-generic-filter-active>
+    </ion-toolbar>
+  }
   <app-search-suggestions
     historyKey="balls"
     [searchTerm]="searchTerm()"
@@ -61,11 +65,9 @@
   </ion-refresher>
 
   @if (!isPageLoading()) {
-    <ng-container *ngIf="displayedBalls().length <= 0; else content">
+    @if (displayedBalls().length <= 0) {
       <ion-text class="no-game-text"> No balls found. </ion-text>
-    </ng-container>
-
-    <ng-template #content>
+    } @else {
       @for (ball of displayedBalls(); track ball.ball_id) {
         <ion-card role="article">
           <div class="action-header">
@@ -89,7 +91,6 @@
               </ion-icon>
             </ion-button>
           </div>
-
           <ion-card-header>
             <ion-card-title
               (click)="getSimilarMovementBalls(ball)"
@@ -108,12 +109,13 @@
             </ion-card-title>
             <ion-card-subtitle>
               <span style="letter-spacing: 1.5px">{{ ball.brand_name }}</span> · {{ ball.release_date }}
-              <ion-icon *ngIf="ball.us_int === 'Overseas'" name="globe-outline" style="vertical-align: text-top"></ion-icon>
+              @if (ball.us_int === "Overseas") {
+                <ion-icon name="globe-outline" style="vertical-align: text-top"></ion-icon>
+              }
             </ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
             <ion-img [src]="ballsStore.url + ball.thumbnail_image" [alt]="'Image for ' + ball.ball_name"></ion-img>
-
             <div class="ball-info">
               <!-- Stat chips -->
               <div class="stats">
@@ -127,12 +129,13 @@
                   <span class="stat-value">{{ ball.core_diff }}</span>
                   <span class="stat-desc">{{ getFlarePotential(ball) }}</span>
                 </div>
-                <div class="stat" *ngIf="ball.core_int_diff">
-                  <span class="stat-label">Int. Diff</span>
-                  <span class="stat-value">{{ ball.core_int_diff }}</span>
-                </div>
+                @if (ball.core_int_diff) {
+                  <div class="stat">
+                    <span class="stat-label">Int. Diff</span>
+                    <span class="stat-value">{{ ball.core_int_diff }}</span>
+                  </div>
+                }
               </div>
-
               <!-- Core card -->
               <div
                 class="spec-card ion-activatable ion-ripple-parent"
@@ -154,7 +157,6 @@
                 </div>
                 <ion-ripple-effect></ion-ripple-effect>
               </div>
-
               <!-- Coverstock card -->
               <div
                 class="spec-card ion-activatable ion-ripple-parent"
@@ -180,25 +182,28 @@
                 </div>
                 <ion-ripple-effect></ion-ripple-effect>
               </div>
-
               <!-- Arsenal CTA -->
               <div class="arsenal-actions">
-                <ion-button *ngIf="!isInArsenal(ball)" class="arsenal-btn add" expand="block" (click)="saveBallToArsenal(ball)">
-                  Add to arsenal
-                </ion-button>
-                <ion-button *ngIf="isInArsenal(ball)" class="arsenal-btn remove" expand="block" fill="outline" (click)="removeFromArsenal(ball)">
-                  Remove from arsenal
-                </ion-button>
+                @if (!isInArsenal(ball)) {
+                  <ion-button class="arsenal-btn add" expand="block" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
+                }
+                @if (isInArsenal(ball)) {
+                  <ion-button class="arsenal-btn remove" expand="block" fill="outline" (click)="removeFromArsenal(ball)">
+                    Remove from arsenal
+                  </ion-button>
+                }
               </div>
             </div>
           </ion-card-content>
         </ion-card>
       }
       <!-- Infinite Scroll -->
-      <ion-infinite-scroll threshold="100px" (ionInfinite)="loadBalls($event)" *ngIf="hasMoreData">
-        <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more balls..."></ion-infinite-scroll-content>
-      </ion-infinite-scroll>
-    </ng-template>
+      @if (hasMoreData) {
+        <ion-infinite-scroll threshold="100px" (ionInfinite)="loadBalls($event)">
+          <ion-infinite-scroll-content loadingSpinner="crescent" loadingText="Loading more balls..."></ion-infinite-scroll-content>
+        </ion-infinite-scroll>
+      }
+    }
   } @else {
     @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
       <ion-card>

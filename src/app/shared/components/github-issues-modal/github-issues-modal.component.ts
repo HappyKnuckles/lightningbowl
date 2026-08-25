@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -46,7 +45,6 @@ import { GitHubService } from 'src/app/core/services/github/github.service';
     IonSelect,
     IonButton,
     IonContent,
-    CommonModule,
     FormsModule,
   ],
 })

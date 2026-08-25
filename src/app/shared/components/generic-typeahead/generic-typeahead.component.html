@@ -19,25 +19,25 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" style="height: 85vh">
-  <ng-container *ngIf="displayedItems().length <= 0 && config().noDataText; else itemsList">
+  @if (displayedItems().length <= 0 && config().noDataText) {
     <ion-text class="no-game-text">{{ config().noDataText }}</ion-text>
-  </ng-container>
-
-  <ng-template #itemsList>
+  } @else {
     <ion-list>
       @for (item of displayedItems(); track getItemIdentifier(item)) {
         <ion-item role="article" [ngClass]="getCustomDisplayLogic(item).cssClass" lines="none">
-          <ion-avatar slot="start" *ngIf="config().showImages && config().imageShape !== 'rect'">
-            <ion-img [src]="getImageUrl(item)"></ion-img>
-          </ion-avatar>
-          <img
-            slot="start"
-            class="typeahead-img-rect"
-            *ngIf="config().showImages && config().imageShape === 'rect'"
-            [src]="getImageUrl(item)"
-            [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
-            (error)="onImageError($event)" />
-
+          @if (config().showImages && config().imageShape !== "rect") {
+            <ion-avatar slot="start">
+              <ion-img [src]="getImageUrl(item)"></ion-img>
+            </ion-avatar>
+          }
+          @if (config().showImages && config().imageShape === "rect") {
+            <img
+              slot="start"
+              class="typeahead-img-rect"
+              [src]="getImageUrl(item)"
+              [alt]="getItemDisplayValue(item, config().displayFields[0].key)"
+              (error)="onImageError($event)" />
+          }
           <ion-checkbox
             [value]="getItemValue(item)"
             [checked]="isItemSelected(item)"
@@ -61,9 +61,8 @@
         </ion-item>
       }
     </ion-list>
-
     <ion-infinite-scroll threshold="90%" (ionInfinite)="loadData($event)" #infiniteScroll>
       <ion-infinite-scroll-content loadingSpinner="crescent" [loadingText]="config().loadingText"></ion-infinite-scroll-content>
     </ion-infinite-scroll>
-  </ng-template>
+  }
 </ion-content>

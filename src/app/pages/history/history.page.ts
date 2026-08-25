@@ -1,4 +1,4 @@
-import { DatePipe, NgIf } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
@@ -53,7 +53,6 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     IonBadge,
     IonContent,
     IonRefresher,
-    NgIf,
     IonText,
     ReactiveFormsModule,
     ReactiveFormsModule,

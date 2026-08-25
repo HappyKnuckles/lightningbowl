@@ -34,7 +34,7 @@ module.exports = tseslint.config(
       // Dependency detection is what keeps `x = this.someService.y` from being hoisted above
       // the `inject()` it reads, which would be a construction-time crash, not a lint warning.
       "perfectionist/sort-classes": [
-        "warn",
+        "error",
         {
           type: "unsorted",
           useExperimentalDependencyDetection: true,

@@ -1,30 +1,36 @@
 <div class="pin-input-container" [class.docked]="docked()">
-  @if (showStatsButton()) {
-    <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
-      <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
-    </ion-button>
-  }
-
-  @for (row of pinRows(); track $index) {
-    <div class="pin-row">
-      @for (pin of row; track pin.number) {
-        <ion-button
-          class="pin"
-          [class.active]="pin.active"
-          [class.knocked-down]="pin.knockedDown"
-          [disabled]="pin.disabled"
-          (click)="togglePin(pin.number)">
-          {{ pin.number }}
-        </ion-button>
-      }
-    </div>
-  }
-
+  <!-- Shortcuts that stand in for touching the deck, kept next to the score grid. -->
   <div class="quick-actions">
     <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
     <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
     <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+  </div>
 
+  <div class="pin-deck">
+    @for (row of pinRows(); track $index) {
+      <div class="pin-row">
+        @for (pin of row; track pin.number) {
+          <ion-button
+            class="pin"
+            [class.active]="pin.active"
+            [class.knocked-down]="pin.knockedDown"
+            [disabled]="pin.disabled"
+            (click)="togglePin(pin.number)">
+            {{ pin.number }}
+          </ion-button>
+        }
+      </div>
+    }
+
+    @if (showStatsButton()) {
+      <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
+        <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
+      </ion-button>
+    }
+  </div>
+
+  <!-- Actions that follow a pin selection, kept in the thumb zone below the deck. -->
+  <div class="quick-actions">
     <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
       <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
     </ion-button>

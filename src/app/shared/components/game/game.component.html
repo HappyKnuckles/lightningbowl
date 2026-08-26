@@ -15,7 +15,17 @@
               class="input-col score-cell"
               [class.current-throw]="highlightCurrentThrow() && currentFrameIndex() === frame.frameIndex && currentThrowIndex() === $index"
               (click)="onScoreCellClicked(frame.frameIndex, $index)">
-              <ion-input type="text" readonly="true" [disabled]="cell.disabled" [value]="cell.display" [class.is-split]="cell.isSplit"></ion-input>
+              <ion-input
+                type="text"
+                readonly="true"
+                inputmode="none"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                [spellcheck]="false"
+                [disabled]="cell.disabled"
+                [value]="cell.display"
+                [class.is-split]="cell.isSplit"></ion-input>
             </ion-col>
           }
         </ion-row>
@@ -83,7 +93,10 @@
                 type="text"
                 clearOnEdit="true"
                 inputmode="numeric"
-                autocapitalize="on"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                [spellcheck]="false"
                 [debounce]="showMetadata() ? 0 : 500"
                 [disabled]="cell.disabled"
                 [value]="cell.display"

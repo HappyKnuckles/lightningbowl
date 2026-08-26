@@ -139,7 +139,7 @@
 </ion-content>
 
 @if (dockPinInput && isPinInputMode) {
-  <ion-footer class="pin-input-footer" [translucent]="true" [class.open]="pinDockOpen()">
+  <ion-footer class="pin-input-footer" [class.open]="pinDockOpen()">
     <app-pin-input
       [docked]="true"
       [pinsLeftStanding]="getPinsLeftStanding(activeSegmentIndex)"

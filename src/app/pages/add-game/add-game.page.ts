@@ -230,6 +230,7 @@ export class AddGamePage implements OnInit {
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
     this.presentingElement = document.querySelector('.ion-page');
+    this.focusCurrentThrowCell();
   }
 
   // PIN INPUT MODE
@@ -449,6 +450,7 @@ export class AddGamePage implements OnInit {
   togglePinInputMode(): void {
     this.isPinInputMode = !this.isPinInputMode;
     localStorage.setItem('pinInputMode', String(this.isPinInputMode));
+    this.focusCurrentThrowCell();
   }
 
   onInputFocused(event: { frameIndex: number; throwIndex: number }, index: number): void {
@@ -620,6 +622,24 @@ export class AddGamePage implements OnInit {
   }
 
   // PRIVATE HELPERS - GAME STATE
+  /**
+   * Raise the docked pin input on the throw that's up next, without waiting for
+   * a score cell tap — the highlighted cell is what tells pin mode apart from
+   * the classic grid at a glance.
+   */
+  private focusCurrentThrowCell(): void {
+    if (!this.isPinInputMode || !this.dockPinInput) {
+      this.pinDockOpen.set(false);
+      return;
+    }
+
+    const index = this.activeSegmentIndex;
+    if (this.isGameComplete(index)) return;
+
+    this.activeGameIndex = index;
+    this.pinDockOpen.set(true);
+  }
+
   private loadPinInputMode(): void {
     const pinInputMode = localStorage.getItem('pinInputMode');
     this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';

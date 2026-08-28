@@ -1,11 +1,3 @@
-:host-context(.plt-hybrid) ion-tab-bar {
-  --background: color-mix(in srgb, var(--ion-card-background, #141414) 45%, transparent);
-  --border: 0;
-
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-}
-
 // ion-tab-bar {
 //     --background: var(--tab-bar-color);
 // }
@@ -18,6 +10,6 @@ ion-icon {
   color: var(--ion-color-primary);
 }
 
-.tab-btn:not(.active-tab){
+.tab-btn:not(.active-tab) {
   color: #999;
 }

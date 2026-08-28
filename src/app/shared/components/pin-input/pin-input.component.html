@@ -1,10 +1,14 @@
 <div class="pin-input-container" [class.docked]="docked()">
-  <!-- Shortcuts that stand in for touching the deck, kept next to the score grid. -->
-  <div class="quick-actions">
-    <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
-    <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
-    <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
-  </div>
+  <!--
+    Docked, the deck sits in the footer and these shortcuts stand in for touching it,
+    so they belong up next to the score grid. Inline they'd split the card in two, so
+    they join the row below the deck instead.
+  -->
+  @if (docked()) {
+    <div class="quick-actions">
+      <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
+    </div>
+  }
 
   <div class="pin-deck">
     @for (row of pinRows(); track $index) {
@@ -31,6 +35,9 @@
 
   <!-- Actions that follow a pin selection, kept in the thumb zone below the deck. -->
   <div class="quick-actions">
+    @if (!docked()) {
+      <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
+    }
     <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
       <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
     </ion-button>
@@ -42,3 +49,9 @@
     </ion-button>
   </div>
 </div>
+
+<ng-template #scoreShortcuts>
+  <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
+  <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
+  <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+</ng-template>

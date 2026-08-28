@@ -1,7 +1,6 @@
 .mode-chevron {
   vertical-align: middle;
   transition: 300ms transform cubic-bezier(0.25, 0.8, 0.5, 1);
-  ;
 
   &.open {
     transform: rotate(180deg);
@@ -26,18 +25,14 @@ ion-grid {
   }
 }
 
-.pin-input-footer {
-  background: transparent;
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-
-  > * {
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  &.open {
-    grid-template-rows: 1fr;
+.pin-input-modal {
+  --backdrop-opacity: 0;
+  --box-shadow: none;
+  --height: auto;
+  --border-radius: var(--card-border-radius);
+  --background: color-mix(in srgb, var(--ion-card-background, #141414) 45%, transparent);
+  &::part(content) {
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
   }
 }

@@ -5,19 +5,17 @@
   align-items: center;
   gap: 20px;
   padding: 20px;
-  // max-width: 500px;
   width: 100%;
   background-color: var(--ion-item-background);
   border-radius: var(--card-border-radius);
   margin: 0 5px 5px;
 
-  &.docked {
+  // In the sheet, the modal surface paints the frosted glass behind the deck.
+  &.sheet {
     border-radius: 0;
     margin: 0;
-    background-color: color-mix(in srgb, var(--ion-card-background, #141414) 45%, transparent);
-    backdrop-filter: saturate(180%) blur(24px);
-    -webkit-backdrop-filter: saturate(180%) blur(24px);
-    border-top: 0.5px solid color-mix(in srgb, var(--ion-text-color, #fff) 12%, transparent);
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    background-color: transparent;
   }
 }
 
@@ -81,12 +79,6 @@
     opacity: 0.4;
     text-decoration: line-through;
   }
-}
-
-.pin-actions {
-  margin-top: 20px;
-  width: 100%;
-  max-width: 400px;
 }
 
 .quick-actions {

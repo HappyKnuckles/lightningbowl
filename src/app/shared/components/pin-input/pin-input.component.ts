@@ -35,10 +35,11 @@ export class PinInputComponent {
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
   /**
-   * Render flat and full-bleed for use as a docked keyboard surface, instead of
-   * the rounded, inset card the component uses inside page flow.
+   * Render as the native bottom sheet: frosted and full-bleed, with the score
+   * shortcuts lifted above the deck. Off, it's the inset card the web build
+   * keeps in page flow, shortcuts and all in the single row below the deck.
    */
-  docked = input<boolean>(false);
+  sheet = input<boolean>(false);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();

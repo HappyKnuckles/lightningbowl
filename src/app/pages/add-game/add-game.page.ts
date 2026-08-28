@@ -22,7 +22,6 @@ import {
   IonSegmentView,
   IonTitle,
   IonToolbar,
-  IonFooter,
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
@@ -92,7 +91,6 @@ defineCustomElements(window);
     IonSegment,
     IonSegmentContent,
     IonSegmentView,
-    IonFooter,
     IonLabel,
     GameComponent,
     PinInputComponent,
@@ -160,17 +158,16 @@ export class AddGamePage implements OnInit {
   private activeGameIndex = 0;
 
   /**
-   * Dock the pin input in the page footer instead of inside each app-game.
-   * Native shell only — the web build keeps the inline layout it always had.
+   * Native shells present the deck as a bottom sheet over the score grid; the
+   * web build keeps it inline inside app-game, where it has always lived.
    */
-  readonly dockPinInput = this.platform.is('hybrid');
+  readonly sheetPinInput = this.platform.is('hybrid');
 
   /**
-   * Whether the docked pin input is up. It behaves like a keyboard: raised by
-   * tapping a score cell, kept up while throws advance through the game, and
-   * dismissed once the game is complete or the user closes it by hand.
+   * Whether the deck's sheet is up. Raised by tapping a score cell, and put away
+   * once the game is complete or the user taps outside it.
    */
-  readonly pinDockOpen = signal(false);
+  readonly pinSheetOpen = signal(false);
 
   /** Index of the game the segment view is currently showing. */
   get activeSegmentIndex(): number {
@@ -295,20 +292,20 @@ export class AddGamePage implements OnInit {
     this.updateGameState(result.updatedFrames, gameIndex);
 
     if (this.isGameComplete(gameIndex)) {
-      this.pinDockOpen.set(false);
+      this.pinSheetOpen.set(false);
     }
   }
 
-  @HostListener('document:focusin', ['$event'])
-  @HostListener('document:pointerdown', ['$event'])
-  onInteractionOutsidePinDock(event: Event): void {
-    if (!this.pinDockOpen()) return;
 
-    const target = event.target as HTMLElement | null;
-    if (!target?.closest) return;
-    if (target.closest('.pin-input-footer') || target.closest('.score-cell')) return;
+  @HostListener('click', ['$event'])
+  onPageTap(event: MouseEvent): void {
+    if (!this.pinSheetOpen()) return;
 
-    this.pinDockOpen.set(false);
+    const target = event.target as HTMLElement;
+
+    if (target.closest('app-pin-input') || target.closest('.score-cell')) return;
+
+    this.pinSheetOpen.set(false);
   }
 
   handlePinUndoRequested(gameIndex: number): void {
@@ -352,7 +349,7 @@ export class AddGamePage implements OnInit {
         return newStates;
       });
       this.activeGameIndex = gameIndex;
-      this.pinDockOpen.set(true);
+      this.pinSheetOpen.set(true);
     }
   }
 
@@ -443,8 +440,7 @@ export class AddGamePage implements OnInit {
   // UI INTERACTION
   onSegmentChange(event: SegmentCustomEvent): void {
     this.selectedSegment = event.detail.value as string;
-    // A different game's grid is showing now — wait for a cell tap there.
-    this.pinDockOpen.set(false);
+    this.pinSheetOpen.set(false);
   }
 
   togglePinInputMode(): void {
@@ -623,13 +619,13 @@ export class AddGamePage implements OnInit {
 
   // PRIVATE HELPERS - GAME STATE
   /**
-   * Raise the docked pin input on the throw that's up next, without waiting for
-   * a score cell tap — the highlighted cell is what tells pin mode apart from
-   * the classic grid at a glance.
+   * Raise the deck on the throw that's up next, without waiting for a score cell
+   * tap — the highlighted cell is what tells pin mode apart from the classic
+   * grid at a glance.
    */
   private focusCurrentThrowCell(): void {
-    if (!this.isPinInputMode || !this.dockPinInput) {
-      this.pinDockOpen.set(false);
+    if (!this.isPinInputMode || !this.sheetPinInput) {
+      this.pinSheetOpen.set(false);
       return;
     }
 
@@ -637,7 +633,8 @@ export class AddGamePage implements OnInit {
     if (this.isGameComplete(index)) return;
 
     this.activeGameIndex = index;
-    this.pinDockOpen.set(true);
+
+    setTimeout(() => this.pinSheetOpen.set(true));
   }
 
   private loadPinInputMode(): void {
@@ -800,6 +797,10 @@ export class AddGamePage implements OnInit {
       ],
     });
     await alert.present();
+
+    // Settle the choice before returning: the caller raises the pin deck on the
+    // current throw, which the draft is still about to change.
+    await alert.onDidDismiss();
   }
 
   private restoreDraft(draft: GameDraft): void {

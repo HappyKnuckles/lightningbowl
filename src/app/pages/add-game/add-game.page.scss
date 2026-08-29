@@ -1,7 +1,6 @@
 .mode-chevron {
   vertical-align: middle;
   transition: 300ms transform cubic-bezier(0.25, 0.8, 0.5, 1);
-  ;
 
   &.open {
     transform: rotate(180deg);
@@ -23,5 +22,17 @@ ion-grid {
   ion-button {
     --background: var(--ion-color-dark);
     color: white;
+  }
+}
+
+.pin-input-modal {
+  --backdrop-opacity: 0;
+  --box-shadow: none;
+  --height: auto;
+  --border-radius: var(--card-border-radius);
+  --background: color-mix(in srgb, var(--ion-card-background, #141414) 45%, transparent);
+  &::part(content) {
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
   }
 }

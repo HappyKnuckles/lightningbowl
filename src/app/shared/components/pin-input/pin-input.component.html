@@ -1,30 +1,38 @@
-<div class="pin-input-container">
-  @if (showStatsButton()) {
-    <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
-      <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
-    </ion-button>
-  }
+<div class="pin-input-container" [class.sheet]="sheet()">
 
-  @for (row of pinRows(); track $index) {
-    <div class="pin-row">
-      @for (pin of row; track pin.number) {
-        <ion-button
-          class="pin"
-          [class.active]="pin.active"
-          [class.knocked-down]="pin.knockedDown"
-          [disabled]="pin.disabled"
-          (click)="togglePin(pin.number)">
-          {{ pin.number }}
-        </ion-button>
-      }
+  @if (sheet()) {
+    <div class="quick-actions">
+      <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
     </div>
   }
 
-  <div class="quick-actions">
-    <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
-    <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
-    <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+  <div class="pin-deck">
+    @for (row of pinRows(); track $index) {
+      <div class="pin-row">
+        @for (pin of row; track pin.number) {
+          <ion-button
+            class="pin"
+            [class.active]="pin.active"
+            [class.knocked-down]="pin.knockedDown"
+            [disabled]="pin.disabled"
+            (click)="togglePin(pin.number)">
+            {{ pin.number }}
+          </ion-button>
+        }
+      </div>
+    }
 
+    @if (showStatsButton()) {
+      <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
+        <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
+      </ion-button>
+    }
+  </div>
+
+  <div class="quick-actions">
+    @if (!sheet()) {
+      <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
+    }
     <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
       <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
     </ion-button>
@@ -36,3 +44,9 @@
     </ion-button>
   </div>
 </div>
+
+<ng-template #scoreShortcuts>
+  <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
+  <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
+  <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+</ng-template>

@@ -5,11 +5,37 @@
   align-items: center;
   gap: 20px;
   padding: 20px;
-  // max-width: 500px;
   width: 100%;
   background-color: var(--ion-item-background);
   border-radius: var(--card-border-radius);
-  margin: 0 5px 5px;
+  margin: 0 4px 4px;
+
+  &.sheet {
+    border-radius: 0;
+    margin: 0;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    background-color: transparent;
+  }
+}
+
+.pin-deck {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+
+  // Left of the 7 pin
+  .stats-btn {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    transform: translateY(-50%);
+    margin: 0;
+    --padding-start: 4px;
+    --padding-end: 4px;
+  }
 }
 
 .pin-row {
@@ -33,7 +59,9 @@
   --padding-end: 0;
   --border-radius: 100%;
   cursor: pointer;
-  transition: color 0.3s ease, background-color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease;
   color: black;
   font-size: 1.25rem;
   margin: 0;
@@ -44,27 +72,12 @@
     font-weight: bold;
   }
 
-
   &.knocked-down {
     --background: var(--ion-color-medium);
     color: var(--ion-color-medium-contrast);
     opacity: 0.4;
     text-decoration: line-through;
   }
-}
-
-.pin-actions {
-  margin-top: 20px;
-  width: 100%;
-  max-width: 400px;
-}
-
-.stats-btn {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  --padding-start: 6px;
-  --padding-end: 6px;
 }
 
 .quick-actions {

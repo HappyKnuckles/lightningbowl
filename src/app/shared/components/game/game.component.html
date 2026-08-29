@@ -1,11 +1,3 @@
-<!-- <app-game-score-toolbar
-  [show]="showButtonToolbar"
-  [offset]="keyboardOffset"
-  [strikeDisabled]="strikeDisabled()"
-  [spareDisabled]="spareDisabled()"
-  (strikeClick)="selectSpecialScore('X')"
-  (spareClick)="selectSpecialScore('/')">
-</app-game-score-toolbar> -->
 @if (isPinInputMode()) {
   <!-- Pin Input Mode: Score Grid + Pin Deck -->
   <div class="grid-container">
@@ -20,10 +12,20 @@
           }
           @for (cell of frame.throws; track $index) {
             <ion-col
-              class="input-col"
-              [class.current-throw]="currentFrameIndex() === frame.frameIndex && currentThrowIndex() === $index"
+              class="input-col score-cell"
+              [class.current-throw]="highlightCurrentThrow() && currentFrameIndex() === frame.frameIndex && currentThrowIndex() === $index"
               (click)="onScoreCellClicked(frame.frameIndex, $index)">
-              <ion-input type="text" readonly="true" [disabled]="cell.disabled" [value]="cell.display" [class.is-split]="cell.isSplit"></ion-input>
+              <ion-input
+                type="text"
+                readonly="true"
+                inputmode="none"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                [spellcheck]="false"
+                [disabled]="cell.disabled"
+                [value]="cell.display"
+                [class.is-split]="cell.isSplit"></ion-input>
             </ion-col>
           }
         </ion-row>
@@ -57,21 +59,22 @@
     }
   </div>
 
-  <!-- Pin Input Component -->
-  <app-pin-input
-    style="display: flex; justify-content: center; align-items: center"
-    [pinsLeftStanding]="pinsLeftStanding()"
-    [canStrike]="canStrike()"
-    [canSpare]="canSpare()"
-    [canUndo]="canUndo()"
-    [isGameComplete]="isGameComplete()"
-    [selectHitPins]="settingsStore.pinInputMode()"
-    [showStatsButton]="showStatsButton()"
-    (throwConfirmed)="onPinThrowConfirmed($event)"
-    (undoRequested)="onPinUndoRequested()"
-    (statsClick)="seriesStatsClick.emit()"
-    [statsEnabled]="statsEnabled()">
-  </app-pin-input>
+  @if (!hidePinInput()) {
+    <app-pin-input
+      style="display: flex; justify-content: center; align-items: center"
+      [pinsLeftStanding]="pinsLeftStanding()"
+      [canStrike]="canStrike()"
+      [canSpare]="canSpare()"
+      [canUndo]="canUndo()"
+      [isGameComplete]="isGameComplete()"
+      [selectHitPins]="settingsStore.pinInputMode()"
+      [showStatsButton]="showStatsButton()"
+      (throwConfirmed)="onPinThrowConfirmed($event)"
+      (undoRequested)="onPinUndoRequested()"
+      (statsClick)="seriesStatsClick.emit()"
+      [statsEnabled]="statsEnabled()">
+    </app-pin-input>
+  }
 } @else {
   <!-- Standard Grid Mode -->
   <div class="grid-container">
@@ -90,7 +93,10 @@
                 type="text"
                 clearOnEdit="true"
                 inputmode="numeric"
-                autocapitalize="on"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                [spellcheck]="false"
                 [debounce]="showMetadata() ? 0 : 500"
                 [disabled]="cell.disabled"
                 [value]="cell.display"

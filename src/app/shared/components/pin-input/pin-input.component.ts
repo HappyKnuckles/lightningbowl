@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -22,7 +23,7 @@ const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonButton, IonIcon],
+  imports: [IonButton, IonIcon, NgTemplateOutlet],
 })
 export class PinInputComponent {
   pinsLeftStanding = input<number[]>(PINS);
@@ -33,6 +34,10 @@ export class PinInputComponent {
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
+  /**
+    * Mobile installed presents the deck as a bottom sheet over the score grid. False means inline deck.
+   */
+  sheet = input<boolean>(false);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();

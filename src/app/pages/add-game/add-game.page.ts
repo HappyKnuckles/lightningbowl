@@ -1,6 +1,6 @@
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, HostListener, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { ModalController, SegmentCustomEvent } from '@ionic/angular';
+import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular';
 import {
   ActionSheetController,
   AlertController,
@@ -40,6 +40,7 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -53,7 +54,7 @@ import { parseInputValue } from 'src/app/core/utils/game-utils/score-input.utils
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { PinInputComponent, ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 
@@ -92,6 +93,7 @@ defineCustomElements(window);
     IonSegmentView,
     IonLabel,
     GameComponent,
+    PinInputComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
     StatPinLeaveComponent,
@@ -155,6 +157,23 @@ export class AddGamePage implements OnInit {
   private seriesId = '';
   private activeGameIndex = 0;
 
+  /**
+   * Mobile installed presents the deck as a bottom sheet over the score grid.
+   */
+  readonly sheetPinInput = this.platform.is('mobile');
+
+  /**
+   * Whether the deck's sheet is up. Raised by tapping a score cell, and put away
+   * once the game is complete or the user taps outside it.
+   */
+  readonly pinSheetOpen = signal(false);
+
+  /** Index of the game the segment view is currently showing. */
+  get activeSegmentIndex(): number {
+    const index = this.segments.indexOf(this.selectedSegment);
+    return index === -1 ? 0 : index;
+  }
+
   constructor(
     private actionSheetCtrl: ActionSheetController,
     private alertController: AlertController,
@@ -168,6 +187,8 @@ export class AddGamePage implements OnInit {
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameStatsService: GameStatsService,
+    public settingsStore: SettingsStore,
+    private platform: Platform,
   ) {
     addIcons({
       bowlingBallOutline,
@@ -205,6 +226,7 @@ export class AddGamePage implements OnInit {
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
     this.presentingElement = document.querySelector('.ion-page');
+    this.focusCurrentThrowCell();
   }
 
   // PIN INPUT MODE
@@ -267,6 +289,21 @@ export class AddGamePage implements OnInit {
     });
 
     this.updateGameState(result.updatedFrames, gameIndex);
+
+    if (this.isGameComplete(gameIndex)) {
+      this.pinSheetOpen.set(false);
+    }
+  }
+
+  @HostListener('click', ['$event'])
+  onPageTap(event: MouseEvent): void {
+    if (!this.pinSheetOpen()) return;
+
+    const target = event.target as HTMLElement;
+
+    if (target.closest('app-pin-input') || target.closest('.score-cell')) return;
+
+    this.pinSheetOpen.set(false);
   }
 
   handlePinUndoRequested(gameIndex: number): void {
@@ -309,6 +346,8 @@ export class AddGamePage implements OnInit {
         };
         return newStates;
       });
+      this.activeGameIndex = gameIndex;
+      this.pinSheetOpen.set(true);
     }
   }
 
@@ -399,11 +438,13 @@ export class AddGamePage implements OnInit {
   // UI INTERACTION
   onSegmentChange(event: SegmentCustomEvent): void {
     this.selectedSegment = event.detail.value as string;
+    this.pinSheetOpen.set(false);
   }
 
   togglePinInputMode(): void {
     this.isPinInputMode = !this.isPinInputMode;
     localStorage.setItem('pinInputMode', String(this.isPinInputMode));
+    this.focusCurrentThrowCell();
   }
 
   onInputFocused(event: { frameIndex: number; throwIndex: number }, index: number): void {
@@ -575,6 +616,25 @@ export class AddGamePage implements OnInit {
   }
 
   // PRIVATE HELPERS - GAME STATE
+  /**
+   * Raise the deck on the throw that's up next, without waiting for a score cell
+   * tap — the highlighted cell is what tells pin mode apart from the classic
+   * grid at a glance.
+   */
+  private focusCurrentThrowCell(): void {
+    if (!this.isPinInputMode || !this.sheetPinInput) {
+      this.pinSheetOpen.set(false);
+      return;
+    }
+
+    const index = this.activeSegmentIndex;
+    if (this.isGameComplete(index)) return;
+
+    this.activeGameIndex = index;
+
+    setTimeout(() => this.pinSheetOpen.set(true));
+  }
+
   private loadPinInputMode(): void {
     const pinInputMode = localStorage.getItem('pinInputMode');
     this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
@@ -735,6 +795,7 @@ export class AddGamePage implements OnInit {
       ],
     });
     await alert.present();
+    await alert.onDidDismiss();
   }
 
   private restoreDraft(draft: GameDraft): void {

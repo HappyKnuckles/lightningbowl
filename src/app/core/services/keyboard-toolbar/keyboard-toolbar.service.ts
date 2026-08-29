@@ -18,6 +18,7 @@ export class KeyboardToolbarService {
   }));
 
   private handles: PluginListenerHandle[] = [];
+  private accessoryBarHidden = false;
 
   constructor() {
     void this.init();
@@ -29,15 +30,17 @@ export class KeyboardToolbarService {
   }
 
   private async init(): Promise<void> {
-    if (this.platform.is('mobile') && !this.platform.is('mobileweb')) {
+    if (this.isNative()) {
+      try {
+        await Keyboard.setAccessoryBarVisible({ isVisible: false });
+        this.accessoryBarHidden = true;
+      } catch {
+        // Older iOS versions and non-iOS platforms reject this — not fatal.
+      }
+
       this.handles.push(
-        await Keyboard.addListener('keyboardWillShow', (info) => {
-          this.offset.set(Math.max(0, info.keyboardHeight || 0));
-          this.keyboardOpen.set(true);
-        }),
-        await Keyboard.addListener('keyboardWillHide', () => {
-          this.keyboardOpen.set(false);
-        }),
+        await Keyboard.addListener('keyboardWillShow', () => this.keyboardOpen.set(true)),
+        await Keyboard.addListener('keyboardWillHide', () => this.keyboardOpen.set(false)),
       );
     } else if ('visualViewport' in window && window.visualViewport) {
       window.visualViewport.addEventListener('resize', this.onViewportResize);
@@ -45,6 +48,10 @@ export class KeyboardToolbarService {
 
     const sub = this.platform.resize.subscribe(() => this.landscape.set(this.platform.isLandscape()));
     inject(DestroyRef).onDestroy(() => sub.unsubscribe());
+  }
+
+  private isNative(): boolean {
+    return this.platform.is('mobile') && !this.platform.is('mobileweb');
   }
 
   private onViewportResize = (): void => {
@@ -60,6 +67,9 @@ export class KeyboardToolbarService {
 
   private teardown(): void {
     this.handles.forEach((h) => h.remove());
+    if (this.accessoryBarHidden) {
+      void Keyboard.setAccessoryBarVisible({ isVisible: true }).catch(() => undefined);
+    }
     if ('visualViewport' in window && window.visualViewport) {
       window.visualViewport.removeEventListener('resize', this.onViewportResize);
     }

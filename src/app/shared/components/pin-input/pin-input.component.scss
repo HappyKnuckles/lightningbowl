@@ -82,12 +82,13 @@
 
 .quick-actions {
   display: flex;
+  width: 100%;
   gap: 8px;
 
   ion-button {
-    min-width: 50px;
+    min-width: 0;
     min-height: 35px;
-    flex: 1;
+    flex: 1 1 0;
     margin: 0;
   }
 }

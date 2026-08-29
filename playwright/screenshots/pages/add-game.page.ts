@@ -42,6 +42,23 @@ export class AddGamePage extends BasePage {
   }
 
   /**
+   * Bring the deck up, the way a bowler does before their first ball.
+   *
+   * Mobile presents the deck as a bottom sheet that a score-cell tap raises and
+   * that puts itself away once a game is finished — so after a save the next
+   * game starts with no deck on screen. Desktop renders it inline and always
+   * visible, where this is a no-op.
+   */
+  private async openPinDeck(): Promise<void> {
+    const deck = this.page.locator('app-pin-input');
+    if (await deck.isVisible()) return;
+
+    await this.active().locator('.score-cell').first().click();
+    await deck.waitFor({ state: 'visible' });
+    await settle(this.page, 300);
+  }
+
+  /**
    * Play a complete, valid pin-mode game by guttering every ball (9 open frames
    * of two balls + the 10th's two balls = 20 throws, totalling 0). Clicks until
    * the deck reports the game complete.
@@ -52,17 +69,24 @@ export class AddGamePage extends BasePage {
    * button mid-click), so the click race is swallowed.
    */
   async recordGutterGame(): Promise<void> {
+    await this.openPinDeck();
+
     const gutter = this.gutterButton();
-    const isComplete = async () => (await gutter.getAttribute('aria-disabled')) === 'true';
-    for (let i = 0; i < 24 && !(await isComplete()); i++) {
+    for (let i = 0; i < 24 && !(await this.isGameComplete()); i++) {
       await gutter.click({ timeout: 2000 }).catch(() => undefined);
       await settle(this.page, 150);
     }
   }
 
-  /** True once the active game is complete (the deck has locked input). */
+  /**
+   * True once the active game is complete — the deck has locked input, or (on
+   * mobile) put its sheet away, which is how the app signals "nothing left to
+   * throw". Both mean the deck is no longer accepting a ball.
+   */
   async isGameComplete(): Promise<boolean> {
-    return (await this.gutterButton().getAttribute('aria-disabled')) === 'true';
+    const gutter = this.gutterButton();
+    if (!(await gutter.isVisible())) return true;
+    return (await gutter.getAttribute('aria-disabled')) === 'true';
   }
 
   /** Persist the current single game via the "Save Score" button. */

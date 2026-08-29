@@ -8,9 +8,8 @@
   width: 100%;
   background-color: var(--ion-item-background);
   border-radius: var(--card-border-radius);
-  margin: 0 5px 5px;
+  margin: 0 4px 4px;
 
-  // In the sheet, the modal surface paints the frosted glass behind the deck.
   &.sheet {
     border-radius: 0;
     margin: 0;
@@ -27,15 +26,15 @@
   gap: 20px;
   width: 100%;
 
-  // Left of the 7 pin: centred on the back row, which is 50px tall.
+  // Left of the 7 pin
   .stats-btn {
     position: absolute;
     top: 25px;
     left: 0;
     transform: translateY(-50%);
     margin: 0;
-    --padding-start: 6px;
-    --padding-end: 6px;
+    --padding-start: 4px;
+    --padding-end: 4px;
   }
 }
 

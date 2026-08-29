@@ -158,8 +158,7 @@ export class AddGamePage implements OnInit {
   private activeGameIndex = 0;
 
   /**
-   * Native shells present the deck as a bottom sheet over the score grid; the
-   * web build keeps it inline inside app-game, where it has always lived.
+   * Mobile installed presents the deck as a bottom sheet over the score grid.
    */
   readonly sheetPinInput = this.platform.is('mobile') && !this.platform.is('mobileweb');
 
@@ -796,9 +795,6 @@ export class AddGamePage implements OnInit {
       ],
     });
     await alert.present();
-
-    // Settle the choice before returning: the caller raises the pin deck on the
-    // current throw, which the draft is still about to change.
     await alert.onDidDismiss();
   }
 

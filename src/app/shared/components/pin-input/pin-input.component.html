@@ -1,9 +1,5 @@
 <div class="pin-input-container" [class.sheet]="sheet()">
-  <!--
-    In the sheet the deck sits over the score grid, so these shortcuts belong up
-    next to it. Inline they'd split the card in two, so they join the row below
-    the deck instead.
-  -->
+
   @if (sheet()) {
     <div class="quick-actions">
       <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
@@ -33,7 +29,6 @@
     }
   </div>
 
-  <!-- Actions that follow a pin selection, kept in the thumb zone below the deck. -->
   <div class="quick-actions">
     @if (!sheet()) {
       <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>

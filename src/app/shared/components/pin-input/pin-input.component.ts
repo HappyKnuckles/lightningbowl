@@ -35,9 +35,7 @@ export class PinInputComponent {
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
   /**
-   * Render as the native bottom sheet: frosted and full-bleed, with the score
-   * shortcuts lifted above the deck. Off, it's the inset card the web build
-   * keeps in page flow, shortcuts and all in the single row below the deck.
+    * Mobile installed presents the deck as a bottom sheet over the score grid. False means inline deck.
    */
   sheet = input<boolean>(false);
 

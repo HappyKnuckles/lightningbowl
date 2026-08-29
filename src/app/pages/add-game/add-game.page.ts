@@ -160,7 +160,7 @@ export class AddGamePage implements OnInit {
   /**
    * Mobile installed presents the deck as a bottom sheet over the score grid.
    */
-  readonly sheetPinInput = this.platform.is('mobile') && !this.platform.is('mobileweb');
+  readonly sheetPinInput = this.platform.is('mobile');
 
   /**
    * Whether the deck's sheet is up. Raised by tapping a score cell, and put away

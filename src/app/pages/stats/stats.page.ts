@@ -1,5 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { DatePipe, DecimalPipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -125,8 +125,6 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonSelectOption,
     IonSelect,
     IonText,
-    NgIf,
-    NgFor,
     FormsModule,
     DatePipe,
     DecimalPipe,

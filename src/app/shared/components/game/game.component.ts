@@ -125,6 +125,9 @@ export class GameComponent implements OnInit {
   spareDisabled = input<boolean>(true);
   isPinInputMode = input<boolean>(false);
 
+  hidePinInput = input<boolean>(false);
+  highlightCurrentThrow = input<boolean>(true);
+
   // Pin Input Mode
   pinsLeftStanding = input<number[]>(PINS);
   currentFrameIndex = input<number>(0);
@@ -319,9 +322,6 @@ export class GameComponent implements OnInit {
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
-  showButtonToolbar = false;
-  keyboardOffset = 0;
-  isLandScapeMode = false;
   private keyboardToolbar = inject(KeyboardToolbarService);
   readonly toolbarState = this.keyboardToolbar.state;
   private localFrameIndex = 0;
@@ -384,7 +384,6 @@ export class GameComponent implements OnInit {
 
   selectSpecialScore(char: string): void {
     if (this.localFrameIndex === null || this.localThrowIndex === null) {
-      this.showButtonToolbar = false;
       return;
     }
     this.throwInput.emit({

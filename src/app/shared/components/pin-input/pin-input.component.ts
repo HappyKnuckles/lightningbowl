@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -32,7 +33,7 @@ const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonButton, IonIcon, IonModal, BallSelectComponent, GenericTypeaheadComponent],
+  imports: [IonButton, IonIcon, IonModal, NgTemplateOutlet, BallSelectComponent, GenericTypeaheadComponent],
 })
 export class PinInputComponent {
   ballsStore = inject(BallsStore);
@@ -53,6 +54,8 @@ export class PinInputComponent {
   selectedBall = input<ThrowBall | undefined>(undefined);
   /** Off when the game records one ball for the whole game. The picker then lives in the game details. */
   showBallSelector = input<boolean>(true);
+  /** Mobile installed presents the deck as a bottom sheet over the score grid. False means inline deck. */
+  sheet = input<boolean>(false);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();

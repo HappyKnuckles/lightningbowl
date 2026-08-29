@@ -1,4 +1,4 @@
-import { DatePipe, NgIf, NgTemplateOutlet } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal, viewChild, viewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -119,7 +119,6 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
     IonItemSliding,
     IonButton,
     IonIcon,
-    NgIf,
     NgTemplateOutlet,
     ReactiveFormsModule,
     FormsModule,

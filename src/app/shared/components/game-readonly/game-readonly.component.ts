@@ -1,5 +1,4 @@
 import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
-import { NgIf } from '@angular/common';
 import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline } from 'ionicons/icons';
@@ -33,7 +32,7 @@ interface ReadonlyFrameVm {
   selector: 'app-game-readonly',
   templateUrl: './game-readonly.component.html',
   styleUrls: ['./game-readonly.component.scss'],
-  imports: [NgIf, IonGrid, IonRow, IonCol, IonIcon, PinDeckComponent],
+  imports: [IonGrid, IonRow, IonCol, IonIcon, PinDeckComponent],
 })
 export class GameReadonlyComponent {
   readonly game = input.required<Game>();

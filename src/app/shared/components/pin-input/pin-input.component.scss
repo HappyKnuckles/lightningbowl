@@ -5,33 +5,71 @@
   align-items: center;
   gap: 20px;
   padding: 20px;
-  // max-width: 500px;
   width: 100%;
   background-color: var(--ion-item-background);
   border-radius: var(--card-border-radius);
-  margin: 0 5px 5px;
+  margin: 0 4px 4px;
+
+  &.sheet {
+    border-radius: 0;
+    margin: 0;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    background-color: transparent;
+  }
 }
 
-.ball-selector-corner {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
+/**
+ * Both deck-flanking buttons get the same square box with no padding of their own, so
+ * their glyphs stay centred the same distance from their edge and the pair reads as a
+ * mirrored pair — the icons inside are then free to differ in size.
+ */
+.stats-btn,
 .ball-icon-button {
   margin: 0;
-  --padding-start: 6px;
-  --padding-end: 6px;
-  --padding-top: 6px;
-  --padding-bottom: 6px;
+  width: 28px;
   height: 28px;
 
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+
   ion-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.ball-icon-button ion-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.pin-deck {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+
+  // Flank the back row: stats left of the 7, ball right of the 10.
+  .stats-btn,
+  .ball-selector-corner {
+    position: absolute;
+    top: 25px;
+    transform: translateY(-50%);
+  }
+
+  .stats-btn {
+    left: 0;
+  }
+
+  .ball-selector-corner {
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 }
 
@@ -72,7 +110,9 @@
   --padding-end: 0;
   --border-radius: 100%;
   cursor: pointer;
-  transition: color 0.3s ease, background-color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease;
   color: black;
   font-size: 1.25rem;
   margin: 0;
@@ -83,27 +123,12 @@
     font-weight: bold;
   }
 
-
   &.knocked-down {
     --background: var(--ion-color-medium);
     color: var(--ion-color-medium-contrast);
     opacity: 0.4;
     text-decoration: line-through;
   }
-}
-
-.pin-actions {
-  margin-top: 20px;
-  width: 100%;
-  max-width: 400px;
-}
-
-.stats-btn {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  --padding-start: 6px;
-  --padding-end: 6px;
 }
 
 .quick-actions {

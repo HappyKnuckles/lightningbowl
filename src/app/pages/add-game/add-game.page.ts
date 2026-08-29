@@ -161,7 +161,7 @@ export class AddGamePage implements OnInit {
    * Native shells present the deck as a bottom sheet over the score grid; the
    * web build keeps it inline inside app-game, where it has always lived.
    */
-  readonly sheetPinInput = this.platform.is('hybrid');
+  readonly sheetPinInput = this.platform.is('mobile') && !this.platform.is('mobileweb');
 
   /**
    * Whether the deck's sheet is up. Raised by tapping a score cell, and put away
@@ -295,7 +295,6 @@ export class AddGamePage implements OnInit {
       this.pinSheetOpen.set(false);
     }
   }
-
 
   @HostListener('click', ['$event'])
   onPageTap(event: MouseEvent): void {

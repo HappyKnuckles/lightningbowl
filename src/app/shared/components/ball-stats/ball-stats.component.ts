@@ -28,6 +28,8 @@ import {
 } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { BALL_STAT_MIN_SAMPLES, BallStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { getRateColor } from 'src/app/core/utils/stat-utils/stat.utils';
+
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { StatDisplayComponent } from '../stat-display/stat-display.component';
 import { StatPinLeaveComponent } from '../stat-pin-leave/stat-pin-leave.component';
@@ -124,7 +126,9 @@ export class BallStatsComponent {
   readonly selected = computed(() => this.ballStats().find((ball) => ball.key === this.selectedKey()));
 
   /** Single-pin conversions ordered the way the deck reads, so the grid is scannable. */
-  readonly pinConversions = computed(() => this.selected()?.detail?.pinConversions ?? []);
+  readonly pinConversions = computed(() =>
+    (this.selected()?.detail?.pinConversions ?? []).map((pin) => ({ ...pin, rateColor: getRateColor(pin.pickupPercentage) })),
+  );
 
   readonly topLeaves = computed(() => (this.selected()?.detail?.leaves ?? []).slice(0, 8));
 
@@ -151,15 +155,6 @@ export class BallStatsComponent {
       this.detailSegment.set(value);
       setTimeout(() => this.detailContent()?.scrollToTop(300), 300);
     }
-  }
-
-  /** Same colour ramp the leave stats use, so a conversion rate reads the same everywhere. */
-  rateColor(rate: number): string {
-    if (rate > 95) return '#4faeff';
-    if (rate > 75) return '#008000';
-    if (rate > 50) return '#809300';
-    if (rate > 33) return '#FFA500';
-    return '#ff0000';
   }
 
   /**

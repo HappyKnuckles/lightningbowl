@@ -59,6 +59,24 @@ import { PinInputComponent, ThrowConfirmedEvent } from 'src/app/shared/component
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 
+interface GameVm {
+  ballSelectorId: string;
+  canSpare: boolean;
+  canStrike: boolean;
+  canUndo: boolean;
+  currentFrameIndex: number;
+  currentThrowIndex: number;
+  game: Game;
+  inputLocked: boolean;
+  isGameComplete: boolean;
+  maxScore: number;
+  patternModalId: string;
+  pinsLeftStanding: number[];
+  segment: string;
+  selectedBall: ThrowBall | undefined;
+  showBallSelector: boolean;
+}
+
 const enum SeriesMode {
   Single = 'Single',
   Series3 = '3-Series',
@@ -114,12 +132,12 @@ export class AddGamePage implements OnInit {
   readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
 
   // UI State
+  segments = signal<string[]>(['Game 1']);
+  selectedSegment = signal('Game 1');
   selectedMode = signal<SeriesMode>(SeriesMode.Single);
   sheetOpen = false;
   isAlertOpen = false;
   is300 = false;
-  selectedSegment = 'Game 1';
-  segments: string[] = ['Game 1'];
   showScoreToolbar = false;
   toolbarOffset = 0;
   toolbarDisabledState = { strikeDisabled: true, spareDisabled: true };
@@ -130,7 +148,7 @@ export class AddGamePage implements OnInit {
   maxScores = signal(new Array(19).fill(300));
 
   // Pin input mode state
-  isPinInputMode = true;
+  isPinInputMode = signal(true);
 
   pinModeState = signal<PinModeState[]>(
     Array.from({ length: 19 }, () => ({
@@ -158,6 +176,38 @@ export class AddGamePage implements OnInit {
   private seriesId = '';
   private activeGameIndex = 0;
 
+  /** Index of the game the segment view is currently showing. */
+  readonly activeSegmentIndex = computed(() => {
+    const index = this.segments().indexOf(this.selectedSegment());
+    return index === -1 ? 0 : index;
+  });
+
+  /**
+   * Everything one game's card and the deck read.
+  */
+  readonly gameVms = computed<GameVm[]>(() =>
+    this.segments().map((segment, index) => ({
+      segment,
+      game: this.games()[index],
+      maxScore: this.maxScores()[index],
+      patternModalId: index.toString(),
+      ballSelectorId: 'modal-ball-selector' + index,
+      pinsLeftStanding: this.getPinsLeftStanding(index),
+      currentFrameIndex: this.getCurrentFrameIndex(index),
+      currentThrowIndex: this.getCurrentThrowIndex(index),
+      canStrike: this.canRecordStrike(index),
+      canSpare: this.canRecordSpare(index),
+      canUndo: this.canUndoForPinMode(index),
+      isGameComplete: this.isGameComplete(index),
+      inputLocked: this.isPinPadLocked(index),
+      showBallSelector: this.isThrowTracking(index),
+      selectedBall: this.getCurrentThrowBall(index),
+    })),
+  );
+
+  /** The game the deck's sheet is bowling, i.e. the one the segment view shows. */
+  readonly pinSheetVm = computed(() => this.gameVms()[this.activeSegmentIndex()]);
+
   /**
    * Mobile installed presents the deck as a bottom sheet over the score grid.
    */
@@ -168,12 +218,6 @@ export class AddGamePage implements OnInit {
    * once the game is complete or the user taps outside it.
    */
   readonly pinSheetOpen = signal(false);
-
-  /** Index of the game the segment view is currently showing. */
-  get activeSegmentIndex(): number {
-    const index = this.segments.indexOf(this.selectedSegment);
-    return index === -1 ? 0 : index;
-  }
 
   constructor(
     private actionSheetCtrl: ActionSheetController,
@@ -202,9 +246,9 @@ export class AddGamePage implements OnInit {
       const maxScores = this.maxScores();
 
       const selectedMode = untracked(() => this.selectedMode());
-      const isPinInputMode = untracked(() => this.isPinInputMode);
-      const gameIndex = untracked(() => this.selectedSegment);
-      const segments = untracked(() => this.segments);
+      const isPinInputMode = untracked(() => this.isPinInputMode());
+      const gameIndex = untracked(() => this.selectedSegment());
+      const segments = untracked(() => this.segments());
 
       if (!this.isStorageReady) return;
 
@@ -297,7 +341,7 @@ export class AddGamePage implements OnInit {
    */
   isThrowTracking(gameIndex: number): boolean {
     const game = this.games()[gameIndex];
-    if (!game || !this.isPinInputMode) return false;
+    if (!game || !this.isPinInputMode()) return false;
     if (game.ballTracking) return game.ballTracking === 'throw';
     if (hasThrowLevelBalls(game.frames ?? [])) return true;
     if ((game.balls ?? []).length > 0) return false;
@@ -377,7 +421,7 @@ export class AddGamePage implements OnInit {
   }
 
   onScoreCellClick(event: { frameIndex: number; throwIndex: number }, gameIndex: number): void {
-    if (!this.isPinInputMode) return;
+    if (!this.isPinInputMode()) return;
 
     const { frameIndex, throwIndex } = event;
     const game = this.games()[gameIndex];
@@ -497,13 +541,13 @@ export class AddGamePage implements OnInit {
 
   // UI INTERACTION
   onSegmentChange(event: SegmentCustomEvent): void {
-    this.selectedSegment = event.detail.value as string;
+    this.selectedSegment.set(event.detail.value as string);
     this.pinSheetOpen.set(false);
   }
 
   togglePinInputMode(): void {
-    this.isPinInputMode = !this.isPinInputMode;
-    localStorage.setItem('pinInputMode', String(this.isPinInputMode));
+    this.isPinInputMode.update((mode) => !mode);
+    localStorage.setItem('pinInputMode', String(this.isPinInputMode()));
     this.focusCurrentThrowCell();
   }
 
@@ -645,7 +689,7 @@ export class AddGamePage implements OnInit {
         }
         game.date = baseDate + i;
         // Apply isPinMode to the game before saving
-        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
+        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode() };
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
       }
 
@@ -682,12 +726,12 @@ export class AddGamePage implements OnInit {
    * grid at a glance.
    */
   private focusCurrentThrowCell(): void {
-    if (!this.isPinInputMode || !this.sheetPinInput) {
+    if (!this.isPinInputMode() || !this.sheetPinInput) {
       this.pinSheetOpen.set(false);
       return;
     }
 
-    const index = this.activeSegmentIndex;
+    const index = this.activeSegmentIndex();
     if (this.isGameComplete(index)) return;
 
     this.activeGameIndex = index;
@@ -697,7 +741,7 @@ export class AddGamePage implements OnInit {
 
   private loadPinInputMode(): void {
     const pinInputMode = localStorage.getItem('pinInputMode');
-    this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
+    this.isPinInputMode.set(pinInputMode === null ? true : pinInputMode === 'true');
   }
 
   private updateGameState(frames: Frame[], index: number): void {
@@ -774,12 +818,12 @@ export class AddGamePage implements OnInit {
 
   private updateSegments(): void {
     const activeIndexes = this.getActiveTrackIndexes();
-    const oldSelectedSegment = this.selectedSegment;
-    this.segments = activeIndexes.map((i) => `Game ${i + 1}`);
+    const oldSelectedSegment = this.selectedSegment();
+    this.segments.set(activeIndexes.map((i) => `Game ${i + 1}`));
 
     // Reset to Game 1 if current segment is beyond the new series range
-    if (!this.segments.includes(oldSelectedSegment)) {
-      this.selectedSegment = 'Game 1';
+    if (!this.segments().includes(oldSelectedSegment)) {
+      this.selectedSegment.set('Game 1');
     }
   }
 
@@ -862,14 +906,14 @@ export class AddGamePage implements OnInit {
     this.isStorageReady = true;
 
     this.selectedMode.set(draft.selectedMode as SeriesMode);
-    this.isPinInputMode = draft.isPinInputMode;
+    this.isPinInputMode.set(draft.isPinInputMode);
     this.updateSegments();
 
     this.games.set(draft.games);
     this.totalScores.set(draft.totalScores);
     this.maxScores.set(draft.maxScores);
     this.pinModeState.set(draft.pinModeState);
-    this.selectedSegment = draft.gameIndex;
+    this.selectedSegment.set(draft.gameIndex);
 
     setTimeout(() => {
       this.propagateMetadataToSeries();

@@ -8,7 +8,7 @@
       <ion-icon name="chevron-down" size="big" class="mode-chevron" [class.open]="sheetOpen"></ion-icon>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" [color]="isPinInputMode ? 'primary' : 'medium'" (click)="togglePinInputMode()">
+      <ion-button fill="clear" [color]="isPinInputMode() ? 'primary' : 'medium'" (click)="togglePinInputMode()">
         <ion-icon slot="icon-only" src="/assets/svg/pin.svg"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -16,8 +16,8 @@
 
   @if (selectedMode() !== "Single") {
     <ion-toolbar>
-      <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)" [scrollable]="true">
-        @for (segment of segments; track segment) {
+      <ion-segment [value]="selectedSegment()" (ionChange)="onSegmentChange($event)" [scrollable]="true">
+        @for (segment of segments(); track segment) {
           <ion-segment-button [value]="segment" [contentId]="segment">
             <ion-label class="segment-label">{{ segment }}</ion-label>
           </ion-segment-button>
@@ -59,26 +59,26 @@
 
 <ion-content [fullscreen]="true">
   <ion-segment-view>
-    @for (segment of segments; track segment; let i = $index) {
-      <ion-segment-content [id]="segment">
+    @for (vm of gameVms(); track vm.segment; let i = $index) {
+      <ion-segment-content [id]="vm.segment">
         <app-game
           #gameRef
-          [game]="games()[i]"
+          [game]="vm.game"
           [strikeDisabled]="toolbarDisabledState.strikeDisabled"
           [spareDisabled]="toolbarDisabledState.spareDisabled"
-          [maxScore]="maxScores()[i]"
-          [isPinInputMode]="isPinInputMode"
+          [maxScore]="vm.maxScore"
+          [isPinInputMode]="isPinInputMode()"
           [hidePinInput]="sheetPinInput"
           [highlightCurrentThrow]="!sheetPinInput || pinSheetOpen()"
-          [pinsLeftStanding]="getPinsLeftStanding(i)"
-          [currentFrameIndex]="getCurrentFrameIndex(i)"
-          [currentThrowIndex]="getCurrentThrowIndex(i)"
-          [canStrike]="canRecordStrike(i)"
-          [canSpare]="canRecordSpare(i)"
-          [canUndo]="canUndoForPinMode(i)"
-          [isGameComplete]="isGameComplete(i)"
-          [patternModalId]="i.toString()"
-          [ballSelectorId]="'modal-ball-selector' + i"
+          [pinsLeftStanding]="vm.pinsLeftStanding"
+          [currentFrameIndex]="vm.currentFrameIndex"
+          [currentThrowIndex]="vm.currentThrowIndex"
+          [canStrike]="vm.canStrike"
+          [canSpare]="vm.canSpare"
+          [canUndo]="vm.canUndo"
+          [isGameComplete]="vm.isGameComplete"
+          [patternModalId]="vm.patternModalId"
+          [ballSelectorId]="vm.ballSelectorId"
           [showStatsButton]="selectedMode() !== 'Single'"
           (throwInput)="handleThrowInput($event, i)"
           (pinThrowConfirmed)="onPinThrowConfirmed($event, i)"
@@ -139,7 +139,7 @@
   }
 </ion-content>
 
-@if (sheetPinInput && isPinInputMode) {
+@if (sheetPinInput && isPinInputMode()) {
   <ion-modal
     class="pin-input-modal"
     [isOpen]="pinSheetOpen()"
@@ -149,21 +149,22 @@
     [backdropDismiss]="false"
     (willDismiss)="pinSheetOpen.set(false)">
     <ng-template>
+      @let sheetVm = pinSheetVm();
       <app-pin-input
         [sheet]="true"
-        [pinsLeftStanding]="getPinsLeftStanding(activeSegmentIndex)"
-        [canStrike]="canRecordStrike(activeSegmentIndex)"
-        [canSpare]="canRecordSpare(activeSegmentIndex)"
-        [canUndo]="canUndoForPinMode(activeSegmentIndex)"
-        [inputLocked]="isPinPadLocked(activeSegmentIndex)"
+        [pinsLeftStanding]="sheetVm.pinsLeftStanding"
+        [canStrike]="sheetVm.canStrike"
+        [canSpare]="sheetVm.canSpare"
+        [canUndo]="sheetVm.canUndo"
+        [inputLocked]="sheetVm.inputLocked"
         [selectHitPins]="settingsStore.pinInputMode()"
         [showStatsButton]="selectedMode() !== 'Single'"
-        [selectedBall]="getCurrentThrowBall(activeSegmentIndex)"
-        [showBallSelector]="isThrowTracking(activeSegmentIndex)"
+        [selectedBall]="sheetVm.selectedBall"
+        [showBallSelector]="sheetVm.showBallSelector"
         [statsEnabled]="hasLiveStats()"
-        (throwConfirmed)="onPinThrowConfirmed($event, activeSegmentIndex)"
-        (undoRequested)="handlePinUndoRequested(activeSegmentIndex)"
-        (ballSelected)="onSheetBallSelected($event, activeSegmentIndex)"
+        (throwConfirmed)="onPinThrowConfirmed($event, activeSegmentIndex())"
+        (undoRequested)="handlePinUndoRequested(activeSegmentIndex())"
+        (ballSelected)="onSheetBallSelected($event, activeSegmentIndex())"
         (statsClick)="onSeriesStatsClick()">
       </app-pin-input>
     </ng-template>

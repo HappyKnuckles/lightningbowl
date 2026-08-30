@@ -95,6 +95,14 @@ interface SeriesRow {
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;
 
+interface GameBallVm {
+  names: string[];
+  text: string;
+  throwSummary: string;
+  throwTracked: boolean;
+  thumbnail: string | null;
+}
+
 @Component({
   selector: 'app-game-list',
   templateUrl: './game-list.component.html',
@@ -184,6 +192,30 @@ export class GameListComponent implements OnInit {
     return games.slice(0, end);
   });
 
+  /**
+   * Ball text, thumbnail and per-throw summary for every visible game.
+   */
+  ballVms = computed<Record<string, GameBallVm>>(() => {
+    this.ballEditVersion();
+    const arsenal = this.ballsStore.arsenal();
+
+    const vms: Record<string, GameBallVm> = {};
+    for (const game of this.showingGames()) {
+      const names = getGameBallNames(game, arsenal);
+      const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
+      const throwTracked = getBallTracking(game) === 'throw';
+
+      vms[game.gameId] = {
+        names,
+        text: names.length > 0 ? names.join(', ') : 'None',
+        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        throwTracked,
+        throwSummary: throwTracked ? throwBallSummary(game) : '',
+      };
+    }
+    return vms;
+  });
+
   gameNumberMap = computed(() => {
     const allGames = this.sortedGames();
     const total = allGames.length;
@@ -265,6 +297,9 @@ export class GameListComponent implements OnInit {
 
     return rows;
   });
+
+  /** Bumped when an edit changes a game's balls in place, which no signal would otherwise see. */
+  private readonly ballEditVersion = signal(0);
 
   // Pagination state
   public loadedCount = signal(0);
@@ -518,40 +553,13 @@ export class GameListComponent implements OnInit {
     modal.dismiss();
     game.balls = selectedBalls;
     game.ballTracking = 'game';
-    this.ballNamesCache.delete(game);
-  }
-
-  /** Games recorded per throw show a read-only summary; the picker lives on the pin pad. */
-  isThrowTracked(game: Game): boolean {
-    return getBallTracking(game) === 'throw';
-  }
-
-  /** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
-  getThrowBallSummary(game: Game): string {
-    let summary = this.throwBallSummaryCache.get(game);
-    if (summary === undefined) {
-      const counts = new Map<string, number>();
-      for (const frame of game.frames ?? []) {
-        for (const t of frame.throws ?? []) {
-          if (!t.ball?.name) continue;
-          const label = formatThrowBall(t.ball);
-          counts.set(label, (counts.get(label) ?? 0) + 1);
-        }
-      }
-      summary = [...counts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .map(([label, throws]) => `${label} · ${throws} throws`)
-        .join('\n');
-      this.throwBallSummaryCache.set(game, summary);
-    }
-    return summary;
+    this.ballEditVersion.update((v) => v + 1);
   }
 
   onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
     this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
     game.ballTracking = 'throw';
-    this.ballNamesCache.delete(game);
-    this.throwBallSummaryCache.delete(game);
+    this.ballEditVersion.update((v) => v + 1);
   }
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
@@ -613,42 +621,6 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  // Resolved per game object; called from the template on every CD pass, so the
-  // frames scan must not repeat. Edits replace the game object, invalidating naturally.
-  private ballNamesCache = new WeakMap<Game, string[]>();
-  private throwBallSummaryCache = new WeakMap<Game, string>();
-  private singleBallThumbCache = new WeakMap<Game, string | null>();
-
-  getGameBalls(game: Game): string[] {
-    let names = this.ballNamesCache.get(game);
-    if (!names) {
-      names = getGameBallNames(game, this.ballsStore.arsenal());
-      this.ballNamesCache.set(game, names);
-    }
-    return names;
-  }
-
-  getSelectedBallsText(game: Game): string {
-    const balls = this.getGameBalls(game);
-    return balls.length > 0 ? balls.join(', ') : 'None';
-  }
-
-  /**
-   * Thumbnail for a game bowled with a single ball, so the row shows the ball itself instead
-   * of the generic icon. Two or more balls keep the icon: there is only one slot, and picking
-   * one of them to stand for the game would misrepresent it. `null` means fall back to the icon.
-   */
-  getSingleBallThumbnail(game: Game): string | null {
-    let thumb = this.singleBallThumbCache.get(game);
-    if (thumb === undefined) {
-      const names = this.getGameBalls(game);
-      const arsenalBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, this.ballsStore.arsenal()) : undefined;
-      thumb = arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : null;
-      this.singleBallThumbCache.set(game, thumb);
-    }
-    return thumb;
-  }
-
   getBallIds(names: string[] | undefined): string[] {
     if (!names) return [];
 
@@ -669,4 +641,21 @@ export class GameListComponent implements OnInit {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
+}
+
+/** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
+function throwBallSummary(game: Game): string {
+  const counts = new Map<string, number>();
+  for (const frame of game.frames ?? []) {
+    for (const t of frame.throws ?? []) {
+      if (!t.ball?.name) continue;
+      const label = formatThrowBall(t.ball);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, throws]) => `${label} · ${throws} throws`)
+    .join('\n');
 }

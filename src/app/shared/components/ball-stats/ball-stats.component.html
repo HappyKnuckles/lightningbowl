@@ -111,7 +111,7 @@
                   @for (pin of pinConversions(); track pin.pin) {
                     <li class="pin-card">
                       <app-pin-deck [activePins]="[pin.pin]" [scale]="0.55" [isStatPage]="true"></app-pin-deck>
-                      <span class="pin-rate" [style.color]="rateColor(pin.pickupPercentage)">{{ pin.pickupPercentage | number: "1.0-0" }}%</span>
+                      <span class="pin-rate" [style.color]="pin.rateColor">{{ pin.pickupPercentage | number: "1.0-0" }}%</span>
                       <span class="pin-count">{{ pin.pickups }} / {{ pin.occurrences }}</span>
                     </li>
                   }

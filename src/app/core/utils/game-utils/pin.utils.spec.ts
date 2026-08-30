@@ -1,13 +1,22 @@
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
+
+import { setThrowBall } from './ball.utils';
 import {
   applyPinModeUndo,
   calculateNextPosition,
   calculateSplit,
   getAvailablePins,
   isCellAccessible,
+  isCornerPinLeave,
+  isFlatCornerLeave,
+  isHighLeave,
+  isLightLeave,
   isMakeableSplit,
+  isPocketHit,
+  isSolidLeave,
   isSplit,
+  isWashout,
   processPinThrow,
 } from './pin.utils';
 
@@ -234,6 +243,38 @@ describe('pin.utils', () => {
       expect(frames[0].throws).toEqual([]);
     });
 
+    it('applies a pendingBall to the newly recorded throw and clears it off the frame', () => {
+      const frames = emptyFrames();
+      frames[0].pendingBall = { name: 'Storm IQ Tour', weight: '15' };
+
+      const result = processPinThrow(frames, 0, 0, [1, 2, 3, 5, 8, 9]);
+
+      expect(result.updatedFrames[0].throws[0].ball).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+      expect(result.updatedFrames[0].pendingBall).toBeUndefined();
+    });
+
+    it('leaves a ball already stamped on the throw alone when it is re-recorded', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+      frames[1].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Storm IQ Tour', weight: '15' } }];
+
+      const result = processPinThrow(frames, 1, 0, [1, 2, 3]);
+
+      expect(result.updatedFrames[1].throws[0].ball).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+    });
+
+    it('keeps a pick made for a later throw when an earlier one is re-recorded', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1 }];
+      setThrowBall(frames, 0, 1, { name: 'White Dot', weight: '15' });
+
+      const result = processPinThrow(frames, 0, 0, [1, 2, 3]);
+
+      expect(result.updatedFrames[0].throws[0].ball).toBeUndefined();
+      expect(result.updatedFrames[0].pendingBall).toEqual({ name: 'White Dot', weight: '15' });
+      expect(result.updatedFrames[0].pendingBallThrowIndex).toBe(1);
+    });
+
     it('advances the cursor past the frame on a strike', () => {
       const result = processPinThrow(emptyFrames(), 0, 0, PINS);
 
@@ -355,6 +396,81 @@ describe('pin.utils', () => {
       applyPinModeUndo(frames, 0, 0);
 
       expect(frames[0].throws).toHaveLength(1);
+    });
+  });
+});
+
+describe('leave classification', () => {
+  describe('isCornerPinLeave', () => {
+    it('recognises a lone corner pin per hand', () => {
+      expect(isCornerPinLeave([10])).toBe(true);
+      expect(isCornerPinLeave([7])).toBe(false);
+      expect(isCornerPinLeave([7], true)).toBe(true);
+      expect(isCornerPinLeave([10], true)).toBe(false);
+    });
+
+    it('is not a corner pin leave once another pin stands', () => {
+      expect(isCornerPinLeave([6, 10])).toBe(false);
+    });
+  });
+
+  describe('isFlatCornerLeave', () => {
+    it('recognises the corner pin with its neighbour still up', () => {
+      expect(isFlatCornerLeave([6, 10])).toBe(true);
+      expect(isFlatCornerLeave([4, 7], true)).toBe(true);
+      expect(isFlatCornerLeave([6, 10], true)).toBe(false);
+    });
+  });
+
+  describe('isSolidLeave', () => {
+    it('recognises a connected cluster after a pocket hit', () => {
+      expect(isSolidLeave([2, 4, 5])).toBe(true);
+      expect(isSolidLeave([3, 6, 9])).toBe(true);
+    });
+
+    it('excludes the head pin, splits and the flat corner', () => {
+      expect(isSolidLeave([1, 2, 4])).toBe(false);
+      expect(isSolidLeave([7, 10])).toBe(false);
+      expect(isSolidLeave([6, 10])).toBe(false);
+    });
+  });
+
+  describe('isWashout', () => {
+    it('needs the head pin standing next to a corner pin', () => {
+      expect(isWashout([1, 2, 10])).toBe(true);
+      expect(isWashout([1, 3, 7])).toBe(true);
+      expect(isWashout([1, 2, 4])).toBe(false);
+      expect(isWashout([2, 4, 10])).toBe(false);
+    });
+  });
+
+  describe('isLightLeave / isHighLeave', () => {
+    it('reads a leave on the bowler’s side as light and the far side as high', () => {
+      expect(isLightLeave([2, 4, 5, 8])).toBe(true);
+      expect(isHighLeave([2, 4, 5, 8])).toBe(false);
+      expect(isHighLeave([3, 6, 9, 10])).toBe(true);
+      expect(isLightLeave([3, 6, 9, 10])).toBe(false);
+    });
+
+    it('mirrors for a left-handed bowler', () => {
+      expect(isLightLeave([3, 6, 9, 10], true)).toBe(true);
+      expect(isHighLeave([2, 4, 5, 8], true)).toBe(true);
+    });
+
+    it('is neither when pins stand on both sides or the head pin is up', () => {
+      expect(isLightLeave([2, 3])).toBe(false);
+      expect(isHighLeave([2, 3])).toBe(false);
+      expect(isLightLeave([1, 2, 4])).toBe(false);
+    });
+  });
+
+  describe('isPocketHit', () => {
+    it('needs the head pin down plus a 2 or 3', () => {
+      expect(isPocketHit([])).toBe(true);
+      expect(isPocketHit([10])).toBe(true);
+      expect(isPocketHit([2, 4, 5])).toBe(true);
+      expect(isPocketHit([1, 2, 4])).toBe(false);
+      expect(isPocketHit([2, 3, 4])).toBe(false);
     });
   });
 });

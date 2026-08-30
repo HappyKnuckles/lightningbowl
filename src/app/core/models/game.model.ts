@@ -1,4 +1,20 @@
 /**
+ * How a game records which ball was used.
+ * - `game`: one selection for the whole game (`Game.balls`), the quick way.
+ * - `throw`: a ball per throw (`Throw.ball`), the detailed way.
+ * Absent means `game`, which is how every game before per-throw tracking was recorded.
+ */
+export type BallTracking = 'game' | 'throw';
+
+/**
+ * Minimized ball reference stored per throw
+ */
+export interface ThrowBall {
+  name: string;
+  weight?: string;
+}
+
+/**
  * Represents a single throw/ball in a bowling frame
  */
 export interface Throw {
@@ -7,6 +23,7 @@ export interface Throw {
   isSplit?: boolean;
   pinsLeftStanding?: number[];
   pinsKnockedDown?: number[];
+  ball?: ThrowBall;
 }
 
 /**
@@ -16,6 +33,18 @@ export interface Frame {
   frameIndex: number;
   throws: Throw[];
   isInvalid?: boolean;
+  /**
+   * Ball selected for a throw in this frame, before that throw has actually been recorded.
+   * `undefined` means nothing was picked yet (the ball carries over from earlier throws as a default);
+   * `null` means the user explicitly cleared the pick, so no ball should carry over onto this throw.
+   */
+  pendingBall?: ThrowBall | null;
+  /**
+   * Throw the pending pick was made for. A frame holds one pick at a time, so without this a pick
+   * made for the second throw would be swallowed by a re-record of the first. Absent on games and
+   * drafts written before picks were throw-scoped, which apply to whichever throw is recorded next.
+   */
+  pendingBallThrowIndex?: number;
 }
 
 /**
@@ -60,5 +89,7 @@ export interface Game {
   note?: string;
   league?: string;
   patterns: string[];
+  /** Balls used. The user's selection in `game` tracking, derived from the throws in `throw` tracking. */
   balls?: string[];
+  ballTracking?: BallTracking;
 }

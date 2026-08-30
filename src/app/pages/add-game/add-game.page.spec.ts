@@ -65,7 +65,7 @@ describe('AddGamePage', () => {
     });
 
     it('stays shut in classic grid mode', () => {
-      component.isPinInputMode = false;
+      component.isPinInputMode.set(false);
 
       component.onScoreCellClick({ frameIndex: 0, throwIndex: 0 }, 0);
 
@@ -139,17 +139,17 @@ describe('AddGamePage', () => {
 
   describe('activeSegmentIndex', () => {
     it('is the position of the selected segment', () => {
-      component.segments = ['Game 1', 'Game 2', 'Game 3'];
+      component.segments.set(['Game 1', 'Game 2', 'Game 3']);
       component.onSegmentChange({ detail: { value: 'Game 3' } } as SegmentCustomEvent);
 
-      expect(component.activeSegmentIndex).toBe(2);
+      expect(component.activeSegmentIndex()).toBe(2);
     });
 
     it('falls back to the first game when the segment is unknown', () => {
-      component.segments = ['Game 1', 'Game 2'];
+      component.segments.set(['Game 1', 'Game 2']);
       component.onSegmentChange({ detail: { value: 'Game 9' } } as SegmentCustomEvent);
 
-      expect(component.activeSegmentIndex).toBe(0);
+      expect(component.activeSegmentIndex()).toBe(0);
     });
   });
 });

@@ -1,6 +1,6 @@
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { environment } from 'src/environments/environment';
-import { buildHighlights, pickTop, pickTopFromList } from './stat.utils';
+import { buildHighlights, getRateColor, pickTop, pickTopFromList } from './stat.utils';
 
 function highlight(overrides: Partial<HighlightItemStats> = {}): HighlightItemStats {
   return { name: 'Item', image: '', avg: 0, highestGame: 0, lowestGame: 0, gameCount: 0, cleanGameCount: 0, strikeRate: 0, ...overrides };
@@ -84,6 +84,17 @@ describe('stat.utils', () => {
       expect(highlights[2].emptyMessage).toBe('No Games with patterns saved.');
       expect(highlights[1].allItems).toBe(src.allBalls);
       expect(highlights[3].allItems).toBe(src.allPatterns);
+    });
+  });
+
+  describe('getRateColor', () => {
+    it('walks the ramp from red at the bottom to blue at the top', () => {
+      expect(getRateColor(0)).toBe('#ff0000');
+      expect(getRateColor(33)).toBe('#ff0000');
+      expect(getRateColor(34)).toBe('#ffa500');
+      expect(getRateColor(51)).toBe('#809300');
+      expect(getRateColor(76)).toBe('#008000');
+      expect(getRateColor(100)).toBe('#4faeff');
     });
   });
 });

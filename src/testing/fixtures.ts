@@ -1,5 +1,5 @@
 import { Ball } from 'src/app/core/models/ball.model';
-import { Frame, Game } from 'src/app/core/models/game.model';
+import { Frame, Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { Stats } from 'src/app/core/models/stats.model';
 
@@ -111,4 +111,30 @@ export function makeBall(overrides: Partial<Ball> = {}): Ball {
     us_int: 'US',
     ...overrides,
   };
+}
+
+/**
+ * A throw with pin data, as pin input mode records it.
+ * `pinsLeft` are the pins still standing afterwards, so `value` is derived from the
+ * pins available before it, so pass `available` when the throw is at a leave.
+ */
+export function makeThrow(
+  throwIndex: number,
+  pinsLeft: number[],
+  options: { ball?: ThrowBall; available?: number[]; isSplit?: boolean } = {},
+): Throw {
+  const available = options.available ?? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  return {
+    value: available.length - pinsLeft.length,
+    throwIndex: throwIndex + 1,
+    pinsLeftStanding: pinsLeft,
+    pinsKnockedDown: available.filter((pin) => !pinsLeft.includes(pin)),
+    isSplit: options.isSplit,
+    ball: options.ball,
+  };
+}
+
+/** A frame built from throws, indexed the way the calculators expect. */
+export function makeFrame(frameIndex: number, throws: Throw[]): Frame {
+  return { frameIndex, throws };
 }

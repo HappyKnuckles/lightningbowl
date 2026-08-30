@@ -39,12 +39,17 @@ import { addIcons } from 'ionicons';
 import { add, chevronBack, chevronDownOutline, ellipsisVerticalOutline, openOutline, trashOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
+import { BallStats } from 'src/app/core/models/stats.model';
+import { findBallInArsenal, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
+import { BallStatsComponent } from 'src/app/shared/components/ball-stats/ball-stats.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
@@ -56,6 +61,7 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   styleUrls: ['./arsenal.page.scss'],
   providers: [ModalController],
   imports: [
+    BallStatsComponent,
     IonRippleEffect,
     IonListHeader,
     IonSegmentButton,
@@ -105,6 +111,45 @@ export class ArsenalPage implements OnInit {
       .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
   );
   selectedSegment = model('arsenal');
+
+  /**
+   * Per-ball stats for the balls currently in the arsenal, across all time.
+   *
+   * This deliberately differs from the stats page in both directions. It ignores the game
+   * filter, because the question here is whether a ball has earned its place in the bag
+   * rather than how it did in one league. And it covers only balls still owned, plus the
+   * owned balls that have never been thrown, which is the most useful answer of all and
+   * one the game history alone can never produce.
+   */
+  readonly ballStats = computed<BallStats[]>(() => {
+    const arsenal = this.ballsStore.arsenal();
+    const fromHistory = this.statsService.calculateBallStats(this.gamesStore.games());
+
+    const owned = fromHistory.filter((stats) => findBallInArsenal({ name: stats.name, weight: stats.weight }, arsenal));
+    const covered = new Set(owned.map((stats) => stats.key));
+
+    const neverThrown = arsenal
+      .filter((ball) => !covered.has(getThrowBallKey({ name: ball.ball_name, weight: ball.core_weight })))
+      .map(
+        (ball): BallStats => ({
+          key: getThrowBallKey({ name: ball.ball_name, weight: ball.core_weight }),
+          name: ball.ball_name,
+          displayName: `${ball.ball_name} ${ball.core_weight}lbs`,
+          weight: ball.core_weight,
+          image: ball.ball_image || ball.thumbnail_image || '',
+          tier: 'basic',
+          gameCount: 0,
+          detailedGameCount: 0,
+          avg: 0,
+          highestGame: 0,
+          lowestGame: 0,
+          cleanGameCount: 0,
+          lastUsed: 0,
+        }),
+      );
+
+    return [...owned, ...neverThrown];
+  });
   @ViewChild('balls', { static: false }) ballChart?: ElementRef;
   private ballsChartInstance: Chart | null = null;
   readonly loadingWeightBallIds = signal<Set<string>>(new Set());
@@ -120,6 +165,8 @@ export class ArsenalPage implements OnInit {
     private ballService: BallService,
     private chartGenerationService: ChartGenerationService,
     private typeaheadConfigService: TypeaheadConfigService,
+    private gamesStore: GamesStore,
+    private statsService: GameStatsService,
   ) {
     addIcons({ add, ellipsisVerticalOutline, trashOutline, chevronBack, openOutline, chevronDownOutline });
     effect(() => {

@@ -39,7 +39,15 @@ import {
 } from 'ionicons/icons';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import {
+  ballValueMatches,
+  findBallInArsenal,
+  formatThrowBall,
+  getBallTracking,
+  getGameBallNames,
+  getThrowBallKey,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -93,6 +101,14 @@ interface SeriesRow {
 }
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;
+
+interface GameBallVm {
+  names: string[];
+  text: string;
+  throwSummary: string;
+  throwTracked: boolean;
+  thumbnail: string | null;
+}
 
 @Component({
   selector: 'app-game-list',
@@ -183,6 +199,30 @@ export class GameListComponent implements OnInit {
     return games.slice(0, end);
   });
 
+  /**
+   * Ball text, thumbnail and per-throw summary for every visible game.
+   */
+  ballVms = computed<Record<string, GameBallVm>>(() => {
+    this.ballEditVersion();
+    const arsenal = this.ballsStore.arsenal();
+
+    const vms: Record<string, GameBallVm> = {};
+    for (const game of this.showingGames()) {
+      const names = getGameBallNames(game, arsenal);
+      const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
+      const throwTracked = getBallTracking(game) === 'throw';
+
+      vms[game.gameId] = {
+        names,
+        text: names.length > 0 ? names.join(', ') : 'None',
+        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        throwTracked,
+        throwSummary: throwTracked ? throwBallSummary(game) : '',
+      };
+    }
+    return vms;
+  });
+
   gameNumberMap = computed(() => {
     const allGames = this.sortedGames();
     const total = allGames.length;
@@ -264,6 +304,9 @@ export class GameListComponent implements OnInit {
 
     return rows;
   });
+
+  /** Bumped when an edit changes a game's balls in place, which no signal would otherwise see. */
+  private readonly ballEditVersion = signal(0);
 
   // Pagination state
   public loadedCount = signal(0);
@@ -506,7 +549,7 @@ export class GameListComponent implements OnInit {
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.onBallSelect(
-      selected.map((b) => b.ball_name),
+      selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
       game,
       modal,
     );
@@ -516,6 +559,14 @@ export class GameListComponent implements OnInit {
   onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
     modal.dismiss();
     game.balls = selectedBalls;
+    game.ballTracking = 'game';
+    this.ballEditVersion.update((v) => v + 1);
+  }
+
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
+    this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
+    game.ballTracking = 'throw';
+    this.ballEditVersion.update((v) => v + 1);
   }
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
@@ -577,17 +628,12 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  getSelectedBallsText(game: Game): string {
-    const balls = game.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
-  }
-
   getBallIds(names: string[] | undefined): string[] {
     if (!names) return [];
 
     return this.ballsStore
       .allBalls()
-      .filter((ball) => names.includes(ball.ball_name))
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 
@@ -602,4 +648,21 @@ export class GameListComponent implements OnInit {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
+}
+
+/** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
+function throwBallSummary(game: Game): string {
+  const counts = new Map<string, number>();
+  for (const frame of game.frames ?? []) {
+    for (const t of frame.throws ?? []) {
+      if (!t.ball?.name) continue;
+      const label = formatThrowBall(t.ball);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, throws]) => `${label} · ${throws} throws`)
+    .join('\n');
 }

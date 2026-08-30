@@ -1,0 +1,158 @@
+<h2 class="item-heading">
+  <span>{{ title() }}</span>
+  <span class="divider-line"></span>
+</h2>
+
+@if (rows().length === 0) {
+  <article class="item-card">
+    <p class="empty-msg">No balls saved for these games.</p>
+  </article>
+} @else {
+  @for (row of rows(); track row.ball.key) {
+    <article
+      class="item-card"
+      [class.ion-activatable]="row.hasDetail"
+      [class.ripple-parent]="row.hasDetail"
+      [attr.tabindex]="row.hasDetail ? '0' : null"
+      [attr.role]="row.hasDetail ? 'button' : null"
+      [attr.aria-label]="row.hasDetail ? 'View detailed stats for ' + row.ball.displayName : null"
+      (click)="openDetail(row)"
+      (keydown.enter)="openDetail(row)">
+      @if (row.ball.image) {
+        <ion-img class="round" [src]="ballsStore.url + row.ball.image" [alt]="row.ball.displayName"></ion-img>
+      }
+
+      <div class="item-meta">
+        <header class="item-top">
+          <h3 class="item-name">{{ row.ball.displayName }}</h3>
+          <span class="item-use">{{ row.tierLabel }}</span>
+        </header>
+        <dl class="item-stats">
+          @for (metric of row.metrics; track metric.label) {
+            <div class="item-line">
+              <dt class="item-label">{{ metric.label }}</dt>
+              <dd class="item-value">{{ metric.value }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      @if (row.hasDetail) {
+        <ion-icon name="chevron-forward-outline" class="card-chevron"></ion-icon>
+        <ion-ripple-effect></ion-ripple-effect>
+      }
+    </article>
+  }
+}
+
+<ion-modal [isOpen]="!!selected()" (ionModalDidDismiss)="closeDetail()">
+  <ng-template>
+    @if (selected(); as ball) {
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start" style="padding: 4px">
+            <ion-button color="medium" (click)="closeDetail()">
+              <ion-icon name="chevron-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ ball.displayName }}</ion-title>
+        </ion-toolbar>
+        <ion-toolbar>
+          <ion-segment [value]="detailSegment()" (ionChange)="onSegmentChange($event.detail.value)" scrollable="true">
+            <ion-segment-button value="overview" contentId="overview"><ion-label class="segment-label">Overview</ion-label></ion-segment-button>
+            <ion-segment-button value="leaves" contentId="leaves"><ion-label class="segment-label">Leaves</ion-label></ion-segment-button>
+            <ion-segment-button value="spares" contentId="spares"><ion-label class="segment-label">Spares</ion-label></ion-segment-button>
+            <ion-segment-button value="patterns" contentId="patterns"><ion-label class="segment-label">Patterns</ion-label></ion-segment-button>
+          </ion-segment>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        @if (ball.detail; as detail) {
+          <ion-segment-view>
+            <ion-segment-content id="overview">
+              <h2 class="item-heading">
+                <span>Games with this ball</span>
+                <span class="divider-line"></span>
+              </h2>
+              <div class="stat-grid-3">
+                <dl class="stat-chip">
+                  <dt class="chip-key">Games</dt>
+                  <dd class="chip-val">{{ ball.gameCount }}</dd>
+                </dl>
+                <dl class="stat-chip">
+                  <dt class="chip-key">High</dt>
+                  <dd class="chip-val">{{ ball.highestGame }}</dd>
+                </dl>
+                <dl class="stat-chip">
+                  <dt class="chip-key">Low</dt>
+                  <dd class="chip-val">{{ ball.lowestGame }}</dd>
+                </dl>
+              </div>
+
+              <app-stat-display title="Usage" [statDefinitions]="USAGE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-display title="First ball" [statDefinitions]="FIRST_BALL_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-display title="Scoring" [statDefinitions]="SCORING_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+            </ion-segment-content>
+
+            <ion-segment-content id="leaves">
+              <app-stat-display title="Leave signature" [statDefinitions]="LEAVE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+              <app-stat-pin-leave title="Most common leaves" [leaveStats]="topLeaves()" [allLeaves]="detail.leaves"></app-stat-pin-leave>
+            </ion-segment-content>
+
+            <ion-segment-content id="spares">
+              <app-stat-display title="Spare shooting" [statDefinitions]="SPARE_DEFINITIONS" [currentStats]="detail"></app-stat-display>
+
+              <h2 class="item-heading"><span>Single pin conversions</span><span class="divider-line"></span></h2>
+              @if (pinConversions().length === 0) {
+                <article class="item-card"><p class="empty-msg">No single pin spares shot with this ball yet.</p></article>
+              } @else {
+                <ul class="pin-grid">
+                  @for (pin of pinConversions(); track pin.pin) {
+                    <li class="pin-card">
+                      <app-pin-deck [activePins]="[pin.pin]" [scale]="0.55" [isStatPage]="true"></app-pin-deck>
+                      <span class="pin-rate" [style.color]="pin.rateColor">{{ pin.pickupPercentage | number: "1.0-0" }}%</span>
+                      <span class="pin-count">{{ pin.pickups }} / {{ pin.occurrences }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </ion-segment-content>
+
+            <ion-segment-content id="patterns">
+              <h2 class="item-heading"><span>By oil pattern</span><span class="divider-line"></span></h2>
+              @if (patternRows().length === 0) {
+                <article class="item-card"><p class="empty-msg">Not enough games on any one pattern yet.</p></article>
+              } @else {
+                @for (row of patternRows(); track row.pattern) {
+                  <article class="item-card">
+                    <div class="item-meta">
+                      <header class="item-top">
+                        <h3 class="item-name wrap">{{ row.pattern }}</h3>
+                        <span class="item-use">{{ row.firstBalls }} first balls</span>
+                      </header>
+                      <dl class="item-stats">
+                        <div class="item-line">
+                          <dt class="item-label">Strike</dt>
+                          <dd class="item-value">{{ row.strikePercentage | number: "1.0-0" }}%</dd>
+                        </div>
+                        <div class="item-line">
+                          <dt class="item-label">Carry</dt>
+                          <dd class="item-value">{{ row.carryPercentage | number: "1.0-0" }}%</dd>
+                        </div>
+                        <div class="item-line">
+                          <dt class="item-label">Avg frame</dt>
+                          <dd class="item-value">{{ row.averageFrameValue | number: "1.1-1" }}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </article>
+                }
+              }
+            </ion-segment-content>
+          </ion-segment-view>
+        }
+      </ion-content>
+    }
+  </ng-template>
+</ion-modal>

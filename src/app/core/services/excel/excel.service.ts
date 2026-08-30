@@ -4,12 +4,14 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
 import type { Workbook, Worksheet } from 'exceljs';
-import { Game, Throw } from 'src/app/core/models/game.model';
+import { Ball } from 'src/app/core/models/ball.model';
+import { Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { formatThrowBall, getGameBalls } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -131,7 +133,10 @@ export class ExcelService {
 
         for (let j = 1; j <= 10; j++) {
           const frameIndex = j;
-          const frame: { frameIndex: number; throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean }[] } = {
+          const frame: {
+            frameIndex: number;
+            throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall }[];
+          } = {
             frameIndex: frameIndex,
             throws: [],
           };
@@ -151,14 +156,23 @@ export class ExcelService {
           const pinsLeft2 = (row[`Frame ${frameIndex} Throw 2`] as string) || '';
           const pinsLeft3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Throw 3`] as string) || '' : '';
           const pinsLefts = [pinsLeft1, pinsLeft2, pinsLeft3];
+          const ball1 = (row[`Frame ${frameIndex} Ball 1`] as string) || '';
+          const ball2 = (row[`Frame ${frameIndex} Ball 2`] as string) || '';
+          const ball3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Ball 3`] as string) || '' : '';
+          const throwBalls = [ball1, ball2, ball3];
 
           const maxThrowsInFrame = frameIndex === 10 ? 3 : 2;
 
           for (let k = 0; k < throwValues.length && k < maxThrowsInFrame; k++) {
-            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean } = {
+            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall } = {
               value: throwValues[k],
               throwIndex: k + 1,
             };
+
+            const throwBall = throwBalls[k]?.trim();
+            if (throwBall) {
+              throwObj.ball = this.parseThrowBall(throwBall);
+            }
 
             if (isPinMode) {
               const pinsLeftString = pinsLefts[k];
@@ -222,7 +236,12 @@ export class ExcelService {
             : (row['Pattern'] as string)?.trim()
               ? [(row['Pattern'] as string).trim()]
               : [],
-          balls: (row['Balls'] as string)?.trim() ? (row['Balls'] as string).split(', ') : [],
+          balls: (row['Balls'] as string)?.trim()
+            ? (row['Balls'] as string)
+                .split(', ')
+                .map((ball) => this.formatBallDisplayName(ball))
+                .filter((ball) => !!ball)
+            : [],
           note: row['Notes'] as string,
         };
 
@@ -232,7 +251,16 @@ export class ExcelService {
 
         if (game.balls) {
           for (const ball of game.balls) {
-            ballMap.add(ball);
+            ballMap.add(this.formatBallDisplayName(ball));
+          }
+        }
+
+        for (const frame of game.frames) {
+          for (const throwData of frame.throws) {
+            if (throwData.ball?.name) {
+              const formattedName = this.formatBallDisplayName(formatThrowBall(throwData.ball));
+              if (formattedName) ballMap.add(formattedName);
+            }
           }
         }
 
@@ -244,8 +272,8 @@ export class ExcelService {
       }
 
       for (const ball of ballMap.values()) {
-        const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+        const ballToAdd = this.resolveBallReference(ball);
+        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
@@ -381,13 +409,17 @@ export class ExcelService {
     const baseHeaders = ['Game', 'Date', ...Array.from({ length: 10 }, (_, i) => `Frame ${i + 1}`), 'Total Score'];
 
     const pinHeaders: string[] = [];
+    const throwBallHeaders: string[] = [];
     for (let i = 0; i < 10; i++) {
       const frameIndex = i + 1;
       pinHeaders.push(`Frame ${frameIndex} Throw 1`);
       pinHeaders.push(`Frame ${frameIndex} Throw 2`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 1`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 2`);
 
       if (frameIndex === 10) {
         pinHeaders.push(`Frame ${frameIndex} Throw 3`);
+        throwBallHeaders.push(`Frame ${frameIndex} Ball 3`);
       }
     }
 
@@ -405,7 +437,7 @@ export class ExcelService {
       'isPinMode',
     ];
 
-    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders];
+    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders, ...throwBallHeaders];
 
     return gameHistory.map((game) => {
       const frameValues = Array.from({ length: 10 }, (_, i) => {
@@ -423,24 +455,30 @@ export class ExcelService {
       });
 
       const pinData: string[] = [];
+      const throwBallData: string[] = [];
       for (let i = 0; i < 10; i++) {
         const frame = game.frames[i];
         const frameIndex = i + 1;
 
         const framePins: string[] = ['', '', ''];
+        const frameBalls: string[] = ['', '', ''];
 
         if (frame) {
           const pins = frame.throws.map((t: Throw) => t.pinsLeftStanding?.join(',') || '');
+          const balls = frame.throws.map((t: Throw) => formatThrowBall(t.ball) || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
             framePins[k] = pins[k] || '';
+            frameBalls[k] = balls[k] || '';
           }
         }
 
         pinData.push(framePins[0], framePins[1]);
+        throwBallData.push(frameBalls[0], frameBalls[1]);
         if (frameIndex === 10) {
           pinData.push(framePins[2]);
+          throwBallData.push(frameBalls[2]);
         }
       }
 
@@ -457,10 +495,13 @@ export class ExcelService {
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
         game.patterns?.join(', ') || '',
-        game.balls?.join(', ') || '',
+        getGameBalls(game)
+          .map((ball) => this.formatBallDisplayName(ball))
+          .join(', ') || '',
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,
+        ...throwBallData,
       ];
 
       return headers.reduce(
@@ -495,8 +536,11 @@ export class ExcelService {
       notes[`Frame ${frameIndex}`] = 'Throw values separated by " / ". Examples: "10", "9 / 1", "10 / 10 / 10" (10th frame).';
       notes[`Frame ${frameIndex} Throw 1`] = 'Pins left standing after throw 1, comma-separated (e.g. 7,10). Leave empty if none.';
       notes[`Frame ${frameIndex} Throw 2`] = 'Pins left standing after throw 2, comma-separated. Only relevant when isPinMode=true.';
+      notes[`Frame ${frameIndex} Ball 1`] = 'Optional. Ball name used for throw 1 of this frame.';
+      notes[`Frame ${frameIndex} Ball 2`] = 'Optional. Ball name used for throw 2 of this frame.';
       if (frameIndex === 10) {
         notes[`Frame ${frameIndex} Throw 3`] = 'Pins left standing after throw 3 in 10th frame (if present).';
+        notes[`Frame ${frameIndex} Ball 3`] = 'Optional. Ball name used for throw 3 in the 10th frame.';
       }
     }
 
@@ -779,6 +823,51 @@ export class ExcelService {
     });
   }
 
+  private normalizeBallKey(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/lbs?|#/g, '');
+  }
+
+  private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
+    const raw = rawBallValue?.trim();
+    if (!raw) return undefined;
+
+    const normalizedRaw = this.normalizeBallKey(raw);
+    return this.ballsStore.allBalls().find((ball) => {
+      const byName = this.normalizeBallKey(ball.ball_name);
+      const byNameAndWeight = this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`);
+      return normalizedRaw === byName || normalizedRaw === byNameAndWeight;
+    });
+  }
+
+  /**
+   * Rebuild a ThrowBall from an exported cell, keeping name and weight apart. Folding the weight
+   * into the name would key the imported throw as its own ball ("Rocket A.I. 15lbs" against the
+   * in-app "Rocket A.I.15"), splitting one ball's per-throw stats across two entries.
+   */
+  private parseThrowBall(rawBallValue: string): ThrowBall {
+    const raw = rawBallValue.trim();
+
+    const resolved = this.resolveBallReference(raw);
+    if (resolved) return { name: resolved.ball_name, weight: resolved.core_weight };
+
+    const withWeight = raw.match(/^(.*?)\s*(\d+(?:\.\d+)?)\s*lbs?$/i);
+    return withWeight ? { name: withWeight[1].trim(), weight: withWeight[2] } : { name: raw };
+  }
+
+  private formatBallDisplayName(rawBallValue: string | undefined): string {
+    const raw = rawBallValue?.trim();
+    if (!raw) return '';
+
+    const resolvedBall = this.resolveBallReference(raw);
+    if (!resolvedBall) return raw;
+
+    return `${resolvedBall.ball_name} ${resolvedBall.core_weight}lbs`;
+  }
+
   private createSampleGame(): Game {
     return {
       gameId: '1775331174465_1u39gi6',
@@ -787,48 +876,48 @@ export class ExcelService {
         {
           frameIndex: 1,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
-            { value: 1, throwIndex: 2, pinsLeftStanding: [] },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
           ],
         },
-        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
-        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
         {
           frameIndex: 4,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [5] },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [5], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 5,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [3] },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [3], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 6,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [2] },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [2], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 7,
           throws: [
-            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2] },
-            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2] },
+            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2], ball: { name: 'Rocket A.I.' } },
+            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2], ball: { name: 'Rocket A.I.' } },
           ],
         },
-        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
-        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
         {
           frameIndex: 10,
           throws: [
-            { value: 10, throwIndex: 1, pinsLeftStanding: [] },
-            { value: 10, throwIndex: 2, pinsLeftStanding: [] },
-            { value: 10, throwIndex: 3, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 10, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 10, throwIndex: 3, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
           ],
         },
       ],

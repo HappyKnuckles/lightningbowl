@@ -15,6 +15,7 @@ import {
 } from '@ionic/angular/standalone';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { ballValueMatches } from 'src/app/core/utils/game-utils/ball.utils';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
 @Component({
@@ -48,29 +49,30 @@ export class BallSelectComponent implements OnInit {
     this.#tempSelectedBalls.set([...this.selectedBalls()!]);
   }
 
+  /**
+   * Selections are stored as "Name{weight}" keys, but games saved before weights were tracked
+   * hold plain names, so a stored value is matched against the ball rather than compared as a
+   * string — otherwise reopening the picker on an older game shows nothing ticked.
+   */
   toggleBallSelection(ballName: string, ballWeight: string): void {
+    const ball = { ball_name: ballName, core_weight: ballWeight };
     const currentSelection = this.#tempSelectedBalls();
-    const index = currentSelection.indexOf(ballName + ballWeight);
+    const isSelected = currentSelection.some((value) => ballValueMatches(value, ball));
 
     if (this.singleSelect()) {
-      if (index > -1) {
-        this.#tempSelectedBalls.set([]);
-      } else {
-        this.#tempSelectedBalls.set([ballName + ballWeight]);
-      }
+      this.#tempSelectedBalls.set(isSelected ? [] : [ballName + ballWeight]);
       return;
     }
 
-    if (index > -1) {
-      const updated = currentSelection.filter((name) => name !== ballName + ballWeight);
-      this.#tempSelectedBalls.set(updated);
+    if (isSelected) {
+      this.#tempSelectedBalls.set(currentSelection.filter((value) => !ballValueMatches(value, ball)));
     } else {
       this.#tempSelectedBalls.set([...currentSelection, ballName + ballWeight]);
     }
   }
 
   isBallSelected(ballName: string, ballWeight: string): boolean {
-    return this.#tempSelectedBalls().includes(ballName + ballWeight);
+    return this.#tempSelectedBalls().some((value) => ballValueMatches(value, { ball_name: ballName, core_weight: ballWeight }));
   }
 
   confirmBallSelection(): void {

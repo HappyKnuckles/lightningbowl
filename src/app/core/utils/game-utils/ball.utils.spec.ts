@@ -1,6 +1,15 @@
 import { Frame, Throw } from 'src/app/core/models/game.model';
 import { makeFrame, makeGame, makeThrow } from 'src/testing/fixtures';
-import { getBallTracking, getCarryOverThrowBall, getThrowBallKeys, setThrowBall } from './ball.utils';
+import {
+  ballValueMatches,
+  canonicalBallKey,
+  getBallTracking,
+  getCarryOverThrowBall,
+  getPendingBall,
+  getThrowBallForPosition,
+  getThrowBallKeys,
+  setThrowBall,
+} from './ball.utils';
 
 function emptyFrames(): Frame[] {
   return Array.from({ length: 10 }, (_, i) => ({ frameIndex: i + 1, throws: [] }));
@@ -33,6 +42,93 @@ describe('ball.utils', () => {
       setThrowBall(frames, 0, 0, undefined);
 
       expect(frames[0].pendingBall).toBeNull();
+    });
+
+    it('remembers which throw the pick was made for', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1 }];
+
+      setThrowBall(frames, 0, 1, { name: 'Storm IQ Tour', weight: '15' });
+
+      expect(frames[0].pendingBallThrowIndex).toBe(1);
+    });
+  });
+
+  describe('getPendingBall', () => {
+    it('answers only for the throw the pick was made for', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1 }];
+      setThrowBall(frames, 0, 1, { name: 'Storm IQ Tour', weight: '15' });
+
+      expect(getPendingBall(frames[0], 1)).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+      expect(getPendingBall(frames[0], 0)).toBeUndefined();
+    });
+
+    it('applies to any throw for a pick stored before picks were throw-scoped', () => {
+      const frames = emptyFrames();
+      frames[0].pendingBall = { name: 'Storm IQ Tour', weight: '15' };
+
+      expect(getPendingBall(frames[0], 0)).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+      expect(getPendingBall(frames[0], 1)).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+    });
+  });
+
+  describe('getThrowBallForPosition', () => {
+    it('prefers what a recorded throw was bowled with, absence included', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+      frames[1].throws = [{ value: 6, throwIndex: 1 }];
+
+      expect(getThrowBallForPosition(frames, 0, 0)).toEqual({ name: 'Phaze II', weight: '15' });
+      expect(getThrowBallForPosition(frames, 1, 0)).toBeUndefined();
+    });
+
+    it('falls back to the pick waiting for that throw, then to the carry-over', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 10, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+      setThrowBall(frames, 1, 0, { name: 'Storm IQ Tour', weight: '15' });
+
+      expect(getThrowBallForPosition(frames, 1, 0)).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+      expect(getThrowBallForPosition(frames, 2, 0)).toEqual({ name: 'Phaze II', weight: '15' });
+    });
+
+    it('keeps a deliberate clear clear instead of carrying a ball over', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 10, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+      setThrowBall(frames, 1, 0, undefined);
+
+      expect(getThrowBallForPosition(frames, 1, 0)).toBeUndefined();
+    });
+  });
+
+  describe('ballValueMatches', () => {
+    const ball = { ball_name: 'Rocket A.I.', core_weight: '15' };
+
+    it('matches every format Game.balls has been written in', () => {
+      expect(ballValueMatches('Rocket A.I.15', ball)).toBe(true);
+      expect(ballValueMatches('Rocket A.I.', ball)).toBe(true);
+      expect(ballValueMatches('Rocket A.I. 15lbs', ball)).toBe(true);
+    });
+
+    it('does not match another ball or another weight of it', () => {
+      expect(ballValueMatches('Phaze II15', ball)).toBe(false);
+      expect(ballValueMatches('Rocket A.I.14', ball)).toBe(false);
+    });
+  });
+
+  describe('canonicalBallKey', () => {
+    const arsenal = [{ ball_name: 'Rocket A.I.', core_weight: '15' }];
+
+    it('reduces the stored formats of one ball to a single key', () => {
+      const key = canonicalBallKey('Rocket A.I.15', arsenal);
+
+      expect(canonicalBallKey('Rocket A.I.', arsenal)).toBe(key);
+      expect(canonicalBallKey('Rocket A.I. 15lbs', arsenal)).toBe(key);
+    });
+
+    it('still compares a ball outside the arsenal against itself', () => {
+      expect(canonicalBallKey('Zen U', [])).toBe(canonicalBallKey('zen u', []));
+      expect(canonicalBallKey('Zen U', [])).not.toBe(canonicalBallKey('Zen Master', []));
     });
   });
 });

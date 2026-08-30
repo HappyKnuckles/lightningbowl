@@ -171,8 +171,7 @@ export class ExcelService {
 
             const throwBall = throwBalls[k]?.trim();
             if (throwBall) {
-              const formattedName = this.formatBallDisplayName(throwBall);
-              throwObj.ball = formattedName ? { name: formattedName } : { name: throwBall };
+              throwObj.ball = this.parseThrowBall(throwBall);
             }
 
             if (isPinMode) {
@@ -842,6 +841,21 @@ export class ExcelService {
       const byNameAndWeight = this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`);
       return normalizedRaw === byName || normalizedRaw === byNameAndWeight;
     });
+  }
+
+  /**
+   * Rebuild a ThrowBall from an exported cell, keeping name and weight apart. Folding the weight
+   * into the name would key the imported throw as its own ball ("Rocket A.I. 15lbs" against the
+   * in-app "Rocket A.I.15"), splitting one ball's per-throw stats across two entries.
+   */
+  private parseThrowBall(rawBallValue: string): ThrowBall {
+    const raw = rawBallValue.trim();
+
+    const resolved = this.resolveBallReference(raw);
+    if (resolved) return { name: resolved.ball_name, weight: resolved.core_weight };
+
+    const withWeight = raw.match(/^(.*?)\s*(\d+(?:\.\d+)?)\s*lbs?$/i);
+    return withWeight ? { name: withWeight[1].trim(), weight: withWeight[2] } : { name: raw };
   }
 
   private formatBallDisplayName(rawBallValue: string | undefined): string {

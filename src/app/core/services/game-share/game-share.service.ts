@@ -5,6 +5,8 @@ import { Share } from '@capacitor/share';
 import { toPng } from 'html-to-image';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+
 import { getGameBallNames } from '../../utils/game-utils/ball.utils';
 import { LoadingService } from '../loader/loading.service';
 import { ToastService } from '../toast/toast.service';
@@ -13,6 +15,7 @@ import { ToastService } from '../toast/toast.service';
 export class GameShareService {
   private renderer: Renderer2;
   private locale = inject(LOCALE_ID);
+  private ballsStore = inject(BallsStore);
 
   constructor(
     rendererFactory: RendererFactory2,
@@ -60,7 +63,7 @@ export class GameShareService {
       game.totalScore === 300
         ? `Look at me bitches, perfect game on ${formattedDate}! 🎳🎉.`
         : `Check out this game from ${formattedDate}. A ${game.totalScore}.`,
-      this.formatBallsPart(getGameBallNames(game)),
+      this.formatBallsPart(getGameBallNames(game, this.ballsStore.arsenal())),
       game.patterns?.length ? `Patterns: ${game.patterns.join(', ')}` : null,
     ];
 

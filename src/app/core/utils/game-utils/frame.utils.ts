@@ -115,7 +115,13 @@ export function calculateIsClean(frames: Frame[]): boolean {
 
 // Mutators (operate on Frame[] / Frame in place)
 
-/** Set a throw value in a frame (mutates). Handles throwIndex assignment. Preserves other throw data (e.g. ball). */
+/**
+ * Set a throw value in a frame (mutates). Handles throwIndex assignment, and keeps the ball the
+ * throw was bowled with — but nothing else: a typed value carries no pin data, so the previous
+ * throw's `pinsLeftStanding`/`pinsKnockedDown`/`isSplit` are dropped rather than carried forward.
+ * Keeping them turns a re-typed strike into a strike that still leaves the 10 pin standing, which
+ * then feeds the leave and spare stats and the pin deck.
+ */
 export function setThrowInFrame(frame: Frame, throwIndex: number, value: number): void {
   if (!frame.throws) frame.throws = [];
 
@@ -123,11 +129,8 @@ export function setThrowInFrame(frame: Frame, throwIndex: number, value: number)
     frame.throws.push(createThrow(0, frame.throws.length + 1));
   }
 
-  frame.throws[throwIndex] = {
-    ...frame.throws[throwIndex],
-    value,
-    throwIndex: throwIndex + 1,
-  };
+  const ball = frame.throws[throwIndex]?.ball;
+  frame.throws[throwIndex] = { ...createThrow(value, throwIndex + 1), ...(ball ? { ball } : {}) };
 }
 
 /** Remove a throw at an index (mutates). */

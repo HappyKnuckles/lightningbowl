@@ -193,6 +193,26 @@ describe('frame.utils', () => {
       expect(target.throws[1]).toEqual({ value: 6, throwIndex: 2 });
     });
 
+    it('keeps the ball but drops the pin data of the throw it overwrites', () => {
+      const target: Frame = {
+        frameIndex: 1,
+        throws: [
+          {
+            value: 9,
+            throwIndex: 1,
+            pinsLeftStanding: [10],
+            pinsKnockedDown: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            isSplit: false,
+            ball: { name: 'Phaze II', weight: '15' },
+          },
+        ],
+      };
+
+      setThrowInFrame(target, 0, 10);
+
+      expect(target.throws[0]).toEqual({ value: 10, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } });
+    });
+
     it('pads with zero throws when writing past the end', () => {
       const target = createEmptyFrame(10);
 

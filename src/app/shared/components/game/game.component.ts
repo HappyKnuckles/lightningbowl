@@ -47,10 +47,11 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import {
+  ballValueMatches,
   findBallInArsenal,
   formatThrowBall,
-  getCarryOverThrowBall,
   getGameBallNames,
+  getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
 } from 'src/app/core/utils/game-utils/ball.utils';
@@ -291,23 +292,10 @@ export class GameComponent implements OnInit {
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
 
-  /**
-   * Ball for the throw the pin input is currently on, falling back to the carried-over ball.
-   * A throw that is already recorded answers for itself, absence included — carrying a ball
-   * over onto it would undo the user clearing the pick. Only a throw not yet recorded takes a
-   * default, and there `pendingBall === null` marks a deliberate clear, which must not fall
-   * through to the carry-over the way an untouched `undefined` does.
-   */
-  currentThrowBall = computed<ThrowBall | undefined>(() => {
-    const frames = this.game()?.frames ?? [];
-    const frameIndex = this.currentFrameIndex();
-    const throwIndex = this.currentThrowIndex();
-    const frame = frames[frameIndex];
-    const recordedThrow = frame?.throws?.[throwIndex];
-    if (recordedThrow) return recordedThrow.ball;
-    if (frame?.pendingBall !== undefined) return frame.pendingBall ?? undefined;
-    return getCarryOverThrowBall(frames, frameIndex, throwIndex);
-  });
+  /** Ball for the throw the pin input is currently on. */
+  currentThrowBall = computed<ThrowBall | undefined>(() =>
+    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex()),
+  );
 
   /** Patterns sorted by how often they were played, most used first. */
   rankedPatterns = computed(() => {
@@ -429,7 +417,7 @@ export class GameComponent implements OnInit {
 
     return this.ballsStore
       .allBalls()
-      .filter((ball) => names.includes(ball.ball_name))
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 
@@ -437,7 +425,7 @@ export class GameComponent implements OnInit {
   onBallAdd(ballIds: string[]) {
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-    this.ballsChanged.emit(selected.map((b) => b.ball_name));
+    this.ballsChanged.emit(selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })));
     this.saveBallToArsenal(selected);
   }
 

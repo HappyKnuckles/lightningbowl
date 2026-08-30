@@ -1,6 +1,6 @@
 import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
-import { getCarryOverThrowBall } from './ball.utils';
+import { clearPendingBall, getCarryOverThrowBall, getPendingBall } from './ball.utils';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];
@@ -176,15 +176,17 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
     isSplit: isSplitThrow,
   };
 
-  // Apply a ball picked before this throw was recorded, if any. `pendingBall === null` means the
-  // user explicitly cleared the pick, so leave the throw without a ball instead of carrying one
-  // over; `undefined` means it was never touched, so fall back to the carry-over default.
-  if (frame.pendingBall) {
-    frame.throws[throwIndex].ball = frame.pendingBall;
-  } else if (frame.pendingBall === undefined) {
+  // A pick made for this throw wins, `null` included: that is the user clearing it, and the
+  // throw is left without a ball rather than carrying one over. Otherwise a ball already stamped
+  // on the throw stands — re-recording a throw must not swap the ball it was bowled with — and
+  // only a throw with no ball at all takes the carry-over default.
+  const pendingBall = getPendingBall(frame, throwIndex);
+  if (pendingBall !== undefined) {
+    frame.throws[throwIndex].ball = pendingBall ?? undefined;
+  } else if (!frame.throws[throwIndex].ball) {
     frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);
   }
-  frame.pendingBall = undefined;
+  clearPendingBall(frame, throwIndex);
 
   cleanupSubsequentThrows(frame, frameIndex, throwIndex, value, pinsStandingAfter);
 

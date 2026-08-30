@@ -221,6 +221,18 @@ describe('BallDetailStatsCalculatorService', () => {
     expect(leave.pickupPercentage).toBe(50);
   });
 
+  it('does not read a throw with no pin data as a pocket hit', () => {
+    // A game typed on the classic grid still carries balls, so it reaches this calculator —
+    // but it never recorded a pin, and an unset pinsLeftStanding is not a swept rack.
+    const game = detailedGame([makeFrame(0, [{ value: 9, throwIndex: 1, ball: IQ }]), makeFrame(1, [{ value: 9, throwIndex: 1, ball: IQ }])]);
+
+    const detail = service.calculate([game]).get('IQ Tour15')!;
+
+    expect(detail.firstBalls).toBe(2);
+    expect(detail.pocketHits).toBe(0);
+    expect(detail.carryPercentage).toBe(0);
+  });
+
   it('splits first ball performance by oil pattern', () => {
     const games = [
       detailedGame([makeFrame(0, [makeThrow(0, [], { ball: IQ })])], { patterns: ['Chameleon'] }),

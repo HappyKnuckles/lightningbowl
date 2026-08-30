@@ -34,11 +34,17 @@ export interface Frame {
   throws: Throw[];
   isInvalid?: boolean;
   /**
-   * Ball selected for the next throw in this frame, before that throw has actually been recorded.
+   * Ball selected for a throw in this frame, before that throw has actually been recorded.
    * `undefined` means nothing was picked yet (the ball carries over from earlier throws as a default);
    * `null` means the user explicitly cleared the pick, so no ball should carry over onto this throw.
    */
   pendingBall?: ThrowBall | null;
+  /**
+   * Throw the pending pick was made for. A frame holds one pick at a time, so without this a pick
+   * made for the second throw would be swallowed by a re-record of the first. Absent on games and
+   * drafts written before picks were throw-scoped, which apply to whichever throw is recorded next.
+   */
+  pendingBallThrowIndex?: number;
 }
 
 /**

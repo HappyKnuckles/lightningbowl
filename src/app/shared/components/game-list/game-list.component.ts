@@ -40,7 +40,14 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import { findBallInArsenal, formatThrowBall, getBallTracking, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
+import {
+  ballValueMatches,
+  findBallInArsenal,
+  formatThrowBall,
+  getBallTracking,
+  getGameBallNames,
+  getThrowBallKey,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -542,7 +549,7 @@ export class GameListComponent implements OnInit {
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     this.onBallSelect(
-      selected.map((b) => b.ball_name),
+      selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
       game,
       modal,
     );
@@ -626,7 +633,7 @@ export class GameListComponent implements OnInit {
 
     return this.ballsStore
       .allBalls()
-      .filter((ball) => names.includes(ball.ball_name))
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 

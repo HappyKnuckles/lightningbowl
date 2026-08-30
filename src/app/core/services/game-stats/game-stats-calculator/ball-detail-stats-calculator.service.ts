@@ -20,14 +20,20 @@ import {
 type ThrowRole = 'first' | 'spare';
 
 interface RoledThrow {
-  role: ThrowRole;
-  throwData: Throw;
-  /** Pins standing when the throw was made. Empty for a first ball on a full rack. */
-  pinsBefore: number[];
-  /** Pins still standing after it. */
-  pinsAfter: number[];
+  /**
+   * Whether the throw recorded pin data at all. A throw typed on the classic grid, or imported
+   * from a sheet that has no pin columns, leaves `pinsLeftStanding` unset — which reads as an
+   * empty rack, i.e. a pocket hit, unless the two are told apart here.
+   */
+  hasPinData: boolean;
   /** First balls only: whether the leave this throw produced was picked up afterwards. */
   leaveConverted?: boolean;
+  /** Pins still standing after it. */
+  pinsAfter: number[];
+  /** Pins standing when the throw was made. Empty for a first ball on a full rack. */
+  pinsBefore: number[];
+  role: ThrowRole;
+  throwData: Throw;
 }
 
 /** Everything accumulated for one ball before it is turned into rates. */
@@ -164,6 +170,7 @@ export class BallDetailStatsCalculatorService {
       throwData: first,
       pinsBefore: [],
       pinsAfter: first.pinsLeftStanding ?? [],
+      hasPinData: first.pinsLeftStanding !== undefined,
       leaveConverted: firstConverted,
     });
 
@@ -174,6 +181,7 @@ export class BallDetailStatsCalculatorService {
           throwData: second,
           pinsBefore: first.pinsLeftStanding ?? [],
           pinsAfter: second.pinsLeftStanding ?? [],
+          hasPinData: second.pinsLeftStanding !== undefined,
         });
       }
       return roles;
@@ -186,6 +194,7 @@ export class BallDetailStatsCalculatorService {
         throwData: second,
         pinsBefore: freshRack ? [] : (first.pinsLeftStanding ?? []),
         pinsAfter: second.pinsLeftStanding ?? [],
+        hasPinData: second.pinsLeftStanding !== undefined,
         leaveConverted: freshRack && third !== undefined && second.value !== 10 && second.value + third.value === 10,
       });
     }
@@ -194,13 +203,20 @@ export class BallDetailStatsCalculatorService {
       const afterDouble = first.value === 10 && second.value === 10;
       const afterSpare = first.value !== 10 && first.value + second.value === 10;
       if (afterDouble || afterSpare) {
-        roles.push({ role: 'first', throwData: third, pinsBefore: [], pinsAfter: third.pinsLeftStanding ?? [] });
+        roles.push({
+          role: 'first',
+          throwData: third,
+          pinsBefore: [],
+          pinsAfter: third.pinsLeftStanding ?? [],
+          hasPinData: third.pinsLeftStanding !== undefined,
+        });
       } else if (first.value === 10) {
         roles.push({
           role: 'spare',
           throwData: third,
           pinsBefore: second.pinsLeftStanding ?? [],
           pinsAfter: third.pinsLeftStanding ?? [],
+          hasPinData: third.pinsLeftStanding !== undefined,
         });
       }
     }
@@ -224,16 +240,17 @@ export class BallDetailStatsCalculatorService {
       acc.strikeStreak = 0;
     }
 
-    if (isPocketHit(pinsAfter)) acc.pocketHits++;
+    const pocketHit = roled.hasPinData && isPocketHit(pinsAfter);
+    if (pocketHit) acc.pocketHits++;
 
     for (const pattern of patterns) {
       const entry = this.patternEntry(acc, pattern);
       entry.firstBalls++;
       if (isStrike) entry.strikes++;
-      if (isPocketHit(pinsAfter)) entry.pocketHits++;
+      if (pocketHit) entry.pocketHits++;
     }
 
-    if (isStrike || pinsAfter.length === 0) return;
+    if (!roled.hasPinData || isStrike || pinsAfter.length === 0) return;
 
     if (isSplit(pinsAfter)) acc.splits++;
     if (isCornerPinLeave(pinsAfter, isLeft)) acc.cornerPinLeaves++;

@@ -1,5 +1,7 @@
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
+
+import { setThrowBall } from './ball.utils';
 import {
   applyPinModeUndo,
   calculateNextPosition,
@@ -249,6 +251,28 @@ describe('pin.utils', () => {
 
       expect(result.updatedFrames[0].throws[0].ball).toEqual({ name: 'Storm IQ Tour', weight: '15' });
       expect(result.updatedFrames[0].pendingBall).toBeUndefined();
+    });
+
+    it('leaves a ball already stamped on the throw alone when it is re-recorded', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+      frames[1].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Storm IQ Tour', weight: '15' } }];
+
+      const result = processPinThrow(frames, 1, 0, [1, 2, 3]);
+
+      expect(result.updatedFrames[1].throws[0].ball).toEqual({ name: 'Storm IQ Tour', weight: '15' });
+    });
+
+    it('keeps a pick made for a later throw when an earlier one is re-recorded', () => {
+      const frames = emptyFrames();
+      frames[0].throws = [{ value: 6, throwIndex: 1 }];
+      setThrowBall(frames, 0, 1, { name: 'White Dot', weight: '15' });
+
+      const result = processPinThrow(frames, 0, 0, [1, 2, 3]);
+
+      expect(result.updatedFrames[0].throws[0].ball).toBeUndefined();
+      expect(result.updatedFrames[0].pendingBall).toEqual({ name: 'White Dot', weight: '15' });
+      expect(result.updatedFrames[0].pendingBallThrowIndex).toBe(1);
     });
 
     it('advances the cursor past the frame on a strike', () => {

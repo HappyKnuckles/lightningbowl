@@ -41,7 +41,7 @@ import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/hi
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { getCarryOverThrowBall, hasThrowLevelBalls, setThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
+import { getThrowBallForPosition, hasThrowLevelBalls, setThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -184,7 +184,7 @@ export class AddGamePage implements OnInit {
 
   /**
    * Everything one game's card and the deck read.
-  */
+   */
   readonly gameVms = computed<GameVm[]>(() =>
     this.segments().map((segment, index) => ({
       segment,
@@ -348,16 +348,10 @@ export class AddGamePage implements OnInit {
     return this.settingsStore.ballTracking() === 'throw';
   }
 
-  /** Ball for the throw the sheet's pad is currently on, falling back to the carried-over ball. */
+  /** Ball for the throw the sheet's pad is currently on. */
   getCurrentThrowBall(gameIndex: number): ThrowBall | undefined {
     const frames = this.games()[gameIndex]?.frames ?? [];
-    const frameIndex = this.getCurrentFrameIndex(gameIndex);
-    const throwIndex = this.getCurrentThrowIndex(gameIndex);
-    const frame = frames[frameIndex];
-    const recordedThrow = frame?.throws?.[throwIndex];
-    if (recordedThrow) return recordedThrow.ball;
-    if (frame?.pendingBall !== undefined) return frame.pendingBall ?? undefined;
-    return getCarryOverThrowBall(frames, frameIndex, throwIndex);
+    return getThrowBallForPosition(frames, this.getCurrentFrameIndex(gameIndex), this.getCurrentThrowIndex(gameIndex));
   }
 
   /** Ball picked on the sheet's pad, applied to the throw the pad is currently on. */

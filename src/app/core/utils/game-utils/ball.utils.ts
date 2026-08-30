@@ -22,26 +22,52 @@ export function formatThrowBall(ball: ThrowBall | undefined): string {
 }
 
 /**
+ * Comparable form of a stored ball string. `Game.balls` has held plain names, "Name{weight}"
+ * keys and "Name {weight}lbs" display strings at different points, so every comparison between
+ * two stored balls goes through this rather than `===`.
+ */
+export function normalizeBallKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/lbs?|#/g, '');
+}
+
+/**
+ * Whether a stored ball string refers to this ball, in any of the formats it may have been
+ * written in: the plain name, the "Name{weight}" key, or the "Name {weight}lbs" display string.
+ * A plain name matches every weight of that ball — the weight simply was never recorded.
+ */
+export function ballValueMatches(value: string, ball: Pick<Ball, 'ball_name' | 'core_weight'>): boolean {
+  const stored = normalizeBallKey(value);
+  return stored === normalizeBallKey(ball.ball_name + ball.core_weight) || stored === normalizeBallKey(ball.ball_name);
+}
+
+/**
  * Find the arsenal entry a ThrowBall refers to, tolerating the different name formats
  * a stored ball can have: plain name, "Name{weight}" key, or "Name {weight}lbs" display string.
  */
 export function findBallInArsenal<T extends Pick<Ball, 'ball_name' | 'core_weight'>>(ball: ThrowBall | undefined, arsenal: T[]): T | undefined {
   if (!ball?.name) return undefined;
 
-  const normalize = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/\s+/g, '')
-      .replace(/lbs?|#/g, '');
-
-  const name = normalize(ball.name);
-  const key = normalize(getThrowBallKey(ball));
+  const name = normalizeBallKey(ball.name);
+  const key = normalizeBallKey(getThrowBallKey(ball));
 
   return arsenal.find((b) => {
-    const byName = normalize(b.ball_name);
-    const byKey = normalize(b.ball_name + b.core_weight);
+    const byName = normalizeBallKey(b.ball_name);
+    const byKey = normalizeBallKey(b.ball_name + b.core_weight);
     return byKey === key || byName === key || byKey === name || byName === name;
   });
+}
+
+/**
+ * The canonical key for a stored ball string, resolved through the arsenal so the formats
+ * `Game.balls` has used over time all reduce to one value. Falls back to the normalized string
+ * for a ball that is not in the arsenal, which still compares equal to itself.
+ */
+export function canonicalBallKey(value: string, arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): string {
+  const match = findBallInArsenal({ name: value }, arsenal);
+  return match ? normalizeBallKey(match.ball_name + match.core_weight) : normalizeBallKey(value);
 }
 
 // Game-level accessors
@@ -172,7 +198,43 @@ export function setThrowBall(frames: Frame[], frameIndex: number, throwIndex: nu
 
   if (throwIndex < frame.throws.length) {
     frame.throws[throwIndex] = { ...frame.throws[throwIndex], throwIndex: throwIndex + 1, ball };
-  } else {
-    frame.pendingBall = ball ?? null;
+    return;
   }
+
+  frame.pendingBall = ball ?? null;
+  frame.pendingBallThrowIndex = throwIndex;
+}
+
+/**
+ * The pending pick belonging to one throw: the ball, `null` for a deliberate clear, or
+ * `undefined` when nothing was picked for it — including when the frame's single pick was
+ * made for a different throw.
+ */
+export function getPendingBall(frame: Frame | undefined, throwIndex: number): ThrowBall | null | undefined {
+  if (!frame || frame.pendingBall === undefined) return undefined;
+  if (frame.pendingBallThrowIndex !== undefined && frame.pendingBallThrowIndex !== throwIndex) return undefined;
+  return frame.pendingBall;
+}
+
+/** Drop a frame's pending pick once the throw it was made for has been recorded. */
+export function clearPendingBall(frame: Frame, throwIndex: number): void {
+  if (frame.pendingBallThrowIndex !== undefined && frame.pendingBallThrowIndex !== throwIndex) return;
+  frame.pendingBall = undefined;
+  frame.pendingBallThrowIndex = undefined;
+}
+
+/**
+ * Ball to show for a throw: what it was recorded with, else the pick waiting for it, else the
+ * ball carried over from earlier throws. A recorded throw answers for itself, absence included —
+ * carrying a ball onto it would undo the user clearing the pick.
+ */
+export function getThrowBallForPosition(frames: Frame[], frameIndex: number, throwIndex: number): ThrowBall | undefined {
+  const frame = frames[frameIndex];
+  const recordedThrow = frame?.throws?.[throwIndex];
+  if (recordedThrow) return recordedThrow.ball;
+
+  const pending = getPendingBall(frame, throwIndex);
+  if (pending !== undefined) return pending ?? undefined;
+
+  return getCarryOverThrowBall(frames, frameIndex, throwIndex);
 }

@@ -3,7 +3,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
-import { makeGame } from 'src/testing/fixtures';
+import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { GamesStore } from './games.store';
 
 describe('GamesStore', () => {
@@ -75,11 +75,59 @@ describe('GamesStore', () => {
     });
 
     it('skips the rewrite when nothing needs migrating', async () => {
-      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', patterns: ['Cheetah', 'Shark'], balls: ['Hammer'] })]);
+      storageRepository.loadByPrefix.mockResolvedValue([
+        makeGame({ gameId: 'g1', patterns: ['Cheetah', 'Shark'], balls: ['Hammer'], ballTracking: 'game' }),
+      ]);
 
       await store.loadGameHistory();
 
       expect(storageRepository.set).not.toHaveBeenCalled();
+    });
+
+    it('tags a legacy game with no per-throw balls as game-tracked', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', balls: ['Hammer15'] })]);
+
+      await store.loadGameHistory();
+
+      expect(store.games()[0].ballTracking).toBe('game');
+    });
+
+    it('does not backfill per-throw balls from the game-level selection', async () => {
+      const game = makeGame({
+        gameId: 'g1',
+        balls: ['Hammer15'],
+        frames: [makeFrame(0, [makeThrow(0, [])]), ...makeFrames().slice(1)],
+      });
+      storageRepository.loadByPrefix.mockResolvedValue([game]);
+
+      await store.loadGameHistory();
+
+      expect(store.games()[0].frames[0].throws[0].ball).toBeUndefined();
+    });
+
+    it('tags a game that has per-throw balls as throw-tracked', async () => {
+      const game = makeGame({
+        gameId: 'g1',
+        frames: [makeFrame(0, [makeThrow(0, [], { ball: { name: 'IQ Tour', weight: '15' } })]), ...makeFrames().slice(1)],
+      });
+      storageRepository.loadByPrefix.mockResolvedValue([game]);
+
+      await store.loadGameHistory();
+
+      expect(store.games()[0].ballTracking).toBe('throw');
+    });
+
+    it('migrates a legacy string ball on a throw into a ThrowBall', async () => {
+      const game = makeGame({
+        gameId: 'g1',
+        frames: [makeFrame(0, [{ value: 10, throwIndex: 1, ball: 'IQ Tour' } as never]), ...makeFrames().slice(1)],
+      });
+      storageRepository.loadByPrefix.mockResolvedValue([game]);
+
+      await store.loadGameHistory();
+
+      expect(store.games()[0].frames[0].throws[0].ball).toEqual({ name: 'IQ Tour' });
+      expect(store.games()[0].ballTracking).toBe('throw');
     });
 
     it('remembers the earliest game date', async () => {

@@ -66,6 +66,7 @@ import {
 import { Stats } from 'src/app/core/models/stats.model';
 import { byAvg, byGameCount, sortGameHistoryByDate } from 'src/app/core/utils/sort-utils/sort.utils';
 import { buildHighlights, pickTopFromList } from 'src/app/core/utils/stat-utils/stat.utils';
+import { BallStatsComponent } from 'src/app/shared/components/ball-stats/ball-stats.component';
 import { StatHighlightItemComponent } from 'src/app/shared/components/stat-highlight-item/stat-highlight-item.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
 import { StatSpareComponent } from 'src/app/shared/components/stat-spare/stat-spare.component';
@@ -133,6 +134,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     StatSpareComponent,
     BowlingRefresherComponent,
     StatHighlightItemComponent,
+    BallStatsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -182,6 +184,10 @@ export class StatsPage implements OnInit {
   sessionBestPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byAvg));
   sessionMostPlayedPatternStats = computed(() => pickTopFromList(this.sessionAllPatternStats(), byGameCount));
   sessionAllLeaves = computed(() => this.statsService.calculateAllLeaves(this.gamesForSelectedSession()));
+  sessionBallStats = computed(() => this.statsService.calculateBallStats(this.gamesForSelectedSession()));
+
+  /** Ball numbers move with the filter, so the card says which games it is describing. */
+  readonly ballScopeLabel = computed(() => (this.gameFilterService.activeFilterCount() > 0 ? 'Current filter' : 'All games'));
   readonly chartGames = computed(() => sortGameHistoryByDate([...this.gameFilterService.filteredGames()], true));
 
   readonly hasGames = computed(
@@ -269,7 +275,7 @@ export class StatsPage implements OnInit {
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
   selectedSegment = 'Overall';
-  segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Sessions'];
+  segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Balls', 'Sessions'];
 
   // ViewChild signal queries — undefined when the @if block is not rendered
   readonly scoreChart = viewChild<ElementRef>('scoreChart');

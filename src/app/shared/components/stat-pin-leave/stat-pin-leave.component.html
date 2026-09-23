@@ -25,7 +25,7 @@
   @if (leaveStats().length === 0) {
     <p class="leave-empty">No Games with pin-data saved.</p>
   } @else {
-    @for (leave of leaveStats(); track $index) {
+    @for (leave of leaveRows(); track $index) {
       <div class="leave-container">
         <app-pin-deck [activePins]="leave.pins" [scale]="0.7" [isStatPage]="true"></app-pin-deck>
         <div class="leave-stats">
@@ -39,7 +39,7 @@
           </ion-text>
           <ion-text>
             <h3>Pickup %</h3>
-            <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
+            <p [style.color]="leave.pickupColor">{{ leave.pickupText }}%</p>
           </ion-text>
         </div>
       </div>
@@ -88,7 +88,7 @@
                   </ion-text>
                   <ion-text>
                     <h3>Pickup %</h3>
-                    <p [style.color]="getPickupColor(leave.pickupPercentage)">{{ leave.pickupPercentage.toFixed(0) }}%</p>
+                    <p [style.color]="leave.pickupColor">{{ leave.pickupText }}%</p>
                   </ion-text>
                 </div>
               </div>

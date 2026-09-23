@@ -14,7 +14,15 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { LeaveStats } from 'src/app/core/models/stats.model';
+import { getRateColor } from 'src/app/core/utils/stat-utils/stat.utils';
+
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
+
+/** A leave card, with its numbers already formatted and coloured. */
+interface LeaveRowVm extends LeaveStats {
+  pickupColor: string;
+  pickupText: string;
+}
 
 @Component({
   selector: 'app-stat-pin-leave',
@@ -27,13 +35,15 @@ export class StatPinLeaveComponent {
   title = input<string>('Pin Leaves');
   allLeaves = input<LeaveStats[]>();
 
-  isModalOpen = signal(false);
+  readonly leaveRows = computed<LeaveRowVm[]>(() => this.leaveStats().map(toRowVm));
 
-  sortedAllLeaves = computed(() => {
+  readonly sortedAllLeaves = computed<LeaveRowVm[]>(() => {
     const leaves = this.allLeaves();
     if (!leaves) return [];
-    return [...leaves].sort((a, b) => b.occurrences - a.occurrences);
+    return [...leaves].sort((a, b) => b.occurrences - a.occurrences).map(toRowVm);
   });
+
+  isModalOpen = signal(false);
 
   constructor() {
     addIcons({ chevronBack, chevronForwardOutline });
@@ -48,18 +58,8 @@ export class StatPinLeaveComponent {
   closeModal(): void {
     this.isModalOpen.set(false);
   }
+}
 
-  getPickupColor(conversionRate: number): string {
-    if (conversionRate > 95) {
-      return '#4faeff';
-    } else if (conversionRate > 75) {
-      return '#008000';
-    } else if (conversionRate > 50) {
-      return '#809300';
-    } else if (conversionRate > 33) {
-      return '#FFA500';
-    } else {
-      return '#FF0000';
-    }
-  }
+function toRowVm(leave: LeaveStats): LeaveRowVm {
+  return { ...leave, pickupText: leave.pickupPercentage.toFixed(0), pickupColor: getRateColor(leave.pickupPercentage) };
 }

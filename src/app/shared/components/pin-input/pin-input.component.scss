@@ -18,6 +18,33 @@
   }
 }
 
+/**
+ * Both deck-flanking buttons get the same square box with no padding of their own, so
+ * their glyphs stay centred the same distance from their edge and the pair reads as a
+ * mirrored pair — the icons inside are then free to differ in size.
+ */
+.stats-btn,
+.ball-icon-button {
+  margin: 0;
+  width: 28px;
+  height: 28px;
+
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+
+  ion-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.ball-icon-button ion-icon {
+  width: 24px;
+  height: 24px;
+}
+
 .pin-deck {
   position: relative;
   display: flex;
@@ -26,16 +53,40 @@
   gap: 20px;
   width: 100%;
 
-  // Left of the 7 pin
-  .stats-btn {
+  // Flank the back row: stats left of the 7, ball right of the 10.
+  .stats-btn,
+  .ball-selector-corner {
     position: absolute;
     top: 25px;
-    left: 0;
     transform: translateY(-50%);
-    margin: 0;
-    --padding-start: 4px;
-    --padding-end: 4px;
   }
+
+  .stats-btn {
+    left: 0;
+  }
+
+  .ball-selector-corner {
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.selected-ball-thumb {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ball-modal {
+  --width: fit-content;
+  --min-width: 250px;
+  --height: fit-content;
+  --border-radius: 13px;
+  --max-height: auto;
 }
 
 .pin-row {

@@ -115,7 +115,13 @@ export function calculateIsClean(frames: Frame[]): boolean {
 
 // Mutators (operate on Frame[] / Frame in place)
 
-/** Set a throw value in a frame (mutates). Handles throwIndex assignment. */
+/**
+ * Set a throw value in a frame (mutates). Handles throwIndex assignment, and keeps the ball the
+ * throw was bowled with — but nothing else: a typed value carries no pin data, so the previous
+ * throw's `pinsLeftStanding`/`pinsKnockedDown`/`isSplit` are dropped rather than carried forward.
+ * Keeping them turns a re-typed strike into a strike that still leaves the 10 pin standing, which
+ * then feeds the leave and spare stats and the pin deck.
+ */
 export function setThrowInFrame(frame: Frame, throwIndex: number, value: number): void {
   if (!frame.throws) frame.throws = [];
 
@@ -123,7 +129,8 @@ export function setThrowInFrame(frame: Frame, throwIndex: number, value: number)
     frame.throws.push(createThrow(0, frame.throws.length + 1));
   }
 
-  frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  const ball = frame.throws[throwIndex]?.ball;
+  frame.throws[throwIndex] = { ...createThrow(value, throwIndex + 1), ...(ball ? { ball } : {}) };
 }
 
 /** Remove a throw at an index (mutates). */
@@ -136,14 +143,11 @@ export function removeThrowFromFrame(frame: Frame, throwIndex: number): void {
   }
 }
 
-/** Record a throw within a frames array (mutates). */
+/** Record a throw within a frames array (mutates). Preserves other throw data (e.g. ball). */
 export function recordThrow(frames: Frame[], frameIndex: number, throwIndex: number, value: number): void {
   const frame = frames[frameIndex];
   if (!frame) return;
-  while (frame.throws.length <= throwIndex) {
-    frame.throws.push(createThrow(0, frame.throws.length + 1));
-  }
-  frame.throws[throwIndex] = createThrow(value, throwIndex + 1);
+  setThrowInFrame(frame, throwIndex, value);
 }
 
 /** Remove a throw within a frames array (mutates). */
@@ -193,4 +197,26 @@ export function numberArraysToFrames(numberArrays: number[][]): Frame[] {
     frameIndex: frameIndex + 1,
     throws: frameArray.map((value, throwIndex) => createThrow(value, throwIndex + 1)),
   }));
+}
+
+/**
+ * Whether a throw is a first ball at a full rack, the only kind of throw that can strike.
+ * In frames 1-9 that is throw 1. The tenth frame racks again after a strike or a spare,
+ * so its second and third throws can be first balls too.
+ */
+export function isFirstBallThrow(frame: Frame, frameIndex: number, throwIndex: number): boolean {
+  if (throwIndex === 0) return true;
+  if (frameIndex !== 9) return false;
+
+  const first = frame.throws?.[0]?.value;
+  const second = frame.throws?.[1]?.value;
+
+  if (throwIndex === 1) return first === 10;
+  if (throwIndex === 2) {
+    if (first === undefined || second === undefined) return false;
+    const afterDouble = first === 10 && second === 10;
+    const afterSpare = first !== 10 && first + second === 10;
+    return afterDouble || afterSpare;
+  }
+  return false;
 }

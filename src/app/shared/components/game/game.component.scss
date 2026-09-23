@@ -11,12 +11,32 @@
 
   .input-col {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+  }
+
+  .throw-ball-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: 8px;
+  }
+
+  .throw-ball-fallback-icon {
+    color: var(--ion-color-medium);
+    font-size: 12px;
+    border: none;
   }
 }
 
-.ball-selector, .pattern-selector{
+.grid-container.reserve-ball-slot .pin-deck-row {
+  min-height: 42px;
+}
+
+.ball-selector,
+.pattern-selector {
   &::part(detail-icon) {
     opacity: 1;
     color: var(--ion-color-step-650, var(--ion-text-color-step-350, #595959));
@@ -27,3 +47,19 @@
   }
 }
 
+.ball-throw-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 0;
+
+  .ball-throw-entry {
+    font-size: 0.875rem;
+  }
+
+  .ball-throw-untracked {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+  }
+}

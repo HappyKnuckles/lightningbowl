@@ -60,6 +60,8 @@ export class AppFacade {
   async loadInitialData(weight: number): Promise<void> {
     try {
       this.settingsStore.loadPinInputMode();
+      this.settingsStore.loadBallTracking();
+      this.settingsStore.loadHandedness();
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
         this.patternsStore.loadPatternImageMap(),

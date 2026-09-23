@@ -47,7 +47,7 @@
       </ion-item> -->
       <app-league-selector></app-league-selector>
       <ion-item>
-        <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+        <ion-icon src="/assets/svg/pin.svg" slot="start"></ion-icon>
         <ion-select
           label="Pin Input Mode"
           interface="action-sheet"
@@ -55,6 +55,28 @@
           (ionChange)="savePinInputMode($event.detail.value)">
           <ion-select-option value="missing">Missing Pins</ion-select-option>
           <ion-select-option value="hit">Hit Pins</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="bowling-ball-outline" slot="start"></ion-icon>
+        <ion-select
+          label="Ball Tracking"
+          interface="action-sheet"
+          [value]="settingsStore.ballTracking()"
+          (ionChange)="saveBallTracking($event.detail.value)">
+          <ion-select-option value="game">Per game (quick)</ion-select-option>
+          <ion-select-option value="throw">Per throw (pin input only)</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-icon name="hand-right-outline" slot="start"></ion-icon>
+        <ion-select
+          label="Handedness"
+          interface="action-sheet"
+          [value]="settingsStore.handedness()"
+          (ionChange)="saveHandedness($event.detail.value)">
+          <ion-select-option value="right">Right handed</ion-select-option>
+          <ion-select-option value="left">Left handed</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>

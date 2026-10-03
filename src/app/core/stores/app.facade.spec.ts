@@ -64,7 +64,7 @@ describe('AppFacade', () => {
     leaguesStore.addLeague.mockResolvedValue(undefined);
     leaguesStore.deleteLeague.mockResolvedValue(undefined);
 
-    settingsStore = createSpyObj<SettingsStore>(['loadPinInputMode']);
+    settingsStore = createSpyObj<SettingsStore>(['loadPinInputMode', 'loadBallTracking', 'loadHandedness']);
 
     ballService = createSpyObj<BallService>(['getBrands', 'getCores', 'getCoverstocks']);
     ballService.getBrands.mockResolvedValue([]);
@@ -89,6 +89,8 @@ describe('AppFacade', () => {
 
       expect(storageRepository.create).toHaveBeenCalled();
       expect(settingsStore.loadPinInputMode).toHaveBeenCalled();
+      expect(settingsStore.loadBallTracking).toHaveBeenCalled();
+      expect(settingsStore.loadHandedness).toHaveBeenCalled();
       expect(ballsStore.loadAllBalls).toHaveBeenCalledWith(undefined, 15);
       expect(gamesStore.loadGameHistory).toHaveBeenCalled();
       expect(leaguesStore.loadLeagues).toHaveBeenCalled();

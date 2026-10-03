@@ -144,3 +144,51 @@ export const SESSION_STAT_DEFINITIONS = buildSection(
   ],
   'session',
 );
+
+// --- Per-ball sections. Only meaningful for balls tracked per throw. ---
+
+export const BALL_USAGE_STAT_DEFINITIONS = buildSection(['ballThrows', 'ballFirstBalls', 'ballSpareBalls', 'ballThrowShare'], 'ball');
+
+export const BALL_FIRST_BALL_STAT_DEFINITIONS = buildSection(
+  [
+    'ballStrikes',
+    'ballStrikePercentage',
+    'ballPocketHits',
+    'ballPocketPercentage',
+    'ballCarryPercentage',
+    'ballFirstBallAverage',
+    'ballLongestStrikeStreak',
+  ],
+  'ball',
+);
+
+export const BALL_LEAVE_STAT_DEFINITIONS = buildSection(
+  [
+    'ballCornerPinPercentage',
+    'ballFlatCornerPercentage',
+    'ballSolidPercentage',
+    'ballSplitPercentage',
+    'ballWashoutPercentage',
+    'ballLightPercentage',
+    'ballHighPercentage',
+  ],
+  'ball',
+);
+
+export const BALL_SPARE_STAT_DEFINITIONS = buildSection(
+  [
+    'ballSpareAttempts',
+    'ballSpareConversionPercentage',
+    'ballSinglePinPercentage',
+    'ballMultiPinPercentage',
+    'ballSplitConversionPercentage',
+    'ballMakeableSplitPercentage',
+    'ballAverageMissMargin',
+  ],
+  'ball',
+);
+
+export const BALL_SCORING_STAT_DEFINITIONS = buildSection(
+  ['ballAverageFrameValue', 'ballProjectedAverage', 'ballMarkPercentage', 'ballOpenFrames', 'ballOpenFramePercentage'],
+  'ball',
+);

@@ -158,4 +158,135 @@ export interface LeagueLeaveStats {
   worst: LeaveStats[];
 }
 
-export type GameStats = Stats | SeriesStats | PrevStats;
+export type GameStats = Stats | SeriesStats | PrevStats | BallDetailStats;
+
+/**
+ * How much a ball's numbers can be trusted to describe the ball itself.
+ * - `basic`: game-level data only. The ball was picked once for the game, so every
+ *   number describes the games it appeared in, not the throws it made.
+ * - `detailed`: per-throw data. Every number is attributed to actual throws.
+ */
+export type BallStatTier = 'basic' | 'detailed';
+
+/** Conversion rate on one specific single pin, with one specific ball. */
+export interface PinConversionStats {
+  pin: number;
+  occurrences: number;
+  pickups: number;
+  pickupPercentage: number;
+}
+
+/** One ball's first-ball performance on one oil pattern. */
+export interface BallPatternStats {
+  pattern: string;
+  firstBalls: number;
+  strikePercentage: number;
+  carryPercentage: number;
+  averageFrameValue: number;
+}
+
+/** Per-throw derived stats. Only produced from games tracked per throw. */
+export interface BallDetailStats {
+  // Usage / role
+  throws: number;
+  firstBalls: number;
+  spareBalls: number;
+  /** Share of all tracked throws in the current selection, 0-100. */
+  throwShare: number;
+
+  // First ball quality
+  strikes: number;
+  strikePercentage: number;
+  pocketHits: number;
+  pocketPercentage: number;
+  /** Strikes as a share of pocket hits: carry, isolated from accuracy. */
+  carryPercentage: number;
+  firstBallAverage: number;
+  splits: number;
+  splitPercentage: number;
+  openFrames: number;
+  openFramePercentage: number;
+  longestStrikeStreak: number;
+
+  // Leave signature (share of first balls)
+  cornerPinLeaves: number;
+  cornerPinPercentage: number;
+  flatCornerLeaves: number;
+  flatCornerPercentage: number;
+  solidLeaves: number;
+  solidPercentage: number;
+  washouts: number;
+  washoutPercentage: number;
+  lightLeaves: number;
+  lightPercentage: number;
+  highLeaves: number;
+  highPercentage: number;
+
+  // Spare shooting
+  spareAttempts: number;
+  sparesConverted: number;
+  spareConversionPercentage: number;
+  singlePinAttempts: number;
+  singlePinConverted: number;
+  singlePinPercentage: number;
+  multiPinAttempts: number;
+  multiPinConverted: number;
+  multiPinPercentage: number;
+  splitAttempts: number;
+  splitConverted: number;
+  splitConversionPercentage: number;
+  makeableSplitAttempts: number;
+  makeableSplitConverted: number;
+  makeableSplitPercentage: number;
+  /** Average pins left standing after a missed spare, showing how badly the misses miss. */
+  averageMissMargin: number;
+
+  // Frame-attributed scoring
+  framesLed: number;
+  averageFrameValue: number;
+  /** `averageFrameValue` × 10, an estimate comparable to a game average. */
+  projectedAverage: number;
+  marks: number;
+  markPercentage: number;
+
+  // Breakdowns
+  pinConversions: PinConversionStats[];
+  leaves: LeaveStats[];
+  patternBreakdown: BallPatternStats[];
+
+  [key: string]: StatValue | PinConversionStats[] | LeaveStats[] | BallPatternStats[] | undefined;
+}
+
+/**
+ * Everything measurable about one ball. The game-level fields are always present;
+ * `detail` needs per-throw tracking and is undefined without it.
+ */
+export interface BallStats {
+  /** Ball key: "Name{weight}", the same key `Game.balls` uses. */
+  key: string;
+  name: string;
+  displayName: string;
+  weight?: string;
+  image: string;
+  tier: BallStatTier;
+
+  gameCount: number;
+  /** Games among those that carried per-throw data. 0 for a basic-tier ball. */
+  detailedGameCount: number;
+  avg: number;
+  highestGame: number;
+  lowestGame: number;
+  cleanGameCount: number;
+  lastUsed: number;
+
+  detail?: BallDetailStats;
+}
+
+/** Denominators below which a rate is too noisy to show. */
+export const BALL_STAT_MIN_SAMPLES = {
+  firstBall: 12,
+  pocket: 8,
+  spareAttempt: 8,
+  leave: 5,
+  frame: 20,
+} as const;

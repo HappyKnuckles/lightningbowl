@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { Frame, Game } from '../../models/game.model';
+import { Frame, Game, ThrowBall } from '../../models/game.model';
+import { setThrowBall as setThrowBallInFrames } from '../../utils/game-utils/ball.utils';
 import { calculateIsClean, cloneFrames, recordThrow, removeThrow } from '../../utils/game-utils/frame.utils';
 import { canUndoLastThrow, isGameValid, isValidFrameScore } from '../../utils/game-utils/game-validation.utils';
 import { applyPinModeUndo, getAvailablePins, isCellAccessible, processPinThrow } from '../../utils/game-utils/pin.utils';
@@ -146,6 +147,22 @@ export class GameEditService {
   }
 
   // PIN MODE
+  setThrowBall(game: Game, frameIndex: number, throwIndex: number, ball: ThrowBall | undefined): void {
+    const editedGame = this.editedGameStates[game.gameId];
+    const target = editedGame ?? game;
+
+    const frames = cloneFrames(target.frames);
+    if (!frames[frameIndex]) return;
+
+    setThrowBallInFrames(frames, frameIndex, throwIndex, ball);
+
+    if (editedGame) {
+      this.editedGameStates[game.gameId] = { ...editedGame, frames };
+    } else {
+      Object.assign(game, { frames });
+    }
+  }
+
   selectCell(game: Game, frameIndex: number, throwIndex: number): void {
     if (!this.isEditModeMap[game.gameId] || !game.isPinMode) return;
 

@@ -20,7 +20,7 @@ import {
   MenuController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { bowlingBallOutline, cameraOutline, cloudDownloadOutline, cloudUploadOutline, personCircleOutline } from 'ionicons/icons';
+import { bowlingBallOutline, cameraOutline, cloudDownloadOutline, cloudUploadOutline, handRightOutline, personCircleOutline } from 'ionicons/icons';
 import { filter } from 'rxjs/operators';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ExcelService } from 'src/app/core/services/excel/excel.service';
@@ -80,7 +80,7 @@ export class SideMenuComponent {
   userService = inject(UserService);
 
   constructor() {
-    addIcons({ cameraOutline, cloudUploadOutline, cloudDownloadOutline, personCircleOutline, bowlingBallOutline });
+    addIcons({ cameraOutline, cloudUploadOutline, cloudDownloadOutline, personCircleOutline, bowlingBallOutline, handRightOutline });
 
     this.updateDisabledState();
     this.router.events
@@ -162,6 +162,14 @@ export class SideMenuComponent {
 
   savePinInputMode(pinMode: string): void {
     this.settingsStore.savePinInputMode(pinMode);
+  }
+
+  saveBallTracking(tracking: string): void {
+    this.settingsStore.saveBallTracking(tracking);
+  }
+
+  saveHandedness(handedness: string): void {
+    this.settingsStore.saveHandedness(handedness);
   }
 
   private updateDisabledState(): void {

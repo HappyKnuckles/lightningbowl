@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 
 const mockSettingsStore = {
   pinInputMode: vi.fn().mockReturnValue(true),
+  ballTracking: vi.fn().mockReturnValue('game'),
 };
 
 const mockPatternsStore = {

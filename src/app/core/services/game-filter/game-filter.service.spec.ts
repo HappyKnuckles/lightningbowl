@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { GameFilter } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { createEmptyGame } from 'src/app/core/utils/game-utils/frame.utils';
+
 import { GameFilterService } from './game-filter.service';
 
 /**
@@ -28,6 +30,7 @@ describe('GameFilterService.filterGames', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
     service = TestBed.inject(GameFilterService);
+    TestBed.inject(BallsStore).arsenal.set([{ ball_name: 'Phaze II', core_weight: '15' } as never]);
     nextId = 0;
   });
 
@@ -131,6 +134,19 @@ describe('GameFilterService.filterGames', () => {
       const result = service.filterGames([phaze, other], { ...baseFilters(), balls: ['Phaze II'] });
 
       expect(ids(result)).toEqual([phaze.gameId]);
+    });
+
+    it('matches a ball across the formats Game.balls has been stored in', () => {
+      // The picker emits "Name{weight}" keys; games saved before weights were tracked hold
+      // plain names, and imported ones hold the display string. All three are the same ball.
+      const key = makeGame({ balls: ['Phaze II15'] });
+      const plain = makeGame({ balls: ['Phaze II'] });
+      const display = makeGame({ balls: ['Phaze II 15lbs'] });
+      const other = makeGame({ balls: ['Zen Master'] });
+
+      const result = service.filterGames([key, plain, display, other], { ...baseFilters(), balls: ['Phaze II15'] });
+
+      expect(ids(result)).toEqual([key.gameId, plain.gameId, display.gameId]);
     });
   });
 

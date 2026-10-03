@@ -4,6 +4,7 @@ import { addIcons } from 'ionicons';
 import { arrowDown, arrowUp, informationCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { PrevStats, Stats } from 'src/app/core/models/stats.model';
+import { getRateColor } from 'src/app/core/utils/stat-utils/stat.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 
 interface SpareRow {
@@ -63,7 +64,7 @@ export class StatSpareComponent {
       hasAttempts: attempts > 0,
       rate: stats.overallSpareRate,
       rateText: stats.overallSpareRate.toFixed(2),
-      rateColor: this.rateColor(stats.overallSpareRate),
+      rateColor: getRateColor(stats.overallSpareRate),
       hit: stats.totalSparesConverted,
       miss: stats.totalSparesMissed,
       attempts,
@@ -97,7 +98,7 @@ export class StatSpareComponent {
         barWidth: max === 0 ? 0 : ((hit + miss) / max) * 100,
         rate,
         rateText: rate.toFixed(2),
-        rateColor: this.rateColor(rate),
+        rateColor: getRateColor(rate),
         arrow: prev ? this.utilsService.getArrowIcon(rate, prevRate) : '',
         diffColor: prev ? this.utilsService.getDiffColor(rate, prevRate) : '',
         diff: prev ? this.hideZeroDiff(this.utilsService.formatStatDifference(rate, prevRate)) : '',
@@ -117,13 +118,5 @@ export class StatSpareComponent {
 
   private hideZeroDiff(diff: string): string {
     return diff === '0' ? '' : diff;
-  }
-
-  private rateColor(rate: number): string {
-    if (rate > 95) return '#4faeff';
-    if (rate > 75) return '#008000';
-    if (rate > 50) return '#809300';
-    if (rate > 33) return '#FFA500';
-    return '#FF0000';
   }
 }

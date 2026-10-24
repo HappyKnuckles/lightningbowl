@@ -16,6 +16,7 @@ import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
+import { saveFileFromWeb } from 'src/app/core/utils/file-utils/web-file-save.utils';
 
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
@@ -27,6 +28,8 @@ type ExcelRow = Record<string, ExcelCellValue>;
  * permission alert for a plain cancel.
  */
 export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
+
+const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 @Injectable({
   providedIn: 'root',
@@ -352,6 +355,14 @@ export class ExcelService {
   /** @returns false only when the user dismissed the native share sheet without saving/sending the file anywhere. */
   private async saveExcelFile(buffer: ArrayBuffer, fileName: string): Promise<boolean> {
     try {
+      if (isPlatform('desktop') || isPlatform('mobileweb') || isPlatform('pwa')) {
+        // Phones/tablets get the share sheet, desktop a save dialog; see saveFileFromWeb.
+        const result = await saveFileFromWeb(new Blob([buffer], { type: XLSX_MIME_TYPE }), fileName, {
+          preferShare: !isPlatform('desktop'),
+        });
+        return result !== 'cancelled';
+      }
+
       let binary = '';
       const bytes = new Uint8Array(buffer);
       const length = bytes.byteLength;
@@ -361,18 +372,7 @@ export class ExcelService {
       }
 
       const base64Data = btoa(binary);
-      const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64Data;
-
-      if (isPlatform('desktop') || isPlatform('mobileweb') || isPlatform('pwa')) {
-        const anchor = document.createElement('a');
-        anchor.href = dataUri;
-        anchor.download = fileName;
-
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-        return true;
-      }
+      const dataUri = `data:${XLSX_MIME_TYPE};base64,` + base64Data;
 
       await Filesystem.writeFile({
         path: fileName,

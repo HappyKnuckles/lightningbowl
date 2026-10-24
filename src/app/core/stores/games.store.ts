@@ -1,8 +1,9 @@
 import { Injectable, signal } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { getBallTracking } from '../utils/game-utils/ball.utils';
 import { sortGameHistoryByDate } from '../utils/sort-utils/sort.utils';
 
 @Injectable({ providedIn: 'root' })
@@ -20,6 +21,12 @@ export class GamesStore {
     try {
       const gameHistory = await this.storageRepository.loadByPrefix<Game>(STORAGE_PREFIX.game);
       let needsUpdate = false;
+
+      // Legacy migration: support games stored before ThrowBall was introduced
+      // (where throw.ball was a plain string)
+      interface LegacyThrow {
+        ball?: string | ThrowBall;
+      }
 
       gameHistory.forEach((game) => {
         const legacyGame = game as Game & { pattern?: string };
@@ -44,6 +51,31 @@ export class GamesStore {
         if (game.balls && Array.isArray(game.balls) && !this.isSorted(game.balls)) {
           game.balls.sort();
           needsUpdate = true;
+        }
+
+        // Migrate legacy string ball data to ThrowBall objects
+        (game.frames || []).forEach((frame) => {
+          (frame.throws || []).forEach((throwData) => {
+            const rawBall = (throwData as LegacyThrow).ball;
+            if (typeof rawBall === 'string') {
+              const trimmed = rawBall.trim();
+              if (trimmed.length === 0) {
+                delete throwData.ball;
+              } else {
+                throwData.ball = { name: trimmed };
+              }
+              needsUpdate = true;
+            }
+          });
+        });
+
+        // Tag how this game recorded its balls. Games that never had a ball picked per throw
+        // stay on game-level tracking. Their throws are deliberately left empty rather than
+        // backfilled, so per-throw stats never count balls the user did not actually record.
+        // The tag is derivable from the frames, so it is set in memory only and reaches storage
+        // with the game's next save, instead of rewriting the whole history on first load.
+        if (!game.ballTracking) {
+          game.ballTracking = getBallTracking(game);
         }
       });
 

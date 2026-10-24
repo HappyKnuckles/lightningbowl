@@ -222,4 +222,55 @@ describe('ExcelService', () => {
     expect(savedGames.length).toBe(1);
     expect(savedGames[0].patterns).toEqual(['New Pattern', 'Sport Pattern']);
   });
+  it('imports a per-throw ball as name and weight, the way the app stores one', async () => {
+    // Export writes "Name 15lbs" into the Ball columns. Reading that back as one string would
+    // key the throw as its own ball and split the ball's per-throw stats across two entries.
+    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.arsenal.mockReturnValue([]);
+    mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
+    mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
+    mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
+
+    const header: Record<string, string> = {
+      Game: 'Game',
+      Date: 'Date',
+      'Total Score': 'Total Score',
+      'Frame Scores': 'Frame Scores',
+      League: 'League',
+      Practice: 'Practice',
+      Clean: 'Clean',
+      Perfect: 'Perfect',
+      Series: 'Series',
+      'Series ID': 'Series ID',
+      Patterns: 'Patterns',
+      Balls: 'Balls',
+      Notes: 'Notes',
+    };
+    for (let i = 1; i <= 10; i++) header[`Frame ${i}`] = `Frame ${i}`;
+
+    const row: Record<string, string> = {
+      Game: '1',
+      Date: '1/1/2024',
+      'Frame 1': '9 / 1',
+      'Frame 1 Ball 1': 'Rocket A.I. 15lbs',
+      'Frame 1 Ball 2': 'White Dot',
+      'Total Score': '10',
+      'Frame Scores': '10',
+      League: '',
+      Practice: 'false',
+      Clean: 'false',
+      Perfect: 'false',
+      Series: 'false',
+      'Series ID': '',
+      Patterns: '',
+      Balls: 'Rocket A.I. 15lbs',
+      Notes: '',
+    };
+
+    await service.transformData([header, row]);
+
+    const savedGames = mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)![0];
+    expect(savedGames[0].frames[0].throws[0].ball).toEqual({ name: 'Rocket A.I.', weight: '15' });
+    expect(savedGames[0].frames[0].throws[1].ball).toEqual({ name: 'White Dot' });
+  });
 });

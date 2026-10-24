@@ -1,5 +1,4 @@
 <div class="pin-input-container" [class.sheet]="sheet()">
-
   @if (sheet()) {
     <div class="quick-actions">
       <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
@@ -7,6 +6,23 @@
   }
 
   <div class="pin-deck">
+    @if (showStatsButton()) {
+      <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
+        <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
+      </ion-button>
+    }
+    @if (showBallSelector()) {
+      <div class="ball-selector-corner">
+        <ion-button class="ball-icon-button" fill="clear" size="small" (click)="openBallSelector()">
+          @if (selectedBallThumbnail(); as thumbnail) {
+            <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
+          } @else {
+            <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
+          }
+        </ion-button>
+      </div>
+    }
+
     @for (row of pinRows(); track $index) {
       <div class="pin-row">
         @for (pin of row; track pin.number) {
@@ -21,32 +37,44 @@
         }
       </div>
     }
-
-    @if (showStatsButton()) {
-      <ion-button class="stats-btn" [disabled]="!statsEnabled()" fill="clear" size="small" (click)="statsClick.emit()">
-        <ion-icon slot="icon-only" name="bar-chart-outline"></ion-icon>
-      </ion-button>
-    }
   </div>
 
   <div class="quick-actions">
     @if (!sheet()) {
       <ng-container [ngTemplateOutlet]="scoreShortcuts"></ng-container>
     }
-    <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || isGameComplete()">
+    <ion-button size="small" (click)="clearSelectedPins()" [disabled]="!hasSelection() || inputLocked()">
       <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
     </ion-button>
     <ion-button size="small" (click)="undoLastThrow()" [disabled]="!canUndo()">
       <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
     </ion-button>
-    <ion-button size="small" (click)="confirmThrow()" [disabled]="isGameComplete()">
+    <ion-button size="small" (click)="confirmThrow()" [disabled]="inputLocked()">
       <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
     </ion-button>
   </div>
 </div>
 
+<ion-modal
+  [isOpen]="isBallModalOpen()"
+  (didDismiss)="closeBallSelector()"
+  class="ball-modal"
+  [enterAnimation]="enterAnimation"
+  [leaveAnimation]="leaveAnimation">
+  <ng-template>
+    <app-ball-select [selectedBalls]="selectedBallKeys()" [singleSelect]="true" (ballSelect)="onBallSelection($event)"></app-ball-select>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="isAddBallModalOpen()" (didDismiss)="closeAddBallModal()">
+  <ng-template>
+    <app-generic-typeahead [items]="ballsStore.allBalls()" [config]="ballTypeaheadConfig" (selectedItemsChange)="onBallAdd($event)">
+    </app-generic-typeahead>
+  </ng-template>
+</ion-modal>
+
 <ng-template #scoreShortcuts>
-  <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || isGameComplete()"> X </ion-button>
-  <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || isGameComplete()"> / </ion-button>
-  <ion-button size="small" (click)="recordGutter()" [disabled]="isGameComplete()"> - </ion-button>
+  <ion-button size="small" (click)="recordStrike()" [disabled]="!canStrike() || inputLocked()"> X </ion-button>
+  <ion-button size="small" (click)="recordSpare()" [disabled]="!canSpare() || inputLocked()"> / </ion-button>
+  <ion-button size="small" (click)="recordGutter()" [disabled]="inputLocked()"> - </ion-button>
 </ng-template>

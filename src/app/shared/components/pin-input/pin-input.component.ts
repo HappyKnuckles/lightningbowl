@@ -1,9 +1,19 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { IonButton, IonIcon } from '@ionic/angular/standalone';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowUndoOutline, barChartOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
+import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { Ball } from 'src/app/core/models/ball.model';
+import { ThrowBall } from 'src/app/core/models/game.model';
+import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
+import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
+import { BallSelectComponent } from '../ball-select/ball-select.component';
+import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -23,25 +33,53 @@ const PIN_LAYOUT: readonly number[][] = [[7, 8, 9, 10], [4, 5, 6], [2, 3], [1]];
   templateUrl: './pin-input.component.html',
   styleUrls: ['./pin-input.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonButton, IonIcon, NgTemplateOutlet],
+  imports: [IonButton, IonIcon, IonModal, NgTemplateOutlet, BallSelectComponent, GenericTypeaheadComponent],
 })
 export class PinInputComponent {
+  ballsStore = inject(BallsStore);
+  private toastService = inject(ToastService);
+  private typeaheadConfigService = inject(TypeaheadConfigService);
+
+  readonly ballTypeaheadConfig = this.typeaheadConfigService.ball;
+
   pinsLeftStanding = input<number[]>(PINS);
   canStrike = input<boolean>(false);
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
-  isGameComplete = input<boolean>(false);
+  /** Pad is read-only: the cursor sits on a finished game's last throw and there is nothing left to record. */
+  inputLocked = input<boolean>(false);
   selectHitPins = input<boolean>(true);
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>();
-  /**
-    * Mobile installed presents the deck as a bottom sheet over the score grid. False means inline deck.
-   */
+  selectedBall = input<ThrowBall | undefined>(undefined);
+  /** Off when the game records one ball for the whole game. The picker then lives in the game details. */
+  showBallSelector = input<boolean>(true);
+  /** Mobile installed presents the deck as a bottom sheet over the score grid. False means inline deck. */
   sheet = input<boolean>(false);
 
   throwConfirmed = output<ThrowConfirmedEvent>();
   undoRequested = output<void>();
   statsClick = output<void>();
+  ballSelected = output<ThrowBall | undefined>();
+
+  readonly isBallModalOpen = signal(false);
+  readonly isAddBallModalOpen = signal(false);
+  enterAnimation = alertEnterAnimation;
+  leaveAnimation = alertLeaveAnimation;
+
+  /** Current ThrowBall as a key string array used by BallSelectComponent */
+  readonly selectedBallKeys = computed<string[]>(() => {
+    const ball = this.selectedBall();
+    return ball ? [getThrowBallKey(ball)] : [];
+  });
+
+  /** Arsenal thumbnail of the currently selected ball, if available */
+  readonly selectedBallThumbnail = computed<string | undefined>(() => {
+    const arsenalBall = findBallInArsenal(this.selectedBall(), this.ballsStore.arsenal());
+    return arsenalBall?.thumbnail_image || undefined;
+  });
+
+  readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));
 
   readonly hasSelection = computed(() => this.selectedPins().length > 0);
   readonly selectedPins = signal<number[]>([]);
@@ -49,7 +87,7 @@ export class PinInputComponent {
   readonly pinRows = computed<PinView[][]>(() => {
     const standing = this.pinsLeftStanding();
     const selected = this.selectedPins();
-    const complete = this.isGameComplete();
+    const locked = this.inputLocked();
     const hitMode = this.selectHitPins();
 
     return PIN_LAYOUT.map((row) =>
@@ -61,18 +99,84 @@ export class PinInputComponent {
           knockedDown: !available,
           // "active" = lit/standing; only meaningful for available pins
           active: available && (hitMode ? !isSelected : isSelected),
-          disabled: !available || complete,
+          disabled: !available || locked,
         };
       }),
     );
   });
 
   constructor() {
-    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline });
+    addIcons({ checkmarkOutline, arrowUndoOutline, closeCircleOutline, barChartOutline, bowlingBallOutline });
+  }
+
+  openBallSelector(): void {
+    if (this.ballsStore.arsenal().length === 0) {
+      this.isAddBallModalOpen.set(true);
+      return;
+    }
+    this.isBallModalOpen.set(true);
+  }
+
+  closeBallSelector(): void {
+    this.isBallModalOpen.set(false);
+  }
+
+  closeAddBallModal(): void {
+    this.isAddBallModalOpen.set(false);
+  }
+
+  /**
+   * Balls picked from the full catalogue when the arsenal is still empty. Every pick is
+   * saved, not just the first: adding three balls and getting one is the kind of silent
+   * loss you only notice much later. A single ball is used for this throw straight away;
+   * with several there is no way to know which one is in hand, so the arsenal picker opens
+   * for the user to choose.
+   */
+  async onBallAdd(ballIds: string[]): Promise<void> {
+    this.isAddBallModalOpen.set(false);
+
+    const allBalls = this.ballsStore.allBalls();
+    const balls = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    if (balls.length === 0) return;
+
+    const failed = await this.ballsStore.saveBallsToArsenal(balls);
+    const saved = balls.filter((ball) => !failed.includes(ball));
+
+    if (failed.length) {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    } else {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveSuccess, 'checkmark-outline');
+    }
+
+    if (saved.length === 0) return;
+
+    if (saved.length === 1) {
+      this.ballSelected.emit({ name: saved[0].ball_name, weight: saved[0].core_weight });
+      return;
+    }
+
+    this.isBallModalOpen.set(true);
+  }
+
+  onBallSelection(selectedKeys: string[]): void {
+    const key = selectedKeys.length > 0 ? selectedKeys[0] : undefined;
+    if (!key) {
+      this.ballSelected.emit(undefined);
+    } else {
+      // Look up the ball in the arsenal to get proper name + weight
+      const arsenalBall = this.ballsStore.arsenal().find((b) => b.ball_name + b.core_weight === key);
+      if (arsenalBall) {
+        this.ballSelected.emit({ name: arsenalBall.ball_name, weight: arsenalBall.core_weight });
+      } else {
+        // Fallback: store the key as the name with no weight (edge case)
+        this.ballSelected.emit({ name: key });
+      }
+    }
+    this.isBallModalOpen.set(false);
   }
 
   togglePin(pinNumber: number): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
     if (!this.pinsLeftStanding().includes(pinNumber)) return;
 
     this.selectedPins.update((pins) => (pins.includes(pinNumber) ? pins.filter((p) => p !== pinNumber) : [...pins, pinNumber]));
@@ -88,7 +192,7 @@ export class PinInputComponent {
   }
 
   confirmThrow(): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
 
     const available = this.pinsLeftStanding();
     const selected = this.selectedPins();
@@ -99,19 +203,19 @@ export class PinInputComponent {
   }
 
   recordStrike(): void {
-    if (!this.canStrike() || this.isGameComplete()) return;
+    if (!this.canStrike() || this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [...this.pinsLeftStanding()] });
     this.selectedPins.set([]);
   }
 
   recordSpare(): void {
-    if (!this.canSpare() || this.isGameComplete()) return;
+    if (!this.canSpare() || this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [...this.pinsLeftStanding()] });
     this.selectedPins.set([]);
   }
 
   recordGutter(): void {
-    if (this.isGameComplete()) return;
+    if (this.inputLocked()) return;
     this.throwConfirmed.emit({ pinsKnockedDown: [] });
     this.selectedPins.set([]);
   }

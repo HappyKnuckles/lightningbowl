@@ -70,3 +70,15 @@ export function buildHighlights(src: {
     },
   ];
 }
+
+/**
+ * Shared colour ramp for a conversion/spare rate, so the same percentage reads the same
+ * colour on the spare table, the leave cards and the ball detail deck.
+ */
+export function getRateColor(rate: number): string {
+  if (rate > 95) return '#4faeff';
+  if (rate > 75) return '#008000';
+  if (rate > 50) return '#809300';
+  if (rate > 33) return '#ffa500';
+  return '#ff0000';
+}

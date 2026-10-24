@@ -13,6 +13,7 @@ describe('SettingsStore', () => {
 
   beforeEach(() => {
     localStorage.removeItem('pin-input-mode');
+    localStorage.removeItem('ball-tracking');
     storageRepository = createSpyObj<StorageRepository>(['get', 'set', 'remove']);
     storageRepository.get.mockResolvedValue(null);
     storageRepository.set.mockResolvedValue(undefined);
@@ -23,6 +24,7 @@ describe('SettingsStore', () => {
 
   afterEach(() => {
     localStorage.removeItem('pin-input-mode');
+    localStorage.removeItem('ball-tracking');
   });
 
   describe('loadPinInputMode', () => {
@@ -62,6 +64,46 @@ describe('SettingsStore', () => {
 
       expect(store.pinInputMode()).toBe(false);
       expect(localStorage.getItem('pin-input-mode')).toBe('missing');
+    });
+  });
+
+  describe('loadBallTracking', () => {
+    it('defaults to per-throw when nothing was stored yet', () => {
+      store.loadBallTracking();
+
+      expect(store.ballTracking()).toBe('throw');
+    });
+
+    it('loads the per-game preference when explicitly stored', () => {
+      localStorage.setItem('ball-tracking', 'game');
+
+      store.loadBallTracking();
+
+      expect(store.ballTracking()).toBe('game');
+    });
+
+    it('loads the per-throw preference when explicitly stored', () => {
+      localStorage.setItem('ball-tracking', 'throw');
+
+      store.loadBallTracking();
+
+      expect(store.ballTracking()).toBe('throw');
+    });
+  });
+
+  describe('saveBallTracking', () => {
+    it('stores the game mode and updates the signal', () => {
+      store.saveBallTracking('game');
+
+      expect(store.ballTracking()).toBe('game');
+      expect(localStorage.getItem('ball-tracking')).toBe('game');
+    });
+
+    it('normalises anything else to the game mode', () => {
+      store.saveBallTracking('something else');
+
+      expect(store.ballTracking()).toBe('game');
+      expect(localStorage.getItem('ball-tracking')).toBe('game');
     });
   });
 

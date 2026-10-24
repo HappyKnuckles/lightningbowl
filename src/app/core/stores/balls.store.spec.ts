@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Ball } from 'src/app/core/models/ball.model';
+import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -272,6 +272,48 @@ describe('BallsStore', () => {
       storageRepository.remove.mockRejectedValue(new Error('storage down'));
 
       await expect(store.updateArsenalBall(makeBall(), makeBall())).rejects.toThrow('storage down');
+    });
+
+    it('keeps the drilling when the weight changes', async () => {
+      const oldBall = makeBall({ ball_id: 'b1', core_weight: '15', drilling: { thumbSize: 1 } });
+      await store.saveBallToArsenal(oldBall);
+      const newBall = makeBall({ ball_id: 'b1', core_weight: '14' });
+
+      await store.updateArsenalBall(oldBall, newBall);
+
+      expect(store.arsenal()[0].drilling).toEqual({ thumbSize: 1 });
+    });
+  });
+
+  describe('updateBallDrilling', () => {
+    const drilling: BallDrilling = {
+      layout: { system: 'dual-angle', drillingAngle: 45, pinToPap: 4.5, valAngle: 30 },
+      thumbSize: 63 / 64,
+    };
+
+    it('stores the drilling under the ball key and replaces the ball in memory', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15', position: 2 });
+      await store.saveBallToArsenal(ball);
+
+      await store.updateBallDrilling(ball, drilling);
+
+      expect(storageRepository.set).toHaveBeenLastCalledWith('arsenal_b1_15', { ...ball, drilling });
+      expect(store.arsenal()).toEqual([{ ...ball, drilling }]);
+    });
+
+    it('clears the drilling when set to undefined', async () => {
+      const ball = makeBall({ ball_id: 'b1', drilling });
+      await store.saveBallToArsenal(ball);
+
+      await store.updateBallDrilling(ball, undefined);
+
+      expect(store.arsenal()[0].drilling).toBeUndefined();
+    });
+
+    it('rethrows storage failures', async () => {
+      storageRepository.set.mockRejectedValue(new Error('storage down'));
+
+      await expect(store.updateBallDrilling(makeBall(), drilling)).rejects.toThrow('storage down');
     });
   });
 

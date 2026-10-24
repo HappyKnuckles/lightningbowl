@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
-import { Ball } from 'src/app/core/models/ball.model';
+import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -164,6 +164,7 @@ export class BallsStore {
   async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
     try {
       newBall.position = oldBall.position;
+      newBall.drilling = oldBall.drilling;
       const oldKey = StorageKeys.arsenal(oldBall.ball_id, oldBall.core_weight);
       const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
       await this.#storageRepository.remove(oldKey);
@@ -171,6 +172,17 @@ export class BallsStore {
       this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
     } catch (error) {
       console.error('Error updating ball in arsenal:', error);
+      throw error;
+    }
+  }
+
+  async updateBallDrilling(ball: Ball, drilling: BallDrilling | undefined): Promise<void> {
+    try {
+      const updated: Ball = { ...ball, drilling };
+      await this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? updated : b)));
+    } catch (error) {
+      console.error('Error saving drilling:', error);
       throw error;
     }
   }

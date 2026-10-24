@@ -11,9 +11,9 @@ export class AddGamePage extends BasePage {
     await settle(this.page, 500);
   }
 
-  /** Toggle the pin-deck input mode via the bowling-ball header button. */
+  /** Toggle the pin-deck input mode via the pin header button. */
   async enablePinInput(): Promise<void> {
-    await this.page.locator('ion-buttons[slot="end"] ion-button:has(ion-icon[name^="bowling-ball"])').first().click();
+    await this.active().locator('ion-header ion-buttons[slot="end"] ion-button:has(ion-icon[src*="pin.svg"])').first().click();
     await settle(this.page, 400);
   }
 

@@ -13,3 +13,9 @@ export const StorageKeys = {
   /** Balls resolved from the ball API that aren't in the arsenal or favorites (see BallsStore.knownBalls). */
   ballCache: 'ball_cache',
 } as const;
+
+// Single-record keys.
+export const SETTINGS_KEYS = {
+  bowlerFit: 'bowler_fit',
+  layoutPresets: 'layout_presets',
+} as const;

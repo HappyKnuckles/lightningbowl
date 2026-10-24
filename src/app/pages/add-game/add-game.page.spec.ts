@@ -3,6 +3,7 @@ import { SegmentCustomEvent } from '@ionic/angular';
 import { vi } from 'vitest';
 
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 
 import { AddGamePage } from './add-game.page';
 
@@ -65,7 +66,7 @@ describe('AddGamePage', () => {
     });
 
     it('stays shut in classic grid mode', () => {
-      component.isPinInputMode = false;
+      component.isPinInputMode.set(false);
 
       component.onScoreCellClick({ frameIndex: 0, throwIndex: 0 }, 0);
 
@@ -137,19 +138,58 @@ describe('AddGamePage', () => {
     });
   });
 
+  describe('game details accordion', () => {
+    it('is shared by every game in the series', () => {
+      component.detailsOpen.set(true);
+      fixture.detectChanges();
+
+      const games = component.gameComponents.toArray();
+      expect(games.length).toBeGreaterThan(0);
+      games.forEach((game) => expect(game.detailsOpen()).toBe(true));
+    });
+
+    it('picks up a toggle from any single game', () => {
+      component.gameComponents.first.detailsOpen.set(true);
+
+      expect(component.detailsOpen()).toBe(true);
+    });
+
+    it('stays as it was when the series switches to another game', () => {
+      component.detailsOpen.set(true);
+
+      component.onSegmentChange({ detail: { value: 'Game 2' } } as SegmentCustomEvent);
+
+      expect(component.detailsOpen()).toBe(true);
+    });
+  });
+
   describe('activeSegmentIndex', () => {
     it('is the position of the selected segment', () => {
-      component.segments = ['Game 1', 'Game 2', 'Game 3'];
+      component.segments.set(['Game 1', 'Game 2', 'Game 3']);
       component.onSegmentChange({ detail: { value: 'Game 3' } } as SegmentCustomEvent);
 
-      expect(component.activeSegmentIndex).toBe(2);
+      expect(component.activeSegmentIndex()).toBe(2);
     });
 
     it('falls back to the first game when the segment is unknown', () => {
-      component.segments = ['Game 1', 'Game 2'];
+      component.segments.set(['Game 1', 'Game 2']);
       component.onSegmentChange({ detail: { value: 'Game 9' } } as SegmentCustomEvent);
 
-      expect(component.activeSegmentIndex).toBe(0);
+      expect(component.activeSegmentIndex()).toBe(0);
+    });
+  });
+
+  describe('onBallsChange', () => {
+    it('switches the game to one selection and drops its per-throw balls', () => {
+      const frames = [makeFrame(0, [makeThrow(0, [], { ball: { name: 'Phaze II' } })]), ...makeFrames().slice(1)];
+      component.games.update((games) => games.map((g, i) => (i === 0 ? makeGame({ frames, ballTracking: 'throw' }) : g)));
+
+      component.onBallsChange(['Hammer15'], 0);
+
+      const game = component.games()[0];
+      expect(game).toMatchObject({ balls: ['Hammer15'], ballTracking: 'game' });
+      expect(game.frames[0].throws[0].ball).toBeUndefined();
+      expect(game.frames[0].throws[0].value).toBe(10);
     });
   });
 });

@@ -1,11 +1,10 @@
 import { BALL_PLACEHOLDER_IMAGE } from 'src/app/core/utils/ball-utils/ball-image.utils';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { makeBall, makeGame } from 'src/testing/fixtures';
-import { formatStoredBall, parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { BallStatsCalculatorService } from './ball-stats-calculator.service';
 
 /** Nine strike frames plus a 10th built from the given values. */
@@ -27,29 +26,14 @@ function framesWithStrikes(strikeCount: number, tenth: number[] = [0, 0]): Frame
 describe('BallStatsCalculatorService', () => {
   let calculator: BallStatsCalculatorService;
   const allBalls = signal<Ball[]>([]);
+  const arsenal = signal<Ball[]>([]);
 
   beforeEach(() => {
     allBalls.set([]);
+    arsenal.set([]);
     TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: BallsStore,
-          useValue: (() => {
-            const findKnownBall = (value: string) => {
-              const byName = (name: string) => allBalls().find((b) => b.ball_name.toLowerCase() === name.toLowerCase());
-              return byName(value) ?? byName(parseStoredBall(value).name);
-            };
-            return {
-              findKnownBall,
-              describeStoredBall: (value: string) => {
-                const ball = findKnownBall(value);
-                const isPlainName = ball?.ball_name.toLowerCase() === value.toLowerCase();
-                return { label: isPlainName ? value : formatStoredBall(parseStoredBall(value)), ball };
-              },
-            };
-          })(),
-        },
-      ],
+      // the calculator resolves stored ball names against the store's known balls
+      providers: [{ provide: BallsStore, useValue: { knownBalls: computed(() => [...allBalls(), ...arsenal()]), url: '' } }],
     });
     calculator = TestBed.inject(BallStatsCalculatorService);
   });
@@ -100,6 +84,19 @@ describe('BallStatsCalculatorService', () => {
       const games = [makeGame({ totalScore: 200, frames: framesWithStrikes(0, [10, 10, 4]), balls: ['Hammer'] })];
 
       expect(calculator.calculateAllBallStats(games)[0].strikeRate).toBe(17);
+    });
+
+    it('credits a game-tracked game to its selection, not to balls left on its throws', () => {
+      const frames = framesWithStrikes(9, [10, 10, 10]).map((frame) => ({
+        ...frame,
+        throws: frame.throws.map((t) => ({ ...t, ball: { name: 'Phaze II' } })),
+      }));
+      const games = [makeGame({ totalScore: 300, frames, balls: ['Hammer'], ballTracking: 'game' })];
+
+      const stats = calculator.calculateAllBallStats(games);
+
+      expect(stats.map((s) => s.name)).toEqual(['Hammer']);
+      expect(stats[0].strikeRate).toBe(100);
     });
 
     it('attaches the ball image from the store as an absolute URL', () => {
@@ -160,6 +157,66 @@ describe('BallStatsCalculatorService', () => {
 
     it('returns an empty highlight without games', () => {
       expect(calculator.calculateMostPlayedBallStats([]).name).toBe('');
+    });
+  });
+
+  describe('calculateBallStats', () => {
+    /** A per-throw tracked game with the given first balls, one per frame. */
+    function throwTrackedGame(firstBalls: { ball: string; pinsLeft: number[] }[], overrides: Partial<Game> = {}): Game {
+      const frames = makeFrames();
+      firstBalls.forEach((entry, index) => {
+        frames[index] = makeFrame(index, [makeThrow(0, entry.pinsLeft, { ball: { name: entry.ball, weight: '15' } })]);
+      });
+      return makeGame({ frames, isPinMode: true, ballTracking: 'throw', ...overrides });
+    }
+
+    it('marks a game-tracked ball as basic and leaves it without detail', () => {
+      const stats = calculator.calculateBallStats([makeGame({ totalScore: 200, balls: ['Hammer'], ballTracking: 'game' })]);
+
+      expect(stats).toHaveLength(1);
+      expect(stats[0].tier).toBe('basic');
+      expect(stats[0].detail).toBeUndefined();
+      expect(stats[0].detailedGameCount).toBe(0);
+    });
+
+    it('marks a throw-tracked ball as detailed and attaches its per-throw stats', () => {
+      const game = throwTrackedGame(
+        [
+          { ball: 'Hammer', pinsLeft: [] },
+          { ball: 'Hammer', pinsLeft: [10] },
+        ],
+        { totalScore: 180 },
+      );
+
+      const stats = calculator.calculateBallStats([game]);
+
+      expect(stats[0].tier).toBe('detailed');
+      expect(stats[0].detailedGameCount).toBe(1);
+      expect(stats[0].detail?.firstBalls).toBe(2);
+      expect(stats[0].detail?.strikePercentage).toBe(50);
+    });
+
+    it('keeps the game-level average alongside the per-throw projection', () => {
+      const game = throwTrackedGame([{ ball: 'Hammer', pinsLeft: [] }], {
+        totalScore: 200,
+        frameScores: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+      });
+
+      const stats = calculator.calculateBallStats([game]);
+
+      // The game average still describes the games the ball appeared in; the projection
+      // describes the frames it actually threw.
+      expect(stats[0].avg).toBe(200);
+      expect(stats[0].detail?.projectedAverage).toBe(300);
+    });
+
+    it('records when each ball was last used', () => {
+      const games = [
+        makeGame({ gameId: 'g1', date: 100, totalScore: 150, balls: ['Hammer'] }),
+        makeGame({ gameId: 'g2', date: 500, totalScore: 150, balls: ['Hammer'] }),
+      ];
+
+      expect(calculator.calculateBallStats(games)[0].lastUsed).toBe(500);
     });
   });
 });

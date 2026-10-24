@@ -12,3 +12,26 @@
     font-weight: 600;
   }
 }
+
+.grid-container.reserve-ball-slot .pin-deck-row {
+  min-height: 42px;
+}
+
+.pin-deck-row .input-col {
+  flex-direction: column;
+  justify-content: flex-start;
+
+  .throw-ball-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: 8px;
+  }
+
+  .throw-ball-fallback-icon {
+    color: var(--ion-color-medium);
+    font-size: 12px;
+    border: none;
+  }
+}

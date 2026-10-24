@@ -40,7 +40,15 @@ import {
 } from 'ionicons/icons';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import {
+  ballValueMatches,
+  findBallInArsenal,
+  formatThrowBall,
+  getBallTracking,
+  getGameBallNames,
+  getThrowBallKey,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -94,6 +102,14 @@ interface SeriesRow {
 }
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;
+
+interface GameBallVm {
+  names: string[];
+  text: string;
+  throwSummary: string;
+  throwTracked: boolean;
+  thumbnail: string | null;
+}
 
 @Component({
   selector: 'app-game-list',
@@ -184,6 +200,30 @@ export class GameListComponent implements OnInit {
     return games.slice(0, end);
   });
 
+  /**
+   * Ball text, thumbnail and per-throw summary for every visible game.
+   */
+  ballVms = computed<Record<string, GameBallVm>>(() => {
+    this.ballEditVersion();
+    const arsenal = this.ballsStore.arsenal();
+
+    const vms: Record<string, GameBallVm> = {};
+    for (const game of this.showingGames()) {
+      const names = getGameBallNames(game, arsenal);
+      const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
+      const throwTracked = getBallTracking(game) === 'throw';
+
+      vms[game.gameId] = {
+        names,
+        text: names.length > 0 ? names.join(', ') : 'None',
+        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        throwTracked,
+        throwSummary: throwTracked ? throwBallSummary(game) : '',
+      };
+    }
+    return vms;
+  });
+
   gameNumberMap = computed(() => {
     const allGames = this.sortedGames();
     const total = allGames.length;
@@ -265,6 +305,9 @@ export class GameListComponent implements OnInit {
 
     return rows;
   });
+
+  /** Bumped when an edit changes a game's balls in place, which no signal would otherwise see. */
+  private readonly ballEditVersion = signal(0);
 
   // Pagination state
   public loadedCount = signal(0);
@@ -504,19 +547,32 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
-  onBallAdd(selected: Ball[], game: Game, modal: IonModal) {
+  async onBallAdd(selected: Ball[], game: Game, modal: IonModal) {
+    // picked balls may come from an API search, so keep them resolvable offline
     void this.ballsStore.rememberBalls(selected);
-    this.onBallSelect(
-      selected.map((b) => b.ball_name),
+    const applied = await this.onBallSelect(
+      selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
       game,
       modal,
     );
-    this.saveBallToArsenal(selected);
+    if (applied) this.saveBallToArsenal(selected);
   }
 
-  onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
+  async onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): Promise<boolean> {
     modal.dismiss();
+    if (!(await this.confirmReplaceThrowBalls(game))) return false;
+
+    this.editService.clearThrowBalls(game);
     game.balls = selectedBalls;
+    game.ballTracking = 'game';
+    this.ballEditVersion.update((v) => v + 1);
+    return true;
+  }
+
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
+    this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
+    game.ballTracking = 'throw';
+    this.ballEditVersion.update((v) => v + 1);
   }
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
@@ -578,15 +634,13 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  getSelectedBallsText(game: Game): string {
-    const balls = game.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
-  }
-
   getBallIds(names: string[] | undefined): string[] {
     if (!names) return [];
 
-    return names.map((name) => this.ballsStore.findKnownBall(name)?.ball_id).filter((id): id is string => !!id);
+    return this.ballsStore
+      .knownBalls()
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
+      .map((ball) => ball.ball_id);
   }
 
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {
@@ -600,4 +654,42 @@ export class GameListComponent implements OnInit {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
+
+  /**
+   * One selection for the whole game replaces the balls recorded per throw. Asks first when
+   * there are any, so they are never dropped silently.
+   */
+  private async confirmReplaceThrowBalls(game: Game): Promise<boolean> {
+    const throwCount = this.editService.countThrowBalls(game);
+    if (throwCount === 0) return true;
+
+    const alert = await this.alertController.create({
+      header: 'Use one ball selection for this game?',
+      message: `The balls picked for ${throwCount} ${throwCount === 1 ? 'throw' : 'throws'} will be removed.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Replace', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
+  }
+}
+
+/** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
+function throwBallSummary(game: Game): string {
+  const counts = new Map<string, number>();
+  for (const frame of game.frames ?? []) {
+    for (const t of frame.throws ?? []) {
+      if (!t.ball?.name) continue;
+      const label = formatThrowBall(t.ball);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, throws]) => `${label} · ${throws} throws`)
+    .join('\n');
 }

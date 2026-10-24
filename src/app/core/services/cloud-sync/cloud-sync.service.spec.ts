@@ -283,8 +283,11 @@ describe('CloudSyncService', () => {
     it('schedules the next sync from the current frequency', async () => {
       await service.syncNow();
 
+      // A calendar week, not 7 × 24h: the gap is an hour off when it spans a DST switch.
       const { lastSyncDate, nextSyncDate } = service.settings();
-      expect(nextSyncDate! - lastSyncDate!).toBeCloseTo(7 * ONE_DAY, -3);
+      const expected = new Date(lastSyncDate!);
+      expected.setDate(expected.getDate() + 7);
+      expect(nextSyncDate!).toBeCloseTo(expected.getTime(), -3);
     });
 
     it('refuses to sync without a connection', async () => {

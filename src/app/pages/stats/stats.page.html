@@ -267,6 +267,14 @@
       }
     </ion-segment-content>
 
+    <ion-segment-content id="Balls">
+      @if (hasFilteredGames()) {
+        <section class="tab">
+          <app-ball-stats [ballStats]="statsService.ballStats()" [title]="'Ball comparison'" [scopeLabel]="ballScopeLabel()"></app-ball-stats>
+        </section>
+      }
+    </ion-segment-content>
+
     <ion-segment-content id="Sessions">
       @if (hasFilteredGames()) {
         <section class="tab">
@@ -294,6 +302,7 @@
           <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-stat-pin-leave>
           <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
           </app-stat-pin-leave>
+          <app-ball-stats [ballStats]="sessionBallStats()" [title]="'Ball comparison'" [scopeLabel]="'This session'"></app-ball-stats>
         </section>
       }
     </ion-segment-content>

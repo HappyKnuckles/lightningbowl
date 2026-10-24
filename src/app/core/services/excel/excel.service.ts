@@ -16,6 +16,7 @@ import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
+import { timestampedFileName } from 'src/app/core/utils/file-utils/file-name.utils';
 import { saveFileFromWeb } from 'src/app/core/utils/file-utils/web-file-save.utils';
 
 type ExcelCellValue = string | number | boolean | Date | null;
@@ -53,13 +54,6 @@ export class ExcelService {
       const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.gamesStore.games();
       const buffer = await this.generateExcelWorkbook(gamesForExport);
 
-      const date = new Date();
-      const formattedDate = date.toLocaleString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-
       const isIos = isPlatform('ios');
       if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
@@ -69,27 +63,8 @@ export class ExcelService {
       }
 
       this.hapticService.vibrate(ImpactStyle.Light);
-      let suffix = '';
-      const fileName = isTemplateExport ? 'lightningbowl_import_template' : `game_data_${formattedDate}`;
-      let i = 1;
-      const existingFiles = JSON.parse(localStorage.getItem('savedFilenames') || '[]');
-
-      if (isPlatform('mobileweb')) {
-        while (existingFiles.includes(fileName + suffix + '.xlsx')) {
-          suffix = `(${i++})`;
-        }
-      } else if (isPlatform('android') || isPlatform('ios')) {
-        while (await this.fileExists(fileName + suffix)) {
-          suffix = `(${i++})`;
-        }
-      }
-
-      const completed = await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
-
-      if (isPlatform('mobileweb')) {
-        existingFiles.push(`${fileName + suffix}.xlsx`);
-        localStorage.setItem('savedFilenames', JSON.stringify(existingFiles));
-      }
+      const fileName = isTemplateExport ? 'lightningbowl_import_template.xlsx' : timestampedFileName('game_data', 'xlsx');
+      const completed = await this.saveExcelFile(buffer, fileName);
       return completed ? 'success' : 'cancelled';
     } catch (error) {
       console.error('Error exporting to Excel:', error);
@@ -796,19 +771,6 @@ export class ExcelService {
       const maxContentLength = Math.max(header.length, ...data.map((row) => (row[header] ?? '').toString().length));
       worksheet.getColumn(startIndex + index).width = maxContentLength + 1;
     });
-  }
-
-  private async fileExists(path: string): Promise<boolean> {
-    try {
-      await Filesystem.stat({
-        path: path + '.xlsx',
-        directory: Directory.Documents,
-      });
-      return true;
-    } catch (error) {
-      console.error('File existence check error:', error);
-      return false;
-    }
   }
 
   private fileToBuffer(file: File): Promise<ArrayBuffer> {

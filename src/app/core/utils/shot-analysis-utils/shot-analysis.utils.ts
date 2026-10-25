@@ -85,6 +85,8 @@ export function loupeSourceRect(x: number, y: number, frameWidth: number, frameH
 
 export interface ShotMetricRow {
   detail?: string;
+  /** Drawn with an accent border: the row the selected pattern says most about. */
+  highlight?: boolean;
   label: string;
   value: string;
 }

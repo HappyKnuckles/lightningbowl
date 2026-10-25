@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
+import { makePattern } from 'src/testing/fixtures';
 import { ShotLaneComponent } from './shot-lane.component';
 
 function result(overrides: Partial<ShotAnalysisResult> = {}): ShotAnalysisResult {
@@ -78,5 +79,35 @@ describe('ShotLaneComponent', () => {
     expect(el.querySelectorAll('.pin').length).toBe(10);
     expect(el.querySelectorAll('.arrow').length).toBe(7);
     expect(el.querySelectorAll('.range-finder').length).toBe(4);
+  });
+
+  it('draws no oil without a pattern', () => {
+    const el = render(result());
+
+    expect(el.querySelectorAll('.oil').length).toBe(0);
+    expect(el.querySelector('.pattern-end')).toBeNull();
+  });
+
+  it('draws the pattern oil in its ratio colour and marks where it ends', () => {
+    const oilRow = {
+      number: '1',
+      start: '10L',
+      stop: '10R',
+      load: '',
+      mics: '',
+      speed: '',
+      buf: '',
+      tank: '',
+      total_oil: '3',
+      distance_start: '0',
+      distance_end: '30',
+    };
+    fixture.componentRef.setInput('pattern', makePattern({ distance: "37'", ratio: '2.5:1', forwards_data: [oilRow], reverse_data: [] }));
+    const el = render(result());
+
+    const oil = [...el.querySelectorAll('.oil')];
+    expect(oil.length).toBe(2); // the forward wash (no reverse passes, so no main wash) and the pass
+    expect(oil.every((r) => r.getAttribute('fill') === 'red')).toBe(true);
+    expect(el.querySelector('.pattern-end-label')?.textContent?.trim()).toBe("end of pattern 37'");
   });
 });

@@ -1,6 +1,8 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, signal } from '@angular/core';
 
+import { Pattern } from 'src/app/core/models/pattern.model';
 import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
+import { patternDistanceFt, patternOilRects, patternRatioColor } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
 import { boardToX, distanceToY, LANE_ARROWS, LANE_BOARDS, LANE_LENGTH_FT } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
 
 /**
@@ -55,6 +57,8 @@ interface Marker {
 })
 export class ShotLaneComponent {
   readonly result = input.required<ShotAnalysisResult>();
+  /** Pattern the shot was bowled on; its oil is drawn under the ball path like on the pattern charts. */
+  readonly pattern = input<Pattern | null>(null);
 
   readonly boardLines = computed(() =>
     Array.from({ length: LANE_BOARDS - 1 }, (_, i) => {
@@ -82,6 +86,33 @@ export class ShotLaneComponent {
       return { key: `${board}-${fromFt}`, x: this.#x(board) - 0.9, y: top, height: this.#y(fromFt) - top };
     }),
   );
+
+  /** Oil boards are counted from the lane's left edge, whatever hand the shot was thrown with. */
+  readonly oil = computed(() => {
+    const pattern = this.pattern();
+    if (!pattern) {
+      return { color: '', rects: [] };
+    }
+    const xFromLeft = (boards: number) => PAD_X + (boards / LANE_BOARDS) * LANE_W;
+    const rects = patternOilRects(pattern).map((r) => {
+      const top = this.#y(r.toFt);
+      return {
+        key: r.key,
+        x: xFromLeft(r.left),
+        y: top,
+        width: xFromLeft(r.right) - xFromLeft(r.left),
+        height: this.#y(r.fromFt) - top,
+        opacity: r.opacity,
+      };
+    });
+    return { color: patternRatioColor(pattern.ratio), rects };
+  });
+
+  readonly patternEnd = computed(() => {
+    const pattern = this.pattern();
+    const ft = pattern ? patternDistanceFt(pattern) : null;
+    return ft === null ? null : { y: this.#y(ft), label: `end of pattern ${ft}'` };
+  });
 
   readonly pins = computed(() => {
     const pins: { key: string; x: number; y: number }[] = [];

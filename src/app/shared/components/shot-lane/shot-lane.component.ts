@@ -1,11 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, signal } from '@angular/core';
 
 import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
 import { boardToX, distanceToY, LANE_ARROWS, LANE_BOARDS, LANE_LENGTH_FT } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
 
-/** Drawing size in SVG units; the SVG scales to its container. */
+/**
+ * Drawing size in SVG units; the SVG scales to its container. The width is fixed, the lane's length
+ * follows the space the component gets, so it fills its box exactly (e.g. as tall as the metric tiles
+ * next to it) without stretching pins, arrows or labels. LANE_H is the length until it is measured.
+ */
 const LANE_W = 156;
 const LANE_H = 640;
+const MIN_LANE_H = 320;
 const GUTTER = 10;
 const PAD_X = 30;
 const PAD_TOP = 8;
@@ -47,7 +52,7 @@ export class ShotLaneComponent {
   readonly #x = (board: number) => PAD_X + boardToX(board, this.result().handedness, LANE_W);
 
   readonly boardLabels = computed(() => [5, 10, 15, 20, 25, 30, 35].map((board) => ({ board, x: this.#x(board) })));
-  readonly #y = (ft: number) => PAD_TOP + distanceToY(ft, LANE_H, SHOWN_FT);
+  readonly #y = (ft: number) => PAD_TOP + distanceToY(ft, this.#laneH(), SHOWN_FT);
 
   readonly arrows = computed(() =>
     LANE_ARROWS.map(([board, ft]) => {
@@ -94,11 +99,30 @@ export class ShotLaneComponent {
     return markers;
   });
 
-  readonly viewBox = `0 0 ${LANE_W + 2 * PAD_X} ${PAD_TOP + LANE_H + PAD_BOTTOM}`;
+  /** Lane length in SVG units for the component's current height / width (read lazily through #y above). */
+  readonly #laneH = signal(LANE_H);
 
-  readonly lane = { x: PAD_X, y: PAD_TOP, width: LANE_W, height: LANE_H, gutter: GUTTER };
+  readonly viewBox = computed(() => `0 0 ${LANE_W + 2 * PAD_X} ${PAD_TOP + this.#laneH() + PAD_BOTTOM}`);
 
-  readonly distanceLabels = [0, 15, 30, 45, 60].map((ft) => ({ ft, y: PAD_TOP + distanceToY(ft, LANE_H, SHOWN_FT) }));
+  readonly lane = computed(() => ({ x: PAD_X, y: PAD_TOP, width: LANE_W, height: this.#laneH(), gutter: GUTTER }));
 
-  readonly foulLineY = PAD_TOP + distanceToY(0, LANE_H, SHOWN_FT);
+  readonly distanceLabels = computed(() => [0, 15, 30, 45, 60].map((ft) => ({ ft, y: this.#y(ft) })));
+
+  readonly foulLineY = computed(() => this.#y(0));
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const observer = new ResizeObserver(([entry]) => {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          const total = (height / width) * (LANE_W + 2 * PAD_X);
+          this.#laneH.set(Math.max(MIN_LANE_H, total - PAD_TOP - PAD_BOTTOM));
+        }
+      });
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
 }

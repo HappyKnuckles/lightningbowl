@@ -1,12 +1,30 @@
-<div class="pattern-container">
-  <img [src]="imagesUrl + pattern().chart_standard" style="width: 50%; height: auto; border-radius: var(--card-border-radius)" alt="Pattern image" />
-  <div class="pattern-info">
-    <ion-chip>Distance: {{ pattern().distance }}ft</ion-chip>
-    <ion-chip>Volume: {{ pattern().volume }}mL</ion-chip>
-    <ion-chip>Ratio: {{ pattern().ratio }}</ion-chip>
-    <ion-chip>{{ getLength() }} Length</ion-chip>
-    <ion-chip>{{ getVolume() }} Volume</ion-chip>
-    <ion-chip>{{ getDifficulty() }} Difficulty</ion-chip>
+<div class="info-split">
+  <img alt="Pattern image" class="info-visual" [src]="imagesUrl + pattern().chart_standard" />
+  <div class="info-tiles">
+    <div class="info-tile">
+      <span class="info-tile-label">Distance</span>
+      <span class="info-tile-value">{{ pattern().distance }} ft</span>
+    </div>
+    <div class="info-tile">
+      <span class="info-tile-label">Volume</span>
+      <span class="info-tile-value">{{ pattern().volume }} mL</span>
+    </div>
+    <div class="info-tile">
+      <span class="info-tile-label">Ratio</span>
+      <span class="info-tile-value">{{ pattern().ratio }}</span>
+    </div>
+    <div class="info-tile">
+      <span class="info-tile-label">Length</span>
+      <span class="info-tile-value">{{ getLength() }}</span>
+    </div>
+    <div class="info-tile">
+      <span class="info-tile-label">Oil Amount</span>
+      <span class="info-tile-value">{{ getVolume() }}</span>
+    </div>
+    <div class="info-tile">
+      <span class="info-tile-label">Difficulty</span>
+      <span class="info-tile-value">{{ getDifficulty() }}</span>
+    </div>
   </div>
 </div>
 

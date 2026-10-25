@@ -162,25 +162,21 @@
 
     @case ("result") {
       @if (result(); as shot) {
-        <div class="result">
-          <app-shot-lane class="lane" [result]="shot"></app-shot-lane>
-          <ion-list class="metrics" lines="full">
+        <div class="info-split">
+          <app-shot-lane class="info-visual" [result]="shot"></app-shot-lane>
+          <div class="info-tiles">
             @for (row of metricRows(); track row.label) {
-              <ion-item>
-                <ion-label>
-                  <p>{{ row.label }}</p>
-                  <h2>{{ row.value }}</h2>
-                  @if (row.detail) {
-                    <p class="detail">{{ row.detail }}</p>
-                  }
-                </ion-label>
-              </ion-item>
+              <div class="info-tile">
+                <span class="info-tile-label">{{ row.label }}</span>
+                <span class="info-tile-value">{{ row.value }}</span>
+                @if (row.detail) {
+                  <span class="info-tile-detail">{{ row.detail }}</span>
+                }
+              </div>
             }
-            <ion-item lines="none">
-              <ion-note>{{ trackedRange() }}</ion-note>
-            </ion-item>
-          </ion-list>
+          </div>
         </div>
+        <p class="tracked-range">{{ trackedRange() }}</p>
 
         @if (videoUrl(); as url) {
           <ion-card class="replay">

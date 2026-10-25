@@ -160,29 +160,11 @@
   }
 }
 
-.result {
-  display: grid;
-  grid-template-columns: minmax(144px, 45%) 1fr;
-  gap: 8px;
-  padding: 8px;
-
-  .lane {
-    height: 64dvh;
-    max-height: 640px;
-  }
-
-  .metrics {
-    align-self: start;
-
-    h2 {
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-
-    .detail {
-      font-size: 0.75rem;
-    }
-  }
+.tracked-range {
+  margin: 0 16px;
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+  text-align: center;
 }
 
 .replay video {

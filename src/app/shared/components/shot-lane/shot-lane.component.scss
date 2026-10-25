@@ -1,11 +1,17 @@
+// The component takes the size its parent gives it (e.g. stretched next to the metric tiles) and draws
+// the lane that long; the SVG is taken out of the flow so it doesn't push that size up itself.
 :host {
   display: block;
+  position: relative;
+  min-height: 320px;
   // Fixed colours: the path is drawn on light wood in every theme (the Gray theme's primary is near-white)
   --shot-path-color: #1f6feb;
   --shot-breakpoint-color: #e5394a;
 }
 
 .shot-lane {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;

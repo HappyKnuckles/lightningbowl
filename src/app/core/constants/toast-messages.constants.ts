@@ -45,7 +45,7 @@ export const TOAST_MESSAGES = {
   pinpalImportSuccess: 'PinPal backup imported successfully.',
   pinpalImportError: 'Error importing PinPal backup.',
   shotAnalysisOffline: 'Could not reach the analysis service. Check your connection.',
-  shotAnalysisVideoTooLarge: 'The video is too large. Trim it to the shot (max 150 MB).',
+  shotAnalysisVideoTooLarge: 'The video is too large. Select a shorter part of the shot (max 150 MB).',
   shotAnalysisUnreadableVideo: 'The video could not be read. Try another file.',
   shotAnalysisNoPath: 'No ball path found. Check the lane corners and that the whole lane is in view.',
   shotAnalysisError: 'Error analyzing shot.',

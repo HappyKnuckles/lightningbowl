@@ -72,14 +72,37 @@ describe('ShotAnalysisPage', () => {
     expect(buttons).toEqual(expect.arrayContaining(['Record Shot', 'Choose Video']));
   });
 
-  it('rejects videos over the upload limit', () => {
+  it('accepts a long video but refuses to upload more than the limit', async () => {
     const big = new File(['x'], 'big.mov');
     Object.defineProperty(big, 'size', { value: MAX_SHOT_VIDEO_BYTES + 1 });
 
     selectVideo(big);
+    expect(page.step()).toBe('calibrate');
 
-    expect(page.step()).toBe('pick');
+    page.points.set(CORNERS);
+    await page.analyze();
+
+    expect(analysisService.analyze).not.toHaveBeenCalled();
+    expect(page.step()).toBe('calibrate');
     expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
+  });
+
+  it('sends the whole file when it cannot be cut', async () => {
+    const file = new File(['not a real video'], 'shot.mov');
+    selectVideo(file);
+    page.duration.set(30);
+    page.trimWindow.set({ startS: 12, endS: 16 });
+    page.frameTime.set(12.5);
+    page.points.set(CORNERS);
+
+    await page.analyze();
+
+    const [video, name, calibration, options] = analysisService.analyze.mock.calls[0];
+    expect(video).toBe(file);
+    expect(name).toBe('shot.mov');
+    expect(calibration.frameTimeS).toBe(12.5);
+    expect(options).toEqual({ handedness: 'right' });
+    expect(page.preparing()).toBe(false);
   });
 
   it('asks for the corners in order and only allows analyzing a plausible lane', () => {
@@ -153,13 +176,13 @@ describe('ShotAnalysisPage', () => {
     expect(page.points()).toEqual([]);
   });
 
-  it('sends the shot with the marked corners and handedness, then shows the result', () => {
+  it('sends the shot with the marked corners and handedness, then shows the result', async () => {
     const file = new File(['x'], 'shot.mov');
     selectVideo(file);
     page.points.set(CORNERS);
     page.setHandedness('left');
 
-    page.analyze();
+    await page.analyze();
     fixture.detectChanges();
 
     expect(page.step()).toBe('analyzing');
@@ -186,10 +209,10 @@ describe('ShotAnalysisPage', () => {
     expect(el().textContent).toContain('Tracked from 2 to 60 ft');
   });
 
-  it('shows the error and returns to marking when the analysis fails', () => {
+  it('shows the error and returns to marking when the analysis fails', async () => {
     selectVideo(new File(['x'], 'shot.mov'));
     page.points.set(CORNERS);
-    page.analyze();
+    await page.analyze();
 
     events.error(new Error(TOAST_MESSAGES.shotAnalysisNoPath));
 
@@ -198,14 +221,29 @@ describe('ShotAnalysisPage', () => {
     expect(page.points()).toEqual(CORNERS);
   });
 
-  it('cancels a running analysis', () => {
+  it('cancels a running analysis', async () => {
     selectVideo(new File(['x'], 'shot.mov'));
     page.points.set(CORNERS);
-    page.analyze();
+    await page.analyze();
 
     page.cancelAnalysis();
 
     expect(events.observed).toBe(false);
+    expect(page.step()).toBe('calibrate');
+  });
+
+  it('drops a cut that finishes after the analysis was cancelled', async () => {
+    selectVideo(new File(['not a real video'], 'shot.mov'));
+    page.duration.set(30);
+    page.trimWindow.set({ startS: 12, endS: 16 });
+    page.frameTime.set(12.5);
+    page.points.set(CORNERS);
+
+    const running = page.analyze();
+    page.cancelAnalysis();
+    await running;
+
+    expect(analysisService.analyze).not.toHaveBeenCalled();
     expect(page.step()).toBe('calibrate');
   });
 

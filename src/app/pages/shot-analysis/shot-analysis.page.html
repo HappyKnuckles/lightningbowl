@@ -44,7 +44,7 @@
             <li>Keep the foul line and the pins in the picture.</li>
             <li>Stand to the side of the bowler so they don't block the lane after the release.</li>
             <li>Start recording before the release; 60 fps works best.</li>
-            <li>Trim the video to the shot: shorter clips upload and analyze much faster.</li>
+            <li>Select just the shot in the next step: shorter clips upload and analyze much faster.</li>
           </ul>
         </ion-card-content>
       </ion-card>
@@ -90,18 +90,31 @@
 
         @if (duration() > 0) {
           <ion-item class="scrub" lines="none">
+            <ion-label>Shot</ion-label>
+            <ion-range
+              aria-label="Part of the video to analyze"
+              [disabled]="overlayPoints().length > 0"
+              [dualKnobs]="true"
+              [max]="duration()"
+              [min]="0"
+              [step]="0.1"
+              [value]="trimValue()"
+              (ionInput)="onTrim($event)"></ion-range>
+          </ion-item>
+          <ion-note class="hint">{{ trimLabel() }} · only this part is uploaded, max {{ maxWindowS }} s</ion-note>
+          <ion-item class="scrub" lines="none">
             <ion-label>Frame</ion-label>
             <ion-range
               aria-label="Frame"
               [disabled]="overlayPoints().length > 0"
-              [max]="duration()"
-              [min]="0"
+              [max]="trimWindow().endS"
+              [min]="trimWindow().startS"
               [step]="0.02"
               [value]="frameTime()"
               (ionInput)="onScrub($event)"></ion-range>
           </ion-item>
           @if (overlayPoints().length > 0) {
-            <ion-note class="hint">Reset the corners to pick another frame.</ion-note>
+            <ion-note class="hint">Reset the corners to change the shot or pick another frame.</ion-note>
           }
         }
 
@@ -128,7 +141,10 @@
       <div class="empty-state">
         <ion-icon class="empty-icon" name="sparkles-outline"></ion-icon>
         <ion-text>
-          @if (processing()) {
+          @if (preparing()) {
+            <h2>Preparing video…</h2>
+            <p>Cutting out the shot.</p>
+          } @else if (processing()) {
             <h2>Analyzing shot…</h2>
             <p>Tracking the ball frame by frame. This can take a minute or two for long videos.</p>
           } @else {
@@ -136,7 +152,10 @@
             <p>{{ uploadPercent() }}%</p>
           }
         </ion-text>
-        <ion-progress-bar class="progress" [type]="processing() ? 'indeterminate' : 'determinate'" [value]="uploadProgress()"></ion-progress-bar>
+        <ion-progress-bar
+          class="progress"
+          [type]="processing() || preparing() ? 'indeterminate' : 'determinate'"
+          [value]="uploadProgress()"></ion-progress-bar>
         <ion-button fill="clear" (click)="cancelAnalysis()">Cancel</ion-button>
       </div>
     }

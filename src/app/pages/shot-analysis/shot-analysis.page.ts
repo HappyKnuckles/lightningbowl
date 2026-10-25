@@ -26,7 +26,7 @@ import { arrowUndoOutline, folderOpenOutline, refreshOutline, sparklesOutline, v
 import { Subscription } from 'rxjs';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Handedness, NormalizedPoint, ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
+import { Handedness, NormalizedPoint, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import {
@@ -37,6 +37,14 @@ import {
   shotMetricRows,
   validateCalibration,
 } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
+import {
+  clampTrimWindow,
+  defaultTrimWindow,
+  isTrimmed,
+  MAX_SHOT_WINDOW_S,
+  trimVideo,
+  TrimWindow,
+} from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
 
 type Step = 'pick' | 'calibrate' | 'analyzing' | 'result';
@@ -128,19 +136,31 @@ export class ShotAnalysisPage implements OnDestroy {
     return result ? shotMetricRows(result) : [];
   });
 
+  /** Part of the video that is sent and analysed; the corners are marked on a frame inside it. */
+  readonly trimWindow = signal<TrimWindow>({ startS: 0, endS: 0 });
+  readonly trimValue = computed(() => ({ lower: this.trimWindow().startS, upper: this.trimWindow().endS }));
+  readonly trimLabel = computed(() => {
+    const { startS, endS } = this.trimWindow();
+    return `${startS.toFixed(1)}–${endS.toFixed(1)} s (${(endS - startS).toFixed(1)} s)`;
+  });
   readonly step = signal<Step>('pick');
   readonly videoUrl = signal<string | null>(null);
   readonly duration = signal(0);
   readonly frameTime = signal(0);
+  /** Cutting the selected part out of the video before the upload. */
+  readonly preparing = signal(false);
   readonly handedness = signal<Handedness>(loadHandedness());
   readonly processing = signal(false);
   readonly loupeVisible = signal(false);
   /** The magnifier sits in the corner away from the finger. */
   readonly loupeOnRight = signal(false);
+  readonly maxWindowS = MAX_SHOT_WINDOW_S;
   readonly totalSteps = CALIBRATION_STEPS.length;
   readonly loupeCssPx = LOUPE_CSS_PX;
 
   #file: File | null = null;
+  /** Bumped by every analysis start and cancel, so a cut finishing late is dropped. */
+  #run = 0;
   #subscription: Subscription | null = null;
   #dragIndex: number | null = null;
 
@@ -160,10 +180,7 @@ export class ShotAnalysisPage implements OnDestroy {
     if (!file) {
       return;
     }
-    if (file.size > MAX_SHOT_VIDEO_BYTES) {
-      this.#toastService.showToast(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
-      return;
-    }
+    // no size check here: a long video may well fit once trimmed to the shot (checked before the upload)
     this.#setVideo(file);
     this.step.set('calibrate');
   }
@@ -174,10 +191,14 @@ export class ShotAnalysisPage implements OnDestroy {
       return;
     }
     this.frameSize.set({ width: video.videoWidth, height: video.videoHeight });
-    this.duration.set(Number.isFinite(video.duration) ? video.duration : 0);
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    this.duration.set(duration);
+    if (this.points().length === 0) {
+      this.trimWindow.set(defaultTrimWindow(duration));
+    }
     // Seeking renders a frame on iOS, which shows nothing for a paused video otherwise. Coming back to
     // marking (e.g. after a failed analysis) returns to the frame the corners were placed on.
-    const time = this.points().length > 0 ? this.frameTime() : Math.min(0.05, video.duration || 0);
+    const time = this.points().length > 0 ? this.frameTime() : Math.min(this.trimWindow().startS + 0.05, duration);
     video.currentTime = time;
     this.frameTime.set(time);
   }
@@ -195,6 +216,21 @@ export class ShotAnalysisPage implements OnDestroy {
     }
     video.currentTime = value;
     this.frameTime.set(value);
+  }
+
+  /** Dragging a trim knob shows that frame, so the shot's start and end can be found; marking then happens on it. */
+  onTrim(event: RangeCustomEvent): void {
+    const value = event.detail.value;
+    const video = this.video()?.nativeElement;
+    if (typeof value !== 'object' || !video) {
+      return;
+    }
+    const previous = this.trimWindow();
+    const next = clampTrimWindow({ startS: value.lower, endS: value.upper }, previous, this.duration());
+    this.trimWindow.set(next);
+    const time = next.startS !== previous.startS ? next.startS : next.endS;
+    video.currentTime = time;
+    this.frameTime.set(time);
   }
 
   setHandedness(value: Handedness): void {
@@ -259,9 +295,10 @@ export class ShotAnalysisPage implements OnDestroy {
     this.points.set([]);
   }
 
-  analyze(): void {
+  async analyze(): Promise<void> {
     const calibration = buildCalibration(this.points(), this.frameTime());
-    if (!calibration || !this.#file || !this.canAnalyze()) {
+    const file = this.#file;
+    if (!calibration || !file || !this.canAnalyze()) {
       return;
     }
     this.video()?.nativeElement.pause();
@@ -269,25 +306,43 @@ export class ShotAnalysisPage implements OnDestroy {
     this.processing.set(false);
     this.step.set('analyzing');
     this.#subscription?.unsubscribe();
-    this.#subscription = this.#analysisService.analyze(this.#file, this.#file.name, calibration, { handedness: this.handedness() }).subscribe({
-      next: (event) => {
-        if (event.type === 'uploading') {
-          this.uploadProgress.set(event.progress);
-        } else if (event.type === 'processing') {
-          this.processing.set(true);
-        } else {
-          this.result.set(event.result);
-          this.step.set('result');
-        }
-      },
-      error: (error: Error) => {
-        this.#toastService.showToast(error.message, 'bug', true);
-        this.step.set('calibrate');
-      },
-    });
+    this.#subscription = null;
+
+    const run = ++this.#run;
+    const upload = await this.#prepareUpload(file, calibration);
+    // cancelled, or another video picked, while cutting
+    if (run !== this.#run || this.step() !== 'analyzing') {
+      return;
+    }
+    if (upload.video.size > MAX_SHOT_VIDEO_BYTES) {
+      this.#toastService.showToast(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
+      this.step.set('calibrate');
+      return;
+    }
+
+    this.#subscription = this.#analysisService
+      .analyze(upload.video, upload.fileName, upload.calibration, { handedness: this.handedness() })
+      .subscribe({
+        next: (event) => {
+          if (event.type === 'uploading') {
+            this.uploadProgress.set(event.progress);
+          } else if (event.type === 'processing') {
+            this.processing.set(true);
+          } else {
+            this.result.set(event.result);
+            this.step.set('result');
+          }
+        },
+        error: (error: Error) => {
+          this.#toastService.showToast(error.message, 'bug', true);
+          this.step.set('calibrate');
+        },
+      });
   }
 
   cancelAnalysis(): void {
+    this.#run++;
+    this.preparing.set(false);
     this.#subscription?.unsubscribe();
     this.#subscription = null;
     this.step.set('calibrate');
@@ -307,6 +362,33 @@ export class ShotAnalysisPage implements OnDestroy {
     this.step.set('pick');
   }
 
+  /**
+   * What gets uploaded: the selected part cut out of the video, so less has to be sent, or the whole
+   * file when the cut fails or isn't smaller. The cut starts slightly before the selection (at a key
+   * frame), so the calibration frame time is shifted to the cut file's time.
+   */
+  async #prepareUpload(file: File, calibration: ShotCalibration): Promise<{ calibration: ShotCalibration; fileName: string; video: Blob }> {
+    const window = this.trimWindow();
+    if (!isTrimmed(window, this.duration())) {
+      return { video: file, fileName: file.name, calibration };
+    }
+
+    this.preparing.set(true);
+    try {
+      const cut = await trimVideo(file, window);
+      if (cut && cut.blob.size < file.size) {
+        return {
+          video: cut.blob,
+          fileName: file.name.replace(/\.[^.]+$/, '') + '-shot.mp4',
+          calibration: { ...calibration, frameTimeS: Math.max(0, calibration.frameTimeS - cut.offsetS) },
+        };
+      }
+    } finally {
+      this.preparing.set(false);
+    }
+    return { video: file, fileName: file.name, calibration };
+  }
+
   #setVideo(file: File | null): void {
     const previous = this.videoUrl();
     if (previous) {
@@ -317,6 +399,7 @@ export class ShotAnalysisPage implements OnDestroy {
     this.frameSize.set(null);
     this.duration.set(0);
     this.frameTime.set(0);
+    this.trimWindow.set({ startS: 0, endS: 0 });
     this.points.set([]);
   }
 

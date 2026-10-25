@@ -111,6 +111,8 @@ describe('shot analysis utils', () => {
       const rows = shotMetricRows(
         result({
           speedMph: 16.66,
+          releaseSpeedMph: 17.84,
+          impactSpeedMph: 15.21,
           revRateRpm: 333,
           revRateConfidence: 0.9,
           launchAngleDeg: 1.42,
@@ -122,7 +124,8 @@ describe('shot analysis utils', () => {
       );
 
       expect(rows.map((r) => [r.label, r.value])).toEqual([
-        ['Speed', '16.7 mph'],
+        ['Release Speed', '17.8 mph'],
+        ['Average Speed', '16.7 mph'],
         ['Rev Rate', '333 rpm'],
         ['Launch Angle', '1.4°'],
         ['Entry Angle', '3.2°'],
@@ -130,12 +133,19 @@ describe('shot analysis utils', () => {
         ['Breakpoint', 'Board 11.3'],
         ['Entry', 'Board 17.5'],
       ]);
-      expect(rows[0].detail).toBe('26.8 km/h');
-      expect(rows[5].detail).toBe('at 38 ft');
+      expect(rows[0].detail).toBe('28.7 km/h');
+      expect(rows[1].detail).toBe('like lane monitors · 15.2 mph at the pins');
+      expect(rows[6].detail).toBe('at 38 ft');
+    });
+
+    it('says when the speeds could not be checked against the pin impact', () => {
+      const rows = shotMetricRows({ ...result({ releaseSpeedMph: 17, speedMph: 15 }), calibrationCorrected: false });
+
+      expect(rows[0].detail).toBe('27.4 km/h · pins not visible, less precise');
     });
 
     it('leaves out what the service could not measure, except the rev rate', () => {
-      expect(shotMetricRows(result({ speedMph: 15 })).map((r) => r.label)).toEqual(['Speed', 'Rev Rate']);
+      expect(shotMetricRows(result({ speedMph: 15 })).map((r) => r.label)).toEqual(['Average Speed', 'Rev Rate']);
     });
 
     it('says the rev rate could not be measured instead of leaving it out', () => {

@@ -92,6 +92,7 @@ export interface ShotMetricRow {
 }
 
 const round = (value: number, digits = 1) => Number(value.toFixed(digits));
+const joinDetails = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
 /** Shown when the tracker found no clearly repeating pattern on the ball in the first 25 ft. */
 export const REV_RATE_MISSING_HINT = 'Needs 60 fps, good light and a ball with a visible logo or holes in the first 25 ft';
@@ -100,8 +101,18 @@ export const REV_RATE_MISSING_HINT = 'Needs 60 fps, good light and a ball with a
 export function shotMetricRows(result: ShotAnalysisResult): ShotMetricRow[] {
   const m = result.metrics;
   const rows: ShotMetricRow[] = [];
+  // pins hidden or missed: the pin end can't be checked, which mostly affects speeds
+  const unchecked = result.calibrationCorrected === false ? 'pins not visible, less precise' : undefined;
+  if (m.releaseSpeedMph !== undefined) {
+    rows.push({
+      label: 'Release Speed',
+      value: `${round(m.releaseSpeedMph)} mph`,
+      detail: joinDetails(`${round(m.releaseSpeedMph * MPH_TO_KMH)} km/h`, unchecked),
+    });
+  }
   if (m.speedMph !== undefined) {
-    rows.push({ label: 'Speed', value: `${round(m.speedMph)} mph`, detail: `${round(m.speedMph * MPH_TO_KMH)} km/h` });
+    const atPins = m.impactSpeedMph !== undefined ? `${round(m.impactSpeedMph)} mph at the pins` : undefined;
+    rows.push({ label: 'Average Speed', value: `${round(m.speedMph)} mph`, detail: joinDetails('like lane monitors', atPins) });
   }
   if (m.revRateRpm !== undefined) {
     const unsure = m.revRateConfidence !== undefined && m.revRateConfidence < 0.5;

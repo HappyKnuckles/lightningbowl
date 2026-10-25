@@ -45,15 +45,25 @@ export interface ShotMetrics {
   /** Board at 60 ft. */
   entryBoard?: number;
   entryBoardExtrapolated: boolean;
+  /** Speed at the pins. */
+  impactSpeedMph?: number;
   /** Positive = heading out towards the gutter. */
   launchAngleDeg?: number;
   /** 0–1, how clearly the ball's rotation repeated. */
   revRateConfidence?: number;
   revRateRpm?: number;
+  /** Average from 5 to 22 ft, right after the release. */
+  releaseSpeedMph?: number;
+  /** Average from the foul line to the pins, like lane monitors show. */
   speedMph?: number;
 }
 
 export interface ShotAnalysisResult {
+  /**
+   * The pin-end calibration was corrected from the moment the pins started flying. False when the
+   * impact wasn't visible (pins covered, gutter ball): distances near the pins and speeds are then less precise.
+   */
+  calibrationCorrected?: boolean;
   /** Smoothed path, one point per foot. */
   curve: ShotCurvePoint[];
   fps: number;

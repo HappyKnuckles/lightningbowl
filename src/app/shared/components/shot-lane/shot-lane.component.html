@@ -16,7 +16,7 @@
   }
   <line class="foul-line" [attr.x1]="lane().x" [attr.x2]="lane().x + lane().width" [attr.y1]="foulLineY()" [attr.y2]="foulLineY()" />
   @for (pin of pins(); track pin.key) {
-    <circle class="pin" r="2.8" [attr.cx]="pin.x" [attr.cy]="pin.y" />
+    <circle class="pin" [attr.cx]="pin.x" [attr.cy]="pin.y" [attr.r]="pinRadius" />
   }
 
   @for (label of distanceLabels(); track label.ft) {

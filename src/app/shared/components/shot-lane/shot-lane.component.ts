@@ -15,11 +15,16 @@ const GUTTER = 10;
 const PAD_X = 30;
 const PAD_TOP = 8;
 const PAD_BOTTOM = 24;
-/** A little past the head pin so the pin deck shows. */
-const SHOWN_FT = 64;
-const PIN_SPACING_IN = 12;
-const PIN_ROW_IN = 10.392;
-const LANE_WIDTH_IN = 41.5;
+/**
+ * The pin deck above the 60 ft line. Not to scale, like the pattern charts: real pins would be specks
+ * at this size, so the triangle spans most of the lane. The head pin sits just above the 60 ft line,
+ * clear of the entry marker there.
+ */
+const PIN_SPACING = LANE_W / 4.2;
+const PIN_RADIUS = PIN_SPACING * 0.3;
+const PIN_ROW = PIN_SPACING * 0.8;
+const HEAD_PIN_GAP = 8;
+const DECK_H = HEAD_PIN_GAP + 2 * PIN_RADIUS + 3 * PIN_ROW + 6;
 
 interface Marker {
   key: string;
@@ -52,7 +57,8 @@ export class ShotLaneComponent {
   readonly #x = (board: number) => PAD_X + boardToX(board, this.result().handedness, LANE_W);
 
   readonly boardLabels = computed(() => [5, 10, 15, 20, 25, 30, 35].map((board) => ({ board, x: this.#x(board) })));
-  readonly #y = (ft: number) => PAD_TOP + distanceToY(ft, this.#laneH(), SHOWN_FT);
+  /** 0 ft at the bottom of the drawing, 60 ft below the pin deck. */
+  readonly #y = (ft: number) => PAD_TOP + DECK_H + distanceToY(ft, this.#laneH() - DECK_H, LANE_LENGTH_FT);
 
   readonly arrows = computed(() =>
     LANE_ARROWS.map(([board, ft]) => {
@@ -66,9 +72,8 @@ export class ShotLaneComponent {
     const pins: { key: string; x: number; y: number }[] = [];
     for (let row = 0; row < 4; row++) {
       for (let i = 0; i <= row; i++) {
-        const fromLeftIn = LANE_WIDTH_IN / 2 + (i - row / 2) * PIN_SPACING_IN;
-        const ft = LANE_LENGTH_FT + (row * PIN_ROW_IN) / 12;
-        pins.push({ key: `${row}-${i}`, x: PAD_X + (fromLeftIn / LANE_WIDTH_IN) * LANE_W, y: this.#y(ft) });
+        const headPinY = this.#y(LANE_LENGTH_FT) - HEAD_PIN_GAP - PIN_RADIUS;
+        pins.push({ key: `${row}-${i}`, x: PAD_X + LANE_W / 2 + (i - row / 2) * PIN_SPACING, y: headPinY - row * PIN_ROW });
       }
     }
     return pins;
@@ -109,6 +114,8 @@ export class ShotLaneComponent {
   readonly distanceLabels = computed(() => [0, 15, 30, 45, 60].map((ft) => ({ ft, y: this.#y(ft) })));
 
   readonly foulLineY = computed(() => this.#y(0));
+
+  readonly pinRadius = PIN_RADIUS;
 
   constructor() {
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;

@@ -413,6 +413,10 @@ ion-segment {
     border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
     background: var(--ion-card-background);
+
+    &.highlight {
+      border-color: rgba(229, 57, 74, 0.4);
+    }
   }
 
   .info-tile-label,

@@ -160,6 +160,39 @@
   }
 }
 
+.pattern-pick {
+  max-width: 640px;
+  margin: 8px 16px;
+  border: 1px solid var(--ion-thin-border-color, #ffffff12);
+  border-radius: var(--card-border-radius);
+  --background: var(--ion-card-background);
+
+  @media (min-width: 672px) {
+    margin: 8px auto;
+  }
+
+  p {
+    font-size: 0.75rem;
+  }
+
+  h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .ratio-dot {
+    width: 12px;
+    height: 12px;
+    margin-inline-end: 12px;
+    border-radius: 50%;
+    flex: none;
+
+    &.empty {
+      border: 1px solid var(--ion-color-medium);
+    }
+  }
+}
+
 .tracked-range {
   margin: 0 16px;
   font-size: 0.75rem;

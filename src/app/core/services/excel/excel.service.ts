@@ -1,26 +1,43 @@
 import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
+import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
-import * as ExcelJS from 'exceljs';
-import { Game, Throw } from 'src/app/core/models/game.model';
+import type { Workbook, Worksheet } from 'exceljs';
+import { Ball } from 'src/app/core/models/ball.model';
+import { Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { findBallInArsenal, formatThrowBall, getGameBalls } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
+import { timestampedFileName } from 'src/app/core/utils/file-utils/file-name.utils';
+import { saveFileFromWeb } from 'src/app/core/utils/file-utils/web-file-save.utils';
 
 type ExcelCellValue = string | number | boolean | Date | null;
 type ExcelRow = Record<string, ExcelCellValue>;
+
+/**
+ * 'cancelled' means the file was generated and written to disk, but the user
+ * dismissed the native share sheet without saving/sending it anywhere —
+ * distinct from 'permission-denied' so the UI doesn't show a misleading
+ * permission alert for a plain cancel.
+ */
+export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
+
+const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ExcelService {
+  #excelJs?: Promise<typeof import('exceljs')>;
+
   constructor(
     private hapticService: HapticService,
     private gamesStore: GamesStore,
@@ -31,50 +48,24 @@ export class ExcelService {
   ) {}
 
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
-  async exportToExcel(): Promise<boolean> {
+  async exportToExcel(): Promise<ExcelExportResult> {
     try {
       const isTemplateExport = this.gamesStore.games().length === 0;
       const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.gamesStore.games();
       const buffer = await this.generateExcelWorkbook(gamesForExport);
 
-      const date = new Date();
-      const formattedDate = date.toLocaleString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-
       const isIos = isPlatform('ios');
       if (isIos) {
         const permissionRequestResult = await Filesystem.requestPermissions();
         if (permissionRequestResult.publicStorage !== 'granted') {
-          return false;
+          return 'permission-denied';
         }
       }
 
       this.hapticService.vibrate(ImpactStyle.Light);
-      let suffix = '';
-      const fileName = isTemplateExport ? 'lightningbowl_import_template' : `game_data_${formattedDate}`;
-      let i = 1;
-      const existingFiles = JSON.parse(localStorage.getItem('savedFilenames') || '[]');
-
-      if (isPlatform('mobileweb')) {
-        while (existingFiles.includes(fileName + suffix + '.xlsx')) {
-          suffix = `(${i++})`;
-        }
-      } else if (isPlatform('android') || isPlatform('ios')) {
-        while (await this.fileExists(fileName + suffix)) {
-          suffix = `(${i++})`;
-        }
-      }
-
-      await this.saveExcelFile(buffer, `${fileName + suffix}.xlsx`);
-
-      if (isPlatform('mobileweb')) {
-        existingFiles.push(`${fileName + suffix}.xlsx`);
-        localStorage.setItem('savedFilenames', JSON.stringify(existingFiles));
-      }
-      return true;
+      const fileName = isTemplateExport ? 'lightningbowl_import_template.xlsx' : timestampedFileName('game_data', 'xlsx');
+      const completed = await this.saveExcelFile(buffer, fileName);
+      return completed ? 'success' : 'cancelled';
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       throw new Error(`Export failed: ${error}`);
@@ -87,6 +78,7 @@ export class ExcelService {
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
     try {
+      const ExcelJS = await this.loadExcelJs();
       const workbook = new ExcelJS.Workbook();
       const buffer = await this.fileToBuffer(file);
       await workbook.xlsx.load(buffer);
@@ -119,7 +111,10 @@ export class ExcelService {
 
         for (let j = 1; j <= 10; j++) {
           const frameIndex = j;
-          const frame: { frameIndex: number; throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean }[] } = {
+          const frame: {
+            frameIndex: number;
+            throws: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall }[];
+          } = {
             frameIndex: frameIndex,
             throws: [],
           };
@@ -139,14 +134,23 @@ export class ExcelService {
           const pinsLeft2 = (row[`Frame ${frameIndex} Throw 2`] as string) || '';
           const pinsLeft3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Throw 3`] as string) || '' : '';
           const pinsLefts = [pinsLeft1, pinsLeft2, pinsLeft3];
+          const ball1 = (row[`Frame ${frameIndex} Ball 1`] as string) || '';
+          const ball2 = (row[`Frame ${frameIndex} Ball 2`] as string) || '';
+          const ball3 = frameIndex === 10 ? (row[`Frame ${frameIndex} Ball 3`] as string) || '' : '';
+          const throwBalls = [ball1, ball2, ball3];
 
           const maxThrowsInFrame = frameIndex === 10 ? 3 : 2;
 
           for (let k = 0; k < throwValues.length && k < maxThrowsInFrame; k++) {
-            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean } = {
+            const throwObj: { value: number; throwIndex: number; pinsLeftStanding?: number[]; isSplit?: boolean; ball?: ThrowBall } = {
               value: throwValues[k],
               throwIndex: k + 1,
             };
+
+            const throwBall = throwBalls[k]?.trim();
+            if (throwBall) {
+              throwObj.ball = this.parseThrowBall(throwBall);
+            }
 
             if (isPinMode) {
               const pinsLeftString = pinsLefts[k];
@@ -210,7 +214,12 @@ export class ExcelService {
             : (row['Pattern'] as string)?.trim()
               ? [(row['Pattern'] as string).trim()]
               : [],
-          balls: (row['Balls'] as string)?.trim() ? (row['Balls'] as string).split(', ') : [],
+          balls: (row['Balls'] as string)?.trim()
+            ? (row['Balls'] as string)
+                .split(', ')
+                .map((ball) => this.formatBallDisplayName(ball))
+                .filter((ball) => !!ball)
+            : [],
           note: row['Notes'] as string,
         };
 
@@ -220,7 +229,16 @@ export class ExcelService {
 
         if (game.balls) {
           for (const ball of game.balls) {
-            ballMap.add(ball);
+            ballMap.add(this.formatBallDisplayName(ball));
+          }
+        }
+
+        for (const frame of game.frames) {
+          for (const throwData of frame.throws) {
+            if (throwData.ball?.name) {
+              const formattedName = this.formatBallDisplayName(formatThrowBall(throwData.ball));
+              if (formattedName) ballMap.add(formattedName);
+            }
           }
         }
 
@@ -232,8 +250,8 @@ export class ExcelService {
       }
 
       for (const ball of ballMap.values()) {
-        const ballToAdd = this.ballsStore.allBalls().find((b) => b.ball_name === ball);
-        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ball)) {
+        const ballToAdd = this.resolveBallReference(ball);
+        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
@@ -253,6 +271,7 @@ export class ExcelService {
         this.statsService.currentStats(),
       );
 
+      const ExcelJS = await this.loadExcelJs();
       const workbook = new ExcelJS.Workbook();
       const gameWorksheet = workbook.addWorksheet('Game History');
       const statsWorksheet = workbook.addWorksheet('Statistics');
@@ -308,8 +327,17 @@ export class ExcelService {
     }
   }
 
-  private async saveExcelFile(buffer: ArrayBuffer, fileName: string): Promise<void> {
+  /** @returns false only when the user dismissed the native share sheet without saving/sending the file anywhere. */
+  private async saveExcelFile(buffer: ArrayBuffer, fileName: string): Promise<boolean> {
     try {
+      if (isPlatform('desktop') || isPlatform('mobileweb') || isPlatform('pwa')) {
+        // Phones/tablets get the share sheet, desktop a save dialog; see saveFileFromWeb.
+        const result = await saveFileFromWeb(new Blob([buffer], { type: XLSX_MIME_TYPE }), fileName, {
+          preferShare: !isPlatform('desktop'),
+        });
+        return result !== 'cancelled';
+      }
+
       let binary = '';
       const bytes = new Uint8Array(buffer);
       const length = bytes.byteLength;
@@ -319,23 +347,32 @@ export class ExcelService {
       }
 
       const base64Data = btoa(binary);
-      const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64Data;
+      const dataUri = `data:${XLSX_MIME_TYPE};base64,` + base64Data;
 
-      if (isPlatform('desktop') || isPlatform('mobileweb') || isPlatform('pwa')) {
-        const anchor = document.createElement('a');
-        anchor.href = dataUri;
-        anchor.download = fileName;
+      await Filesystem.writeFile({
+        path: fileName,
+        data: dataUri,
+        directory: Directory.Documents,
+        recursive: true,
+      });
 
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-      } else {
-        await Filesystem.writeFile({
-          path: fileName,
-          data: dataUri,
-          directory: Directory.Documents,
-          recursive: true,
+      const fileUri = await Filesystem.getUri({
+        directory: Directory.Documents,
+        path: fileName,
+      });
+
+      try {
+        await Share.share({
+          title: fileName,
+          url: fileUri.uri,
+          dialogTitle: 'Save or Share Excel File',
         });
+        return true;
+      } catch (shareError) {
+        if (shareError instanceof Error && shareError.message === 'Share canceled') {
+          return false;
+        }
+        throw shareError;
       }
     } catch (error) {
       console.error('Error saving Excel file:', error);
@@ -347,13 +384,17 @@ export class ExcelService {
     const baseHeaders = ['Game', 'Date', ...Array.from({ length: 10 }, (_, i) => `Frame ${i + 1}`), 'Total Score'];
 
     const pinHeaders: string[] = [];
+    const throwBallHeaders: string[] = [];
     for (let i = 0; i < 10; i++) {
       const frameIndex = i + 1;
       pinHeaders.push(`Frame ${frameIndex} Throw 1`);
       pinHeaders.push(`Frame ${frameIndex} Throw 2`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 1`);
+      throwBallHeaders.push(`Frame ${frameIndex} Ball 2`);
 
       if (frameIndex === 10) {
         pinHeaders.push(`Frame ${frameIndex} Throw 3`);
+        throwBallHeaders.push(`Frame ${frameIndex} Ball 3`);
       }
     }
 
@@ -371,7 +412,7 @@ export class ExcelService {
       'isPinMode',
     ];
 
-    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders];
+    const headers = [...baseHeaders, ...finalStaticHeaders, ...pinHeaders, ...throwBallHeaders];
 
     return gameHistory.map((game) => {
       const frameValues = Array.from({ length: 10 }, (_, i) => {
@@ -389,24 +430,30 @@ export class ExcelService {
       });
 
       const pinData: string[] = [];
+      const throwBallData: string[] = [];
       for (let i = 0; i < 10; i++) {
         const frame = game.frames[i];
         const frameIndex = i + 1;
 
         const framePins: string[] = ['', '', ''];
+        const frameBalls: string[] = ['', '', ''];
 
         if (frame) {
           const pins = frame.throws.map((t: Throw) => t.pinsLeftStanding?.join(',') || '');
+          const balls = frame.throws.map((t: Throw) => formatThrowBall(t.ball) || '');
 
           const maxThrows = frameIndex === 10 ? 3 : 2;
           for (let k = 0; k < maxThrows; k++) {
             framePins[k] = pins[k] || '';
+            frameBalls[k] = balls[k] || '';
           }
         }
 
         pinData.push(framePins[0], framePins[1]);
+        throwBallData.push(frameBalls[0], frameBalls[1]);
         if (frameIndex === 10) {
           pinData.push(framePins[2]);
+          throwBallData.push(frameBalls[2]);
         }
       }
 
@@ -423,10 +470,13 @@ export class ExcelService {
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
         game.patterns?.join(', ') || '',
-        game.balls?.join(', ') || '',
+        getGameBalls(game)
+          .map((ball) => this.formatBallDisplayName(ball))
+          .join(', ') || '',
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,
+        ...throwBallData,
       ];
 
       return headers.reduce(
@@ -461,15 +511,18 @@ export class ExcelService {
       notes[`Frame ${frameIndex}`] = 'Throw values separated by " / ". Examples: "10", "9 / 1", "10 / 10 / 10" (10th frame).';
       notes[`Frame ${frameIndex} Throw 1`] = 'Pins left standing after throw 1, comma-separated (e.g. 7,10). Leave empty if none.';
       notes[`Frame ${frameIndex} Throw 2`] = 'Pins left standing after throw 2, comma-separated. Only relevant when isPinMode=true.';
+      notes[`Frame ${frameIndex} Ball 1`] = 'Optional. Ball name used for throw 1 of this frame.';
+      notes[`Frame ${frameIndex} Ball 2`] = 'Optional. Ball name used for throw 2 of this frame.';
       if (frameIndex === 10) {
         notes[`Frame ${frameIndex} Throw 3`] = 'Pins left standing after throw 3 in 10th frame (if present).';
+        notes[`Frame ${frameIndex} Ball 3`] = 'Optional. Ball name used for throw 3 in the 10th frame.';
       }
     }
 
     return notes;
   }
 
-  private addHeaderNotes(worksheet: ExcelJS.Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
+  private addHeaderNotes(worksheet: Worksheet, rowNumber: number, notesMap: Record<string, string>): void {
     const row = worksheet.getRow(rowNumber);
     row.eachCell((cell) => {
       const headerName = cell.value?.toString();
@@ -611,7 +664,7 @@ export class ExcelService {
     return { overall, spares, throwStats, strike, special, playFrequency, series, pinStats };
   }
 
-  private addBallStatsWorksheet(workbook: ExcelJS.Workbook, allBallStats: HighlightItemStats[]): void {
+  private addBallStatsWorksheet(workbook: Workbook, allBallStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Ball Stats');
     const headers = ['Ball', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
@@ -631,7 +684,7 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addPatternStatsWorksheet(workbook: ExcelJS.Workbook, allPatternStats: HighlightItemStats[]): void {
+  private addPatternStatsWorksheet(workbook: Workbook, allPatternStats: HighlightItemStats[]): void {
     const worksheet = workbook.addWorksheet('Pattern Stats');
     const headers = ['Pattern', 'Games', 'Avg', 'High', 'Low', 'Strike Rate %', 'Clean Games'];
 
@@ -651,7 +704,7 @@ export class ExcelService {
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  private addLeaveStatsWorksheet(workbook: ExcelJS.Workbook, allLeaves: LeaveStats[]): void {
+  private addLeaveStatsWorksheet(workbook: Workbook, allLeaves: LeaveStats[]): void {
     const leaveWorksheet = workbook.addWorksheet('Pin Leave Stats');
     const sharedCols = ['Occurrences', 'Pickups', 'Pickup %', 'Misses', 'Miss %'];
 
@@ -701,7 +754,7 @@ export class ExcelService {
     return result;
   }
 
-  private addTable(worksheet: ExcelJS.Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {
+  private addTable(worksheet: Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {
     worksheet.addTable({
       name,
       ref,
@@ -713,24 +766,11 @@ export class ExcelService {
     });
   }
 
-  private setColumnWidths(worksheet: ExcelJS.Worksheet, headers: string[], data: Record<string, ExcelCellValue>[], startIndex: number): void {
+  private setColumnWidths(worksheet: Worksheet, headers: string[], data: Record<string, ExcelCellValue>[], startIndex: number): void {
     headers.forEach((header, index) => {
       const maxContentLength = Math.max(header.length, ...data.map((row) => (row[header] ?? '').toString().length));
       worksheet.getColumn(startIndex + index).width = maxContentLength + 1;
     });
-  }
-
-  private async fileExists(path: string): Promise<boolean> {
-    try {
-      await Filesystem.stat({
-        path: path + '.xlsx',
-        directory: Directory.Documents,
-      });
-      return true;
-    } catch (error) {
-      console.error('File existence check error:', error);
-      return false;
-    }
   }
 
   private fileToBuffer(file: File): Promise<ArrayBuffer> {
@@ -745,6 +785,36 @@ export class ExcelService {
     });
   }
 
+  private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
+    const raw = rawBallValue?.trim();
+    return raw ? findBallInArsenal({ name: raw }, this.ballsStore.allBalls()) : undefined;
+  }
+
+  /**
+   * Rebuild a ThrowBall from an exported cell, keeping name and weight apart. Folding the weight
+   * into the name would key the imported throw as its own ball ("Rocket A.I. 15lbs" against the
+   * in-app "Rocket A.I.15"), splitting one ball's per-throw stats across two entries.
+   */
+  private parseThrowBall(rawBallValue: string): ThrowBall {
+    const raw = rawBallValue.trim();
+
+    const resolved = this.resolveBallReference(raw);
+    if (resolved) return { name: resolved.ball_name, weight: resolved.core_weight };
+
+    const withWeight = raw.match(/^(.*?)\s*(\d+(?:\.\d+)?)\s*lbs?$/i);
+    return withWeight ? { name: withWeight[1].trim(), weight: withWeight[2] } : { name: raw };
+  }
+
+  private formatBallDisplayName(rawBallValue: string | undefined): string {
+    const raw = rawBallValue?.trim();
+    if (!raw) return '';
+
+    const resolvedBall = this.resolveBallReference(raw);
+    if (!resolvedBall) return raw;
+
+    return `${resolvedBall.ball_name} ${resolvedBall.core_weight}lbs`;
+  }
+
   private createSampleGame(): Game {
     return {
       gameId: '1775331174465_1u39gi6',
@@ -753,48 +823,48 @@ export class ExcelService {
         {
           frameIndex: 1,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
-            { value: 1, throwIndex: 2, pinsLeftStanding: [] },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
           ],
         },
-        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
-        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
         {
           frameIndex: 4,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [5] },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [5], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 5,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [3] },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [3], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 6,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10] },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [2] },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [2], ball: { name: 'Rocket A.I.' } },
           ],
         },
         {
           frameIndex: 7,
           throws: [
-            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2] },
-            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2] },
+            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2], ball: { name: 'Rocket A.I.' } },
+            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2], ball: { name: 'Rocket A.I.' } },
           ],
         },
-        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
-        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [] }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
         {
           frameIndex: 10,
           throws: [
-            { value: 10, throwIndex: 1, pinsLeftStanding: [] },
-            { value: 10, throwIndex: 2, pinsLeftStanding: [] },
-            { value: 10, throwIndex: 3, pinsLeftStanding: [] },
+            { value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 10, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 10, throwIndex: 3, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
           ],
         },
       ],
@@ -809,5 +879,21 @@ export class ExcelService {
       patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
       balls: ['Rocket A.I.'],
     };
+  }
+
+  /**
+   * exceljs (with its jszip dependency) is ~900KB and was landing in the
+   * eagerly-loaded startup bundle, because CloudSyncService — constructed by an
+   * app initializer — injects this service. Import/export is a rare, explicit
+   * user action, so the library is fetched on first use instead and cached for
+   * subsequent calls.
+   */
+  private loadExcelJs(): Promise<typeof import('exceljs')> {
+    this.#excelJs ??= import('exceljs').then((module) => {
+      // exceljs is CommonJS, so the namespace may wrap the real exports in `default`.
+      const commonJsExport = (module as { default?: typeof import('exceljs') }).default;
+      return commonJsExport ?? module;
+    });
+    return this.#excelJs;
   }
 }

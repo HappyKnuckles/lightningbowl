@@ -1,5 +1,5 @@
-import { DatePipe, NgIf, NgTemplateOutlet } from '@angular/common';
-import { Component, OnInit, QueryList, ViewChild, ViewChildren, computed, inject, input, signal } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal, viewChild, viewChildren } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -39,7 +39,15 @@ import {
 } from 'ionicons/icons';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import {
+  ballValueMatches,
+  findBallInArsenal,
+  formatThrowBall,
+  getBallTracking,
+  getGameBallNames,
+  getThrowBallKey,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -94,11 +102,20 @@ interface SeriesRow {
 
 type DisplayRow = MonthRow | SingleRow | SeriesRow;
 
+interface GameBallVm {
+  names: string[];
+  text: string;
+  throwSummary: string;
+  throwTracked: boolean;
+  thumbnail: string | null;
+}
+
 @Component({
   selector: 'app-game-list',
   templateUrl: './game-list.component.html',
   styleUrls: ['./game-list.component.scss'],
   providers: [DatePipe, ModalController, GameEditService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonModal,
     IonBadge,
@@ -117,7 +134,6 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
     IonItemSliding,
     IonButton,
     IonIcon,
-    NgIf,
     NgTemplateOutlet,
     ReactiveFormsModule,
     FormsModule,
@@ -134,15 +150,15 @@ type DisplayRow = MonthRow | SingleRow | SeriesRow;
 })
 export class GameListComponent implements OnInit {
   // DOM
-  @ViewChild('modal', { static: false }) modal!: IonModal;
-  @ViewChild('accordionGroup') accordionGroup!: IonAccordionGroup;
-  @ViewChild(AccordionDelayedCloseDirective) delayedClose!: AccordionDelayedCloseDirective;
-  @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
+  accordionGroup = viewChild.required<IonAccordionGroup>('accordionGroup');
+  delayedClose = viewChild.required(AccordionDelayedCloseDirective);
+  gameComponents = viewChildren(GameComponent);
 
   // Inputs
   games = input.required<Game[]>();
   isLeaguePage = input<boolean>(false);
   batchSize = input<number>(100);
+  initialBatchSize = input<number>(25);
 
   // Services
   public editService = inject(GameEditService);
@@ -181,6 +197,30 @@ export class GameListComponent implements OnInit {
     }
 
     return games.slice(0, end);
+  });
+
+  /**
+   * Ball text, thumbnail and per-throw summary for every visible game.
+   */
+  ballVms = computed<Record<string, GameBallVm>>(() => {
+    this.ballEditVersion();
+    const arsenal = this.ballsStore.arsenal();
+
+    const vms: Record<string, GameBallVm> = {};
+    for (const game of this.showingGames()) {
+      const names = getGameBallNames(game, arsenal);
+      const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
+      const throwTracked = getBallTracking(game) === 'throw';
+
+      vms[game.gameId] = {
+        names,
+        text: names.length > 0 ? names.join(', ') : 'None',
+        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        throwTracked,
+        throwSummary: throwTracked ? throwBallSummary(game) : '',
+      };
+    }
+    return vms;
   });
 
   gameNumberMap = computed(() => {
@@ -265,6 +305,9 @@ export class GameListComponent implements OnInit {
     return rows;
   });
 
+  /** Bumped when an edit changes a game's balls in place, which no signal would otherwise see. */
+  private readonly ballEditVersion = signal(0);
+
   // Pagination state
   public loadedCount = signal(0);
   public presentingElement?: HTMLElement;
@@ -300,7 +343,7 @@ export class GameListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadedCount.set(this.batchSize());
+    this.loadedCount.set(this.initialBatchSize());
 
     this.presentingElement = document.querySelector('.ion-page')!;
   }
@@ -315,21 +358,21 @@ export class GameListComponent implements OnInit {
 
   // ACCORDION
   private isAccordionOpen(accordionId: string): boolean {
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     return Array.isArray(value) ? value.includes(accordionId) : value === accordionId;
   }
 
   private openAccordion(accordionId: string): void {
     if (this.isAccordionOpen(accordionId)) return;
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup.value = [...open, accordionId];
+    this.accordionGroup().value = [...open, accordionId];
   }
 
   private closeAccordion(accordionId: string): void {
-    const value = this.accordionGroup.value;
+    const value = this.accordionGroup().value;
     const open = Array.isArray(value) ? value : value ? [value] : [];
-    this.accordionGroup.value = open.filter((id) => id !== accordionId);
+    this.accordionGroup().value = open.filter((id) => id !== accordionId);
   }
 
   // NAVIGATION
@@ -394,7 +437,7 @@ export class GameListComponent implements OnInit {
 
   // SHARE
   async takeScreenshotAndShare(game: Game): Promise<void> {
-    this.delayedClose.markVisible(game.gameId);
+    this.delayedClose().markVisible(game.gameId);
 
     const accordion = document.getElementById(game.gameId);
     if (!accordion) {
@@ -410,14 +453,14 @@ export class GameListComponent implements OnInit {
       return;
     }
 
-    const previousValue = this.accordionGroup.value;
+    const previousValue = this.accordionGroup().value;
     if (!this.isAccordionOpen(game.gameId)) this.openAccordion(game.gameId);
 
     try {
       await this.shareService.shareGame(game, scoreTemplate);
     } finally {
-      this.accordionGroup.value = previousValue;
-      this.delayedClose.clear(game.gameId);
+      this.accordionGroup().value = previousValue;
+      this.delayedClose().clear(game.gameId);
     }
   }
 
@@ -427,7 +470,7 @@ export class GameListComponent implements OnInit {
       this.editAccordionWasOpen.set(game.gameId, this.isAccordionOpen(game.gameId));
       this.editService.startEdit(game);
       this.openAccordion(game.gameId);
-      this.delayedClose.markVisible(game.gameId);
+      this.delayedClose().markVisible(game.gameId);
     } else {
       this.cancelEdit(game);
     }
@@ -452,7 +495,7 @@ export class GameListComponent implements OnInit {
 
     if (!wasOpen) {
       this.closeAccordion(gameId);
-      this.delayedClose.clear(gameId);
+      this.delayedClose().clear(gameId);
     }
   }
 
@@ -461,13 +504,13 @@ export class GameListComponent implements OnInit {
     const result = this.editService.handleThrowInput(event, game);
 
     if (result === 'invalid') {
-      const grid = this.gameComponents.find((g) => g.game()?.gameId === game.gameId);
+      const grid = this.gameComponents().find((g) => g.game()?.gameId === game.gameId);
       grid?.handleInvalidInput(event.frameIndex, event.throwIndex);
       return;
     }
 
     if (result === 'recorded') {
-      const grid = this.gameComponents.find((g) => g.game()?.gameId === game.gameId);
+      const grid = this.gameComponents().find((g) => g.game()?.gameId === game.gameId);
       grid?.focusNextInput(event.frameIndex, event.throwIndex);
     }
   }
@@ -502,20 +545,32 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
-  onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
+  async onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-    this.onBallSelect(
-      selected.map((b) => b.ball_name),
+    const applied = await this.onBallSelect(
+      selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
       game,
       modal,
     );
-    this.saveBallToArsenal(selected);
+    if (applied) this.saveBallToArsenal(selected);
   }
 
-  onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): void {
+  async onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): Promise<boolean> {
     modal.dismiss();
+    if (!(await this.confirmReplaceThrowBalls(game))) return false;
+
+    this.editService.clearThrowBalls(game);
     game.balls = selectedBalls;
+    game.ballTracking = 'game';
+    this.ballEditVersion.update((v) => v + 1);
+    return true;
+  }
+
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, game: Game): void {
+    this.editService.setThrowBall(game, event.frameIndex, event.throwIndex, event.ball);
+    game.ballTracking = 'throw';
+    this.ballEditVersion.update((v) => v + 1);
   }
 
   updateSeries(game: Game, league?: string, patterns?: string[]): void {
@@ -577,17 +632,12 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  getSelectedBallsText(game: Game): string {
-    const balls = game.balls || [];
-    return balls.length > 0 ? balls.join(', ') : 'None';
-  }
-
   getBallIds(names: string[] | undefined): string[] {
     if (!names) return [];
 
     return this.ballsStore
       .allBalls()
-      .filter((ball) => names.includes(ball.ball_name))
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 
@@ -602,4 +652,42 @@ export class GameListComponent implements OnInit {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
   }
+
+  /**
+   * One selection for the whole game replaces the balls recorded per throw. Asks first when
+   * there are any, so they are never dropped silently.
+   */
+  private async confirmReplaceThrowBalls(game: Game): Promise<boolean> {
+    const throwCount = this.editService.countThrowBalls(game);
+    if (throwCount === 0) return true;
+
+    const alert = await this.alertController.create({
+      header: 'Use one ball selection for this game?',
+      message: `The balls picked for ${throwCount} ${throwCount === 1 ? 'throw' : 'throws'} will be removed.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Replace', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
+  }
+}
+
+/** "IQ Tour 15lbs · 34 throws" per ball, most used first. */
+function throwBallSummary(game: Game): string {
+  const counts = new Map<string, number>();
+  for (const frame of game.frames ?? []) {
+    for (const t of frame.throws ?? []) {
+      if (!t.ball?.name) continue;
+      const label = formatThrowBall(t.ball);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, throws]) => `${label} · ${throws} throws`)
+    .join('\n');
 }

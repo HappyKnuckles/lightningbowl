@@ -1,7 +1,6 @@
-import { NgFor, NgIf } from '@angular/common';
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, OnInit, QueryList, signal, untracked, ViewChild, ViewChildren } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, HostListener, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { InputCustomEvent, ModalController, SegmentCustomEvent } from '@ionic/angular';
+import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular';
 import {
   ActionSheetController,
   AlertController,
@@ -14,6 +13,7 @@ import {
   IonHeader,
   IonIcon,
   IonLabel,
+  IonMenuButton,
   IonModal,
   IonRow,
   IonSegment,
@@ -25,15 +25,14 @@ import {
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
-import { add, bowlingBall, bowlingBallOutline, cameraOutline, chevronDown, chevronUp, documentTextOutline, trophyOutline } from 'ionicons/icons';
+import { chevronDown, chevronUp } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Frame, Game, GameDraft, PinModeState } from 'src/app/core/models/game.model';
+import { Frame, Game, GameDraft, PinModeState, ThrowBall } from 'src/app/core/models/game.model';
 import { StatDefinition } from 'src/app/core/models/stat-definitions.model';
 import { LiveSeriesStats } from 'src/app/core/models/stats.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDraftService } from 'src/app/core/services/game-draft/game-draft.service';
-import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';
@@ -41,6 +40,8 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { SettingsStore } from 'src/app/core/stores/settings.store';
+import { clearThrowBalls, getThrowBallForPosition, hasThrowLevelBalls, setThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -54,9 +55,27 @@ import { parseInputValue } from 'src/app/core/utils/game-utils/score-input.utils
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { GameScoreToolbarComponent } from 'src/app/shared/components/game-score-toolbar/game-score-toolbar.component';
 import { GameComponent } from 'src/app/shared/components/game/game.component';
-import { ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
+import { PinInputComponent, ThrowConfirmedEvent } from 'src/app/shared/components/pin-input/pin-input.component';
 import { StatDisplayComponent } from 'src/app/shared/components/stat-display/stat-display.component';
 import { StatPinLeaveComponent } from 'src/app/shared/components/stat-pin-leave/stat-pin-leave.component';
+
+interface GameVm {
+  ballSelectorId: string;
+  canSpare: boolean;
+  canStrike: boolean;
+  canUndo: boolean;
+  currentFrameIndex: number;
+  currentThrowIndex: number;
+  game: Game;
+  inputLocked: boolean;
+  isGameComplete: boolean;
+  maxScore: number;
+  patternModalId: string;
+  pinsLeftStanding: number[];
+  segment: string;
+  selectedBall: ThrowBall | undefined;
+  showBallSelector: boolean;
+}
 
 const enum SeriesMode {
   Single = 'Single',
@@ -86,14 +105,14 @@ defineCustomElements(window);
     IonCol,
     IonModal,
     IonButtons,
+    IonMenuButton,
     IonSegmentButton,
     IonSegment,
     IonSegmentContent,
     IonSegmentView,
     IonLabel,
-    NgIf,
-    NgFor,
     GameComponent,
+    PinInputComponent,
     GameScoreToolbarComponent,
     StatDisplayComponent,
     StatPinLeaveComponent,
@@ -113,25 +132,23 @@ export class AddGamePage implements OnInit {
   readonly liveStatDefinitions: StatDefinition[] = LIVE_SERIES_STAT_DEFINTIONS;
 
   // UI State
+  segments = signal<string[]>(['Game 1']);
+  selectedSegment = signal('Game 1');
   selectedMode = signal<SeriesMode>(SeriesMode.Single);
   sheetOpen = false;
   isAlertOpen = false;
-  isModalOpen = false;
   is300 = false;
-  selectedSegment = 'Game 1';
-  segments: string[] = ['Game 1'];
   showScoreToolbar = false;
   toolbarOffset = 0;
   toolbarDisabledState = { strikeDisabled: true, spareDisabled: true };
 
   // Game Data State
-  gameData!: Game;
   games = signal(Array.from({ length: 19 }, () => createEmptyGame()));
   totalScores = signal(new Array(19).fill(0));
   maxScores = signal(new Array(19).fill(300));
 
   // Pin input mode state
-  isPinInputMode = true;
+  isPinInputMode = signal(true);
 
   pinModeState = signal<PinModeState[]>(
     Array.from({ length: 19 }, () => ({
@@ -152,13 +169,62 @@ export class AddGamePage implements OnInit {
 
   // View Children & DOM References
   @ViewChildren(GameComponent) gameComponents!: QueryList<GameComponent>;
-  @ViewChild('modalGrid', { static: false }) modalGrid!: GameComponent;
   presentingElement!: HTMLElement | null;
 
   // Internal Logic State
   private isStorageReady = false;
   private seriesId = '';
   private activeGameIndex = 0;
+
+  /** Index of the game the segment view is currently showing. */
+  readonly activeSegmentIndex = computed(() => {
+    const index = this.segments().indexOf(this.selectedSegment());
+    return index === -1 ? 0 : index;
+  });
+
+  /**
+   * Everything one game's card and the deck read.
+   */
+  readonly gameVms = computed<GameVm[]>(() =>
+    this.segments().map((segment, index) => ({
+      segment,
+      game: this.games()[index],
+      maxScore: this.maxScores()[index],
+      patternModalId: index.toString(),
+      ballSelectorId: 'modal-ball-selector' + index,
+      pinsLeftStanding: this.getPinsLeftStanding(index),
+      currentFrameIndex: this.getCurrentFrameIndex(index),
+      currentThrowIndex: this.getCurrentThrowIndex(index),
+      canStrike: this.canRecordStrike(index),
+      canSpare: this.canRecordSpare(index),
+      canUndo: this.canUndoForPinMode(index),
+      isGameComplete: this.isGameComplete(index),
+      inputLocked: this.isPinPadLocked(index),
+      showBallSelector: this.isThrowTracking(index),
+      selectedBall: this.getCurrentThrowBall(index),
+    })),
+  );
+
+  /** The game the deck's sheet is bowling, i.e. the one the segment view shows. */
+  readonly pinSheetVm = computed(() => this.gameVms()[this.activeSegmentIndex()]);
+
+  /**
+   * Mobile installed presents the deck as a bottom sheet over the score grid.
+   */
+  readonly sheetPinInput = this.platform.is('mobile');
+
+  /**
+   * Whether the deck's sheet is up. Raised by tapping a score cell, and put away
+   * once the game is complete or the user taps outside it.
+   */
+  readonly pinSheetOpen = signal(false);
+
+  /**
+   * Whether "Game Details" is open, shared by every game in the series. The games sit
+   * side by side in one segment view, so if only one game had it open, that game would
+   * stretch the others and push the content below them down (#687).
+   */
+  readonly detailsOpen = signal(false);
 
   constructor(
     private actionSheetCtrl: ActionSheetController,
@@ -172,10 +238,14 @@ export class AddGamePage implements OnInit {
     private gamesStore: GamesStore,
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
-    private gameImageImport: GameImageImportService,
     private gameStatsService: GameStatsService,
+    public settingsStore: SettingsStore,
+    private platform: Platform,
   ) {
-    addIcons({ cameraOutline, bowlingBallOutline, bowlingBall, chevronDown, chevronUp, trophyOutline, documentTextOutline, add });
+    addIcons({
+      chevronDown,
+      chevronUp,
+    });
     effect(() => {
       const games = this.games();
       const pinModeState = this.pinModeState();
@@ -183,9 +253,9 @@ export class AddGamePage implements OnInit {
       const maxScores = this.maxScores();
 
       const selectedMode = untracked(() => this.selectedMode());
-      const isPinInputMode = untracked(() => this.isPinInputMode);
-      const gameIndex = untracked(() => this.selectedSegment);
-      const segments = untracked(() => this.segments);
+      const isPinInputMode = untracked(() => this.isPinInputMode());
+      const gameIndex = untracked(() => this.selectedSegment());
+      const segments = untracked(() => this.segments());
 
       if (!this.isStorageReady) return;
 
@@ -206,6 +276,7 @@ export class AddGamePage implements OnInit {
     this.loadPinInputMode();
     await this.checkAndRestoreDraft();
     this.presentingElement = document.querySelector('.ion-page');
+    this.focusCurrentThrowCell();
   }
 
   // PIN INPUT MODE
@@ -251,6 +322,50 @@ export class AddGamePage implements OnInit {
     return this.pinModeState()[gameIndex].currentThrowIndex;
   }
 
+  /**
+   * The sheet's pad locks on a finished game's very last throw, where a stray confirm would
+   * overwrite the score just bowled. Mirrors `GameComponent.isPinPadLocked`, which the inline
+   * deck uses; tapping an earlier cell moves the cursor off that spot and reopens the pad.
+   */
+  isPinPadLocked(gameIndex: number): boolean {
+    if (!this.isGameComplete(gameIndex)) return false;
+
+    const frames = this.games()[gameIndex]?.frames ?? [];
+    for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
+      const throwCount = frames[frameIndex]?.throws?.length ?? 0;
+      if (throwCount > 0) {
+        return this.getCurrentFrameIndex(gameIndex) === frameIndex && this.getCurrentThrowIndex(gameIndex) === throwCount - 1;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Per-throw picking needs the pin pad, so the sheet only offers it in pin input mode.
+   * Mirrors `GameComponent.ballTracking`: a game carrying ball data keeps its own mode, an
+   * untouched one follows the user's default — `getBallTracking` would call that one 'game'
+   * and silently drop the picker from a fresh game's sheet.
+   */
+  isThrowTracking(gameIndex: number): boolean {
+    const game = this.games()[gameIndex];
+    if (!game || !this.isPinInputMode()) return false;
+    if (game.ballTracking) return game.ballTracking === 'throw';
+    if (hasThrowLevelBalls(game.frames ?? [])) return true;
+    if ((game.balls ?? []).length > 0) return false;
+    return this.settingsStore.ballTracking() === 'throw';
+  }
+
+  /** Ball for the throw the sheet's pad is currently on. */
+  getCurrentThrowBall(gameIndex: number): ThrowBall | undefined {
+    const frames = this.games()[gameIndex]?.frames ?? [];
+    return getThrowBallForPosition(frames, this.getCurrentFrameIndex(gameIndex), this.getCurrentThrowIndex(gameIndex));
+  }
+
+  /** Ball picked on the sheet's pad, applied to the throw the pad is currently on. */
+  onSheetBallSelected(ball: ThrowBall | undefined, gameIndex: number): void {
+    this.onThrowBallChange({ frameIndex: this.getCurrentFrameIndex(gameIndex), throwIndex: this.getCurrentThrowIndex(gameIndex), ball }, gameIndex);
+  }
+
   onPinThrowConfirmed(event: ThrowConfirmedEvent, gameIndex: number): void {
     const state = this.pinModeState()[gameIndex];
     const game = this.games()[gameIndex];
@@ -267,7 +382,22 @@ export class AddGamePage implements OnInit {
       return newStates;
     });
 
-    this.updateGameState(result.updatedFrames, gameIndex, false);
+    this.updateGameState(result.updatedFrames, gameIndex);
+
+    if (this.isGameComplete(gameIndex)) {
+      this.pinSheetOpen.set(false);
+    }
+  }
+
+  @HostListener('click', ['$event'])
+  onPageTap(event: MouseEvent): void {
+    if (!this.pinSheetOpen()) return;
+
+    const target = event.target as HTMLElement;
+
+    if (target.closest('app-pin-input') || target.closest('.score-cell')) return;
+
+    this.pinSheetOpen.set(false);
   }
 
   handlePinUndoRequested(gameIndex: number): void {
@@ -288,11 +418,11 @@ export class AddGamePage implements OnInit {
       return newStates;
     });
 
-    this.updateGameState(result.updatedFrames, gameIndex, false);
+    this.updateGameState(result.updatedFrames, gameIndex);
   }
 
   onScoreCellClick(event: { frameIndex: number; throwIndex: number }, gameIndex: number): void {
-    if (!this.isPinInputMode) return;
+    if (!this.isPinInputMode()) return;
 
     const { frameIndex, throwIndex } = event;
     const game = this.games()[gameIndex];
@@ -310,99 +440,97 @@ export class AddGamePage implements OnInit {
         };
         return newStates;
       });
+      this.activeGameIndex = gameIndex;
+      this.pinSheetOpen.set(true);
     }
   }
 
   // GAME STATE UPDATE HANDLERS
-  onGameChange(game: Game, index = 0, isModal = false): void {
-    if (isModal) {
-      this.gameData = { ...game };
-    } else {
-      this.games.update((games) => games.map((g, i) => (i === index ? { ...game } : g)));
-    }
+  onGameChange(game: Game, index = 0): void {
+    this.games.update((games) => games.map((g, i) => (i === index ? { ...game } : g)));
   }
 
-  updateSingleGameProperty<K extends keyof Game>(key: K, value: Game[K], index: number, isModal: boolean): void {
-    if (isModal) {
-      this.gameData = { ...this.gameData, [key]: value };
-    } else {
-      this.games.update((games) => games.map((g, i) => (i === index ? { ...g, [key]: value } : g)));
-    }
+  updateSingleGameProperty<K extends keyof Game>(key: K, value: Game[K], index: number): void {
+    this.games.update((games) => games.map((g, i) => (i === index ? { ...g, [key]: value } : g)));
   }
 
-  updateSeriesProperty<K extends keyof Game>(key: K, value: Game[K], isModal: boolean): void {
+  updateSeriesProperty<K extends keyof Game>(key: K, value: Game[K]): void {
     const league = key === 'league' ? (value as Game['league']) : undefined;
     const isPractice = league === '' || league === 'New';
+    const trackIndexes = this.getActiveTrackIndexes();
 
-    if (isModal) {
-      this.gameData = { ...this.gameData, [key]: value };
+    this.games.update((games) =>
+      games.map((g, i) => {
+        if (trackIndexes.includes(i)) {
+          const updates: Partial<Game> = { [key]: value };
 
-      if (key === 'league') {
-        this.gameData.isPractice = isPractice;
-        if (this.modalGrid?.checkbox) {
-          this.modalGrid.checkbox.checked = isPractice;
-          this.modalGrid.checkbox.disabled = !isPractice;
+          if (key === 'league') {
+            updates.isPractice = isPractice;
+          }
+          if (key === 'patterns' && Array.isArray(value) && value.length > 2) {
+            updates.patterns = value.slice(-2) as Game['patterns'];
+          }
+          return { ...g, ...updates };
         }
-      }
-    } else {
-      const trackIndexes = this.getActiveTrackIndexes();
+        return g;
+      }),
+    );
 
-      this.games.update((games) =>
-        games.map((g, i) => {
-          if (trackIndexes.includes(i)) {
-            const updates: Partial<Game> = { [key]: value };
-
-            if (key === 'league') {
-              updates.isPractice = isPractice;
-            }
-            if (key === 'patterns' && Array.isArray(value) && value.length > 2) {
-              updates.patterns = value.slice(-2) as Game['patterns'];
-            }
-            return { ...g, ...updates };
-          }
-          return g;
-        }),
-      );
-
-      if (key === 'league') {
-        const isPractice = value === '' || value === 'New';
-        this.gameComponents.forEach((game, i) => {
-          if (trackIndexes.includes(i)) {
-            game.leagueSelector.selectedLeague.set(league as string);
-            game.checkbox.checked = isPractice;
-            game.checkbox.disabled = !isPractice;
-          }
-        });
-      }
+    if (key === 'league') {
+      this.gameComponents.forEach((game, i) => {
+        if (trackIndexes.includes(i)) {
+          game.leagueSelector.selectedLeague.set(league as string);
+          game.checkbox.checked = isPractice;
+          game.checkbox.disabled = !isPractice;
+        }
+      });
     }
   }
 
   // Wrapper methods for Template Binding
-  onNoteChange(note: string, index = 0, isModal = false) {
-    this.updateSingleGameProperty('note', note, index, isModal);
+  onNoteChange(note: string, index = 0) {
+    this.updateSingleGameProperty('note', note, index);
   }
-  onBallsChange(balls: string[], index = 0, isModal = false) {
-    this.updateSingleGameProperty('balls', balls, index, isModal);
+  onBallsChange(balls: string[], index = 0) {
+    this.games.update((games) =>
+      games.map((g, i) => {
+        if (i !== index) return g;
+        // One selection for the game replaces any per-throw balls; the game component confirmed it.
+        const frames = cloneFrames(g.frames);
+        clearThrowBalls(frames);
+        return { ...g, frames, balls, ballTracking: 'game' as const };
+      }),
+    );
   }
-  onIsPracticeChange(isPractice: boolean, index = 0, isModal = false) {
-    this.updateSingleGameProperty('isPractice', isPractice, index, isModal);
+  onThrowBallChange(event: { frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }, index = 0) {
+    const { frameIndex, throwIndex, ball } = event;
+    this.games.update((games) =>
+      games.map((g, i) => {
+        if (i !== index) return g;
+        const frames = cloneFrames(g.frames);
+        setThrowBall(frames, frameIndex, throwIndex, ball);
+        return { ...g, frames, ballTracking: 'throw' as const };
+      }),
+    );
   }
-  onLeagueChange(league: string, isModal = false) {
-    this.updateSeriesProperty('league', league, isModal);
+  onIsPracticeChange(isPractice: boolean, index = 0) {
+    this.updateSingleGameProperty('isPractice', isPractice, index);
   }
-  onPatternChange(patterns: string[], isModal = false) {
-    this.updateSeriesProperty('patterns', patterns, isModal);
+  onLeagueChange(league: string) {
+    this.updateSeriesProperty('league', league);
+  }
+  onPatternChange(patterns: string[]) {
+    this.updateSeriesProperty('patterns', patterns);
   }
 
   // GRID MODE INPUT & SCORING LOGIC
-  handleThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, index: number, isModal = false): void {
+  handleThrowInput(event: { frameIndex: number; throwIndex: number; value: string }, index: number): void {
     const { frameIndex, throwIndex, value } = event;
-    const currentGame = isModal ? this.gameData : this.games()[index];
-    const frames = cloneFrames(currentGame.frames);
+    const frames = cloneFrames(this.games()[index].frames);
 
     if (value.length === 0) {
       removeThrow(frames, frameIndex, throwIndex);
-      this.updateGameState(frames, index, isModal);
+      this.updateGameState(frames, index);
       return;
     }
 
@@ -411,27 +539,25 @@ export class AddGamePage implements OnInit {
     const isValidScore = isValidFrameScore(parsedValue, frameIndex, throwIndex, frames);
 
     if (!isValidNumber || !isValidScore) {
-      this.handleInvalidInputUI(index, frameIndex, throwIndex, isModal);
+      this.handleInvalidInputUI(index, frameIndex, throwIndex);
       return;
     }
 
     recordThrow(frames, frameIndex, throwIndex, parsedValue);
-    this.updateGameState(frames, index, isModal);
-    this.focusNextInputUI(index, frameIndex, throwIndex, isModal);
-  }
-
-  updateFrameScore(event: InputCustomEvent, index: number): void {
-    this.gameData.frameScores[index] = parseInt(event.detail.value!, 10);
+    this.updateGameState(frames, index);
+    this.focusNextInputUI(index, frameIndex, throwIndex);
   }
 
   // UI INTERACTION
   onSegmentChange(event: SegmentCustomEvent): void {
-    this.selectedSegment = event.detail.value as string;
+    this.selectedSegment.set(event.detail.value as string);
+    this.pinSheetOpen.set(false);
   }
 
   togglePinInputMode(): void {
-    this.isPinInputMode = !this.isPinInputMode;
-    localStorage.setItem('pinInputMode', String(this.isPinInputMode));
+    this.isPinInputMode.update((mode) => !mode);
+    localStorage.setItem('pinInputMode', String(this.isPinInputMode()));
+    this.focusCurrentThrowCell();
   }
 
   onInputFocused(event: { frameIndex: number; throwIndex: number }, index: number): void {
@@ -494,15 +620,6 @@ export class AddGamePage implements OnInit {
     await actionSheet.present();
   }
 
-  // IMAGE IMPORT
-  async handleImageUpload(): Promise<void> {
-    const game = await this.gameImageImport.captureAndParseGame();
-    if (game) {
-      this.gameData = game;
-      this.isModalOpen = true;
-    }
-  }
-
   // SAVE & RESET LOGIC
   isGameValid(game: Game): boolean {
     return isGameValid(game);
@@ -532,11 +649,6 @@ export class AddGamePage implements OnInit {
       this.gameDraftService.clear();
     }
     this.toastService.showToast(TOAST_MESSAGES.gameResetSuccess, 'refresh-outline');
-  }
-
-  async confirm(modal: IonModal): Promise<void> {
-    const success = await this.processAndSaveGames([this.gameData]);
-    if (success) modal.dismiss();
   }
 
   async calculateScore(): Promise<void> {
@@ -586,7 +698,7 @@ export class AddGamePage implements OnInit {
         }
         game.date = baseDate + i;
         // Apply isPinMode to the game before saving
-        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode };
+        const gameWithPinMode: Game = { ...game, isPinMode: this.isPinInputMode() };
         gamesToPersist.push(this.transformGameService.transformGameData(gameWithPinMode, seriesConfig));
       }
 
@@ -617,31 +729,46 @@ export class AddGamePage implements OnInit {
   }
 
   // PRIVATE HELPERS - GAME STATE
-  private loadPinInputMode(): void {
-    const pinInputMode = localStorage.getItem('pinInputMode');
-    this.isPinInputMode = pinInputMode === null ? true : pinInputMode === 'true';
+  /**
+   * Raise the deck on the throw that's up next, without waiting for a score cell
+   * tap — the highlighted cell is what tells pin mode apart from the classic
+   * grid at a glance.
+   */
+  private focusCurrentThrowCell(): void {
+    if (!this.isPinInputMode() || !this.sheetPinInput) {
+      this.pinSheetOpen.set(false);
+      return;
+    }
+
+    const index = this.activeSegmentIndex();
+    if (this.isGameComplete(index)) return;
+
+    this.activeGameIndex = index;
+
+    setTimeout(() => this.pinSheetOpen.set(true));
   }
 
-  private updateGameState(frames: Frame[], index: number, isModal: boolean): void {
+  private loadPinInputMode(): void {
+    const pinInputMode = localStorage.getItem('pinInputMode');
+    this.isPinInputMode.set(pinInputMode === null ? true : pinInputMode === 'true');
+  }
+
+  private updateGameState(frames: Frame[], index: number): void {
     const scoreResult = this.gameScoreCalculatorService.calculateScoreFromFrames(frames);
     const maxScore = this.gameScoreCalculatorService.calculateMaxScoreFromFrames(frames, scoreResult.totalScore);
     const updatedGameData = { frames, frameScores: scoreResult.frameScores, totalScore: scoreResult.totalScore };
 
-    if (isModal) {
-      this.gameData = { ...this.gameData, ...updatedGameData };
-    } else {
-      this.games.update((games) => games.map((g, i) => (i === index ? { ...g, ...updatedGameData } : g)));
-      this.totalScores.update((scores) => {
-        const s = [...scores];
-        s[index] = scoreResult.totalScore;
-        return s;
-      });
-      this.maxScores.update((scores) => {
-        const s = [...scores];
-        s[index] = maxScore;
-        return s;
-      });
-    }
+    this.games.update((games) => games.map((g, i) => (i === index ? { ...g, ...updatedGameData } : g)));
+    this.totalScores.update((scores) => {
+      const s = [...scores];
+      s[index] = scoreResult.totalScore;
+      return s;
+    });
+    this.maxScores.update((scores) => {
+      const s = [...scores];
+      s[index] = maxScore;
+      return s;
+    });
   }
 
   private initializeGames(): void {
@@ -700,12 +827,12 @@ export class AddGamePage implements OnInit {
 
   private updateSegments(): void {
     const activeIndexes = this.getActiveTrackIndexes();
-    const oldSelectedSegment = this.selectedSegment;
-    this.segments = activeIndexes.map((i) => `Game ${i + 1}`);
+    const oldSelectedSegment = this.selectedSegment();
+    this.segments.set(activeIndexes.map((i) => `Game ${i + 1}`));
 
     // Reset to Game 1 if current segment is beyond the new series range
-    if (!this.segments.includes(oldSelectedSegment)) {
-      this.selectedSegment = 'Game 1';
+    if (!this.segments().includes(oldSelectedSegment)) {
+      this.selectedSegment.set('Game 1');
     }
   }
 
@@ -729,14 +856,14 @@ export class AddGamePage implements OnInit {
   }
 
   // PRIVATE HELPERS - VALIDATION
-  private handleInvalidInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
+  private handleInvalidInputUI(index: number, frameIndex: number, throwIndex: number): void {
     this.hapticService.vibrate(ImpactStyle.Heavy);
-    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
+    const grid = this.gameComponents.toArray()[index];
     if (grid) grid.handleInvalidInput(frameIndex, throwIndex);
   }
 
-  private focusNextInputUI(index: number, frameIndex: number, throwIndex: number, isModal: boolean): void {
-    const grid = isModal ? this.modalGrid : this.gameComponents.toArray()[index];
+  private focusNextInputUI(index: number, frameIndex: number, throwIndex: number): void {
+    const grid = this.gameComponents.toArray()[index];
     if (grid) grid.focusNextInput(frameIndex, throwIndex);
   }
 
@@ -781,20 +908,21 @@ export class AddGamePage implements OnInit {
       ],
     });
     await alert.present();
+    await alert.onDidDismiss();
   }
 
   private restoreDraft(draft: GameDraft): void {
     this.isStorageReady = true;
 
     this.selectedMode.set(draft.selectedMode as SeriesMode);
-    this.isPinInputMode = draft.isPinInputMode;
+    this.isPinInputMode.set(draft.isPinInputMode);
     this.updateSegments();
 
     this.games.set(draft.games);
     this.totalScores.set(draft.totalScores);
     this.maxScores.set(draft.maxScores);
     this.pinModeState.set(draft.pinModeState);
-    this.selectedSegment = draft.gameIndex;
+    this.selectedSegment.set(draft.gameIndex);
 
     setTimeout(() => {
       this.propagateMetadataToSeries();

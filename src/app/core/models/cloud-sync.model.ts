@@ -3,6 +3,7 @@ export interface CloudSyncSettings {
   provider: CloudProvider;
   frequency: SyncFrequency;
   lastSyncDate?: number;
+  lastSyncProvider?: CloudProvider; // which provider lastSyncDate belongs to
   nextSyncDate?: number;
   connectedProvider?: CloudProvider; // which provider is connected via backend
   folderPath?: string; // User-selectable folder path

@@ -58,7 +58,7 @@ export const REGISTRY: ShotDefinition[] = [
     name: 'series',
     route: R.add,
     description: '3-game series mode',
-    prepare: ({ page }) => new AddGamePage(page).selectMode('3 Series'),
+    prepare: ({ page }) => new AddGamePage(page).selectMode('3-Series'),
   },
   {
     id: 'games.mode-select',

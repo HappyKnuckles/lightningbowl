@@ -3,14 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LeagueSelectorComponent } from './league-selector.component';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { AppFacade } from 'src/app/core/stores/app.facade';
+import { vi } from 'vitest';
 
 const mockLeaguesStore = {
-  leagues: jasmine.createSpy('leagues').and.returnValue([]),
-  addLeague: jasmine.createSpy('addLeague').and.returnValue(Promise.resolve()),
+  leagues: vi.fn().mockReturnValue([]),
+  addLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 const mockAppFacade = {
-  editLeague: jasmine.createSpy('editLeague').and.returnValue(Promise.resolve()),
+  editLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
 describe('LeagueSelectorComponent', () => {

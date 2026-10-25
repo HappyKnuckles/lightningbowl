@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { IonSearchbar } from '@ionic/angular/standalone';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
 import { SearchHistoryDirective } from './search-history.directive';
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 @Component({
   template: `<ion-searchbar appSearchHistory historyKey="balls" (searchCommitted)="committed.push($event)"></ion-searchbar>`,
@@ -18,13 +19,13 @@ describe('SearchHistoryDirective', () => {
   let host: HostComponent;
   let searchbar: DebugElement;
   let directive: SearchHistoryDirective;
-  let searchHistoryService: jasmine.SpyObj<SearchHistoryService>;
+  let searchHistoryService: SpyObj<SearchHistoryService>;
 
   const commit = (value: string | undefined): void => searchbar.triggerEventHandler('ionChange', { detail: { value } });
 
   beforeEach(async () => {
-    searchHistoryService = jasmine.createSpyObj('SearchHistoryService', ['history', 'addSearch', 'removeSearch']);
-    searchHistoryService.addSearch.and.resolveTo();
+    searchHistoryService = createSpyObj(['history', 'addSearch', 'removeSearch']);
+    searchHistoryService.addSearch.mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [HostComponent],
@@ -39,13 +40,13 @@ describe('SearchHistoryDirective', () => {
   });
 
   it('tracks searchbar focus', () => {
-    expect(directive.focused()).toBeFalse();
+    expect(directive.focused()).toBe(false);
 
-    searchbar.triggerEventHandler('ionFocus');
-    expect(directive.focused()).toBeTrue();
+    searchbar.triggerEventHandler('ionFocus', { target: searchbar.nativeElement });
+    expect(directive.focused()).toBe(true);
 
-    searchbar.triggerEventHandler('ionBlur');
-    expect(directive.focused()).toBeFalse();
+    searchbar.triggerEventHandler('ionBlur', { target: searchbar.nativeElement });
+    expect(directive.focused()).toBe(false);
   });
 
   it('records a committed search trimmed and re-emits it', () => {
@@ -80,7 +81,7 @@ describe('SearchHistoryDirective', () => {
   it('clears a pending suppression when the searchbar is refocused', () => {
     directive.recordSelection('zen');
 
-    searchbar.triggerEventHandler('ionFocus');
+    searchbar.triggerEventHandler('ionFocus', { target: searchbar.nativeElement });
     commit('phaze');
 
     expect(host.committed).toEqual(['phaze']);

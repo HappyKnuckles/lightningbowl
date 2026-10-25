@@ -1,9 +1,12 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ModalController } from '@ionic/angular';
 import { TimeRange } from 'src/app/core/models/filter.model';
-import { BehaviorSubject } from 'rxjs';
 import { GameFilterComponent } from './game-filter.component';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
+import { GamesStore } from 'src/app/core/stores/games.store';
+import { makeGame } from 'src/testing/fixtures';
+import { vi } from 'vitest';
 
 const mockFilters = {
   excludePractice: false,
@@ -17,27 +20,41 @@ const mockFilters = {
   endDate: '',
 };
 
+// GameFilterService exposes `filters` as a writable signal, and the component
+// calls `.update()` on it, so the mock has to be a real signal.
 const FilterServiceMock = {
-  filterGames: jasmine.createSpy('filterGames').and.returnValue([]),
-  // Mock filters$ as a BehaviorSubject to allow subscriptions
-  filters$: new BehaviorSubject(mockFilters),
+  filterGames: vi.fn().mockReturnValue([]),
+  filters: signal(mockFilters),
+  filteredGames: signal([]),
+  defaultFilters: mockFilters,
+  activeFilterCount: vi.fn().mockReturnValue(0),
+  resetFilters: vi.fn(),
+  saveFilters: vi.fn(),
+};
+
+// ngOnInit indexes games()[length - 1] without a guard, so the store must be non-empty.
+const GamesStoreMock = {
+  games: vi
+    .fn()
+    .mockReturnValue([makeGame({ gameId: 'game-1', date: Date.UTC(2026, 0, 2) }), makeGame({ gameId: 'game-2', date: Date.UTC(2026, 0, 1) })]),
 };
 
 describe('GameFilterComponent', () => {
   let component: GameFilterComponent;
   let fixture: ComponentFixture<GameFilterComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
       imports: [GameFilterComponent], // Corrected here
       providers: [
         {
           provide: ModalController,
           useValue: {
-            create: jasmine.createSpy('create').and.returnValue(Promise.resolve({ present: jasmine.createSpy('present') })),
+            create: vi.fn().mockReturnValue(Promise.resolve({ present: vi.fn() })),
           },
         },
-        { provide: GameFilterService, useValue: FilterServiceMock }, // Mocked FilterService with filters$
+        { provide: GameFilterService, useValue: FilterServiceMock },
+        { provide: GamesStore, useValue: GamesStoreMock },
       ],
     }).compileComponents();
 
@@ -46,11 +63,7 @@ describe('GameFilterComponent', () => {
 
     component.filteredGames = [];
     fixture.detectChanges();
-
-    // Ensure filters are initialized by triggering the subscription manually
-    FilterServiceMock.filters$.next(mockFilters);
-    fixture.detectChanges();
-  }));
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();

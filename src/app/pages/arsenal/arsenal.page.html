@@ -2,6 +2,9 @@
   <ion-toolbar>
     <ion-title>Arsenal</ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="openFitModal()" aria-label="Ball fit">
+        <ion-icon slot="icon-only" name="hand-left-outline"></ion-icon>
+      </ion-button>
       <ion-button class="action-sheet" id="addBall">
         <ion-icon slot="icon-only" name="add"></ion-icon>
       </ion-button>
@@ -22,6 +25,7 @@
       <ion-segment [(ngModel)]="selectedSegment">
         <ion-segment-button value="arsenal" contentId="arsenal">Arsenal</ion-segment-button>
         <ion-segment-button value="compare" contentId="compare">Compare Chart</ion-segment-button>
+        <ion-segment-button value="stats" contentId="stats">Stats</ion-segment-button>
       </ion-segment>
     </ion-toolbar>
   }
@@ -33,41 +37,49 @@
       @if (ballsStore.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
-              <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
-                <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
-                  <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
-                </ion-item-option>
-              </ion-item-options>
-
-              <ion-item button [id]="ball.ball_id + ball.core_weight">
-                <ion-reorder slot="start">
-                  <ion-thumbnail>
-                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
-                  </ion-thumbnail>
-                </ion-reorder>
-
-                <ion-label>
-                  <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
-                  <h1>{{ ball.ball_name }}</h1>
-                  <div class="ball-info">
-                    <ion-chip (click)="$event.stopPropagation()">
-                      <ion-select
-                        #weightSelect
-                        [value]="ball.core_weight"
-                        style="min-height: 0"
-                        [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
-                        (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
-                        interface="popover">
-                        <ion-select-option *ngFor="let weight of availableWeights" [value]="weight">{{ weight }}lbs</ion-select-option>
-                      </ion-select>
-                    </ion-chip>
-                    <ion-chip>{{ ball.core_type }}</ion-chip>
-                    <ion-chip>{{ ball.coverstock_type }}</ion-chip>
-                  </div>
-                </ion-label>
-              </ion-item>
-            </ion-item-sliding>
+            @for (ball of ballsStore.arsenal(); track ball) {
+              <ion-item-sliding #slidingItem class="sliding">
+                <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
+                  <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
+                    <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+                  </ion-item-option>
+                </ion-item-options>
+                <ion-item button (click)="openBallDetail(ball)">
+                  <ion-reorder slot="start">
+                    <ion-thumbnail>
+                      <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                    </ion-thumbnail>
+                  </ion-reorder>
+                  <ion-label>
+                    <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
+                    <h1>{{ ball.ball_name }}</h1>
+                    <div class="ball-info">
+                      <ion-chip (click)="$event.stopPropagation()">
+                        <ion-select
+                          #weightSelect
+                          [value]="ball.core_weight"
+                          style="min-height: 0"
+                          [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
+                          (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
+                          interface="popover">
+                          @for (weight of availableWeights; track weight) {
+                            <ion-select-option [value]="weight">{{ weight }}lbs</ion-select-option>
+                          }
+                        </ion-select>
+                      </ion-chip>
+                      <ion-chip>{{ ball.core_type }}</ion-chip>
+                      <ion-chip>{{ ball.coverstock_type }}</ion-chip>
+                      @if (ball.drilling?.layout | layout; as layoutText) {
+                        <ion-chip>{{ layoutText }}</ion-chip>
+                      }
+                      @if (ball.drilling | holeSizes: isTwoHanded(); as holesText) {
+                        <ion-chip>{{ holesText }}</ion-chip>
+                      }
+                    </div>
+                  </ion-label>
+                </ion-item>
+              </ion-item-sliding>
+            }
           </ion-reorder-group>
         </ion-list>
       }
@@ -80,129 +92,300 @@
         </div>
       }
     </ion-segment-content>
+
+    <ion-segment-content id="stats">
+      <app-ball-stats [ballStats]="ballStats()" [title]="'How each ball performs'" [scopeLabel]="'All time'"></app-ball-stats>
+    </ion-segment-content>
   </ion-segment-view>
 
-  <ng-container *ngIf="ballsStore.arsenal().length <= 0">
+  @if (ballsStore.arsenal().length <= 0) {
     <ion-text class="no-game-text"> You have no balls in your arsenal. Add a ball to get started! </ion-text>
-  </ng-container>
+  }
   <!-- <ng-template #content>
-    <ion-list>
-      <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-        <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
-          <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
-            <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
-              <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
+  <ion-list>
+    <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
+      <ion-item-sliding *ngFor="let ball of ballsStore.arsenal()" #slidingItem class="sliding">
+        <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
+          <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
+            <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
 
-          <ion-item button [id]="ball.ball_id + ball.core_weight">
-            <ion-reorder slot="start">
-              <ion-thumbnail>
-                <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
-              </ion-thumbnail>
-            </ion-reorder>
+        <ion-item button [id]="ball.ball_id + ball.core_weight">
+          <ion-reorder slot="start">
+            <ion-thumbnail>
+              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+            </ion-thumbnail>
+          </ion-reorder>
 
-            <ion-label>
-              <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
-              <h1>{{ ball.ball_name }}</h1>
-              <div class="ball-info">
-                <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
-                <ion-chip>{{ ball.core_type }}</ion-chip>
-                <ion-chip>{{ ball.coverstock_type }}</ion-chip>
-              </div>
-            </ion-label>
-          </ion-item>
-        </ion-item-sliding>
-      </ion-reorder-group>
-    </ion-list>
-  </ng-template> -->
+          <ion-label>
+            <p>{{ ball.brand_name }} ({{ ball.release_date }})</p>
+            <h1>{{ ball.ball_name }}</h1>
+            <div class="ball-info">
+              <ion-chip>{{ ball.core_weight }}lbs</ion-chip>
+              <ion-chip>{{ ball.core_type }}</ion-chip>
+              <ion-chip>{{ ball.coverstock_type }}</ion-chip>
+            </div>
+          </ion-label>
+        </ion-item>
+      </ion-item-sliding>
+    </ion-reorder-group>
+  </ion-list>
+</ng-template> -->
 </ion-content>
 
-<ion-modal *ngFor="let ball of ballsStore.arsenal()" [trigger]="ball.ball_id + ball.core_weight" #modal>
-  <ng-template>
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start" style="padding: 4px">
-          <ion-button color="medium" (click)="modal.dismiss()">
-            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
-          </ion-button>
-        </ion-buttons>
-        <ion-title>{{ ball.ball_name }}</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content [fullscreen]="true">
-      <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
-      <ion-card
-        class="ion-activatable ion-ripple-parent"
-        button
-        (click)="getSameCoverstockBalls(ball)"
-        (keydown.enter)="getSameCoverstockBalls(ball)"
-        (keydown.space)="getSameCoverstockBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View coverstock balls">
-        <ion-card-content>
-          <div class="coverstock-container">
-            <div class="coverstock-image">
-              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
-            </div>
-            <div class="info-container">
-              <ion-text
-                >Type:&nbsp;
-                <p class="info">{{ ball.coverstock_type }}</p></ion-text
-              >
-              <ion-text
-                >Factory Finish:&nbsp;
-                <p class="info">{{ ball.factory_finish }}</p></ion-text
-              >
-            </div>
-          </div>
-        </ion-card-content>
-        <ion-ripple-effect></ion-ripple-effect>
-      </ion-card>
-
-      <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
-      <ion-card
-        class="ion-activatable ion-ripple-parent"
-        button
-        (click)="getSameCoreBalls(ball)"
-        (keydown.enter)="getSameCoreBalls(ball)"
-        (keydown.space)="getSameCoreBalls(ball)"
-        tabindex="0"
-        role="button"
-        aria-label="View core balls">
-        <ion-card-content>
-          <div class="core-container">
-            <div class="core-image">
-              <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
-            </div>
-            <div class="info-container">
-              <ion-text
-                >Type:&nbsp;
-                <p class="info">{{ ball.core_type }}</p></ion-text
-              >
-              <ion-text
-                >RG:&nbsp;
-                <p class="info">{{ ball.core_rg }}</p></ion-text
-              >
-              <ion-text
-                >Diff:&nbsp;
-                <p class="info">{{ ball.core_diff }}</p></ion-text
-              >
-              @if (ball.core_int_diff) {
-                <ion-text
-                  >Int. Diff:&nbsp;
-                  <p class="info">{{ ball.core_int_diff }}</p></ion-text
-                >
+<!-- tracked by key so saving drilling (which replaces the ball object) keeps the open modal alive -->
+@for (ball of ballsStore.arsenal(); track ball.ball_id + ball.core_weight) {
+  <ion-modal
+    [isOpen]="openBallKey() === ball.ball_id + ball.core_weight"
+    (didDismiss)="closeBallDetail()"
+    (didPresent)="syncDetailSegmentView($event)"
+    #modal>
+    <ng-template>
+      <ion-header [translucent]="true">
+        <ion-toolbar>
+          <ion-buttons slot="start" style="padding: 4px">
+            <ion-button color="medium" (click)="modal.dismiss()">
+              <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ ball.ball_name }}</ion-title>
+        </ion-toolbar>
+        <ion-toolbar>
+          <ion-segment [value]="detailSegment()" (ionChange)="detailSegment.set($event.detail.value === 'drilling' ? 'drilling' : 'ball')">
+            <ion-segment-button value="ball" contentId="ball-detail">Ball</ion-segment-button>
+            <ion-segment-button value="drilling" contentId="ball-drilling">Drilling</ion-segment-button>
+          </ion-segment>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content [fullscreen]="true">
+        <ion-segment-view>
+          <ion-segment-content id="ball-detail">
+            <ion-list-header style="margin-bottom: 4px">Coverstock - {{ ball.coverstock_name }}</ion-list-header>
+            <ion-card
+              class="ion-activatable ion-ripple-parent"
+              button
+              (click)="getSameCoverstockBalls(ball)"
+              (keydown.enter)="getSameCoverstockBalls(ball)"
+              (keydown.space)="getSameCoverstockBalls(ball)"
+              tabindex="0"
+              role="button"
+              aria-label="View coverstock balls">
+              <ion-card-content>
+                <div class="coverstock-container">
+                  <div class="coverstock-image">
+                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                  </div>
+                  <div class="info-container">
+                    <ion-text
+                      >Type:&nbsp;
+                      <p class="info">{{ ball.coverstock_type }}</p></ion-text
+                    >
+                    <ion-text
+                      >Factory Finish:&nbsp;
+                      <p class="info">{{ ball.factory_finish }}</p></ion-text
+                    >
+                  </div>
+                </div>
+              </ion-card-content>
+              <ion-ripple-effect></ion-ripple-effect>
+            </ion-card>
+            <ion-list-header style="margin-bottom: 4px">Core - {{ ball.core_name }}</ion-list-header>
+            <ion-card
+              class="ion-activatable ion-ripple-parent"
+              button
+              (click)="getSameCoreBalls(ball)"
+              (keydown.enter)="getSameCoreBalls(ball)"
+              (keydown.space)="getSameCoreBalls(ball)"
+              tabindex="0"
+              role="button"
+              aria-label="View core balls">
+              <ion-card-content>
+                <div class="core-container">
+                  <div class="core-image">
+                    <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
+                  </div>
+                  <div class="info-container">
+                    <ion-text
+                      >Type:&nbsp;
+                      <p class="info">{{ ball.core_type }}</p></ion-text
+                    >
+                    <ion-text
+                      >RG:&nbsp;
+                      <p class="info">{{ ball.core_rg }}</p></ion-text
+                    >
+                    <ion-text
+                      >Diff:&nbsp;
+                      <p class="info">{{ ball.core_diff }}</p></ion-text
+                    >
+                    @if (ball.core_int_diff) {
+                      <ion-text
+                        >Int. Diff:&nbsp;
+                        <p class="info">{{ ball.core_int_diff }}</p></ion-text
+                      >
+                    }
+                  </div>
+                </div>
+              </ion-card-content>
+              <ion-ripple-effect></ion-ripple-effect>
+            </ion-card>
+          </ion-segment-content>
+          <ion-segment-content id="ball-drilling">
+            <ion-list inset class="drilling-list">
+              <ion-item button [detail]="true" (click)="openFitModal()">
+                <ion-label>
+                  <h3>Ball Fit</h3>
+                  <p>{{ (fit() | bowlerFit) || "Add your grip, span and PAP" }}</p>
+                </ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-select
+                  label="Layout"
+                  interface="popover"
+                  [value]="ball.drilling?.layout?.system ?? ''"
+                  (ionChange)="onLayoutSystemChange(ball, $event.detail.value)">
+                  <ion-select-option value="">None</ion-select-option>
+                  @for (system of layoutSystems; track system[0]) {
+                    <ion-select-option [value]="system[0]">{{ system[1] }}</ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+              <ion-item>
+                <div class="layout-presets">
+                  @if (layoutBeforePreset(); as previous) {
+                    <ion-chip color="medium" (click)="undoLayoutPreset(ball)">
+                      <ion-icon name="arrow-undo-outline"></ion-icon>
+                      <ion-label>Undo · {{ previous | layout }}</ion-label>
+                    </ion-chip>
+                  }
+                  @for (preset of layoutPresets; track $index) {
+                    @if (!ball.drilling?.layout || ball.drilling?.layout?.system === preset.system) {
+                      <ion-chip (click)="onLayoutPresetSelect(ball, preset)">{{ preset | layout: !ball.drilling?.layout }}</ion-chip>
+                    }
+                  }
+                  @for (preset of customLayoutPresets(); track $index) {
+                    @if (!ball.drilling?.layout || ball.drilling?.layout?.system === preset.system) {
+                      <ion-chip color="primary" (click)="onLayoutPresetSelect(ball, preset)">
+                        <ion-label>{{ preset | layout: !ball.drilling?.layout }}</ion-label>
+                        <ion-icon name="close-circle" aria-label="Remove preset" (click)="removeLayoutPreset(preset, $event)"></ion-icon>
+                      </ion-chip>
+                    }
+                  }
+                  @if (ball.drilling?.layout; as layout) {
+                    <ion-chip [outline]="true" (click)="saveLayoutPreset(layout)">
+                      <ion-icon name="add"></ion-icon>
+                      <ion-label>Save as preset</ion-label>
+                    </ion-chip>
+                  }
+                </div>
+              </ion-item>
+              @if (ball.drilling?.layout; as layout) {
+                @if (layout.system === "dual-angle") {
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="Drilling Angle"
+                      placeholder="45°"
+                      [value]="layout.drillingAngle"
+                      (ionChange)="onLayoutValueChange(ball, 'drillingAngle', $event.detail.value)"></ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="Pin to PAP"
+                      placeholder='4 1/2"'
+                      [value]="layout.pinToPap | inches"
+                      (ionChange)="onLayoutValueChange(ball, 'pinToPap', $event.detail.value)"></ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="VAL Angle"
+                      placeholder="30°"
+                      [value]="layout.valAngle"
+                      (ionChange)="onLayoutValueChange(ball, 'valAngle', $event.detail.value)"></ion-input>
+                  </ion-item>
+                } @else {
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="Pin to PAP"
+                      placeholder='5"'
+                      [value]="layout.pinToPap | inches"
+                      (ionChange)="onLayoutValueChange(ball, 'pinToPap', $event.detail.value)"></ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="PSA to PAP"
+                      placeholder='4"'
+                      [value]="layout.psaToPap | inches"
+                      (ionChange)="onLayoutValueChange(ball, 'psaToPap', $event.detail.value)"></ion-input>
+                  </ion-item>
+                  <ion-item>
+                    <ion-input
+                      class="ion-text-right"
+                      label="Pin Buffer"
+                      placeholder='2"'
+                      [value]="layout.pinBuffer | inches"
+                      (ionChange)="onLayoutValueChange(ball, 'pinBuffer', $event.detail.value)"></ion-input>
+                  </ion-item>
+                }
               }
-            </div>
-          </div>
-        </ion-card-content>
-        <ion-ripple-effect></ion-ripple-effect>
-      </ion-card>
-    </ion-content>
-  </ng-template>
-</ion-modal>
+              @if (!isTwoHanded()) {
+                <ion-item>
+                  <ion-input
+                    class="ion-text-right"
+                    label="Thumb"
+                    placeholder='63/64"'
+                    [value]="ball.drilling?.thumbSize | inches"
+                    (ionChange)="onHoleSizeChange(ball, 'thumbSize', $event.detail.value)"></ion-input>
+                </ion-item>
+              }
+              <ion-item>
+                <ion-input
+                  class="ion-text-right"
+                  label="Middle Finger"
+                  placeholder='41/64"'
+                  [value]="ball.drilling?.middleFingerSize | inches"
+                  (ionChange)="onHoleSizeChange(ball, 'middleFingerSize', $event.detail.value)"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-input
+                  class="ion-text-right"
+                  label="Ring Finger"
+                  placeholder='39/64"'
+                  [value]="ball.drilling?.ringFingerSize | inches"
+                  (ionChange)="onHoleSizeChange(ball, 'ringFingerSize', $event.detail.value)"></ion-input>
+              </ion-item>
+              @if (!isTwoHanded()) {
+                <ion-item>
+                  <ion-input
+                    class="ion-text-right"
+                    label="Thumb Insert"
+                    placeholder="Thumb Solution"
+                    [value]="ball.drilling?.thumbInsert ?? ''"
+                    (ionChange)="onInsertChange(ball, 'thumbInsert', $event.detail.value)"></ion-input>
+                </ion-item>
+              }
+              <ion-item lines="none">
+                <ion-input
+                  class="ion-text-right"
+                  label="Finger Inserts"
+                  placeholder="Vise Pro #1"
+                  [value]="ball.drilling?.fingerInserts ?? ''"
+                  (ionChange)="onInsertChange(ball, 'fingerInserts', $event.detail.value)"></ion-input>
+              </ion-item>
+            </ion-list>
+            <ion-text color="medium">
+              <p class="drilling-hint">Sizes in inches, e.g. 4 1/2, 4.5 or 41/64. Ball Fit is shared by all your balls.</p>
+            </ion-text>
+          </ion-segment-content>
+        </ion-segment-view>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+}
 
 <ion-modal [initialBreakpoint]="0.35" [breakpoints]="[0, 0.35, 0.5, 0.75]" #coverstock>
   <ng-template>
@@ -224,5 +407,77 @@
       (selectedItemsChange)="onBallSelectionChange($event)"
       [prevSelectedItems]="[]">
     </app-generic-typeahead>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="isFitModalOpen()" (didDismiss)="closeFitModal()" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.75, 1]">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button (click)="closeFitModal()">Cancel</ion-button>
+        </ion-buttons>
+        <ion-title>Ball Fit</ion-title>
+        <ion-buttons slot="end">
+          <ion-button [strong]="true" (click)="saveFit()">Save</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        <ion-item>
+          <ion-select label="Style" interface="popover" [value]="fitForm().style" (ionChange)="updateFitForm('style', $event.detail.value)">
+            <ion-select-option value="one-handed">One-Handed</ion-select-option>
+            <ion-select-option value="two-handed">Two-Handed</ion-select-option>
+          </ion-select>
+        </ion-item>
+        @if (fitForm().style !== "two-handed") {
+          <ion-item>
+            <ion-select label="Grip" interface="popover" [value]="fitForm().grip" (ionChange)="updateFitForm('grip', $event.detail.value)">
+              <ion-select-option value="">Not set</ion-select-option>
+              @for (grip of gripStyles; track grip[0]) {
+                <ion-select-option [value]="grip[0]">{{ grip[1] }}</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              class="ion-text-right"
+              label="Span Middle"
+              placeholder='4 1/8"'
+              [value]="fitForm().middleSpan"
+              (ionInput)="updateFitForm('middleSpan', $event.detail.value)"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              class="ion-text-right"
+              label="Span Ring"
+              placeholder='4 1/4"'
+              [value]="fitForm().ringSpan"
+              (ionInput)="updateFitForm('ringSpan', $event.detail.value)"></ion-input>
+          </ion-item>
+        }
+        <ion-item>
+          <ion-input
+            class="ion-text-right"
+            label="PAP Over"
+            placeholder='5 1/4"'
+            [value]="fitForm().papOver"
+            (ionInput)="updateFitForm('papOver', $event.detail.value)"></ion-input>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-input
+            class="ion-text-right"
+            label="PAP Up/Down"
+            placeholder="3/4 up"
+            [value]="fitForm().papVertical"
+            (ionInput)="updateFitForm('papVertical', $event.detail.value)"></ion-input>
+        </ion-item>
+      </ion-list>
+      <p class="fit-hint">
+        Inches, e.g. 4 1/8, 4.125 or 4⅛. PAP is measured from the center of the grip; write up or down, or 0 for the midline. Layouts and hole sizes
+        are set per ball in the arsenal.
+      </p>
+    </ion-content>
   </ng-template>
 </ion-modal>

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { firstValueFrom } from 'rxjs';
+import { environment } from 'src/environments/environment';
 import { Alley } from '../../models/alley.model';
 
 interface OverpassTags {
@@ -52,6 +53,12 @@ interface NominatimResult {
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * Domain the /api proxies (api/overpass.mjs, api/nominatim.mjs) are deployed
+ * to for the branch this build was made from.
+ */
+const APP_ORIGIN = environment.branch === 'test' ? 'https://test.lightningbowl.de' : 'https://lightningbowl.de';
+
 @Injectable({ providedIn: 'root' })
 export class AlleyService {
   private http = inject(HttpClient);
@@ -62,14 +69,20 @@ export class AlleyService {
 
   /**
    * Picks where map-data requests go. The public Overpass/Nominatim instances
-   * block requests carrying the hosted *.vercel.app Origin/Referer (HTTP 406),
-   * so the deployed web app routes through same-origin /api proxies that strip
-   * those headers. Native apps and local dev call the upstreams directly —
-   * their origins are allowed and no serverless proxy runs there.
+   * throttle/block browser requests unpredictably (HTTP 406/429/504) —
+   * observed for both the hosted *.vercel.app origin and the native app's
+   * capacitor://localhost origin, not just one of them (see api/overpass.mjs).
+   * So both the deployed web app and native route through the /api proxies,
+   * which call upstream server-side with a descriptive User-Agent and no
+   * browser-origin exposure. Native uses the proxies' full production URL
+   * (its own bundle has no live server behind a relative /api path); the
+   * proxies send Access-Control-Allow-Origin: * so that cross-origin call is
+   * actually readable. Local dev calls the upstreams directly since there's no
+   * local proxy running.
    */
   private resolveEndpoint(proxyPath: string, directUrl: string): string {
     if (Capacitor.isNativePlatform()) {
-      return directUrl;
+      return `${APP_ORIGIN}${proxyPath}`;
     }
     const host = typeof location !== 'undefined' ? location.hostname : '';
     const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';

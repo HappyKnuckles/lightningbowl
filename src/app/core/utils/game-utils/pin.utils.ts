@@ -1,5 +1,6 @@
 import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
+import { clearPendingBall, getCarryOverThrowBall, getPendingBall } from './ball.utils';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];
@@ -167,12 +168,25 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
   );
 
   frame.throws[throwIndex] = {
+    ...frame.throws[throwIndex],
     value,
     throwIndex: throwIndex + 1,
     pinsLeftStanding: pinsStandingAfter,
     pinsKnockedDown: validPinsHit,
     isSplit: isSplitThrow,
   };
+
+  // A pick made for this throw wins, `null` included: that is the user clearing it, and the
+  // throw is left without a ball rather than carrying one over. Otherwise a ball already stamped
+  // on the throw stands — re-recording a throw must not swap the ball it was bowled with — and
+  // only a throw with no ball at all takes the carry-over default.
+  const pendingBall = getPendingBall(frame, throwIndex);
+  if (pendingBall !== undefined) {
+    frame.throws[throwIndex].ball = pendingBall ?? undefined;
+  } else if (!frame.throws[throwIndex].ball) {
+    frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);
+  }
+  clearPendingBall(frame, throwIndex);
 
   cleanupSubsequentThrows(frame, frameIndex, throwIndex, value, pinsStandingAfter);
 
@@ -291,4 +305,98 @@ function validateOrClearThrow(targetThrow: Throw, availablePins: number[], frame
   } else {
     targetThrow.pinsLeftStanding = availablePins.filter((p) => !targetThrow.pinsKnockedDown!.includes(p));
   }
+}
+
+// Leave classification
+//
+// Names a leave the way a bowler would, from the pins left standing after a first ball.
+// All of these are about first balls only. A leave after a spare shot says nothing
+// about ball reaction. `isLeft` mirrors the deck for a left-handed bowler, so "light"
+// and "high" mean the same thing physically for both hands.
+
+/** Corner pins for the bowler's hand: the 10 for a righty, the 7 for a lefty. */
+export function getCornerPin(isLeft: boolean): number {
+  return isLeft ? 7 : 10;
+}
+
+/** The opposite corner: the 7 for a righty, the 10 for a lefty. */
+export function getOppositeCornerPin(isLeft: boolean): number {
+  return isLeft ? 10 : 7;
+}
+
+/**
+ * A single corner pin left standing: the "ringing 10" for a righty, the "ringing 7"
+ * for a lefty. Everything in front of it fell, so this is a carry problem, not a miss.
+ */
+export function isCornerPinLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  return pinsLeftStanding.length === 1 && pinsLeftStanding[0] === getCornerPin(isLeft);
+}
+
+/**
+ * A corner pin left with the 6 (righty) or 4 (lefty) still standing next to it, meaning
+ * the ball never got to the corner at all, as opposed to ringing it out.
+ */
+export function isFlatCornerLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  const corner = getCornerPin(isLeft);
+  const neighbour = isLeft ? 4 : 6;
+  return pinsLeftStanding.length === 2 && pinsLeftStanding.includes(corner) && pinsLeftStanding.includes(neighbour);
+}
+
+/**
+ * A solid leave: the pocket was hit but a cluster of two or more connected pins stands.
+ * Typically 2-4-5 / 3-6-9 style, where the ball hit light or deflected off the pocket.
+ * The flat corner (6-10 / 4-7) is excluded because it is reported on its own.
+ */
+export function isSolidLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  if (pinsLeftStanding.length < 2 || pinsLeftStanding.includes(1)) return false;
+  if (isSplit(pinsLeftStanding)) return false;
+  return !isFlatCornerLeave(pinsLeftStanding, isLeft);
+}
+
+/** Washout: the head pin still stands with corner pins around it, a badly missed line. */
+export function isWashout(pinsLeftStanding: number[]): boolean {
+  if (!pinsLeftStanding.includes(1)) return false;
+  return pinsLeftStanding.includes(10) || pinsLeftStanding.includes(7);
+}
+
+/** Each pin's mirror image across the deck's centre line: 2↔3, 4↔6, 7↔10, 8↔9. */
+const MIRRORED_PIN: Record<number, number> = { 1: 1, 2: 3, 3: 2, 4: 6, 5: 5, 6: 4, 7: 10, 8: 9, 9: 8, 10: 7 };
+
+/** A leave as a right-hander would see it, so one rule classifies both hands. */
+function toRightHandedLeave(pinsLeftStanding: number[], isLeft: boolean): number[] {
+  return isLeft ? pinsLeftStanding.map((p) => MIRRORED_PIN[p] ?? p) : pinsLeftStanding;
+}
+
+/**
+ * Light hit: the ball deflected off the pocket and failed to carry through the middle of the
+ * deck, leaving the 2, 5 or 8 (5, 8, 2-8, 5-7, 8-10, the 2-4-5-8 bucket). Right-handed pins;
+ * mirrored for a lefty (3, 5, 9). A lone corner pin is not counted here: that is a carry
+ * problem reported by `isCornerPinLeave`, not a sign of where the ball hit.
+ */
+export function isLightLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  const pins = toRightHandedLeave(pinsLeftStanding, isLeft);
+  if (pins.length === 0 || pins.includes(1)) return false;
+  return pins.some((p) => p === 2 || p === 5 || p === 8);
+}
+
+/**
+ * High hit: the ball drove too much into the head pin and the pins on the far side did not
+ * carry, leaving the 4 or 7 (4, 4-7, 4-9, 6-7, 7-10, 4-7-10, 4-6-7-10). Right-handed pins;
+ * mirrored for a lefty (6 or 10). Exclusive with a light leave, so the bucket stays light.
+ */
+export function isHighLeave(pinsLeftStanding: number[], isLeft = false): boolean {
+  const pins = toRightHandedLeave(pinsLeftStanding, isLeft);
+  if (pins.length === 0 || pins.includes(1) || isLightLeave(pins)) return false;
+  return pins.some((p) => p === 4 || p === 7);
+}
+
+/**
+ * Pocket hit: head pin down and at least one of the 2/3 pins down.
+ * An empty array (a strike) counts, which is correct.
+ */
+export function isPocketHit(pinsLeftStanding: number[]): boolean {
+  const pin1Down = !pinsLeftStanding.includes(1);
+  const pin2Down = !pinsLeftStanding.includes(2);
+  const pin3Down = !pinsLeftStanding.includes(3);
+  return pin1Down && (pin2Down || pin3Down);
 }

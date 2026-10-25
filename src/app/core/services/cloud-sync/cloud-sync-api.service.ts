@@ -1,6 +1,29 @@
 import { Injectable } from '@angular/core';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { environment } from 'src/environments/environment';
 import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model';
+
+/**
+ * Custom URL scheme the OAuth backend redirects to once a native app's flow
+ * finishes in the in-app browser (see AppUrlOpen handling in CloudSyncService).
+ * Registered in ios/App/App/Info.plist (CFBundleURLTypes) and
+ * android/app/src/main/AndroidManifest.xml (intent-filter).
+ */
+export const NATIVE_AUTH_CALLBACK_URL = 'lightningbowl://auth-callback';
+
+/**
+ * The OAuth backend definitively rejected the session or refresh token —
+ * the user must go through the OAuth flow again. Transient failures
+ * (network, 5xx/503) intentionally do NOT use this type, so callers can
+ * keep the stored connection and simply retry later.
+ */
+export class CloudAuthRequiredError extends Error {
+  constructor() {
+    super('Not authenticated. Please reconnect your cloud provider.');
+    this.name = 'CloudAuthRequiredError';
+  }
+}
 
 /**
  * Service responsible for all cloud provider API interactions (OAuth, uploads).
@@ -10,27 +33,46 @@ import { CloudProvider, CloudSyncSettings } from '../../models/cloud-sync.model'
 })
 export class CloudSyncApiService {
   /**
-   * Navigate browser to OAuth start endpoint
+   * Kick off the OAuth start endpoint. On native platforms this opens an
+   * in-app browser (SFSafariViewController/Custom Tabs) instead of
+   * navigating the app's own WebView away, so the login flow keeps its own
+   * chrome (address bar, cancel button) and the app UI stays intact behind
+   * it. The backend redirects back via a custom URL scheme, picked up by
+   * CloudSyncService's `appUrlOpen` listener.
    */
   authenticateWithProvider(provider: CloudProvider): void {
-    const redirectUrl = `${window.location.origin}/tabs/settings?openCloudSync=true`;
+    const isNative = Capacitor.isNativePlatform();
+    const redirectUrl = isNative ? NATIVE_AUTH_CALLBACK_URL : `${window.location.origin}/tabs/settings?openCloudSync=true`;
     const startUrl = `${environment.authBackendUrl}/${provider}/start?redirect=${encodeURIComponent(redirectUrl)}`;
-    window.location.href = startUrl;
+
+    if (isNative) {
+      void Browser.open({ url: startUrl });
+    } else {
+      window.location.href = startUrl;
+    }
   }
 
   /**
    * Fetch a fresh access token from the OAuth backend
    */
   async getAccessToken(provider: CloudProvider): Promise<string> {
-    const response = await fetch(`${environment.authBackendUrl}/${provider}/access-token`, {
-      credentials: 'include',
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${environment.authBackendUrl}/${provider}/access-token`, {
+        credentials: 'include',
+      });
+    } catch {
+      throw new Error('Could not reach the sync service. Please check your connection and try again.');
+    }
 
     if (!response.ok) {
+      // Only 401/404 mean the connection itself is gone; anything else
+      // (500/503) is a temporary backend/provider problem and must not
+      // invalidate the stored connection.
       if (response.status === 401 || response.status === 404) {
-        throw new Error('Not authenticated. Please reconnect your cloud provider.');
+        throw new CloudAuthRequiredError();
       }
-      throw new Error('Failed to retrieve access token');
+      throw new Error('Sync service is temporarily unavailable. Please try again later.');
     }
 
     const data = await response.json();

@@ -5,6 +5,7 @@ import { BasePage } from './base.page';
 /** Ball Library page. */
 export class BallsPage extends BasePage {
   async waitForBalls(): Promise<void> {
+    await this.waitForSkeletons();
     await this.waitForCount('ion-card', 3);
     await waitForImages(this.page);
   }

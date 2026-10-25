@@ -11,3 +11,9 @@ export const StorageKeys = {
   arsenal: (ballId: string | number, coreWeight: string | number): string => `${STORAGE_PREFIX.arsenal}_${ballId}_${coreWeight}`,
   searchHistory: (context: string): string => `${STORAGE_PREFIX.searchHistory}_${context}`,
 } as const;
+
+// Single-record keys.
+export const SETTINGS_KEYS = {
+  bowlerFit: 'bowler_fit',
+  layoutPresets: 'layout_presets',
+} as const;

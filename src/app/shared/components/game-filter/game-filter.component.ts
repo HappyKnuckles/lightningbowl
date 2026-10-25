@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, Input, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -57,7 +56,6 @@ import { BallSelectComponent } from '../ball-select/ball-select.component';
     IonSelect,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
     IonSelectOption,
     BallSelectComponent,
   ],

@@ -1,4 +1,4 @@
-<div class="grid-container" #captureRoot>
+<div class="grid-container" [class.reserve-ball-slot]="showBalls()" #captureRoot>
   @for (f of frameVms(); track f.frameNumber) {
     <ion-grid fixed="true">
       <ion-row>
@@ -6,7 +6,9 @@
       </ion-row>
 
       <ion-row>
-        <ion-col class="input-col" *ngIf="!f.isTenth"></ion-col>
+        @if (!f.isTenth) {
+          <ion-col class="input-col"></ion-col>
+        }
 
         <ion-col class="input-col">
           <div class="cell" [class.is-split]="f.throw0.isSplit">{{ f.throw0.display }}</div>
@@ -25,11 +27,18 @@
 
       @if (isPinMode()) {
         <ion-row class="pin-deck-row">
-          <ion-col class="input-col" *ngIf="!f.isTenth"></ion-col>
+          @if (!f.isTenth) {
+            <ion-col class="input-col"></ion-col>
+          }
 
           <ion-col class="input-col">
             @if (f.throw0.pinShow) {
               <app-pin-deck [scale]="pinScale()" [activePins]="f.throw0.pinPins"></app-pin-deck>
+            }
+            @if (f.throw0.ballThumb; as thumb) {
+              <img class="throw-ball-thumb" [src]="thumb" [alt]="f.throw0.ballLabel + ' thumbnail'" />
+            } @else if (f.throw0.hasBall) {
+              <ion-icon class="throw-ball-thumb throw-ball-fallback-icon" name="bowling-ball-outline"></ion-icon>
             }
           </ion-col>
 
@@ -37,12 +46,22 @@
             @if (f.throw1.pinShow) {
               <app-pin-deck [scale]="pinScale()" [activePins]="f.throw1.pinPins"></app-pin-deck>
             }
+            @if (f.throw1.ballThumb; as thumb) {
+              <img class="throw-ball-thumb" [src]="thumb" [alt]="f.throw1.ballLabel + ' thumbnail'" />
+            } @else if (f.throw1.hasBall) {
+              <ion-icon class="throw-ball-thumb throw-ball-fallback-icon" name="bowling-ball-outline"></ion-icon>
+            }
           </ion-col>
 
           @if (f.isTenth && f.throw2; as t2) {
             <ion-col class="input-col">
               @if (t2.pinShow) {
                 <app-pin-deck [scale]="pinScale()" [activePins]="t2.pinPins"></app-pin-deck>
+              }
+              @if (t2.ballThumb; as thumb) {
+                <img class="throw-ball-thumb" [src]="thumb" [alt]="t2.ballLabel + ' thumbnail'" />
+              } @else if (t2.hasBall) {
+                <ion-icon class="throw-ball-thumb throw-ball-fallback-icon" name="bowling-ball-outline"></ion-icon>
               }
             </ion-col>
           }

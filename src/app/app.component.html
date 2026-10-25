@@ -1,5 +1,6 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <app-side-menu></app-side-menu>
+  <ion-router-outlet id="main-content"></ion-router-outlet>
 </ion-app>
 @if (loadingService.isLoading()) {
   <ion-backdrop style="opacity: 0.4; z-index: 999999"></ion-backdrop>

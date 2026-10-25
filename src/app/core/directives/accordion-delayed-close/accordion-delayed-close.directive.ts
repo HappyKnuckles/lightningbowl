@@ -13,8 +13,8 @@ export class AccordionDelayedCloseDirective implements OnDestroy {
   private readonly closeDelay = 500;
 
   @HostListener('ionChange', ['$event'])
-  onAccordionChange(event: CustomEvent): void {
-    const openIds: string[] = event.detail?.value ?? [];
+  onAccordionChange(event: Event): void {
+    const openIds: string[] = (event as CustomEvent<{ value?: string[] }>).detail?.value ?? [];
 
     // Newly opened: cancel pending close, mark visible
     for (const id of openIds) {

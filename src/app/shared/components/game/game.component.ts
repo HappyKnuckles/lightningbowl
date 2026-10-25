@@ -10,17 +10,20 @@ import {
   effect,
   inject,
   input,
+  model,
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { InputCustomEvent } from '@ionic/angular';
+import { AccordionGroupCustomEvent, InputCustomEvent } from '@ionic/angular';
 import {
+  AlertController,
   IonAccordion,
   IonAccordionGroup,
   IonCheckbox,
   IonCol,
   IonGrid,
+  IonIcon,
   IonInput,
   IonItem,
   IonLabel,
@@ -30,10 +33,10 @@ import {
   IonTextarea,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronExpandOutline } from 'ionicons/icons';
+import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game } from 'src/app/core/models/game.model';
+import { BallTracking, Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -45,6 +48,16 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
+import {
+  ballValueMatches,
+  countThrowBalls,
+  findBallInArsenal,
+  formatThrowBall,
+  getGameBallNames,
+  getThrowBallForPosition,
+  getThrowBallKey,
+  hasThrowLevelBalls,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -62,6 +75,9 @@ interface ThrowCellView {
   pinsStanding: number[];
   showPinDeck: boolean;
   disabled: boolean;
+  hasBall: boolean;
+  ballThumb: string | undefined;
+  ballLabel: string;
 }
 
 interface FrameView {
@@ -87,6 +103,7 @@ interface FrameView {
     IonGrid,
     IonRow,
     IonCol,
+    IonIcon,
     IonInput,
     FormsModule,
     LeagueSelectorComponent,
@@ -102,6 +119,8 @@ interface FrameView {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class GameComponent implements OnInit {
+  private static readonly DETAILS_ACCORDION = 'details';
+
   // --- Inputs ---
   ballSelectorId = input<string>();
   showMetadata = input<boolean>(true);
@@ -111,6 +130,9 @@ export class GameComponent implements OnInit {
   strikeDisabled = input<boolean>(true);
   spareDisabled = input<boolean>(true);
   isPinInputMode = input<boolean>(false);
+
+  hidePinInput = input<boolean>(false);
+  highlightCurrentThrow = input<boolean>(true);
 
   // Pin Input Mode
   pinsLeftStanding = input<number[]>(PINS);
@@ -128,6 +150,7 @@ export class GameComponent implements OnInit {
   patternChanged = output<string[]>();
   noteChanged = output<string>();
   ballsChanged = output<string[]>();
+  throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
 
@@ -137,6 +160,8 @@ export class GameComponent implements OnInit {
   seriesStatsClick = output<void>();
   showStatsButton = input<boolean>(false);
   statsEnabled = input<boolean>(true);
+  /** Whether "Game Details" is open. Bound two-way by the page so every game in a series shares it. */
+  detailsOpen = model<boolean>(false);
   // Pin mode edit - score cell clicked
   scoreCellClick = output<{ frameIndex: number; throwIndex: number }>();
 
@@ -151,6 +176,24 @@ export class GameComponent implements OnInit {
   frameVms: Signal<FrameView[]> = computed(() => {
     const frames = this.game()?.frames ?? [];
     const frameScores = this.game()?.frameScores ?? [];
+    const arsenal = this.ballsStore.arsenal();
+
+    // A throw's own recorded ball is shown as-is — no carry-over guessing for display, so a
+    // throw the user explicitly left without a ball renders empty rather than borrowing a
+    // neighbor's. Every recorded ball gets its indicator here: while a game is being entered
+    // the thumbnail is the confirmation that the pick landed on the throw, so it has to appear
+    // from the first throw on, even for a game bowled with one ball. The saved view thins them
+    // out again (see GameReadonlyComponent).
+    // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
+    const thumbCache = new Map<string, string | undefined>();
+    const resolveThumb = (ball: ThrowBall): string | undefined => {
+      const key = getThrowBallKey(ball);
+      if (!thumbCache.has(key)) {
+        const arsenalBall = findBallInArsenal(ball, arsenal);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+      }
+      return thumbCache.get(key);
+    };
 
     return Array.from({ length: 10 }, (_, frameIndex): FrameView => {
       const frame = frames[frameIndex];
@@ -160,6 +203,8 @@ export class GameComponent implements OnInit {
 
       const throws = Array.from({ length: isTenth ? 3 : 2 }, (_, throwIndex): ThrowCellView => {
         const value = getThrowValue(frame, throwIndex);
+        const storedBall = frame?.throws?.[throwIndex]?.ball;
+        const ball = storedBall?.name ? storedBall : undefined;
         return {
           value,
           display: formatThrowDisplay(frame, throwIndex, isTenth),
@@ -167,6 +212,9 @@ export class GameComponent implements OnInit {
           pinsStanding: frame?.throws?.[throwIndex]?.pinsLeftStanding ?? [],
           showPinDeck: value !== undefined && (throwIndex !== 1 || isTenth || first !== 10),
           disabled: (throwIndex === 1 && !isTenth && first === 10) || (throwIndex === 2 && first !== 10 && (first ?? 0) + (second ?? 0) !== 10),
+          hasBall: !!ball,
+          ballThumb: ball ? resolveThumb(ball) : undefined,
+          ballLabel: formatThrowBall(ball),
         };
       });
 
@@ -186,8 +234,76 @@ export class GameComponent implements OnInit {
     });
   });
 
-  ballsText = computed(() => (this.currentGame().balls ?? []).join(', '));
+  detailsAccordionValue = computed(() => (this.detailsOpen() ? GameComponent.DETAILS_ACCORDION : undefined));
+  ballsText = computed(() => getGameBallNames(this.currentGame(), this.ballsStore.arsenal()).join(', '));
+
+  /**
+   * Which ball UI this game gets. A game that already carries ball data keeps its own mode;
+   * an untouched one follows the user's default. Per-throw picking lives on the pin pad,
+   * so it is only offered while pin input is on.
+   */
+  ballTracking = computed<BallTracking>(() => {
+    const game = this.currentGame();
+    if (game.ballTracking) return game.ballTracking;
+    if (hasThrowLevelBalls(game.frames ?? [])) return 'throw';
+    if ((game.balls ?? []).length > 0) return 'game';
+    return this.settingsStore.ballTracking();
+  });
+
+  /** Per-throw picking needs the pin pad; everything else falls back to the game-level selection. */
+  isThrowTracking = computed(() => this.ballTracking() === 'throw' && this.isPinInputMode());
+
+  /**
+   * The pad locks only while a finished game's cursor rests on its very last throw, where a
+   * stray confirm would silently overwrite the score just bowled. Tapping any earlier cell
+   * moves the cursor off that spot and reopens the pad, which is how a finished game gets
+   * corrected — pins and ball alike.
+   */
+  isPinPadLocked = computed(() => {
+    if (!this.isGameComplete()) return false;
+
+    const frames = this.game()?.frames ?? [];
+    for (let frameIndex = frames.length - 1; frameIndex >= 0; frameIndex--) {
+      const throwCount = frames[frameIndex]?.throws?.length ?? 0;
+      if (throwCount > 0) {
+        return this.currentFrameIndex() === frameIndex && this.currentThrowIndex() === throwCount - 1;
+      }
+    }
+    return true;
+  });
+
+  /**
+   * Whether the deck row keeps room for the per-throw ball indicator.
+   */
+  reservesBallSlot = computed(() => this.isThrowTracking() || hasThrowLevelBalls(this.game()?.frames ?? []));
+
+  /** Read-only summary of the balls used per throw: "IQ Tour · 34 throws". */
+  throwBallSummary = computed(() => {
+    const counts = new Map<string, { label: string; throws: number }>();
+    let untracked = 0;
+    for (const frame of this.currentGame().frames ?? []) {
+      for (const t of frame.throws ?? []) {
+        if (!t.ball?.name) {
+          untracked++;
+          continue;
+        }
+        const label = formatThrowBall(t.ball);
+        const entry = counts.get(label) ?? { label, throws: 0 };
+        entry.throws++;
+        counts.set(label, entry);
+      }
+    }
+    return {
+      balls: [...counts.values()].sort((a, b) => b.throws - a.throws),
+      untracked,
+    };
+  });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
+
+  /** Ball for the throw the pin input is currently on. */
+  currentThrowBall = computed<ThrowBall | undefined>(() =>
+    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex()),
+  );
 
   /** Patterns sorted by how often they were played, most used first. */
   rankedPatterns = computed(() => {
@@ -202,9 +318,6 @@ export class GameComponent implements OnInit {
   patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = this.typeaheadConfigService.partialPattern;
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
 
-  showButtonToolbar = false;
-  keyboardOffset = 0;
-  isLandScapeMode = false;
   private keyboardToolbar = inject(KeyboardToolbarService);
   readonly toolbarState = this.keyboardToolbar.state;
   private localFrameIndex = 0;
@@ -219,13 +332,19 @@ export class GameComponent implements OnInit {
     private patternService: PatternService,
     private toastService: ToastService,
     private typeaheadConfigService: TypeaheadConfigService,
+    private alertController: AlertController,
   ) {
-    addIcons({ chevronExpandOutline });
+    addIcons({ bowlingBallOutline, chevronExpandOutline });
     effect(() => this.toolbarStateChanged.emit(this.toolbarState()));
   }
 
   async ngOnInit(): Promise<void> {
     this.presentingElement = document.querySelector('.ion-page')!;
+  }
+
+  onDetailsToggle(event: AccordionGroupCustomEvent): void {
+    if (event.target !== event.currentTarget) return;
+    this.detailsOpen.set(event.detail.value === GameComponent.DETAILS_ACCORDION);
   }
 
   // PIN INPUT MODE - PASS-THROUGH HANDLERS
@@ -235,6 +354,14 @@ export class GameComponent implements OnInit {
 
   onPinUndoRequested(): void {
     this.pinUndoRequested.emit();
+  }
+
+  onPinBallSelected(ball: ThrowBall | undefined): void {
+    this.throwBallChanged.emit({
+      frameIndex: this.currentFrameIndex(),
+      throwIndex: this.currentThrowIndex(),
+      ball,
+    });
   }
 
   onScoreCellClicked(frameIndex: number, throwIndex: number): void {
@@ -259,7 +386,6 @@ export class GameComponent implements OnInit {
 
   selectSpecialScore(char: string): void {
     if (this.localFrameIndex === null || this.localThrowIndex === null) {
-      this.showButtonToolbar = false;
       return;
     }
     this.throwInput.emit({
@@ -305,15 +431,16 @@ export class GameComponent implements OnInit {
 
     return this.ballsStore
       .allBalls()
-      .filter((ball) => names.includes(ball.ball_name))
+      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 
   // --- Passthrough Event Emitters ---
-  onBallAdd(ballIds: string[]) {
+  async onBallAdd(ballIds: string[]) {
+    if (!(await this.confirmReplaceThrowBalls())) return;
     const allBalls = this.ballsStore.allBalls();
     const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-    this.ballsChanged.emit(selected.map((b) => b.ball_name));
+    this.ballsChanged.emit(selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })));
     this.saveBallToArsenal(selected);
   }
 
@@ -323,8 +450,9 @@ export class GameComponent implements OnInit {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  onBallSelect(selectedBalls: string[], modal: IonModal) {
+  async onBallSelect(selectedBalls: string[], modal: IonModal) {
     modal.dismiss();
+    if (!(await this.confirmReplaceThrowBalls())) return;
     this.ballsChanged.emit(selectedBalls);
   }
   onNoteChange(note: string) {
@@ -344,5 +472,26 @@ export class GameComponent implements OnInit {
     if (failed.length) {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
+  }
+
+  /**
+   * One selection for the whole game replaces the balls recorded per throw, which the parent
+   * clears on `ballsChanged`. Asks first when there are any, so they are never dropped silently.
+   */
+  private async confirmReplaceThrowBalls(): Promise<boolean> {
+    const throwCount = countThrowBalls(this.currentGame().frames ?? []);
+    if (throwCount === 0) return true;
+
+    const alert = await this.alertController.create({
+      header: 'Use one ball selection for this game?',
+      message: `The balls picked for ${throwCount} ${throwCount === 1 ? 'throw' : 'throws'} will be removed.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Replace', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
   }
 }

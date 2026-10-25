@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PatternInfoComponent } from './pattern-info.component';
+import { makePattern } from 'src/testing/fixtures';
 
 describe('PatternInfoComponent', () => {
   let component: PatternInfoComponent;
@@ -13,6 +14,7 @@ describe('PatternInfoComponent', () => {
 
     fixture = TestBed.createComponent(PatternInfoComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('pattern', makePattern());
     fixture.detectChanges();
   });
 

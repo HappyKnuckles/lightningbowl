@@ -7,8 +7,12 @@
           <ion-button fill="clear" type="reset" (click)="onDismiss()"> Cancel </ion-button>
         </ion-buttons>
         <ion-buttons slot="end">
-          <ion-button *ngIf="!isIOS" strong="true" (click)="onInstall()" [disabled]="!canInstall"> Install! </ion-button>
-          <ion-button *ngIf="isIOS" strong="true" type="submit" (click)="onDismiss()"> Got it! </ion-button>
+          @if (!isIOS) {
+            <ion-button strong="true" (click)="onInstall()" [disabled]="!canInstall"> Install! </ion-button>
+          }
+          @if (isIOS) {
+            <ion-button strong="true" type="submit" (click)="onDismiss()"> Got it! </ion-button>
+          }
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -86,78 +90,78 @@
         </div>
 
         <div class="instructions-section">
-          <div *ngIf="!isIOS">
-            <h3>How to install:</h3>
-            <div class="install-steps">
-              <div class="step">
-                <span class="step-number">1</span>
-                <p>Tap "Install" in the upper right corner</p>
-              </div>
-              <div class="step">
-                <span class="step-number">2</span>
-                <p>Confirm installation in the popup</p>
-              </div>
-              <div class="step">
-                <span class="step-number">3</span>
-                <p>Find the app on your home screen</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="instruction-section" *ngIf="isIOS">
-            <div class="ios-header">
-              <ion-icon name="phone-portrait" color="primary" class="ios-icon"></ion-icon>
-              <h3>Install on iOS Safari</h3>
-            </div>
-            <p class="ios-description">Follow these simple steps to add Lightning Bowl to your home screen for the best mobile experience:</p>
-
-            <div class="install-steps">
-              <div class="step">
-                <div class="step-visual">
+          @if (!isIOS) {
+            <div>
+              <h3>How to install:</h3>
+              <div class="install-steps">
+                <div class="step">
                   <span class="step-number">1</span>
-                  <ion-icon name="share-outline" class="step-icon"></ion-icon>
+                  <p>Tap "Install" in the upper right corner</p>
                 </div>
-                <div class="step-content">
-                  <h4>Find the Share Button</h4>
-                  <p>Tap the <strong>Share</strong> button at the bottom of your Safari browser</p>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-visual">
+                <div class="step">
                   <span class="step-number">2</span>
-                  <ion-icon
-                    name="add"
-                    class="step-icon"
-                    style="border: 1px solid var(--ion-color-primary); border-radius: 4px; font-size: 1.2rem"></ion-icon>
+                  <p>Confirm installation in the popup</p>
                 </div>
-                <div class="step-content">
-                  <h4>Add to Home Screen</h4>
-                  <p>Scroll down in the share menu and tap <strong>"Add to Home Screen"</strong></p>
-                </div>
-              </div>
-
-              <div class="step">
-                <div class="step-visual">
+                <div class="step">
                   <span class="step-number">3</span>
-                </div>
-                <div class="step-content">
-                  <h4>Complete Installation</h4>
-                  <p>Tap <strong>"Add"</strong> in the top right corner to finish installing</p>
+                  <p>Find the app on your home screen</p>
                 </div>
               </div>
             </div>
+          }
 
-            <div class="ios-benefits">
-              <h4>After installation, you'll enjoy:</h4>
-              <ul>
-                <li>App icon on your home screen</li>
-                <li>Full-screen experience without Safari UI</li>
-                <li>Faster loading and better performance</li>
-                <li>Works offline</li>
-              </ul>
+          @if (isIOS) {
+            <div class="instruction-section">
+              <div class="ios-header">
+                <ion-icon name="phone-portrait" color="primary" class="ios-icon"></ion-icon>
+                <h3>Install on iOS Safari</h3>
+              </div>
+              <p class="ios-description">Follow these simple steps to add Lightning Bowl to your home screen for the best mobile experience:</p>
+              <div class="install-steps">
+                <div class="step">
+                  <div class="step-visual">
+                    <span class="step-number">1</span>
+                    <ion-icon name="share-outline" class="step-icon"></ion-icon>
+                  </div>
+                  <div class="step-content">
+                    <h4>Find the Share Button</h4>
+                    <p>Tap the <strong>Share</strong> button at the bottom of your Safari browser</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="step-visual">
+                    <span class="step-number">2</span>
+                    <ion-icon
+                      name="add"
+                      class="step-icon"
+                      style="border: 1px solid var(--ion-color-primary); border-radius: 4px; font-size: 1.2rem"></ion-icon>
+                  </div>
+                  <div class="step-content">
+                    <h4>Add to Home Screen</h4>
+                    <p>Scroll down in the share menu and tap <strong>"Add to Home Screen"</strong></p>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="step-visual">
+                    <span class="step-number">3</span>
+                  </div>
+                  <div class="step-content">
+                    <h4>Complete Installation</h4>
+                    <p>Tap <strong>"Add"</strong> in the top right corner to finish installing</p>
+                  </div>
+                </div>
+              </div>
+              <div class="ios-benefits">
+                <h4>After installation, you'll enjoy:</h4>
+                <ul>
+                  <li>App icon on your home screen</li>
+                  <li>Full-screen experience without Safari UI</li>
+                  <li>Faster loading and better performance</li>
+                  <li>Works offline</li>
+                </ul>
+              </div>
             </div>
-          </div>
+          }
         </div>
       </div>
     </ion-content>

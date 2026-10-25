@@ -1,5 +1,5 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { importProvidersFrom, inject, isDevMode, provideAppInitializer } from '@angular/core';
+import { importProvidersFrom, inject, isDevMode, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { bootstrapApplication, BrowserModule } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { PreloadAllModules, provideRouter, RouteReuseStrategy, withPreloading } from '@angular/router';
@@ -27,6 +27,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
+    provideZoneChangeDetection(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     importProvidersFrom(BrowserModule, IonicStorageModule.forRoot()),
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },

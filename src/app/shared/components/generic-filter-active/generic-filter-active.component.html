@@ -1,31 +1,36 @@
 <div class="filter-info">
-  <h6 *ngIf="title" class="filter-title">{{ title }}</h6>
+  @if (title) {
+    <h6 class="filter-title">{{ title }}</h6>
+  }
 
-  <ng-container *ngFor="let config of filterConfigs">
+  @for (config of filterConfigs; track config) {
     <!-- Simple filters (boolean, string, number, enum, array) -->
-    <ion-chip *ngIf="shouldShowFilter(config) && !config.isRange && config.type !== 'date'">
-      <!-- None-state array: show just the display value, no label -->
-      <ng-container *ngIf="isEmptyArrayFilter(config)">{{ getDisplayValue(config) }}</ng-container>
-
-      <!-- Everything else: label, plus value for non-boolean -->
-      <ng-container *ngIf="!isEmptyArrayFilter(config)">
-        {{ getFilterLabel(config) }}<span *ngIf="config.type !== 'boolean'">: {{ getDisplayValue(config) }}</span>
-      </ng-container>
-    </ion-chip>
-
+    @if (shouldShowFilter(config) && !config.isRange && config.type !== "date") {
+      <ion-chip>
+        <!-- None-state array: show just the display value, no label -->
+        @if (isEmptyArrayFilter(config)) {
+          {{ getDisplayValue(config) }}
+        }
+        <!-- Everything else: label, plus value for non-boolean -->
+        @if (!isEmptyArrayFilter(config)) {
+          {{ getFilterLabel(config) }}
+          @if (config.type !== "boolean") {
+            <span>: {{ getDisplayValue(config) }}</span>
+          }
+        }
+      </ion-chip>
+    }
     <!-- Date filters (single date) -->
-    <ion-chip *ngIf="shouldShowFilter(config) && config.type === 'date' && !config.isRange">
-      {{ getFilterLabel(config) }}: {{ getDisplayValue(config) | date }}
-    </ion-chip>
-
+    @if (shouldShowFilter(config) && config.type === "date" && !config.isRange) {
+      <ion-chip> {{ getFilterLabel(config) }}: {{ getDisplayValue(config) | date }} </ion-chip>
+    }
     <!-- Date range filters -->
-    <ion-chip *ngIf="shouldShowFilter(config) && config.type === 'date' && config.isRange">
-      {{ getFilterLabel(config) }}: {{ getDateRangeDisplay(config) }}
-    </ion-chip>
-
+    @if (shouldShowFilter(config) && config.type === "date" && config.isRange) {
+      <ion-chip> {{ getFilterLabel(config) }}: {{ getDateRangeDisplay(config) }} </ion-chip>
+    }
     <!-- Other range filters (non-date) -->
-    <ion-chip *ngIf="shouldShowFilter(config) && config.isRange && config.type !== 'date'">
-      {{ getFilterLabel(config) }}: {{ getDisplayValue(config) }}
-    </ion-chip>
-  </ng-container>
+    @if (shouldShowFilter(config) && config.isRange && config.type !== "date") {
+      <ion-chip> {{ getFilterLabel(config) }}: {{ getDisplayValue(config) }} </ion-chip>
+    }
+  }
 </div>

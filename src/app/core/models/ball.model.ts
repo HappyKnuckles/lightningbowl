@@ -22,6 +22,42 @@ export interface Ball {
   thumbnail_image: string;
   us_int: string;
   position?: number;
+  drilling?: BallDrilling;
+}
+
+/**
+ * Layout systems as written on drill sheets:
+ * - Dual Angle: drilling angle (°) × pin to PAP (") × VAL angle (°), e.g. 45° × 4 1/2" × 30°
+ * - VLS / 2LS: pin to PAP (") × PSA to PAP (") × pin buffer ("), e.g. 5" × 4" × 2"
+ */
+export type LayoutSystem = 'dual-angle' | 'vls';
+
+export interface DualAngleLayout {
+  system: 'dual-angle';
+  drillingAngle?: number;
+  pinToPap?: number;
+  valAngle?: number;
+}
+
+export interface VlsLayout {
+  system: 'vls';
+  pinToPap?: number;
+  psaToPap?: number;
+  pinBuffer?: number;
+}
+
+export type BallLayout = DualAngleLayout | VlsLayout;
+
+/** How a specific arsenal ball is drilled. All lengths in inches. */
+export interface BallDrilling {
+  layout?: BallLayout;
+  thumbSize?: number;
+  middleFingerSize?: number;
+  ringFingerSize?: number;
+  /** Free text, e.g. "Turbo Thumb Solution 1 1/64" */
+  thumbInsert?: string;
+  /** Free text, e.g. "Vise Pro #1 Black" */
+  fingerInserts?: string;
 }
 
 export interface Core {

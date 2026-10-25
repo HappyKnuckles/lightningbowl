@@ -12,6 +12,7 @@ import { PatternSortService } from 'src/app/core/services/sort/pattern-sort.serv
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { PatternPage } from './pattern.page';
+import { createSpyObj } from '../../../testing/spy-obj';
 
 describe('PatternPage', () => {
   let component: PatternPage;
@@ -21,14 +22,14 @@ describe('PatternPage', () => {
   beforeEach(async () => {
     allPatterns = signal<Partial<Pattern>[]>([]);
     const mockPatternsStore = { allPatterns };
-    const patternServiceSpy = jasmine.createSpyObj('PatternService', ['getPatterns', 'searchPattern']);
-    const toastServiceSpy = jasmine.createSpyObj('ToastService', ['showToast']);
-    const loadingServiceSpy = jasmine.createSpyObj('LoadingService', ['setLoading']);
-    const hapticServiceSpy = jasmine.createSpyObj('HapticService', ['vibrate']);
-    const sortServiceSpy = jasmine.createSpyObj('PatternSortService', ['sortPatterns'], { PATTERN_SORT_OPTIONS: [] });
-    const networkServiceSpy = jasmine.createSpyObj('NetworkService', [], { isOffline: false });
-    const favoritesServiceSpy = jasmine.createSpyObj('FavoritesService', ['toggleFavorite', 'isFavorite']);
-    const analyticsServiceSpy = jasmine.createSpyObj('AnalyticsService', ['trackEvent', 'trackPatternLookup']);
+    const patternServiceSpy = createSpyObj(['getPatterns', 'searchPattern']);
+    const toastServiceSpy = createSpyObj(['showToast']);
+    const loadingServiceSpy = createSpyObj(['setLoading']);
+    const hapticServiceSpy = createSpyObj(['vibrate']);
+    const sortServiceSpy = createSpyObj(['sortPatterns'], { PATTERN_SORT_OPTIONS: [] });
+    const networkServiceSpy = createSpyObj([], { isOffline: false });
+    const favoritesServiceSpy = createSpyObj(['toggleFavorite', 'isFavorite']);
+    const analyticsServiceSpy = createSpyObj(['trackEvent', 'trackPatternLookup']);
 
     await TestBed.configureTestingModule({
       imports: [PatternPage],
@@ -55,11 +56,11 @@ describe('PatternPage', () => {
   });
 
   it('disables the search until the pattern library has loaded', () => {
-    expect(component.searchDisabled()).toBeTrue();
+    expect(component.searchDisabled()).toBe(true);
 
     allPatterns.set([{ title: 'PBA Shark' }]);
 
-    expect(component.searchDisabled()).toBeFalse();
+    expect(component.searchDisabled()).toBe(false);
   });
 
   it('builds search suggestions from the loaded pattern titles', () => {

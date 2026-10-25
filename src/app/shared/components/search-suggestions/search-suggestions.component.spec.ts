@@ -3,18 +3,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
 import { SearchSuggestionsComponent } from './search-suggestions.component';
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 describe('SearchSuggestionsComponent', () => {
   let component: SearchSuggestionsComponent;
   let fixture: ComponentFixture<SearchSuggestionsComponent>;
   let historySignal: ReturnType<typeof signal<string[]>>;
-  let searchHistoryService: jasmine.SpyObj<SearchHistoryService>;
+  let searchHistoryService: SpyObj<SearchHistoryService>;
 
   beforeEach(async () => {
     historySignal = signal<string[]>([]);
-    searchHistoryService = jasmine.createSpyObj('SearchHistoryService', ['history', 'addSearch', 'removeSearch']);
-    searchHistoryService.history.and.callFake(() => historySignal.asReadonly());
-    searchHistoryService.removeSearch.and.resolveTo();
+    searchHistoryService = createSpyObj(['history', 'addSearch', 'removeSearch']);
+    searchHistoryService.history.mockImplementation(() => historySignal.asReadonly());
+    searchHistoryService.removeSearch.mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [SearchSuggestionsComponent],
@@ -35,7 +36,7 @@ describe('SearchSuggestionsComponent', () => {
     historySignal.set(['zen']);
     fixture.detectChanges();
 
-    expect(component.isVisible()).toBeFalse();
+    expect(component.isVisible()).toBe(false);
     expect(fixture.debugElement.query(By.css('.suggestion-panel'))).toBeNull();
   });
 
@@ -76,7 +77,7 @@ describe('SearchSuggestionsComponent', () => {
     fixture.detectChanges();
 
     expect(component.displayedSuggestions()).toEqual([]);
-    expect(component.isVisible()).toBeFalse();
+    expect(component.isVisible()).toBe(false);
   });
 
   it('renders the Recent and Suggestions sections when both have entries', () => {
@@ -101,7 +102,7 @@ describe('SearchSuggestionsComponent', () => {
     fixture.debugElement.query(By.css('ion-item')).triggerEventHandler('pointerdown', event);
 
     expect(selected).toEqual(['zen']);
-    expect(event.defaultPrevented).toBeTrue();
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('removes a history entry without selecting it', () => {

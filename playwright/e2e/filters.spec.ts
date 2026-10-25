@@ -1,3 +1,4 @@
+import type { Locator } from '@playwright/test';
 import { test, expect } from './lib/app';
 import { HistoryPage } from '../screenshots/pages/history.page';
 
@@ -8,6 +9,25 @@ import { HistoryPage } from '../screenshots/pages/history.page';
  * covered by the unit tests (game-filter.service.spec.ts) — these assert the
  * modal → service → list/chips/count wiring stays consistent.
  */
+
+/**
+ * Read the history header badge: the total number of games matching the current
+ * filter. This — not the number of rendered `ion-accordion`s — is the count to
+ * assert against. GameListComponent lazy-loads in batches (`initialBatchSize`,
+ * 25 by default), so the DOM only ever holds a prefix of the result set.
+ */
+async function badgeCount(app: { active: () => Locator }): Promise<number> {
+  const badge = app.active().locator('ion-header ion-badge').first();
+  await expect(badge).toHaveText(/^\d+$/);
+  return Number(await badge.textContent());
+}
+
+/** Assert the rendered rows are a non-empty prefix of `total`. */
+async function expectRenderedPrefix(app: { active: () => Locator }, total: number): Promise<void> {
+  const rendered = await app.active().locator('ion-accordion').count();
+  expect(rendered).toBeGreaterThan(0);
+  expect(rendered).toBeLessThanOrEqual(total);
+}
 
 /** Read the live "Confirm (N Games)" count from the filter modal footer. */
 async function footerCount(app: { page: import('@playwright/test').Page }): Promise<number> {
@@ -23,7 +43,7 @@ test.describe('history filters', () => {
     const history = new HistoryPage(app.page);
     await history.waitForGames();
 
-    const initial = await app.active().locator('ion-accordion').count();
+    const initial = await badgeCount(app);
     expect(initial).toBeGreaterThan(0);
 
     await history.openFilter();
@@ -37,8 +57,8 @@ test.describe('history filters', () => {
     await app.page.locator('ion-modal.show-modal ion-footer ion-button').click();
 
     // List, header badge and footer count all agree; an active-filter chip shows.
-    await expect(app.active().locator('ion-accordion')).toHaveCount(narrowed);
     await expect(app.active().locator('ion-header ion-badge').first()).toHaveText(String(narrowed));
+    await expectRenderedPrefix(app, narrowed);
     await expect(app.active().locator('app-generic-filter-active ion-chip').first()).toBeVisible();
   });
 
@@ -46,7 +66,7 @@ test.describe('history filters', () => {
     await app.boot('/tabs/history');
     const history = new HistoryPage(app.page);
     await history.waitForGames();
-    const initial = await app.active().locator('ion-accordion').count();
+    const initial = await badgeCount(app);
 
     await history.openFilter();
     await app.page.locator('ion-modal.show-modal ion-toggle', { hasText: 'Only clean games' }).click();
@@ -55,14 +75,15 @@ test.describe('history filters', () => {
     expect(narrowed).toBeLessThan(initial);
 
     await app.page.locator('ion-modal.show-modal ion-footer ion-button').click();
-    await expect(app.active().locator('ion-accordion')).toHaveCount(narrowed);
+    await expect(app.active().locator('ion-header ion-badge').first()).toHaveText(String(narrowed));
+    await expectRenderedPrefix(app, narrowed);
   });
 
   test('Reset clears an active filter and restores the full list', async ({ app }) => {
     await app.boot('/tabs/history');
     const history = new HistoryPage(app.page);
     await history.waitForGames();
-    const initial = await app.active().locator('ion-accordion').count();
+    const initial = await badgeCount(app);
 
     // Apply a filter first.
     await history.openFilter();
@@ -77,6 +98,7 @@ test.describe('history filters', () => {
     await app.page.locator('ion-modal.show-modal ion-footer ion-button').click();
 
     await expect(app.active().locator('app-generic-filter-active')).toHaveCount(0);
-    await expect(app.active().locator('ion-accordion')).toHaveCount(initial);
+    await expect(app.active().locator('ion-header ion-badge').first()).toHaveText(String(initial));
+    await expectRenderedPrefix(app, initial);
   });
 });

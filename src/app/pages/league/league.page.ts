@@ -1,4 +1,4 @@
-import { DecimalPipe, NgIf } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -23,6 +23,7 @@ import {
   IonSegmentView,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import Chart from 'chart.js/auto';
@@ -84,12 +85,12 @@ import { buildHighlights } from 'src/app/core/utils/stat-utils/stat.utils';
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     IonCheckbox,
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
-    NgIf,
     DecimalPipe,
     StatDisplayComponent,
     IonSegmentButton,

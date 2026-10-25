@@ -17,7 +17,7 @@ test.describe('pattern library (mocked API)', () => {
 
     await patterns.search('Cheetah');
 
-    await expect(patterns.active().getByText('PBA Cheetah 35')).toBeVisible();
+    await expect(patterns.active().locator('ion-card').filter({ hasText: 'PBA Cheetah 35' }).first()).toBeVisible();
     expect(await patterns.active().locator('ion-card').count()).toBeLessThan(total);
   });
 });

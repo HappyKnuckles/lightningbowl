@@ -39,6 +39,11 @@ export async function installBowwwlMocks(page: Page, balls: Ball[]): Promise<voi
 export async function installPatternMocks(page: Page, patterns: Pattern[]): Promise<void> {
   // Catch-all (lowest priority): a shape that satisfies both list + search readers.
   await page.route(/pattern\.lightningbowl\.de\/api\//, (route) => json(route, { patterns: [], total: 0, count: 0 }));
+  // The full stripped catalogue drives the facade boot: `allPatterns` gates the
+  // searchbar (`searchDisabled()` is true while empty) and feeds the typeahead.
+  // Its URL carries no query string, so without this it fell to the catch-all
+  // above and the search input stayed [disabled] forever.
+  await page.route(/\/patterns\/all-stripped/, (route) => json(route, { count: patterns.length, patterns }));
   // Library list, paged.
   await page.route(/\/patterns\?page=/, (route) => {
     const isFirst = firstPage(route.request().url());

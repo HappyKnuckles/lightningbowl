@@ -1,8 +1,9 @@
 import { Injectable, signal } from '@angular/core';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { getBallTracking } from '../utils/game-utils/ball.utils';
 import { sortGameHistoryByDate } from '../utils/sort-utils/sort.utils';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +22,12 @@ export class GamesStore {
       const gameHistory = await this.storageRepository.loadByPrefix<Game>(STORAGE_PREFIX.game);
       let needsUpdate = false;
 
+      // Legacy migration: support games stored before ThrowBall was introduced
+      // (where throw.ball was a plain string)
+      interface LegacyThrow {
+        ball?: string | ThrowBall;
+      }
+
       gameHistory.forEach((game) => {
         const legacyGame = game as Game & { pattern?: string };
         if (legacyGame.pattern && !game.patterns) {
@@ -37,19 +44,38 @@ export class GamesStore {
           needsUpdate = true;
         }
 
-        if (game.patterns && Array.isArray(game.patterns)) {
-          const originalPatternsStr = JSON.stringify(game.patterns);
+        if (game.patterns && Array.isArray(game.patterns) && !this.isSorted(game.patterns)) {
           game.patterns.sort();
-          if (JSON.stringify(game.patterns) !== originalPatternsStr) {
-            needsUpdate = true;
-          }
+          needsUpdate = true;
         }
-        if (game.balls && Array.isArray(game.balls)) {
-          const originalBallsStr = JSON.stringify(game.balls);
+        if (game.balls && Array.isArray(game.balls) && !this.isSorted(game.balls)) {
           game.balls.sort();
-          if (JSON.stringify(game.balls) !== originalBallsStr) {
-            needsUpdate = true;
-          }
+          needsUpdate = true;
+        }
+
+        // Migrate legacy string ball data to ThrowBall objects
+        (game.frames || []).forEach((frame) => {
+          (frame.throws || []).forEach((throwData) => {
+            const rawBall = (throwData as LegacyThrow).ball;
+            if (typeof rawBall === 'string') {
+              const trimmed = rawBall.trim();
+              if (trimmed.length === 0) {
+                delete throwData.ball;
+              } else {
+                throwData.ball = { name: trimmed };
+              }
+              needsUpdate = true;
+            }
+          });
+        });
+
+        // Tag how this game recorded its balls. Games that never had a ball picked per throw
+        // stay on game-level tracking. Their throws are deliberately left empty rather than
+        // backfilled, so per-throw stats never count balls the user did not actually record.
+        // The tag is derivable from the frames, so it is set in memory only and reaches storage
+        // with the game's next save, instead of rewriting the whole history on first load.
+        if (!game.ballTracking) {
+          game.ballTracking = getBallTracking(game);
         }
       });
 
@@ -211,5 +237,15 @@ export class GamesStore {
     }
 
     localStorage.setItem('first-game', date.toString());
+  }
+
+  /** Cheap already-sorted check so loadGameHistory can skip sort+save for the common case without JSON.stringify-ing every game's arrays. */
+  private isSorted(values: string[]): boolean {
+    for (let i = 1; i < values.length; i++) {
+      if (values[i - 1] > values[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 }

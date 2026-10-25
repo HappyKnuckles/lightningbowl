@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GameReadonlyComponent } from './game-readonly.component';
+import { makeGame } from 'src/testing/fixtures';
 
 describe('GameReadonlyComponent', () => {
   let component: GameReadonlyComponent;
@@ -13,6 +14,7 @@ describe('GameReadonlyComponent', () => {
 
     fixture = TestBed.createComponent(GameReadonlyComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('game', makeGame());
     fixture.detectChanges();
   });
 

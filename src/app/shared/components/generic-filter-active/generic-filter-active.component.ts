@@ -1,4 +1,4 @@
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { IonChip } from '@ionic/angular/standalone';
 import { FilterConfig, IndexableFilter } from 'src/app/core/models/filter.model';
@@ -6,7 +6,7 @@ import { UtilsService } from 'src/app/core/utils/utils.service';
 
 @Component({
   selector: 'app-generic-filter-active',
-  imports: [IonChip, NgIf, NgFor, DatePipe],
+  imports: [IonChip, DatePipe],
   templateUrl: './generic-filter-active.component.html',
   styleUrl: './generic-filter-active.component.scss',
 })

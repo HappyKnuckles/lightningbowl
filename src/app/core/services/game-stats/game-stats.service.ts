@@ -1,11 +1,13 @@
 import { computed, Injectable, Signal } from '@angular/core';
-import { HighlightItemStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
+import { BallStats, HighlightItemStats, LeaveStats, LiveSeriesStats, PrevStats, SeriesStats, Stats } from 'src/app/core/models/stats.model';
 
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { GameFilterService } from '../game-filter/game-filter.service';
 
 import { Game } from '../../models/game.model';
 import { isAllFramesComplete, toCompletedFramesGame } from '../../utils/game-utils/frame.utils';
+import { byAvg, byGameCount } from '../../utils/sort-utils/sort.utils';
+import { pickTopFromList } from '../../utils/stat-utils/stat.utils';
 import { BallStatsCalculatorService } from './game-stats-calculator/ball-stats-calculator.service';
 import { OverallStatsCalculatorService } from './game-stats-calculator/overall-stats-calculator.service';
 import { PatternStatsCalculatorService } from './game-stats-calculator/pattern-stats-calculator.service';
@@ -30,16 +32,24 @@ export class GameStatsService {
 
   public readonly prevStats: Signal<PrevStats> = this.statsPersistenceService.prevStats;
 
+  public readonly allBallStats: Signal<HighlightItemStats[]> = computed(() => {
+    return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
+  });
+
+  /** Full per-ball stats for the current filter, detailed balls first, then by usage. */
+  public readonly ballStats: Signal<BallStats[]> = computed(() => {
+    return this.calculateBallStats(this.gameFilterService.filteredGames());
+  });
+
+  /** True once any game in the current filter carries per-throw ball data. */
+  public readonly hasDetailedBallStats: Signal<boolean> = computed(() => this.ballStats().some((ball) => ball.tier === 'detailed'));
+
   public readonly bestBallStats: Signal<HighlightItemStats> = computed(() => {
-    return this.calculateBestBallStats(this.gameFilterService.filteredGames());
+    return pickTopFromList(this.allBallStats(), byAvg);
   });
 
   public readonly mostPlayedBallStats: Signal<HighlightItemStats> = computed(() => {
-    return this.calculateMostPlayedBallStats(this.gameFilterService.filteredGames());
-  });
-
-  public readonly allBallStats: Signal<HighlightItemStats[]> = computed(() => {
-    return this.ballStatsCalculatorService.calculateAllBallStats(this.gameFilterService.filteredGames());
+    return pickTopFromList(this.allBallStats(), byGameCount);
   });
 
   public readonly allPatternStats: Signal<HighlightItemStats[]> = computed(() => {
@@ -47,11 +57,11 @@ export class GameStatsService {
   });
 
   public readonly bestPatternStats: Signal<HighlightItemStats> = computed(() => {
-    return this.patternStatsCalculatorService.calculateBestPatternStats(this.gameFilterService.filteredGames());
+    return pickTopFromList(this.allPatternStats(), byAvg);
   });
 
   public readonly mostPlayedPatternStats: Signal<HighlightItemStats> = computed(() => {
-    return this.patternStatsCalculatorService.calculateMostPlayedPatternStats(this.gameFilterService.filteredGames());
+    return pickTopFromList(this.allPatternStats(), byGameCount);
   });
 
   public readonly allLeaves: Signal<LeaveStats[]> = computed(() => {
@@ -75,14 +85,14 @@ export class GameStatsService {
     return this.calculateBowlingStats(games) as Stats;
   });
 
-  public readonly overallStats: Signal<Stats> = computed(() => {
-    const games = this.gamesStore.games();
-    return this.calculateBowlingStats(games) as Stats;
-  });
-
   public readonly seriesStats: Signal<SeriesStats> = computed(() => {
     const games = this.gamesStore.games();
     return this.seriesStatsCalculatorService.calculateSeriesStats(games);
+  });
+
+  public readonly overallStats: Signal<Stats> = computed(() => {
+    const games = this.gamesStore.games();
+    return this.overallStatsCalculatorService.calculateBowlingStats(games, this.seriesStats()) as Stats;
   });
 
   calculateBowlingStats(gameHistory: Game[]): Stats {
@@ -148,6 +158,13 @@ export class GameStatsService {
 
   calculateAllBallStats(gameHistory: Game[]): HighlightItemStats[] {
     return this.ballStatsCalculatorService.calculateAllBallStats(gameHistory);
+  }
+
+  calculateBallStats(gameHistory: Game[]): BallStats[] {
+    return this.ballStatsCalculatorService.calculateBallStats(gameHistory).sort((a, b) => {
+      if (a.tier !== b.tier) return a.tier === 'detailed' ? -1 : 1;
+      return b.gameCount - a.gameCount;
+    });
   }
 
   calculateBestPatternStats(gameHistory: Game[]): HighlightItemStats {

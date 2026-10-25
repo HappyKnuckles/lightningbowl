@@ -1,18 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 import { StorageRepository } from '../storage/storage.repository';
 import { SearchHistoryService } from './search-history.service';
+import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';
 
 /** Lets pending storage promises (load/persist) settle. */
 const flushAsync = (): Promise<void> => new Promise((resolve) => setTimeout(resolve));
 
 describe('SearchHistoryService', () => {
   let service: SearchHistoryService;
-  let storageRepository: jasmine.SpyObj<StorageRepository>;
+  let storageRepository: SpyObj<StorageRepository>;
 
   beforeEach(() => {
-    storageRepository = jasmine.createSpyObj('StorageRepository', ['get', 'set']);
-    storageRepository.get.and.resolveTo(null);
-    storageRepository.set.and.resolveTo();
+    storageRepository = createSpyObj(['get', 'set']);
+    storageRepository.get.mockResolvedValue(null);
+    storageRepository.set.mockResolvedValue(undefined);
 
     TestBed.configureTestingModule({
       providers: [{ provide: StorageRepository, useValue: storageRepository }],
@@ -25,7 +26,7 @@ describe('SearchHistoryService', () => {
   });
 
   it('loads the persisted history on first access', async () => {
-    storageRepository.get.and.resolveTo(['zen', 'phaze']);
+    storageRepository.get.mockResolvedValue(['zen', 'phaze']);
 
     const history = service.history('balls');
     await flushAsync();
@@ -86,7 +87,7 @@ describe('SearchHistoryService', () => {
 
   it('does not clobber a search made while the persisted history is still loading', async () => {
     let resolveLoad!: (value: string[]) => void;
-    storageRepository.get.and.returnValue(new Promise((resolve) => (resolveLoad = resolve)));
+    storageRepository.get.mockReturnValue(new Promise((resolve) => (resolveLoad = resolve)));
 
     const history = service.history('balls');
     await service.addSearch('balls', 'zen');

@@ -30,7 +30,6 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-ball-filter',
@@ -55,7 +54,6 @@ import { CommonModule } from '@angular/common';
     IonSelect,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
     IonSelectOption,
     GenericTypeaheadComponent,
   ],

@@ -3,8 +3,56 @@ import { Subscription } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { IonToast } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import * as allIcons from 'ionicons/icons';
+import {
+  add,
+  alertCircle,
+  alertCircleOutline,
+  bug,
+  bugOutline,
+  checkmark,
+  checkmarkCircle,
+  checkmarkOutline,
+  clipboardOutline,
+  cloudOfflineOutline,
+  eyeOutline,
+  heart,
+  heartOutline,
+  informationCircleOutline,
+  locateOutline,
+  refreshOutline,
+  reloadOutline,
+  removeOutline,
+  searchOutline,
+  shareSocialOutline,
+  warning,
+} from 'ionicons/icons';
 import { NgStyle } from '@angular/common';
+
+const TOAST_ICONS = {
+  add,
+  alertCircle,
+  alertCircleOutline,
+  bug,
+  bugOutline,
+  checkmark,
+  checkmarkCircle,
+  checkmarkOutline,
+  clipboardOutline,
+  cloudOfflineOutline,
+  eyeOutline,
+  heart,
+  heartOutline,
+  informationCircleOutline,
+  locateOutline,
+  refreshOutline,
+  reloadOutline,
+  removeOutline,
+  searchOutline,
+  shareSocialOutline,
+  warning,
+};
+
+const toKebabCase = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 
 interface ToastData {
   id: number;
@@ -30,23 +78,31 @@ export class ToastComponent implements OnDestroy {
   private readonly GAP = 8;
   private heights = new Map<number, number>();
 
+  private readonly registeredIcons = new Set(Object.keys(TOAST_ICONS).map(toKebabCase));
+
   constructor(private toastService: ToastService) {
+    addIcons(TOAST_ICONS);
+
     this.toastSubscription = this.toastService.toastState$.subscribe((raw) => {
-      const newToast: ToastData = {
-        id: this.nextId++,
-        message: raw.message,
-        icon: raw.icon,
-        isError: raw.error ?? false,
-      };
+      void this.ensureIconRegistered(raw.icon).then(() => {
+        const newToast: ToastData = {
+          id: this.nextId++,
+          message: raw.message,
+          icon: raw.icon,
+          isError: raw.error ?? false,
+        };
 
-      if (this.activeToasts.length < this.MAX_ACTIVE) {
-        this.activeToasts.push(newToast);
-      } else {
-        this.toastQueue.push(newToast);
-      }
+        if (this.activeToasts.length < this.MAX_ACTIVE) {
+          this.activeToasts.push(newToast);
+        } else {
+          this.toastQueue.push(newToast);
+        }
+      });
     });
+  }
 
-    addIcons(allIcons);
+  ngOnDestroy(): void {
+    this.toastSubscription.unsubscribe();
   }
 
   onToastDidPresent(id: number, ev: Event) {
@@ -67,10 +123,6 @@ export class ToastComponent implements OnDestroy {
     return offset;
   }
 
-  private estimateHeight(message: string): number {
-    return message.length > 60 ? 80 : 60;
-  }
-
   onToastDidDismiss(dismissedId: number) {
     this.activeToasts = this.activeToasts.filter((t) => t.id !== dismissedId);
     this.heights.delete(dismissedId);
@@ -81,7 +133,25 @@ export class ToastComponent implements OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    this.toastSubscription.unsubscribe();
+  private async ensureIconRegistered(icon: string): Promise<void> {
+    if (!icon || this.registeredIcons.has(icon)) {
+      return;
+    }
+
+    try {
+      const allIcons = (await import('ionicons/icons')) as unknown as Record<string, string>;
+      const match = Object.keys(allIcons).find((key) => toKebabCase(key) === icon);
+      if (match) {
+        addIcons({ [match]: allIcons[match] });
+      }
+    } catch (error) {
+      console.error('Failed to load toast icon:', icon, error);
+    } finally {
+      this.registeredIcons.add(icon);
+    }
+  }
+
+  private estimateHeight(message: string): number {
+    return message.length > 60 ? 80 : 60;
   }
 }

@@ -1,6 +1,14 @@
 import { Frame } from 'src/app/core/models/game.model';
 import { getThrowValue } from './frame.utils';
 
+/** Thrown when a scanned scoresheet holds no score lines for the given player. */
+export class ScoreSheetPlayerNotFoundError extends Error {
+  constructor(readonly username: string) {
+    super(`Insufficient score data for user ${username}`);
+    this.name = 'ScoreSheetPlayerNotFoundError';
+  }
+}
+
 /** Parse a single typed throw input (X, /, number) against a Frame[]. */
 export function parseInputValue(input: string, frameIndex: number, throwIndex: number, frames: Frame[]): number {
   const upperInput = input.toUpperCase();
@@ -74,7 +82,7 @@ export function parseBowlingScores(input: string, username: string): { frames: n
   const relevantLines = nextNonXLineIndex >= 0 ? linesAfterUsername.slice(0, nextNonXLineIndex) : linesAfterUsername;
 
   if (relevantLines.length < 2) {
-    throw new Error(`Insufficient score data for user ${username}`);
+    throw new ScoreSheetPlayerNotFoundError(username);
   }
 
   let throwValues = relevantLines[0].split('');

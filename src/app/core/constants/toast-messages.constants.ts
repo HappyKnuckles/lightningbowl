@@ -1,6 +1,8 @@
 export const TOAST_MESSAGES = {
   noImage: 'No image uploaded.',
   imageUploadError: 'Error uploading image.',
+  noTextFound: "Couldn't read any scores from that image. Try a clearer photo.",
+  noScoresForUser: 'No scores found for your name on that sheet. Check your name in the menu.',
   gameSaveSuccess: 'Game saved successfully.',
   gameResetSuccess: 'Game reset successfully.',
   gameSaveError: 'Error saving game.',
@@ -42,4 +44,13 @@ export const TOAST_MESSAGES = {
   leagueEditMode: 'Select leagues to hide or show.',
   pinpalImportSuccess: 'PinPal backup imported successfully.',
   pinpalImportError: 'Error importing PinPal backup.',
+  fitSaveSuccess: 'Fit saved successfully.',
+  fitSaveError: 'Error saving fit.',
+  drillingSaveError: 'Error saving drilling.',
+  layoutPresetSaveSuccess: 'Layout preset saved successfully.',
+  layoutPresetSaveError: 'Error saving layout preset.',
+  layoutPresetRemoveSuccess: 'Layout preset removed successfully.',
+  layoutPresetExists: 'This layout is already a preset.',
+  layoutPresetIncomplete: 'Fill in all layout values to save it as a preset.',
+  invalidMeasurement: 'Invalid measurement. Use inches like 4 1/2, 4.5 or 41/64.',
 };

@@ -60,6 +60,8 @@ export class AppFacade {
   async loadInitialData(weight: number): Promise<void> {
     try {
       this.settingsStore.loadPinInputMode();
+      this.settingsStore.loadBallTracking();
+      this.settingsStore.loadHandedness();
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
         this.patternsStore.loadPatternImageMap(),
@@ -67,6 +69,8 @@ export class AppFacade {
         this.leaguesStore.loadLeagues(),
         this.gamesStore.loadGameHistory(),
         this.ballsStore.loadArsenal(),
+        this.settingsStore.loadFit(),
+        this.settingsStore.loadLayoutPresets(),
         this.ballService.getBrands(),
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),

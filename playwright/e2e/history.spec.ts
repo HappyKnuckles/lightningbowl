@@ -7,13 +7,19 @@ test.describe('game history', () => {
     const history = new HistoryPage(app.page);
     await history.waitForGames();
 
-    const cards = app.active().locator('ion-accordion');
-    const count = await cards.count();
-    expect(count).toBeGreaterThan(0);
-
-    // The header badge reflects the number of (filtered) games shown.
+    // The header badge is the total number of (filtered) games. The list itself
+    // lazy-loads in batches (GameListComponent's `initialBatchSize`, 25 by
+    // default), so the DOM holds a non-empty prefix of that total rather than
+    // all of it — asserting DOM count === badge only held while every row fit
+    // in the first batch.
     const badge = app.active().locator('ion-header ion-badge').first();
-    await expect(badge).toHaveText(String(count));
+    await expect(badge).toHaveText(/^\d+$/);
+    const total = Number(await badge.textContent());
+    expect(total).toBeGreaterThan(0);
+
+    const rendered = await app.active().locator('ion-accordion').count();
+    expect(rendered).toBeGreaterThan(0);
+    expect(rendered).toBeLessThanOrEqual(total);
 
     // Each card surfaces a total score.
     await expect(app.active().locator('.score-text').first()).toContainText(/\d+/);

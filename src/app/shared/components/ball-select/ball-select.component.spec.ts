@@ -13,6 +13,7 @@ describe('BallSelectComponent', () => {
 
     fixture = TestBed.createComponent(BallSelectComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('selectedBalls', []);
     fixture.detectChanges();
   });
 

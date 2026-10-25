@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -27,6 +26,7 @@ import {
   IonSelectOption,
   IonText,
   IonTitle,
+  IonMenuButton,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import type { Chart } from 'chart.js';
@@ -58,11 +58,11 @@ interface SavedEntry {
     IonCol,
     IonRow,
     IonGrid,
-    CommonModule,
     FormsModule,
     IonContent,
     IonHeader,
     IonTitle,
+    IonMenuButton,
     IonToolbar,
     IonButton,
     IonButtons,

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 import { Game } from 'src/app/core/models/game.model';
 import { BallDetailStats, BallStats, HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -86,18 +87,9 @@ export class BallStatsCalculatorService {
     return pickTop(this._calculateAllBallStats(gameHistory), byGameCount);
   }
 
+  /** There is no full catalog on the device; games' balls are resolved into the known balls at startup. */
   private getBallCandidates(): Ball[] {
-    const all = this.ballsStore.allBalls();
-    const arsenal = this.ballsStore.arsenal();
-    const merged = [...all, ...arsenal];
-    const seen = new Set<string>();
-
-    return merged.filter((ball) => {
-      const key = `${ball.ball_id}-${ball.core_weight}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    return this.ballsStore.knownBalls();
   }
 
   private normalizeBallName(value: string): string {
@@ -269,7 +261,7 @@ export class BallStatsCalculatorService {
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
       const resolvedBall = this.resolveBallReference(ballName);
-      const ballImage = resolvedBall?.ball_image || resolvedBall?.thumbnail_image || '';
+      const ballImage = ballImageUrl(resolvedBall, 'ball');
       const strikeRate = stats.totalThrows > 0 ? Math.round((stats.totalStrikes / stats.totalThrows) * 100) : 0;
 
       finalStats[ballName] = {

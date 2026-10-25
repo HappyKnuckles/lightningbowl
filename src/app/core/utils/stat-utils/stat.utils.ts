@@ -38,7 +38,8 @@ export function buildHighlights(src: {
       allItems: src.allBalls,
       sortMode: 'gameCount' as const,
       emptyMessage: 'No Games with balls saved.',
-      imageUrlBase: undefined,
+      // Ball images are absolute URLs already.
+      imageUrlBase: '',
       roundImage: true,
     },
     {
@@ -47,7 +48,8 @@ export function buildHighlights(src: {
       allItems: src.allBalls,
       sortMode: 'avg' as const,
       emptyMessage: 'No Games with balls saved.',
-      imageUrlBase: undefined,
+      // Ball images are absolute URLs already.
+      imageUrlBase: '',
       roundImage: true,
     },
     {

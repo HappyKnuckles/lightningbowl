@@ -13,7 +13,6 @@ describe('PinInputComponent', () => {
   let component: PinInputComponent;
   let fixture: ComponentFixture<PinInputComponent>;
 
-  const allBalls = signal<Ball[]>([]);
   const arsenal = signal<Ball[]>([]);
   const saveBallsToArsenal = vi.fn<(balls: Ball[]) => Promise<Ball[]>>();
   const showToast = vi.fn();
@@ -44,7 +43,6 @@ describe('PinInputComponent', () => {
   };
 
   beforeEach(async () => {
-    allBalls.set([]);
     arsenal.set([]);
     saveBallsToArsenal.mockReset().mockResolvedValue([]);
     showToast.mockReset();
@@ -52,7 +50,7 @@ describe('PinInputComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PinInputComponent],
       providers: [
-        { provide: BallsStore, useValue: { allBalls, arsenal, saveBallsToArsenal, url: '' } },
+        { provide: BallsStore, useValue: { arsenal, saveBallsToArsenal, url: '' } },
         { provide: ToastService, useValue: { showToast } },
       ],
     }).compileComponents();
@@ -70,10 +68,8 @@ describe('PinInputComponent', () => {
     const iq = makeBall({ ball_id: 'b1', ball_name: 'IQ Tour', core_weight: '15' });
     const phaze = makeBall({ ball_id: 'b2', ball_name: 'Phaze II', core_weight: '15' });
 
-    beforeEach(() => allBalls.set([iq, phaze]));
-
     it('saves every selected ball to the arsenal, not just the first', async () => {
-      await component.onBallAdd(['b1', 'b2']);
+      await component.onBallAdd([iq, phaze]);
 
       expect(saveBallsToArsenal).toHaveBeenCalledWith([iq, phaze]);
     });
@@ -82,7 +78,7 @@ describe('PinInputComponent', () => {
       const emitted: (ThrowBall | undefined)[] = [];
       component.ballSelected.subscribe((ball) => emitted.push(ball));
 
-      await component.onBallAdd(['b1']);
+      await component.onBallAdd([iq]);
 
       expect(emitted).toEqual([{ name: 'IQ Tour', weight: '15' }]);
       expect(component.isBallModalOpen()).toBe(false);
@@ -92,7 +88,7 @@ describe('PinInputComponent', () => {
       const emitted: (ThrowBall | undefined)[] = [];
       component.ballSelected.subscribe((ball) => emitted.push(ball));
 
-      await component.onBallAdd(['b1', 'b2']);
+      await component.onBallAdd([iq, phaze]);
 
       expect(emitted).toEqual([]);
       expect(component.isBallModalOpen()).toBe(true);
@@ -103,13 +99,13 @@ describe('PinInputComponent', () => {
       const emitted: (ThrowBall | undefined)[] = [];
       component.ballSelected.subscribe((ball) => emitted.push(ball));
 
-      await component.onBallAdd(['b1', 'b2']);
+      await component.onBallAdd([iq, phaze]);
 
       expect(emitted).toEqual([{ name: 'IQ Tour', weight: '15' }]);
     });
 
-    it('does nothing when the selection matches no known ball', async () => {
-      await component.onBallAdd(['nope']);
+    it('does nothing when nothing was picked', async () => {
+      await component.onBallAdd([]);
 
       expect(saveBallsToArsenal).not.toHaveBeenCalled();
     });

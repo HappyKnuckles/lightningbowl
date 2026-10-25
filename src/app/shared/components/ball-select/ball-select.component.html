@@ -8,7 +8,7 @@
     @for (ball of rankedArsenal(); track $index) {
       <ion-item [lines]="$last ? 'none' : ''">
         <ion-avatar slot="start" (click)="toggleBallSelection(ball.ball_name, ball.core_weight)">
-          <img [src]="ballsStore.url + ball.thumbnail_image" [alt]="ball.ball_name + 'image'" />
+          <img [src]="ball | ballImage" [alt]="ball.ball_name + 'image'" />
         </ion-avatar>
         <ion-checkbox
           justify="space-between"

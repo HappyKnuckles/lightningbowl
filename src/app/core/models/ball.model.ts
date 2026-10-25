@@ -1,29 +1,18 @@
-export interface Ball {
-  availability: string;
-  ball_id: string;
-  ball_image: string;
-  ball_name: string;
-  brand_id: string;
-  brand_name: string;
-  core_diff: string;
-  core_id: string;
-  core_image: string;
-  core_int_diff: string;
-  core_name: string;
-  core_rg: string;
-  core_type: string;
-  core_weight: string;
-  coverstock_id: string;
-  coverstock_name: string;
-  coverstock_type: string;
-  factory_finish: string;
-  last_update: string;
-  release_date: string;
-  thumbnail_image: string;
-  us_int: string;
+import type { components } from './generated/ball-api';
+
+// Ball API types are generated from its OpenAPI spec (`npm run generate:ball-api`).
+type ApiSchemas = components['schemas'];
+
+/**
+ * A ball (in one weight) as the ball API returns it. `first_seen_at` is
+ * optional because balls saved before the ball API (e.g. in the arsenal) don't
+ * have it; `position` is the app's own arsenal order.
+ */
+export type Ball = Omit<ApiSchemas['Ball'], 'first_seen_at'> & {
+  first_seen_at?: string;
   position?: number;
   drilling?: BallDrilling;
-}
+};
 
 /**
  * Layout systems as written on drill sheets:
@@ -60,25 +49,11 @@ export interface BallDrilling {
   fingerInserts?: string;
 }
 
-export interface Core {
-  core_name: string;
-  brand: string;
-  id: string;
-  api_filter_url: string;
-}
+export type Core = ApiSchemas['Core'];
 
-export interface Coverstock {
-  coverstock_name: string;
-  brand: string;
-  id: string;
-  api_filter_url: string;
-}
+export type Coverstock = ApiSchemas['Coverstock'];
 
-export interface Brand {
-  brand_name: string;
-  id: string;
-  logo: string;
-}
+export type Brand = ApiSchemas['Brand'];
 
 export interface BallMetrics {
   hookScore: number;
@@ -102,3 +77,9 @@ export interface BallTraits {
   rg: number;
   diff: number;
 }
+
+/** One page of balls from the ball API (Spring `PagedModel` shape). */
+export type BallPage = Omit<ApiSchemas['BallPage'], 'content'> & { content: Ball[] };
+
+/** Query-string values for `GET balls`; arrays become repeated parameters. */
+export type BallQueryParams = Record<string, string | string[]>;

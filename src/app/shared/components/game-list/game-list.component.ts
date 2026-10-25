@@ -26,6 +26,7 @@ import {
 import { addIcons } from 'ionicons';
 import {
   bowlingBallOutline,
+  chevronExpandOutline,
   cloudDownloadOutline,
   cloudUploadOutline,
   createOutline,
@@ -339,6 +340,7 @@ export class GameListComponent implements OnInit {
       cloudDownloadOutline,
       filterOutline,
       layersOutline,
+      chevronExpandOutline,
     });
   }
 
@@ -545,9 +547,9 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
-  async onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
-    const allBalls = this.ballsStore.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+  async onBallAdd(selected: Ball[], game: Game, modal: IonModal) {
+    // picked balls may come from an API search, so keep them resolvable offline
+    void this.ballsStore.rememberBalls(selected);
     const applied = await this.onBallSelect(
       selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
       game,
@@ -636,7 +638,7 @@ export class GameListComponent implements OnInit {
     if (!names) return [];
 
     return this.ballsStore
-      .allBalls()
+      .knownBalls()
       .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }

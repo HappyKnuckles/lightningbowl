@@ -197,10 +197,10 @@
               <ion-modal [trigger]="ballSelectorId()" [presentingElement]="presentingElement">
                 <ng-template>
                   <app-generic-typeahead
-                    [items]="ballsStore.allBalls()"
+                    [items]="ballsStore.arsenal()"
                     [config]="ballTypeaheadConfig"
                     [prevSelectedItems]="getBallIds(currentGame().balls)"
-                    (selectedItemsChange)="onBallAdd($event)">
+                    (selectedObjectsChange)="onBallAdd($event)">
                   </app-generic-typeahead>
                 </ng-template>
               </ion-modal>

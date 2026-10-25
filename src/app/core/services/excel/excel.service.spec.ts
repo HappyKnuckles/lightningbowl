@@ -18,7 +18,8 @@ describe('ExcelService', () => {
 
   beforeEach(() => {
     const gamesStoreSpy = createSpyObj(['games', 'saveGamesToLocalStorage']);
-    const ballsStoreSpy = createSpyObj(['allBalls', 'arsenal', 'saveBallToArsenal']);
+    const ballsStoreSpy = createSpyObj<BallsStore>(['resolveBallNames', 'knownBalls', 'arsenal', 'saveBallToArsenal']);
+    ballsStoreSpy.knownBalls.mockReturnValue([]);
     const leaguesStoreSpy = createSpyObj(['addLeague']);
 
     TestBed.configureTestingModule({
@@ -73,7 +74,7 @@ describe('ExcelService', () => {
 
   it('should support legacy Pattern field in transformData', async () => {
     // Mock storage service methods
-    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
     mockBallsStore.arsenal.mockReturnValue([]);
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
@@ -151,7 +152,7 @@ describe('ExcelService', () => {
 
   it('should prefer new Patterns field over legacy Pattern field', async () => {
     // Mock storage service methods
-    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
     mockBallsStore.arsenal.mockReturnValue([]);
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
@@ -225,7 +226,7 @@ describe('ExcelService', () => {
   it('imports a per-throw ball as name and weight, the way the app stores one', async () => {
     // Export writes "Name 15lbs" into the Ball columns. Reading that back as one string would
     // key the throw as its own ball and split the ball's per-throw stats across two entries.
-    mockBallsStore.allBalls.mockReturnValue([]);
+    mockBallsStore.knownBalls.mockReturnValue([]);
     mockBallsStore.arsenal.mockReturnValue([]);
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));

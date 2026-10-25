@@ -20,7 +20,7 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { documentOutline, openOutline, warningOutline } from 'ionicons/icons';
+import { chevronBack, documentOutline, openOutline, warningOutline } from 'ionicons/icons';
 import { GitHubIssue } from 'src/app/core/models/github-issue.model';
 import { GitHubService } from 'src/app/core/services/github/github.service';
 
@@ -60,6 +60,7 @@ export class GithubIssuesModalComponent implements OnInit {
       documentOutline,
       openOutline,
       warningOutline,
+      chevronBack,
     });
   }
 

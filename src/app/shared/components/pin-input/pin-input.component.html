@@ -68,7 +68,7 @@
 
 <ion-modal [isOpen]="isAddBallModalOpen()" (didDismiss)="closeAddBallModal()">
   <ng-template>
-    <app-generic-typeahead [items]="ballsStore.allBalls()" [config]="ballTypeaheadConfig" (selectedItemsChange)="onBallAdd($event)">
+    <app-generic-typeahead [items]="ballsStore.arsenal()" [config]="ballTypeaheadConfig" (selectedObjectsChange)="onBallAdd($event)">
     </app-generic-typeahead>
   </ng-template>
 </ion-modal>

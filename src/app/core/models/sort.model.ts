@@ -13,6 +13,8 @@ export enum BallSortField {
   CORE_TYPE = 'core_type',
   COVERSTOCK_TYPE = 'coverstock_type',
   FACTORY_FINISH = 'factory_finish',
+  /** Search relevance ("Best Match"); only offered while searching. Not a Ball field. */
+  RELEVANCE = 'relevance',
 }
 
 export enum PatternSortField {

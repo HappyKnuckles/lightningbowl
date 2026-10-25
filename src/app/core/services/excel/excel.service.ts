@@ -249,6 +249,8 @@ export class ExcelService {
         await this.leaguesStore.addLeague(league);
       }
 
+      // Fetches balls the device doesn't know yet from the ball API (exact name), so they resolve below.
+      await this.ballsStore.resolveBallNames([...ballMap.values()]);
       for (const ball of ballMap.values()) {
         const ballToAdd = this.resolveBallReference(ball);
         if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
@@ -787,7 +789,7 @@ export class ExcelService {
 
   private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
     const raw = rawBallValue?.trim();
-    return raw ? findBallInArsenal({ name: raw }, this.ballsStore.allBalls()) : undefined;
+    return raw ? findBallInArsenal({ name: raw }, this.ballsStore.knownBalls()) : undefined;
   }
 
   /**

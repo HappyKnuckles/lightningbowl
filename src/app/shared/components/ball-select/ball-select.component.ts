@@ -1,3 +1,4 @@
+import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, computed, inject, input, output, signal, OnInit } from '@angular/core';
 import {
   IonButtons,
@@ -20,7 +21,7 @@ import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage
 
 @Component({
   selector: 'app-ball-select',
-  imports: [IonItem, IonAvatar, IonList, IonLabel, IonTitle, IonHeader, IonContent, IonCheckbox, IonButton, IonToolbar, IonFooter, IonButtons],
+  imports: [BallImagePipe, IonItem, IonAvatar, IonList, IonLabel, IonTitle, IonHeader, IonContent, IonCheckbox, IonButton, IonToolbar, IonFooter, IonButtons],
   templateUrl: './ball-select.component.html',
   styleUrls: ['./ball-select.component.scss'],
 })

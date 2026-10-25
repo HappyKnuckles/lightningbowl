@@ -36,7 +36,7 @@ import {
 } from '@ionic/angular/standalone';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
-import { calendarNumber, calendarNumberOutline, filterOutline } from 'ionicons/icons';
+import { calendarNumber, calendarNumberOutline, filterOutline, trendingDownOutline, trendingUpOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
@@ -308,7 +308,7 @@ export class StatsPage implements OnInit {
     private chartService: ChartGenerationService,
     private toastService: ToastService,
   ) {
-    addIcons({ filterOutline, calendarNumberOutline, calendarNumber });
+    addIcons({ filterOutline, calendarNumberOutline, calendarNumber, trendingUpOutline, trendingDownOutline });
 
     effect(() => {
       if (this.gameFilterService.filteredGames().length > 0) {

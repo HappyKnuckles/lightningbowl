@@ -126,17 +126,14 @@ export class PinInputComponent {
   }
 
   /**
-   * Balls picked from the full catalogue when the arsenal is still empty. Every pick is
+   * Balls picked from the ball API when the arsenal is still empty. Every pick is
    * saved, not just the first: adding three balls and getting one is the kind of silent
    * loss you only notice much later. A single ball is used for this throw straight away;
    * with several there is no way to know which one is in hand, so the arsenal picker opens
    * for the user to choose.
    */
-  async onBallAdd(ballIds: string[]): Promise<void> {
+  async onBallAdd(balls: Ball[]): Promise<void> {
     this.isAddBallModalOpen.set(false);
-
-    const allBalls = this.ballsStore.allBalls();
-    const balls = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     if (balls.length === 0) return;
 
     const failed = await this.ballsStore.saveBallsToArsenal(balls);

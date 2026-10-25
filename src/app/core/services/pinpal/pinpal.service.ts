@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
+import { BallService } from 'src/app/core/services/ball/ball.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -34,6 +35,7 @@ export class PinpalService {
 
   constructor(
     private ballsStore: BallsStore,
+    private ballService: BallService,
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
@@ -53,8 +55,9 @@ export class PinpalService {
       const gameRows = this.queryGames(db);
       const timestamp = Date.now();
 
-      // Namen für Matching laden
-      const availableBalls = this.ballsStore.allBalls();
+      // Ball candidates for name matching: known balls plus API search results
+      // for every distinct ball name in the import.
+      const availableBalls = await this.findBallCandidates(gameRows.map((row) => row.ballName));
       const availableBallNames = availableBalls.map((b) => b.ball_name);
       const availableBallsByName = new Map(availableBalls.map((ball) => [ball.ball_name.toLowerCase(), ball]));
       const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
@@ -262,6 +265,16 @@ export class PinpalService {
   /**
    * Fuzzy Matching Logik
    */
+  /** Known balls plus the top API matches for each distinct name (skipped offline). */
+  private async findBallCandidates(names: (string | null)[]): Promise<Ball[]> {
+    const known = this.ballsStore.knownBalls();
+    const unique = [...new Set(names.map((name) => name?.trim()).filter((name): name is string => !!name))];
+    const searches = await Promise.allSettled(unique.map((name) => this.ballService.findBallsByText(name, undefined, 10)));
+    const found = searches.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
+    const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
+    return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
+  }
+
   private findBestMatch(input: string | null, available: string[]): string | null {
     if (!input) return null;
     const sanitized = input.trim().toLowerCase();

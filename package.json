@@ -24,7 +24,8 @@
     "e2e": "playwright test --config=playwright.e2e.config.ts",
     "e2e:ui": "playwright test --config=playwright.e2e.config.ts --ui",
     "e2e:headed": "playwright test --config=playwright.e2e.config.ts --headed",
-    "e2e:report": "playwright show-report playwright/.e2e-report"
+    "e2e:report": "playwright show-report playwright/.e2e-report",
+    "generate:ball-api": "openapi-typescript https://balls.lightningbowl.de/api/openapi.json -o src/app/core/models/generated/ball-api.d.ts && prettier --write src/app/core/models/generated/ball-api.d.ts"
   },
   "private": true,
   "dependencies": {
@@ -99,6 +100,7 @@
     "eslint-plugin-perfectionist": "5.10.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
+    "openapi-typescript": "^7.4.4",
     "prettier": "3.5.2",
     "sass": "^1.103.0",
     "stylelint": "^16.14.1",

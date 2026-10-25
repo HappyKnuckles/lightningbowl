@@ -238,9 +238,9 @@
                     <ng-template>
                       <app-generic-typeahead
                         [config]="ballTypeaheadConfig"
-                        [items]="ballsStore.allBalls()"
+                        [items]="ballsStore.arsenal()"
                         [prevSelectedItems]="getBallIds(game.balls)"
-                        (selectedItemsChange)="onBallAdd($event, game, allBallsModal)">
+                        (selectedObjectsChange)="onBallAdd($event, game, allBallsModal)">
                       </app-generic-typeahead>
                     </ng-template>
                   </ion-modal>

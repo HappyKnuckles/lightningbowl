@@ -1,4 +1,5 @@
-import { signal } from '@angular/core';
+import { BALL_PLACEHOLDER_IMAGE } from 'src/app/core/utils/ball-utils/ball-image.utils';
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game } from 'src/app/core/models/game.model';
@@ -31,7 +32,8 @@ describe('BallStatsCalculatorService', () => {
     allBalls.set([]);
     arsenal.set([]);
     TestBed.configureTestingModule({
-      providers: [{ provide: BallsStore, useValue: { allBalls, arsenal, url: '' } }],
+      // the calculator resolves stored ball names against the store's known balls
+      providers: [{ provide: BallsStore, useValue: { knownBalls: computed(() => [...allBalls(), ...arsenal()]), url: '' } }],
     });
     calculator = TestBed.inject(BallStatsCalculatorService);
   });
@@ -97,18 +99,32 @@ describe('BallStatsCalculatorService', () => {
       expect(stats[0].strikeRate).toBe(100);
     });
 
-    it('attaches the ball image from the store', () => {
-      allBalls.set([makeBall({ ball_name: 'Hammer', ball_image: 'hammer.png' })]);
+    it('attaches the ball image from the store as an absolute URL', () => {
+      allBalls.set([makeBall({ ball_name: 'Hammer', ball_image: '/hammer.png' })]);
 
       const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: ['Hammer'] })]);
 
-      expect(stats[0].image).toBe('hammer.png');
+      expect(stats[0].image).toBe('https://bowwwl.com/hammer.png');
     });
 
-    it('falls back to an empty image for an unknown ball', () => {
+    it('shows balls stored with their weight as "Name 15lbs", with the image of the ball', () => {
+      allBalls.set([makeBall({ ball_name: 'Phaze II', ball_image: '/phaze.png' })]);
+
+      const stats = calculator.calculateAllBallStats([
+        makeGame({ totalScore: 200, balls: ['Phaze II15'] }),
+        makeGame({ totalScore: 220, balls: ['Phaze II 15lbs'] }),
+      ]);
+
+      expect(stats).toHaveLength(1);
+      expect(stats[0].name).toBe('Phaze II 15lbs');
+      expect(stats[0].gameCount).toBe(2);
+      expect(stats[0].image).toBe('https://bowwwl.com/phaze.png');
+    });
+
+    it('falls back to the placeholder image for an unknown ball', () => {
       const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: ['Unknown'] })]);
 
-      expect(stats[0].image).toBe('');
+      expect(stats[0].image).toBe(BALL_PLACEHOLDER_IMAGE);
     });
   });
 

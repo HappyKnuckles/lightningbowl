@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { firstValueFrom, retry } from 'rxjs';
-import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
+import { firstValueFrom } from 'rxjs';
+import { BALL_API, BALL_LOOKUP_CHUNK } from 'src/app/core/constants/ball-api.constants';
+import { Ball, BallPage, BallQueryParams, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
@@ -21,82 +22,55 @@ export class BallService {
     private networkService: NetworkService,
   ) {}
 
-  async loadBalls(page: number): Promise<Ball[]> {
-    const cacheKey = `balls_page_${page}`;
-
-    try {
-      // Check cache first
-      const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-      if (cachedBalls && (isCacheValid || this.networkService.isOffline)) {
-        return cachedBalls;
-      }
-
-      if (this.networkService.isOffline) {
-        return [];
-      }
-
-      const response = await firstValueFrom(
-        this.http.get<Ball[]>(`${environment.bowwwlEndpoint}balls-pages`, {
-          params: {
-            page: page.toString(),
-          },
-        }),
-      );
-
-      if (response.length !== 0) {
-        await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 6 hours
-      }
-
-      return response;
-    } catch (error) {
-      console.error(`Error loading balls for page ${page}:`, error);
-
-      // Try to use cached data as fallback
-      const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      if (cachedBalls) {
-        return cachedBalls;
-      }
-
-      throw error;
-    }
+  /** Server-side search, filter, sort and paging (see `buildBallQueryParams`). */
+  async searchBalls(params: BallQueryParams): Promise<BallPage> {
+    return firstValueFrom(this.http.get<BallPage>(this.url(BALL_API.balls), { params }));
   }
 
-  async loadAllBalls(updated?: string, weight?: number): Promise<Ball[]> {
-    try {
-      let params = new HttpParams();
-      if (updated) {
-        params = params.set('updated', updated);
-      }
-      if (weight !== undefined) {
-        params = params.set('weight', weight.toString());
-      }
-      const response = await firstValueFrom(
-        this.http.get<Ball[]>(`${environment.bowwwlEndpoint}all-balls`, { params }).pipe(retry({ count: 5, delay: 2000 })),
-      );
-      return response;
-    } catch (error) {
-      console.error('Error loading all balls:', error);
-      throw error;
-    }
+  /** Text search for pickers: the best matches for `term`. */
+  async findBallsByText(term: string, weight?: string, size = 50): Promise<Ball[]> {
+    const page = await this.searchBalls({ search: term, size: String(size), ...(weight ? { weight } : {}) });
+    return page.content;
   }
 
-  async getBallsByWeight(weight: number): Promise<Ball[]> {
-    return this.fetchWithCache(`balls_weight_${weight}`, () => this.loadAllBalls(undefined, weight), 24 * 60 * 60 * 1000);
+  /** One page for pickers: newest balls first when browsing, best matches when `term` is set. */
+  async findBallsPage(term: string, page: number, weight?: string, size = 50): Promise<{ items: Ball[]; hasMore: boolean }> {
+    const params: BallQueryParams = { page: String(page), size: String(size), ...(weight ? { weight } : {}) };
+    if (term) {
+      params['search'] = term;
+    } else {
+      params['sort'] = 'release_date,desc';
+    }
+    const response = await this.searchBalls(params);
+    return { items: response.content, hasMore: response.page.number + 1 < response.page.totalPages };
+  }
+
+  /** All weight variants of the given ball ids. */
+  async getBallsByIds(ballIds: string[]): Promise<Ball[]> {
+    return this.lookup('id', ballIds);
+  }
+
+  /** All weight variants of balls with exactly these names (case-insensitive). */
+  async getBallsByNames(names: string[]): Promise<Ball[]> {
+    return this.lookup('name', names);
+  }
+
+  /** One ball at a given weight, or undefined if it doesn't exist in that weight. */
+  async getBallVariant(ballId: string, weight: number | string): Promise<Ball | undefined> {
+    const { path, params } = BALL_API.ball(ballId);
+    try {
+      const variants = await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: String(weight) } }));
+      return variants.find((b) => Number(b.core_weight) === Number(weight));
+    } catch (error) {
+      if ((error as { status?: number }).status === 404) return undefined;
+      throw error;
+    }
   }
 
   async getBallsByCore(ball: Ball): Promise<Ball[]> {
+    if (!ball.core_name) return [];
     try {
-      const response = await firstValueFrom(
-        this.http.get<Ball[]>(`${environment.bowwwlEndpoint}core-balls`, {
-          params: {
-            core: ball.core_name,
-            ballId: ball.ball_id.toString(),
-          },
-        }),
-      );
-      return response;
+      return await this.findRelatedBalls({ core: ball.core_name, excludeId: ball.ball_id.toString(), weight: ball.core_weight });
     } catch (error) {
       console.error(`Error loading balls by core for ball ID ${ball.ball_id}:`, error);
       throw error;
@@ -104,16 +78,9 @@ export class BallService {
   }
 
   async getBallsByCoverstock(ball: Ball): Promise<Ball[]> {
+    if (!ball.coverstock_name) return [];
     try {
-      const response = await firstValueFrom(
-        this.http.get<Ball[]>(`${environment.bowwwlEndpoint}coverstock-balls`, {
-          params: {
-            coverstock: ball.coverstock_name,
-            ballId: ball.ball_id.toString(),
-          },
-        }),
-      );
-      return response;
+      return await this.findRelatedBalls({ coverstock: ball.coverstock_name, excludeId: ball.ball_id.toString(), weight: ball.core_weight });
     } catch (error) {
       console.error(`Error loading balls by coverstock for ball ID ${ball.ball_id}:`, error);
       throw error;
@@ -122,12 +89,7 @@ export class BallService {
 
   async getBallByBrand(brand: string): Promise<Ball[]> {
     try {
-      const response = await firstValueFrom(
-        this.http.get<Ball[]>(`${environment.bowwwlEndpoint}brand`, {
-          params: { brand },
-        }),
-      );
-      return response;
+      return await this.findRelatedBalls({ brand });
     } catch (error) {
       console.error(`Error loading balls by brand "${brand}":`, error);
       throw error;
@@ -137,7 +99,7 @@ export class BallService {
   async getBrands(): Promise<Brand[]> {
     return this.fetchWithCache(
       'brands',
-      () => firstValueFrom(this.http.get<Brand[]>(`${environment.bowwwlEndpoint}brands`)),
+      () => firstValueFrom(this.http.get<Brand[]>(this.url(BALL_API.brands))),
       7 * 24 * 60 * 60 * 1000,
       (data) => this.brands.set(data),
     );
@@ -146,86 +108,66 @@ export class BallService {
   async getCores(): Promise<Core[]> {
     return this.fetchWithCache(
       'cores',
-      () => firstValueFrom(this.http.get<Core[]>(`${environment.bowwwlEndpoint}cores`)),
+      () => firstValueFrom(this.http.get<Core[]>(this.url(BALL_API.cores))),
       7 * 24 * 60 * 60 * 1000,
-      (data) => {
-        data.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.cores.set(data);
-      },
+      // The API returns them sorted by brand, then name.
+      (data) => this.cores.set(data),
     );
   }
 
   async getCoverstocks(): Promise<Coverstock[]> {
     return this.fetchWithCache(
       'coverstocks',
-      () => firstValueFrom(this.http.get<Coverstock[]>(`${environment.bowwwlEndpoint}coverstocks`)),
+      () => firstValueFrom(this.http.get<Coverstock[]>(this.url(BALL_API.coverstocks))),
       7 * 24 * 60 * 60 * 1000,
-      (data) => {
-        data.sort((a, b) => a.brand.localeCompare(b.brand));
-        this.coverstocks.set(data);
-      },
+      (data) => this.coverstocks.set(data),
     );
   }
 
-  async getBallsByMovementPattern(ball: Ball, allBalls: Ball[]): Promise<Ball[]> {
+  /**
+   * Balls with a similar expected reaction (same weight, core and coverstock
+   * type, close RG/differential), newest first. The matching runs on the API.
+   */
+  async getBallsByMovementPattern(ball: Ball): Promise<Ball[]> {
     try {
-      const ballRg = parseFloat(ball.core_rg);
-      const ballDiff = parseFloat(ball.core_diff);
-      const ballIntDiff = parseFloat(ball.core_int_diff);
-
-      if (isNaN(ballRg) || isNaN(ballDiff)) {
-        return [];
-      }
-
-      const rgTolerance = 0.03;
-      const diffTolerance = 0.008;
-      const intDiffTolerance = 0.005;
-
-      const similarBalls = allBalls.filter((otherBall) => {
-        if (otherBall.ball_id === ball.ball_id && otherBall.core_weight === ball.core_weight) {
-          return false;
-        }
-
-        if (ball.core_type !== otherBall.core_type) {
-          return false;
-        }
-
-        const otherRg = parseFloat(otherBall.core_rg);
-        const otherDiff = parseFloat(otherBall.core_diff);
-
-        if (isNaN(otherRg) || isNaN(otherDiff)) {
-          return false;
-        }
-
-        const rgSimilar = Math.abs(ballRg - otherRg) <= rgTolerance;
-        const diffSimilar = Math.abs(ballDiff - otherDiff) <= diffTolerance;
-
-        const coverstockSimilar = ball.coverstock_type === otherBall.coverstock_type;
-
-        let intDiffSimilar = true;
-        if (ball.core_type === 'Asymmetric') {
-          const otherIntDiff = parseFloat(otherBall.core_int_diff);
-          if (isNaN(ballIntDiff) || isNaN(otherIntDiff)) {
-            intDiffSimilar = false;
-          } else {
-            intDiffSimilar = Math.abs(ballIntDiff - otherIntDiff) <= intDiffTolerance;
-          }
-        }
-
-        return rgSimilar && diffSimilar && coverstockSimilar && intDiffSimilar;
-      });
-
-      similarBalls.sort((a, b) => {
-        const dateA = new Date(a.release_date);
-        const dateB = new Date(b.release_date);
-        return dateB.getTime() - dateA.getTime();
-      });
+      const { path, params } = BALL_API.similar(ball.ball_id.toString());
+      const similar = await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: ball.core_weight, limit: '10' } }));
       // add original ball back it to have a title for the modal at index 0 (workaround)
-      return [ball, ...similarBalls.slice(0, 10)];
+      return similar.length > 0 ? [ball, ...similar] : [];
     } catch (error) {
       console.error(`Error finding balls with similar movement pattern for ball ID ${ball.ball_id}:`, error);
       throw error;
     }
+  }
+
+  /** Resolves values of a list filter in chunks, following every page. */
+  private async lookup(filter: 'id' | 'name', values: string[]): Promise<Ball[]> {
+    const unique = [...new Set(values.filter(Boolean))];
+    const chunks: string[][] = [];
+    for (let i = 0; i < unique.length; i += BALL_LOOKUP_CHUNK) chunks.push(unique.slice(i, i + BALL_LOOKUP_CHUNK));
+
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const balls: Ball[] = [];
+        for (let page = 0; page < 20; page++) {
+          const response = await this.searchBalls({ [filter]: chunk, page: String(page), size: '100', sort: 'ball_name' });
+          balls.push(...response.content);
+          if (response.page.number + 1 >= response.page.totalPages) break;
+        }
+        return balls;
+      }),
+    );
+    return results.flat();
+  }
+
+  private url(path: string): string {
+    return `${environment.ballApiEndpoint}${path}`;
+  }
+
+  /** First 100 matches of a list query, newest first. */
+  private async findRelatedBalls(filters: BallQueryParams): Promise<Ball[]> {
+    const page = await this.searchBalls({ ...filters, size: '100', sort: 'release_date,desc' });
+    return page.content;
   }
 
   private async fetchWithCache<T>(cacheKey: string, fetcher: () => Promise<T[]>, ttl: number, onData?: (data: T[]) => void): Promise<T[]> {

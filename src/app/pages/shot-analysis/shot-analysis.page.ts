@@ -109,9 +109,13 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly pattern = signal<Pattern | null>(null);
   readonly patternTitles = computed(() => (this.pattern() ? [this.pattern()!.title] : []));
 
-  readonly patternSummary = computed(() => {
+  readonly patternTitle = computed(() => this.pattern()?.title ?? 'No pattern');
+  readonly patternDetail = computed(() => {
     const pattern = this.pattern();
-    return pattern ? [pattern.title, pattern.distance, pattern.ratio].filter(Boolean).join(' · ') : 'None';
+    if (!pattern) {
+      return 'Pick the pattern to see the oil';
+    }
+    return [pattern.distance, pattern.ratio, pattern.volume ? `${pattern.volume} mL` : undefined].filter(Boolean).join(' · ');
   });
   readonly patternColor = computed(() => {
     const pattern = this.pattern();

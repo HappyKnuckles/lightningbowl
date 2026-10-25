@@ -52,7 +52,7 @@
 
     @case ("calibrate") {
       <div class="frame" [class.dragging]="loupeVisible()">
-        @if (videoUrl(); as url) {
+        @if (videoSrc(); as url) {
           <video #video muted playsinline preload="auto" [src]="url" (error)="onVideoError()" (loadedmetadata)="onMetadataLoaded()"></video>
         }
         <svg
@@ -178,7 +178,7 @@
         </div>
         <p class="tracked-range">{{ trackedRange() }}</p>
 
-        @if (videoUrl(); as url) {
+        @if (videoSrc(); as url) {
           <ion-card class="replay">
             <video controls muted playsinline preload="metadata" [src]="url"></video>
           </ion-card>

@@ -141,8 +141,16 @@ export class ShotAnalysisPage implements OnDestroy {
     const { startS, endS } = this.trimWindow();
     return `${startS.toFixed(1)}–${endS.toFixed(1)} s (${(endS - startS).toFixed(1)} s)`;
   });
-  readonly step = signal<Step>('pick');
   readonly videoUrl = signal<string | null>(null);
+  /**
+   * What the video elements load. Safari on iOS keeps a paused video black until it plays: the
+   * media fragment makes it decode and show a frame right away (other browsers ignore it).
+   */
+  readonly videoSrc = computed(() => {
+    const url = this.videoUrl();
+    return url ? `${url}#t=0.001` : null;
+  });
+  readonly step = signal<Step>('pick');
   readonly duration = signal(0);
   readonly frameTime = signal(0);
   /** Cutting the selected part out of the video before the upload. */
@@ -194,11 +202,10 @@ export class ShotAnalysisPage implements OnDestroy {
     if (this.points().length === 0) {
       this.trimWindow.set(defaultTrimWindow(duration));
     }
-    // Seeking renders a frame on iOS, which shows nothing for a paused video otherwise. Coming back to
-    // marking (e.g. after a failed analysis) returns to the frame the corners were placed on.
+    // Coming back to marking (e.g. after a failed analysis) returns to the frame the corners were placed on.
     const time = this.points().length > 0 ? this.frameTime() : Math.min(this.trimWindow().startS + 0.05, duration);
-    video.currentTime = time;
     this.frameTime.set(time);
+    showFrame(video, time);
   }
 
   onVideoError(): void {
@@ -463,6 +470,33 @@ export class ShotAnalysisPage implements OnDestroy {
     ctx.stroke();
     this.loupeVisible.set(true);
   }
+}
+
+/**
+ * Seeks a paused video and makes sure the frame is painted. iOS Safari only loads metadata for a
+ * video that hasn't played, so a seek alone leaves it black there: a short muted play makes it decode.
+ * When playing isn't allowed (e.g. Low Power Mode) the plain seek is all that's left.
+ */
+function showFrame(video: HTMLVideoElement, time: number): void {
+  const seek = () => {
+    video.currentTime = time;
+  };
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    seek();
+    return;
+  }
+  video.muted = true;
+  const playing = video.play();
+  if (!playing) {
+    seek();
+    return;
+  }
+  playing
+    .then(() => {
+      video.pause();
+      seek();
+    })
+    .catch(seek);
 }
 
 function loadHandedness(): Handedness {

@@ -1,5 +1,14 @@
 import { NormalizedPoint, ShotAnalysisResult, ShotMetrics } from '../../models/shot-analysis.model';
-import { boardToX, buildCalibration, distanceToY, loupeSourceRect, normalizePoint, shotMetricRows, validateCalibration } from './shot-analysis.utils';
+import {
+  boardToX,
+  buildCalibration,
+  distanceToY,
+  loupeSourceRect,
+  normalizePoint,
+  REV_RATE_MISSING_HINT,
+  shotMetricRows,
+  validateCalibration,
+} from './shot-analysis.utils';
 
 // a lane filmed from behind the approach: wide at the foul line (bottom), narrow at the pins (top)
 const GOOD: NormalizedPoint[] = [
@@ -125,8 +134,14 @@ describe('shot analysis utils', () => {
       expect(rows[5].detail).toBe('at 38 ft');
     });
 
-    it('leaves out what the service could not measure', () => {
-      expect(shotMetricRows(result({ speedMph: 15 })).map((r) => r.label)).toEqual(['Speed']);
+    it('leaves out what the service could not measure, except the rev rate', () => {
+      expect(shotMetricRows(result({ speedMph: 15 })).map((r) => r.label)).toEqual(['Speed', 'Rev Rate']);
+    });
+
+    it('says the rev rate could not be measured instead of leaving it out', () => {
+      const rows = shotMetricRows(result({ speedMph: 17 }));
+
+      expect(rows.find((r) => r.label === 'Rev Rate')).toEqual({ label: 'Rev Rate', value: 'Not measurable', detail: REV_RATE_MISSING_HINT });
     });
 
     it('flags a projected entry board and an unsure rev rate', () => {

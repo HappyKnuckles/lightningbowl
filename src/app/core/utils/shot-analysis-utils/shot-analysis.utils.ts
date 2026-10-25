@@ -93,7 +93,10 @@ export interface ShotMetricRow {
 
 const round = (value: number, digits = 1) => Number(value.toFixed(digits));
 
-/** The metrics as display rows, LaneTrax-style; metrics the service couldn't measure are left out. */
+/** Shown when the tracker found no clearly repeating pattern on the ball in the first 25 ft. */
+export const REV_RATE_MISSING_HINT = 'Needs 60 fps, good light and a ball with a visible logo or holes in the first 25 ft';
+
+/** The metrics as display rows, LaneTrax-style; metrics the service couldn't measure are left out, except the rev rate. */
 export function shotMetricRows(result: ShotAnalysisResult): ShotMetricRow[] {
   const m = result.metrics;
   const rows: ShotMetricRow[] = [];
@@ -103,6 +106,9 @@ export function shotMetricRows(result: ShotAnalysisResult): ShotMetricRow[] {
   if (m.revRateRpm !== undefined) {
     const unsure = m.revRateConfidence !== undefined && m.revRateConfidence < 0.5;
     rows.push({ label: 'Rev Rate', value: `${Math.round(m.revRateRpm)} rpm`, detail: unsure ? 'low confidence' : undefined });
+  } else {
+    // Always shown: a missing rev rate is the one metric users look for, so say why it is missing
+    rows.push({ label: 'Rev Rate', value: 'Not measurable', detail: REV_RATE_MISSING_HINT });
   }
   if (m.launchAngleDeg !== undefined) {
     rows.push({ label: 'Launch Angle', value: `${round(m.launchAngleDeg)}°` });

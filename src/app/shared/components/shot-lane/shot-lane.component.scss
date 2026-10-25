@@ -43,6 +43,18 @@
   fill: #6b4a23;
 }
 
+.pattern-end {
+  stroke: #6b1b1b;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.pattern-end-label {
+  fill: #6b1b1b;
+  font-size: 8px;
+  font-weight: 700;
+}
+
 .foul-line {
   stroke: #e5394a;
   stroke-width: 1.5;

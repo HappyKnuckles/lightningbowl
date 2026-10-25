@@ -162,11 +162,29 @@
 
     @case ("result") {
       @if (result(); as shot) {
+        <ion-item button class="pattern-pick" detail id="shotPatternPicker" lines="none">
+          <span class="ratio-dot" slot="start" [class.empty]="!patternColor()" [style.background]="patternColor()"></span>
+          <ion-label>
+            <h3>{{ patternTitle() }}</h3>
+            <p>{{ patternDetail() }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-modal trigger="shotPatternPicker">
+          <ng-template>
+            <app-generic-typeahead
+              [config]="patternTypeaheadConfig"
+              [items]="patternsStore.allPatterns()"
+              [prevSelectedItems]="patternTitles()"
+              (selectedItemsChange)="onPatternSelected($event)">
+            </app-generic-typeahead>
+          </ng-template>
+        </ion-modal>
+
         <div class="info-split">
-          <app-shot-lane class="info-visual" [result]="shot"></app-shot-lane>
+          <app-shot-lane class="info-visual" [pattern]="pattern()" [result]="shot"></app-shot-lane>
           <div class="info-tiles">
             @for (row of metricRows(); track row.label) {
-              <div class="info-tile">
+              <div class="info-tile" [class.highlight]="row.highlight">
                 <span class="info-tile-label">{{ row.label }}</span>
                 <span class="info-tile-value">{{ row.value }}</span>
                 @if (row.detail) {

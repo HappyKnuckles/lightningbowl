@@ -11,6 +11,7 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
+  IonModal,
   IonNote,
   IonProgressBar,
   IonRange,
@@ -25,9 +26,15 @@ import { arrowUndoOutline, folderOpenOutline, refreshOutline, sparklesOutline, v
 import { Subscription } from 'rxjs';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
+import { Pattern } from 'src/app/core/models/pattern.model';
 import { Handedness, NormalizedPoint, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
+import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { patternRatioColor, withPatternRows } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
 import {
   buildCalibration,
   CALIBRATION_STEPS,
@@ -44,11 +51,14 @@ import {
   trimVideo,
   TrimWindow,
 } from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
+import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
 
 type Step = 'pick' | 'calibrate' | 'analyzing' | 'result';
 
 const HANDEDNESS_STORAGE_KEY = 'shot-analysis-handedness';
+/** URL of the last pattern picked, so the next shot starts on the same lane conditions. */
+const PATTERN_STORAGE_KEY = 'shot-analysis-pattern';
 /** Touch tolerance around a placed corner, in screen pixels. */
 const HIT_RADIUS_PX = 28;
 /** Part of the frame width the magnifier shows. */
@@ -74,6 +84,7 @@ const LOUPE_CSS_PX = 112;
     IonItem,
     IonLabel,
     IonMenuButton,
+    IonModal,
     IonNote,
     IonProgressBar,
     IonRange,
@@ -82,18 +93,36 @@ const LOUPE_CSS_PX = 112;
     IonText,
     IonTitle,
     IonToolbar,
+    GenericTypeaheadComponent,
     ShotLaneComponent,
   ],
 })
 export class ShotAnalysisPage implements OnDestroy {
   readonly #analysisService = inject(ShotAnalysisService);
   readonly #toastService = inject(ToastService);
-
+  readonly #patternService = inject(PatternService);
+  readonly patternsStore = inject(PatternsStore);
   readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
   readonly overlay = viewChild<ElementRef<SVGSVGElement>>('overlay');
   readonly loupeCanvas = viewChild<ElementRef<HTMLCanvasElement>>('loupe');
+  /** Pattern the shot was bowled on, with its oil data; optional. */
+  readonly pattern = signal<Pattern | null>(null);
+  readonly patternTitles = computed(() => (this.pattern() ? [this.pattern()!.title] : []));
 
+  readonly patternTitle = computed(() => this.pattern()?.title ?? 'No pattern');
+  readonly patternDetail = computed(() => {
+    const pattern = this.pattern();
+    if (!pattern) {
+      return 'Pick the pattern to see the oil';
+    }
+    return [pattern.distance, pattern.ratio, pattern.volume ? `${pattern.volume} mL` : undefined].filter(Boolean).join(' · ');
+  });
+  readonly patternColor = computed(() => {
+    const pattern = this.pattern();
+    return pattern ? patternRatioColor(pattern.ratio) : null;
+  });
   readonly points = signal<NormalizedPoint[]>([]);
+
   readonly instruction = computed(() => CALIBRATION_STEPS[this.points().length]?.label ?? 'Lane marked. Drag a corner to adjust it.');
   readonly calibrationError = computed(() => validateCalibration(this.points()));
   readonly canAnalyze = computed(() => this.points().length === CALIBRATION_STEPS.length && this.calibrationError() === null);
@@ -124,18 +153,23 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly uploadProgress = signal(0);
   readonly uploadPercent = computed(() => Math.round(this.uploadProgress() * 100));
   readonly result = signal<ShotAnalysisResult | null>(null);
-
   readonly trackedRange = computed(() => {
     const result = this.result();
     return result ? `Tracked from ${Math.round(result.trackedFromFt)} to ${Math.round(result.trackedToFt)} ft` : '';
   });
+
   readonly metricRows = computed(() => {
     const result = this.result();
-    return result ? shotMetricRows(result) : [];
+    if (!result) {
+      return [];
+    }
+    const rows = shotMetricRows(result);
+    const pattern = this.pattern();
+    return pattern ? withPatternRows(rows, result, pattern) : rows;
   });
-
   /** Part of the video that is sent and analysed; the corners are marked on a frame inside it. */
   readonly trimWindow = signal<TrimWindow>({ startS: 0, endS: 0 });
+
   readonly trimValue = computed(() => ({ lower: this.trimWindow().startS, upper: this.trimWindow().endS }));
   readonly trimLabel = computed(() => {
     const { startS, endS } = this.trimWindow();
@@ -152,6 +186,11 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly loupeVisible = signal(false);
   /** The magnifier sits in the corner away from the finger. */
   readonly loupeOnRight = signal(false);
+  readonly patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = {
+    ...inject(TypeaheadConfigService).partialPattern,
+    title: 'Select Pattern',
+    maxSelections: 1,
+  };
   readonly maxWindowS = MAX_SHOT_WINDOW_S;
   readonly totalSteps = CALIBRATION_STEPS.length;
   readonly loupeCssPx = LOUPE_CSS_PX;
@@ -164,6 +203,10 @@ export class ShotAnalysisPage implements OnDestroy {
 
   constructor() {
     addIcons({ videocamOutline, folderOpenOutline, arrowUndoOutline, refreshOutline, sparklesOutline });
+    const url = loadPatternUrl();
+    if (url) {
+      void this.#loadPattern(url);
+    }
   }
 
   ngOnDestroy(): void {
@@ -229,6 +272,17 @@ export class ShotAnalysisPage implements OnDestroy {
     const time = next.startS !== previous.startS ? next.startS : next.endS;
     video.currentTime = time;
     this.frameTime.set(time);
+  }
+
+  async onPatternSelected(titles: string[]): Promise<void> {
+    const title = titles[0];
+    const url = title ? this.patternsStore.allPatterns().find((p) => p.title === title)?.url : undefined;
+    if (!url) {
+      this.pattern.set(null);
+      savePatternUrl(null);
+      return;
+    }
+    await this.#loadPattern(url);
   }
 
   setHandedness(value: Handedness): void {
@@ -462,6 +516,35 @@ export class ShotAnalysisPage implements OnDestroy {
     ctx.lineTo(cx, cy + px * 0.15);
     ctx.stroke();
     this.loupeVisible.set(true);
+  }
+
+  /** The search results carry no oil data, so the full pattern is fetched (and remembered) on selection. */
+  async #loadPattern(url: string): Promise<void> {
+    const pattern = await this.#patternService.getPatternData(url);
+    if (pattern?.url && pattern.forwards_data) {
+      this.pattern.set(pattern);
+      savePatternUrl(pattern.url);
+    }
+  }
+}
+
+function loadPatternUrl(): string | null {
+  try {
+    return localStorage.getItem(PATTERN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function savePatternUrl(url: string | null): void {
+  try {
+    if (url) {
+      localStorage.setItem(PATTERN_STORAGE_KEY, url);
+    } else {
+      localStorage.removeItem(PATTERN_STORAGE_KEY);
+    }
+  } catch {
+    // storage unavailable; the pattern still applies to this session
   }
 }
 

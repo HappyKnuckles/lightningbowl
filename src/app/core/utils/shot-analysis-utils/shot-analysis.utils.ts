@@ -23,8 +23,6 @@ export const LANE_ARROWS: readonly [number, number][] = [
   [35, 13],
 ];
 
-const MPH_TO_KMH = 1.609344;
-
 /** A point in video pixels as fractions of the frame, or null when it lies outside the frame. */
 export function normalizePoint(x: number, y: number, frameWidth: number, frameHeight: number): NormalizedPoint | null {
   if (frameWidth <= 0 || frameHeight <= 0 || x < 0 || y < 0 || x > frameWidth || y > frameHeight) {
@@ -107,7 +105,7 @@ export function shotMetricRows(result: ShotAnalysisResult): ShotMetricRow[] {
     rows.push({
       label: 'Release Speed',
       value: `${round(m.releaseSpeedMph)} mph`,
-      detail: joinDetails(`${round(m.releaseSpeedMph * MPH_TO_KMH)} km/h`, unchecked),
+      detail: unchecked,
     });
   }
   if (m.speedMph !== undefined) {

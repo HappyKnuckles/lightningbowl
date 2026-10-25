@@ -133,7 +133,7 @@ describe('shot analysis utils', () => {
         ['Breakpoint', 'Board 11.3'],
         ['Entry', 'Board 17.5'],
       ]);
-      expect(rows[0].detail).toBe('28.7 km/h');
+      expect(rows[0].detail).toBeUndefined();
       expect(rows[1].detail).toBe('like lane monitors · 15.2 mph at the pins');
       expect(rows[6].detail).toBe('at 38 ft');
     });
@@ -141,7 +141,7 @@ describe('shot analysis utils', () => {
     it('says when the speeds could not be checked against the pin impact', () => {
       const rows = shotMetricRows({ ...result({ releaseSpeedMph: 17, speedMph: 15 }), calibrationCorrected: false });
 
-      expect(rows[0].detail).toBe('27.4 km/h · pins not visible, less precise');
+      expect(rows[0].detail).toBe('pins not visible, less precise');
     });
 
     it('leaves out what the service could not measure, except the rev rate', () => {

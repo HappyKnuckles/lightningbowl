@@ -165,8 +165,8 @@
         <ion-item button class="pattern-pick" detail id="shotPatternPicker" lines="none">
           <span class="ratio-dot" slot="start" [class.empty]="!patternColor()" [style.background]="patternColor()"></span>
           <ion-label>
-            <p>Pattern</p>
-            <h3>{{ patternSummary() }}</h3>
+            <h3>{{ patternTitle() }}</h3>
+            <p>{{ patternDetail() }}</p>
           </ion-label>
         </ion-item>
         <ion-modal trigger="shotPatternPicker">

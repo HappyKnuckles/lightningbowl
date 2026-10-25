@@ -166,18 +166,26 @@
   border: 1px solid var(--ion-thin-border-color, #ffffff12);
   border-radius: var(--card-border-radius);
   --background: var(--ion-card-background);
+  --min-height: 48px;
 
   @media (min-width: 672px) {
     margin: 8px auto;
   }
 
+  h3,
   p {
-    font-size: 0.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   h3 {
     font-size: 0.875rem;
     font-weight: 600;
+  }
+
+  p {
+    font-size: 0.75rem;
   }
 
   .ratio-dot {

@@ -11,6 +11,9 @@
   @for (line of boardLines(); track line.x) {
     <line class="board" [attr.x1]="line.x" [attr.x2]="line.x" [attr.y1]="lane().y" [attr.y2]="lane().y + lane().height" [class.major]="line.major" />
   }
+  @for (mark of rangeFinders(); track mark.key) {
+    <rect class="range-finder" rx="0.9" width="1.8" [attr.height]="mark.height" [attr.x]="mark.x" [attr.y]="mark.y" />
+  }
   @for (arrow of arrows(); track arrow.key) {
     <polygon class="arrow" [attr.points]="arrow.points" />
   }

@@ -25,6 +25,14 @@ const PIN_RADIUS = PIN_SPACING * 0.3;
 const PIN_ROW = PIN_SPACING * 0.8;
 const HEAD_PIN_GAP = 8;
 const DECK_H = HEAD_PIN_GAP + 2 * PIN_RADIUS + 3 * PIN_ROW + 6;
+/** Range finders on synthetic lanes: board 15 from each side at 34-37 ft, board 10 from each side at 40-43 ft. */
+const RANGE_FINDERS: readonly [number, number][] = [
+  [15, 34],
+  [25, 34],
+  [10, 40],
+  [30, 40],
+];
+const RANGE_FINDER_FT = 3;
 
 interface Marker {
   key: string;
@@ -65,6 +73,13 @@ export class ShotLaneComponent {
       const x = this.#x(board);
       const y = this.#y(ft);
       return { key: `${board}`, points: `${x},${y - 6} ${x + 2.5},${y + 3} ${x - 2.5},${y + 3}` };
+    }),
+  );
+
+  readonly rangeFinders = computed(() =>
+    RANGE_FINDERS.map(([board, fromFt]) => {
+      const top = this.#y(fromFt + RANGE_FINDER_FT);
+      return { key: `${board}-${fromFt}`, x: this.#x(board) - 0.9, y: top, height: this.#y(fromFt) - top };
     }),
   );
 

@@ -77,5 +77,6 @@ describe('ShotLaneComponent', () => {
 
     expect(el.querySelectorAll('.pin').length).toBe(10);
     expect(el.querySelectorAll('.arrow').length).toBe(7);
+    expect(el.querySelectorAll('.range-finder').length).toBe(4);
   });
 });

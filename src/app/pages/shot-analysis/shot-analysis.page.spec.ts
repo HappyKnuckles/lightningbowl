@@ -87,7 +87,7 @@ describe('ShotAnalysisPage', () => {
     expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
   });
 
-  it('sends the whole file with the selected window when it cannot be cut', async () => {
+  it('sends the whole file when it cannot be cut', async () => {
     const file = new File(['not a real video'], 'shot.mov');
     selectVideo(file);
     page.duration.set(30);
@@ -101,7 +101,7 @@ describe('ShotAnalysisPage', () => {
     expect(video).toBe(file);
     expect(name).toBe('shot.mov');
     expect(calibration.frameTimeS).toBe(12.5);
-    expect(options).toEqual({ handedness: 'right', startS: 12, endS: 16 });
+    expect(options).toEqual({ handedness: 'right' });
     expect(page.preparing()).toBe(false);
   });
 

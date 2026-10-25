@@ -26,7 +26,7 @@ import { arrowUndoOutline, folderOpenOutline, refreshOutline, sparklesOutline, v
 import { Subscription } from 'rxjs';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Handedness, NormalizedPoint, ShotAnalysisOptions, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
+import { Handedness, NormalizedPoint, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import {
@@ -321,7 +321,7 @@ export class ShotAnalysisPage implements OnDestroy {
     }
 
     this.#subscription = this.#analysisService
-      .analyze(upload.video, upload.fileName, upload.calibration, { ...upload.window, handedness: this.handedness() })
+      .analyze(upload.video, upload.fileName, upload.calibration, { handedness: this.handedness() })
       .subscribe({
         next: (event) => {
           if (event.type === 'uploading') {
@@ -363,34 +363,30 @@ export class ShotAnalysisPage implements OnDestroy {
   }
 
   /**
-   * What gets uploaded: the selected part cut out of the video when that works, the whole file
-   * otherwise. Either way the window tells the tracker which part to analyse, in the uploaded file's time.
+   * What gets uploaded: the selected part cut out of the video, so less has to be sent, or the whole
+   * file when the cut fails or isn't smaller. The cut starts slightly before the selection (at a key
+   * frame), so the calibration frame time is shifted to the cut file's time.
    */
-  async #prepareUpload(
-    file: File,
-    calibration: ShotCalibration,
-  ): Promise<{ calibration: ShotCalibration; fileName: string; video: Blob; window: Pick<ShotAnalysisOptions, 'endS' | 'startS'> }> {
+  async #prepareUpload(file: File, calibration: ShotCalibration): Promise<{ calibration: ShotCalibration; fileName: string; video: Blob }> {
     const window = this.trimWindow();
     if (!isTrimmed(window, this.duration())) {
-      return { video: file, fileName: file.name, calibration, window: {} };
+      return { video: file, fileName: file.name, calibration };
     }
 
     this.preparing.set(true);
     try {
       const cut = await trimVideo(file, window);
       if (cut && cut.blob.size < file.size) {
-        const shift = (t: number) => Math.max(0, t - cut.offsetS);
         return {
           video: cut.blob,
           fileName: file.name.replace(/\.[^.]+$/, '') + '-shot.mp4',
-          calibration: { ...calibration, frameTimeS: shift(calibration.frameTimeS) },
-          window: { startS: shift(window.startS), endS: shift(window.endS) },
+          calibration: { ...calibration, frameTimeS: Math.max(0, calibration.frameTimeS - cut.offsetS) },
         };
       }
     } finally {
       this.preparing.set(false);
     }
-    return { video: file, fileName: file.name, calibration, window: { startS: window.startS, endS: window.endS } };
+    return { video: file, fileName: file.name, calibration };
   }
 
   #setVideo(file: File | null): void {

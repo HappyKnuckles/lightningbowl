@@ -1,5 +1,9 @@
-/** Longest part of a video the ball tracker analyses (its `MAX_VIDEO_SECONDS`). */
-export const MAX_SHOT_WINDOW_S = 20;
+/**
+ * Longest selectable part of a video. The ball tracker analyses the first 20 s of a file (its
+ * `MAX_VIDEO_SECONDS`), and a cut can run up to a key frame interval longer on each side (see
+ * {@link trimVideo}), so this leaves room for that.
+ */
+export const MAX_SHOT_WINDOW_S = 18;
 
 /** Closer than this to the start/end of the video counts as not trimmed. */
 const EDGE_TOLERANCE_S = 0.05;

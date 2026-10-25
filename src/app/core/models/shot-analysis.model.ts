@@ -21,11 +21,7 @@ export interface ShotCalibration {
 }
 
 export interface ShotAnalysisOptions {
-  /** End of the part of the video to analyse, in seconds; defaults to the tracker's limit after `startS`. */
-  endS?: number;
   handedness: Handedness;
-  /** Start of the part of the video to analyse, in seconds. */
-  startS?: number;
 }
 
 export interface ShotTrackPoint {

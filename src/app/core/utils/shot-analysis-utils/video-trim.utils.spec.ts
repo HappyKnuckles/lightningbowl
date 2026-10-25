@@ -44,9 +44,9 @@ describe('video-trim.utils', () => {
     });
 
     it('drags the other knob along when the window would get too long', () => {
-      const previous = { startS: 10, endS: 30 };
-      expect(clampTrimWindow({ startS: 5, endS: 30 }, previous, 60)).toEqual({ startS: 5, endS: 25 });
-      expect(clampTrimWindow({ startS: 10, endS: 40 }, previous, 60)).toEqual({ startS: 20, endS: 40 });
+      const previous = { startS: 10, endS: 28 };
+      expect(clampTrimWindow({ startS: 5, endS: 28 }, previous, 60)).toEqual({ startS: 5, endS: 23 });
+      expect(clampTrimWindow({ startS: 10, endS: 40 }, previous, 60)).toEqual({ startS: 22, endS: 40 });
     });
 
     it('keeps the window inside the video', () => {

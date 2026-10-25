@@ -3,18 +3,22 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
 import { boardToX, distanceToY, LANE_ARROWS, LANE_BOARDS, LANE_LENGTH_FT } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
 
-/** Drawing size in SVG units; the SVG scales to its container. */
+/** Drawing size in SVG units; the SVG scales to its container. Proportions follow the pattern charts. */
 const LANE_W = 156;
-const LANE_H = 640;
-const GUTTER = 10;
+const LANE_H = 600;
 const PAD_X = 30;
 const PAD_TOP = 8;
 const PAD_BOTTOM = 24;
-/** A little past the head pin so the pin deck shows. */
-const SHOWN_FT = 64;
-const PIN_SPACING_IN = 12;
-const PIN_ROW_IN = 10.392;
-const LANE_WIDTH_IN = 41.5;
+/**
+ * The pin deck above the 60 ft line. Like the pattern charts it isn't to scale: real pins would be specks
+ * at this size, so the triangle spans most of the lane width.
+ */
+const DECK_H = 112;
+const PIN_SPACING = LANE_W / 4.2;
+const PIN_ROW = PIN_SPACING * 0.78;
+const PIN_RADIUS = PIN_SPACING * 0.24;
+const LANE_TOP = PAD_TOP + DECK_H;
+const DISTANCE_STEPS_FT = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 
 interface Marker {
   key: string;
@@ -47,27 +51,16 @@ export class ShotLaneComponent {
   readonly #x = (board: number) => PAD_X + boardToX(board, this.result().handedness, LANE_W);
 
   readonly boardLabels = computed(() => [5, 10, 15, 20, 25, 30, 35].map((board) => ({ board, x: this.#x(board) })));
-  readonly #y = (ft: number) => PAD_TOP + distanceToY(ft, LANE_H, SHOWN_FT);
+  /** Distances past the head pin (the curve's last point can be a little beyond) stay on the lane. */
+  readonly #y = (ft: number) => LANE_TOP + distanceToY(Math.min(ft, LANE_LENGTH_FT), LANE_H, LANE_LENGTH_FT);
 
   readonly arrows = computed(() =>
     LANE_ARROWS.map(([board, ft]) => {
       const x = this.#x(board);
       const y = this.#y(ft);
-      return { key: `${board}`, points: `${x},${y - 6} ${x + 2.5},${y + 3} ${x - 2.5},${y + 3}` };
+      return { key: `${board}`, points: `${x},${y - 9} ${x + 3.5},${y + 4} ${x - 3.5},${y + 4}` };
     }),
   );
-
-  readonly pins = computed(() => {
-    const pins: { key: string; x: number; y: number }[] = [];
-    for (let row = 0; row < 4; row++) {
-      for (let i = 0; i <= row; i++) {
-        const fromLeftIn = LANE_WIDTH_IN / 2 + (i - row / 2) * PIN_SPACING_IN;
-        const ft = LANE_LENGTH_FT + (row * PIN_ROW_IN) / 12;
-        pins.push({ key: `${row}-${i}`, x: PAD_X + (fromLeftIn / LANE_WIDTH_IN) * LANE_W, y: this.#y(ft) });
-      }
-    }
-    return pins;
-  });
 
   readonly path = computed(() =>
     this.result()
@@ -94,11 +87,23 @@ export class ShotLaneComponent {
     return markers;
   });
 
-  readonly viewBox = `0 0 ${LANE_W + 2 * PAD_X} ${PAD_TOP + LANE_H + PAD_BOTTOM}`;
+  /** Head pin nearest the lane, back row at the top; pins of a row are the same for both hands. */
+  readonly pins = (() => {
+    const pins: { key: string; x: number; y: number }[] = [];
+    const center = PAD_X + LANE_W / 2;
+    const headY = LANE_TOP - PIN_RADIUS - 6;
+    for (let row = 0; row < 4; row++) {
+      for (let i = 0; i <= row; i++) {
+        pins.push({ key: `${row}-${i}`, x: center + (i - row / 2) * PIN_SPACING, y: headY - row * PIN_ROW });
+      }
+    }
+    return pins;
+  })();
+  readonly pinRadius = PIN_RADIUS;
 
-  readonly lane = { x: PAD_X, y: PAD_TOP, width: LANE_W, height: LANE_H, gutter: GUTTER };
+  readonly viewBox = `0 0 ${LANE_W + 2 * PAD_X} ${LANE_TOP + LANE_H + PAD_BOTTOM}`;
 
-  readonly distanceLabels = [0, 15, 30, 45, 60].map((ft) => ({ ft, y: PAD_TOP + distanceToY(ft, LANE_H, SHOWN_FT) }));
+  readonly lane = { x: PAD_X, y: LANE_TOP, width: LANE_W, height: LANE_H };
 
-  readonly foulLineY = PAD_TOP + distanceToY(0, LANE_H, SHOWN_FT);
+  readonly distanceLines = DISTANCE_STEPS_FT.map((ft) => ({ ft, y: LANE_TOP + distanceToY(ft, LANE_H, LANE_LENGTH_FT) }));
 }

@@ -1,7 +1,12 @@
+// Same look as the pattern charts (white card, light grid, black arrows, pins above the lane),
+// with fixed colours so it matches them in every theme.
 :host {
   display: block;
-  // Fixed colours: the path is drawn on light wood in every theme (the Gray theme's primary is near-white)
-  --shot-path-color: #1f6feb;
+  overflow: hidden;
+  border-radius: var(--card-border-radius);
+  background: #fff;
+  --shot-grid-color: #d3d3d3;
+  --shot-path-color: #f76707;
   --shot-breakpoint-color: #e5394a;
 }
 
@@ -13,42 +18,34 @@
   font-size: 9px;
 }
 
-.gutter {
-  fill: #3a3f47;
-}
-
-.wood {
-  fill: #e9cf9f;
-}
-
-.board {
-  stroke: #b8945c;
-  stroke-width: 0.3;
-  opacity: 0.6;
-
-  &.major {
-    stroke-width: 0.7;
-    opacity: 0.9;
-  }
-}
-
-.arrow {
-  fill: #6b4a23;
-}
-
-.foul-line {
-  stroke: #e5394a;
-  stroke-width: 1.5;
-}
-
-.pin {
-  fill: #fafafa;
-  stroke: #8a8a8a;
+.lane {
+  fill: #fff;
+  stroke: var(--shot-grid-color);
   stroke-width: 0.5;
 }
 
+.board,
+.distance {
+  stroke: var(--shot-grid-color);
+  stroke-width: 0.5;
+}
+
+.board.major {
+  stroke: #b5b5b5;
+}
+
+.arrow {
+  fill: #000;
+}
+
+.pin {
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 1;
+}
+
 .axis {
-  fill: var(--ion-color-medium);
+  fill: #000;
 }
 
 .ball-path {
@@ -70,11 +67,11 @@
 }
 
 .marker-label {
-  fill: #fff;
+  fill: #000;
   font-size: 12px;
   font-weight: 700;
   paint-order: stroke;
-  stroke: rgba(0, 0, 0, 0.75);
+  stroke: #fff;
   stroke-width: 3px;
   stroke-linejoin: round;
 }

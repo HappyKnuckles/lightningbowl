@@ -36,7 +36,7 @@ import { addIcons } from 'ionicons';
 import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
-import { BallTracking, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { BallTracking, Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -142,6 +142,8 @@ export class GameComponent implements OnInit {
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
   isGameComplete = input<boolean>(false);
+  /** Earlier games (oldest first) the ball carry-over continues from, see `getCarryOverThrowBall`. */
+  carryOverGames = input<Frame[][]>([]);
 
   // --- Outputs ---
   throwInput = output<{ frameIndex: number; throwIndex: number; value: string }>();
@@ -302,7 +304,7 @@ export class GameComponent implements OnInit {
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
-    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex()),
+    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex(), this.carryOverGames()),
   );
 
   /** Patterns sorted by how often they were played, most used first. */

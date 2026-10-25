@@ -3,8 +3,10 @@ import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { NormalizedPoint, ShotAnalysisEvent, ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { makePattern } from 'src/testing/fixtures';
 import { ShotAnalysisPage } from './shot-analysis.page';
 
 const CORNERS: NormalizedPoint[] = [
@@ -34,6 +36,7 @@ describe('ShotAnalysisPage', () => {
   let events: Subject<ShotAnalysisEvent>;
   const analysisService = { analyze: vi.fn() };
   const toastService = { showToast: vi.fn() };
+  const patternService = { searchPattern: vi.fn(), getPatternData: vi.fn() };
 
   const el = () => fixture.nativeElement as HTMLElement;
 
@@ -49,12 +52,16 @@ describe('ShotAnalysisPage', () => {
     events = new Subject<ShotAnalysisEvent>();
     analysisService.analyze.mockReset().mockReturnValue(events);
     toastService.showToast.mockReset();
+    patternService.searchPattern.mockReset().mockResolvedValue({ patterns: [] });
+    patternService.getPatternData.mockReset();
+    localStorage.removeItem('shot-analysis-pattern');
     // no real video element loads in the test, so nothing tries to decode the fake file
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('');
     TestBed.configureTestingModule({
       providers: [
         { provide: ShotAnalysisService, useValue: analysisService },
         { provide: ToastService, useValue: toastService },
+        { provide: PatternService, useValue: patternService },
       ],
     });
     fixture = TestBed.createComponent(ShotAnalysisPage);
@@ -255,5 +262,51 @@ describe('ShotAnalysisPage', () => {
 
     expect(page.step()).toBe('pick');
     expect(page.points()).toEqual([]);
+  });
+
+  describe('pattern', () => {
+    const oil = {
+      number: '1',
+      start: '10L',
+      stop: '10R',
+      load: '',
+      mics: '',
+      speed: '',
+      buf: '',
+      tank: '',
+      total_oil: '3',
+      distance_start: '0',
+      distance_end: '30',
+    };
+
+    it('loads the picked pattern with its oil through the search, not patterns/<url>', async () => {
+      const addison = makePattern({ url: 'https://patternlibrary.kegel.net/pattern/a', title: 'Addison', forwards_data: [oil] });
+      patternService.searchPattern.mockResolvedValue({ patterns: [makePattern({ title: 'Addison 2' }), addison] });
+
+      await page.onPatternSelected(['Addison']);
+
+      expect(patternService.searchPattern).toHaveBeenCalledWith('Addison', true);
+      expect(patternService.getPatternData).not.toHaveBeenCalled();
+      expect(page.pattern()).toBe(addison);
+      expect(page.patternDetail()).toContain('mL');
+      expect(localStorage.getItem('shot-analysis-pattern')).toBe('Addison');
+    });
+
+    it('keeps no pattern when the search has no oil data for it', async () => {
+      patternService.searchPattern.mockResolvedValue({ patterns: [makePattern({ title: 'Addison' })] });
+
+      await page.onPatternSelected(['Addison']);
+
+      expect(page.pattern()).toBeNull();
+    });
+
+    it('clears the pattern when the selection is emptied', async () => {
+      page.pattern.set(makePattern({ forwards_data: [oil] }));
+
+      await page.onPatternSelected([]);
+
+      expect(page.pattern()).toBeNull();
+      expect(page.patternTitle()).toBe('No pattern');
+    });
   });
 });

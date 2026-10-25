@@ -150,7 +150,8 @@ export class PatternService {
   }
 
   async searchPattern(searchTerm: string, include_metadata = false, sortField = 'title', sortDirection = 'asc'): Promise<SearchResult> {
-    const cacheKey = `pattern_search_${encodeURIComponent(searchTerm)}_${sortField}_${sortDirection}`;
+    // with and without the oil rows are different results
+    const cacheKey = `pattern_search_${encodeURIComponent(searchTerm)}_${sortField}_${sortDirection}${include_metadata ? '_full' : ''}`;
 
     try {
       const cachedResult = await this.cacheService.get<SearchResult>(cacheKey);
@@ -167,7 +168,7 @@ export class PatternService {
 
       const response = await firstValueFrom(
         this.http.get<SearchResult>(
-          `${environment.patternEndpoint}search?q=${searchTerm}&include_metadata=${include_metadata}&sort_field=${sortField}&sort_direction=${sortDirection}`,
+          `${environment.patternEndpoint}search?q=${encodeURIComponent(searchTerm)}&include_metadata=${include_metadata}&sort_field=${sortField}&sort_direction=${sortDirection}`,
         ),
       );
 

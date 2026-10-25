@@ -57,7 +57,7 @@ import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane
 type Step = 'pick' | 'calibrate' | 'analyzing' | 'result';
 
 const HANDEDNESS_STORAGE_KEY = 'shot-analysis-handedness';
-/** URL of the last pattern picked, so the next shot starts on the same lane conditions. */
+/** Title of the last pattern picked, so the next shot starts on the same lane conditions. */
 const PATTERN_STORAGE_KEY = 'shot-analysis-pattern';
 /** Touch tolerance around a placed corner, in screen pixels. */
 const HIT_RADIUS_PX = 28;
@@ -211,9 +211,9 @@ export class ShotAnalysisPage implements OnDestroy {
 
   constructor() {
     addIcons({ videocamOutline, folderOpenOutline, arrowUndoOutline, refreshOutline, sparklesOutline });
-    const url = loadPatternUrl();
-    if (url) {
-      void this.#loadPattern(url);
+    const title = loadPatternTitle();
+    if (title) {
+      void this.#loadPattern(title);
     }
   }
 
@@ -283,13 +283,12 @@ export class ShotAnalysisPage implements OnDestroy {
 
   async onPatternSelected(titles: string[]): Promise<void> {
     const title = titles[0];
-    const url = title ? this.patternsStore.allPatterns().find((p) => p.title === title)?.url : undefined;
-    if (!url) {
+    if (!title) {
       this.pattern.set(null);
-      savePatternUrl(null);
+      savePatternTitle(null);
       return;
     }
-    await this.#loadPattern(url);
+    await this.#loadPattern(title);
   }
 
   setHandedness(value: Handedness): void {
@@ -525,17 +524,23 @@ export class ShotAnalysisPage implements OnDestroy {
     this.loupeVisible.set(true);
   }
 
-  /** The search results carry no oil data, so the full pattern is fetched (and remembered) on selection. */
-  async #loadPattern(url: string): Promise<void> {
-    const pattern = await this.#patternService.getPatternData(url);
-    if (pattern?.url && pattern.forwards_data) {
+  /**
+   * The picker's list carries no oil data, so the pattern is looked up again with it. This goes
+   * through the search: `patterns/<url>` can't be used, the URLs are full links and the double slash
+   * in them gets the request redirected.
+   */
+  async #loadPattern(title: string): Promise<void> {
+    const url = this.patternsStore.allPatterns().find((p) => p.title === title)?.url;
+    const { patterns } = await this.#patternService.searchPattern(title, true);
+    const pattern = (url && patterns.find((p) => p.url === url)) || patterns.find((p) => p.title === title);
+    if (pattern && (pattern.forwards_data?.length || pattern.reverse_data?.length)) {
       this.pattern.set(pattern);
-      savePatternUrl(pattern.url);
+      savePatternTitle(pattern.title);
     }
   }
 }
 
-function loadPatternUrl(): string | null {
+function loadPatternTitle(): string | null {
   try {
     return localStorage.getItem(PATTERN_STORAGE_KEY);
   } catch {
@@ -543,10 +548,10 @@ function loadPatternUrl(): string | null {
   }
 }
 
-function savePatternUrl(url: string | null): void {
+function savePatternTitle(title: string | null): void {
   try {
-    if (url) {
-      localStorage.setItem(PATTERN_STORAGE_KEY, url);
+    if (title) {
+      localStorage.setItem(PATTERN_STORAGE_KEY, title);
     } else {
       localStorage.removeItem(PATTERN_STORAGE_KEY);
     }

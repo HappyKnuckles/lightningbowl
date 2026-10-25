@@ -1,18 +1,26 @@
 <svg aria-label="Ball path on the lane" class="shot-lane" role="img" [attr.viewBox]="viewBox">
-  <rect class="lane" [attr.height]="lane.height" [attr.width]="lane.width" [attr.x]="lane.x" [attr.y]="lane.y" />
+  <rect
+    class="gutter"
+    rx="3"
+    [attr.height]="lane.height"
+    [attr.width]="lane.width + 2 * lane.gutter"
+    [attr.x]="lane.x - lane.gutter"
+    [attr.y]="lane.y" />
+  <rect class="wood" [attr.height]="lane.height" [attr.width]="lane.width" [attr.x]="lane.x" [attr.y]="lane.y" />
 
   @for (line of boardLines(); track line.x) {
     <line class="board" [attr.x1]="line.x" [attr.x2]="line.x" [attr.y1]="lane.y" [attr.y2]="lane.y + lane.height" [class.major]="line.major" />
   }
-  @for (line of distanceLines; track line.ft) {
-    <line class="distance" [attr.x1]="lane.x" [attr.x2]="lane.x + lane.width" [attr.y1]="line.y" [attr.y2]="line.y" />
-    <text class="axis" text-anchor="end" [attr.x]="lane.x - 4" [attr.y]="line.y + 3">{{ line.ft }}</text>
-  }
   @for (arrow of arrows(); track arrow.key) {
     <polygon class="arrow" [attr.points]="arrow.points" />
   }
-  @for (pin of pins; track pin.key) {
-    <circle class="pin" [attr.cx]="pin.x" [attr.cy]="pin.y" [attr.r]="pinRadius" />
+  <line class="foul-line" [attr.x1]="lane.x" [attr.x2]="lane.x + lane.width" [attr.y1]="foulLineY" [attr.y2]="foulLineY" />
+  @for (pin of pins(); track pin.key) {
+    <circle class="pin" r="2.8" [attr.cx]="pin.x" [attr.cy]="pin.y" />
+  }
+
+  @for (label of distanceLabels; track label.ft) {
+    <text class="axis" text-anchor="end" [attr.x]="lane.x - lane.gutter - 4" [attr.y]="label.y + 3">{{ label.ft }}'</text>
   }
   @for (label of boardLabels(); track label.board) {
     <text class="axis" text-anchor="middle" [attr.x]="label.x" [attr.y]="lane.y + lane.height + 16">{{ label.board }}</text>

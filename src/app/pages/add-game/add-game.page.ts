@@ -47,6 +47,7 @@ import {
   getThrowBallForPosition,
   hasThrowLevelBalls,
   keepArsenalThrowBalls,
+  resolveBallTracking,
   setThrowBall,
 } from 'src/app/core/utils/game-utils/ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
@@ -364,17 +365,14 @@ export class AddGamePage implements OnInit {
 
   /**
    * Per-throw picking needs the pin pad, so the sheet only offers it in pin input mode.
-   * Mirrors `GameComponent.ballTracking`: a game carrying ball data keeps its own mode, an
-   * untouched one follows the user's default — `getBallTracking` would call that one 'game'
-   * and silently drop the picker from a fresh game's sheet.
+   * Same rule as `GameComponent.ballTracking` (`resolveBallTracking`): a game carrying ball data
+   * keeps its own mode, one without follows the user's default — `getBallTracking` would call
+   * that one 'game' and silently drop the picker from a fresh game's sheet.
    */
   isThrowTracking(gameIndex: number): boolean {
     const game = this.games()[gameIndex];
     if (!game || !this.isPinInputMode()) return false;
-    if (game.ballTracking) return game.ballTracking === 'throw';
-    if (hasThrowLevelBalls(game.frames ?? [])) return true;
-    if ((game.balls ?? []).length > 0) return false;
-    return this.settingsStore.ballTracking() === 'throw';
+    return resolveBallTracking(game, this.settingsStore.ballTracking()) === 'throw';
   }
 
   /** Games a game's ball carry-over continues from, oldest first: the last saved game, then the earlier games of this series. */
@@ -538,9 +536,10 @@ export class AddGamePage implements OnInit {
       games.map((g, i) => {
         if (i !== index) return g;
         // One selection for the game replaces any per-throw balls; the game component confirmed it.
+        // Picking nothing adds no ball data, so it leaves the game to follow the default mode.
         const frames = cloneFrames(g.frames);
         clearThrowBalls(frames);
-        return { ...g, frames, balls, ballTracking: 'game' as const };
+        return { ...g, frames, balls, ballTracking: balls.length > 0 ? ('game' as const) : undefined };
       }),
     );
   }

@@ -57,6 +57,7 @@ import {
   getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
+  resolveBallTracking,
 } from 'src/app/core/utils/game-utils/ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
@@ -244,13 +245,7 @@ export class GameComponent implements OnInit {
    * an untouched one follows the user's default. Per-throw picking lives on the pin pad,
    * so it is only offered while pin input is on.
    */
-  ballTracking = computed<BallTracking>(() => {
-    const game = this.currentGame();
-    if (game.ballTracking) return game.ballTracking;
-    if (hasThrowLevelBalls(game.frames ?? [])) return 'throw';
-    if ((game.balls ?? []).length > 0) return 'game';
-    return this.settingsStore.ballTracking();
-  });
+  ballTracking = computed<BallTracking>(() => resolveBallTracking(this.currentGame(), this.settingsStore.ballTracking()));
 
   /** Per-throw picking needs the pin pad; everything else falls back to the game-level selection. */
   isThrowTracking = computed(() => this.ballTracking() === 'throw' && this.isPinInputMode());

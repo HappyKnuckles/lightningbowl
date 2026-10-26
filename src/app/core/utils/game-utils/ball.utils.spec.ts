@@ -6,6 +6,7 @@ import {
   clearThrowBalls,
   countThrowBalls,
   getBallTracking,
+  resolveBallTracking,
   getCarryOverThrowBall,
   getGameBallNames,
   getGameBalls,
@@ -177,6 +178,27 @@ describe('getBallTracking', () => {
 
   it('reads a legacy game with no flag and no per-throw balls as game-tracked', () => {
     expect(getBallTracking(makeGame({ balls: ['IQ Tour15'] }))).toBe('game');
+  });
+});
+
+describe('resolveBallTracking', () => {
+  const withThrowBall = () => [makeFrame(0, [makeThrow(0, [], { ball: { name: 'IQ Tour', weight: '15' } })])];
+
+  it('follows the default for a game without ball data, even one flagged before', () => {
+    expect(resolveBallTracking({ frames: [], balls: [] }, 'throw')).toBe('throw');
+    // closing the game's ball picker with nothing picked flags it 'game' without adding data
+    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: [] }, 'throw')).toBe('throw');
+    expect(resolveBallTracking({ ballTracking: 'throw', frames: [], balls: [] }, 'game')).toBe('game');
+  });
+
+  it('keeps the mode of a game that carries ball data', () => {
+    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
+    expect(resolveBallTracking({ ballTracking: 'throw', frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
+  });
+
+  it('reads the mode from the data when the game has no flag', () => {
+    expect(resolveBallTracking({ frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
+    expect(resolveBallTracking({ frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
   });
 });
 

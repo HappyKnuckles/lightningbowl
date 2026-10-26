@@ -81,6 +81,21 @@ export function getBallTracking(game: Pick<Game, 'ballTracking' | 'frames'>): Ba
   return hasThrowLevelBalls(game.frames ?? []) ? 'throw' : 'game';
 }
 
+/**
+ * Ball mode of a game being entered. A game keeps its own mode once it carries ball data;
+ * one without any follows `fallback` (the user's default), even if it was flagged before:
+ * closing the game's ball picker with nothing picked flags it 'game' without adding data,
+ * and that must not stop a later switch of the default from applying to it.
+ */
+export function resolveBallTracking(game: Pick<Game, 'ballTracking' | 'balls' | 'frames'>, fallback: BallTracking): BallTracking {
+  const throwBalls = hasThrowLevelBalls(game.frames ?? []);
+  const gameBalls = (game.balls ?? []).length > 0;
+  if (game.ballTracking && (throwBalls || gameBalls)) return game.ballTracking;
+  if (throwBalls) return 'throw';
+  if (gameBalls) return 'game';
+  return fallback;
+}
+
 /** Whether any throw carries a ball, i.e. whether per-throw data exists at all. */
 export function hasThrowLevelBalls(frames: Frame[]): boolean {
   return frames.some((frame) => (frame.throws ?? []).some((t) => t.ball?.name));

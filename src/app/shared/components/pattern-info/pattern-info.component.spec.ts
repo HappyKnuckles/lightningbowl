@@ -53,28 +53,35 @@ describe('PatternInfoComponent', () => {
     expect(component.ratios()[3].label).toBe('1:1');
   });
 
-  it('marks a board picked on the graph on the lane and reads out its oil', () => {
+  it('marks boards picked on the graph on the lane and adds up their oil', () => {
     fixture.componentRef.setInput('pattern', makePattern({ distance: "37'", forwards_data: [row('2L', '2R', '0', '24')], reverse_data: [] }));
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(0);
 
-    component.selectBoard(12);
+    const tap = (index: number) =>
+      component.boardRange.set(component.pickRange(component.boardRange(), { range: { from: index, to: index }, start: true }));
+    tap(11);
     fixture.detectChanges();
 
     expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(1);
     expect(component.boardReadout()).toBe('Board 12L · 90 µL · 90 ↑ 0 ↓');
 
-    component.selectBoard(12); // tapping it again clears it
-    expect(component.selectedBoard()).toBeNull();
+    component.boardRange.set(component.pickRange(component.boardRange(), { range: { from: 7, to: 11 }, start: false }));
+    expect(component.boardReadout()).toBe('Boards 8L–12L · 450 µL · 450 ↑ 0 ↓');
+
+    tap(11); // a new tap starts over on that board
+    expect(component.boardRange()).toEqual({ from: 11, to: 11 });
+    tap(11); // and tapping it again clears it
+    expect(component.boardRange()).toBeNull();
   });
 
-  it('reads out a picked foot and says when there is no oil', () => {
+  it('reads out picked feet and says when there is no oil', () => {
     fixture.componentRef.setInput('pattern', makePattern({ distance: "37'", forwards_data: [row('2L', '2R', '0', '24')], reverse_data: [] }));
-    component.selectFoot(30);
+    component.footRange.set({ from: 30, to: 33 });
     fixture.detectChanges();
 
-    expect(component.footReadout()).toBe('30–31 ft · no oil');
+    expect(component.footReadout()).toBe('30–34 ft · no oil');
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.lane-overlay .highlight').length).toBe(1);
   });
 });

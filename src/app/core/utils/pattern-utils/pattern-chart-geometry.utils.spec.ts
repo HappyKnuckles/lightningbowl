@@ -12,8 +12,8 @@ describe('pattern chart geometry', () => {
   it('turns a point on the chart into a board and a foot', () => {
     // the lane runs from x 30 to 186; board 12 from the left spans 11/39 to 12/39 of it
     const x = 30 + (11.5 / 39) * 156;
-    const stripe = boardStripe(12, 60);
-    const footY = footBand(20).y + footBand(20).height / 2;
+    const stripe = boardStripe(12, 12, 60);
+    const footY = footBand(20, 20).y + footBand(20, 20).height / 2;
 
     expect(chartPointToLane(x, footY)).toEqual({ board: 12, foot: 20 });
     expect(stripe.x).toBeLessThan(x);
@@ -26,13 +26,17 @@ describe('pattern chart geometry', () => {
     expect(chartPointToLane(CHART_W / 2, 20).foot).toBeNull();
   });
 
-  it('draws a board from the foul line to the given distance, and a foot across the lane', () => {
-    const toEnd = boardStripe(5, 37);
-    const toPins = boardStripe(5, 60);
+  it('draws boards from the foul line to the given distance, and feet across the lane', () => {
+    const toEnd = boardStripe(5, 5, 37);
+    const toPins = boardStripe(5, 5, 60);
     expect(toEnd.y + toEnd.height).toBeCloseTo(toPins.y + toPins.height, 5); // both start at the foul line
     expect(toEnd.height).toBeLessThan(toPins.height);
 
-    expect(footBand(0)).toMatchObject({ x: 30, width: 156 });
-    expect(footBand(0).y + footBand(0).height).toBeCloseTo(toPins.y + toPins.height, 5);
+    expect(footBand(0, 0)).toMatchObject({ x: 30, width: 156 });
+    expect(footBand(0, 0).y + footBand(0, 0).height).toBeCloseTo(toPins.y + toPins.height, 5);
+
+    // a run spans its first to its last board / foot
+    expect(boardStripe(8, 12, 60).width).toBeCloseTo(5 * boardStripe(8, 8, 60).width, 5);
+    expect(footBand(10, 14).height).toBeCloseTo(5 * footBand(10, 10).height, 5);
   });
 });

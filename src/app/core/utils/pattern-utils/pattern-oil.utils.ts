@@ -22,6 +22,22 @@ export interface OilBar {
   reverse: number;
 }
 
+/** A run of bars, first and last index included. */
+export interface BarRange {
+  from: number;
+  to: number;
+}
+
+/** The bars from `range.from` to `range.to` added up. */
+export function sumBars(bars: OilBar[], range: BarRange): OilBar {
+  const sum = { forward: 0, reverse: 0 };
+  for (let i = Math.max(0, range.from); i <= Math.min(bars.length - 1, range.to); i++) {
+    sum.forward += bars[i].forward;
+    sum.reverse += bars[i].reverse;
+  }
+  return sum;
+}
+
 export interface BlockRatio {
   from: number;
   /** "3.03", "1:1" for the centre, or "–" when the block has no oil. */

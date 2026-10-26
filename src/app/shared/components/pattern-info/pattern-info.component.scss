@@ -31,7 +31,7 @@
 
     .lane-overlay {
       cursor: crosshair;
-      touch-action: pan-y;
+      touch-action: none; // dragging along the lane picks feet instead of scrolling
     }
 
     .highlight {

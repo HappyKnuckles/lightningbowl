@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output } from '@angular/core';
 
-import { OilBar } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
+import { BarRange, OilBar } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
+
+/** A picked run of bars; `start` is set on the tap that begins it, not while dragging it wider. */
+export interface BarPick {
+  range: BarRange;
+  start: boolean;
+}
 
 /** A label under the chart at a bar (0-based), or a band label over a range of bars above it. */
 export interface ChartTick {
@@ -19,8 +25,8 @@ const GRID_LINES = 3;
 
 /**
  * Oil as stacked bars, forward passes below and reverse passes on top, like a pattern sheet's
- * "left to right" and "front to back" graphs. Stretches to the size it's given. Tapping or dragging
- * across it reports the bar under the finger, and a selected bar is highlighted.
+ * "left to right" and "front to back" graphs. Stretches to the size it's given. A tap picks the bar
+ * under the finger, dragging picks every bar from there to the finger; the picked bars are highlighted.
  */
 @Component({
   selector: 'app-pattern-oil-chart',
@@ -36,11 +42,11 @@ export class PatternOilChartComponent {
   readonly ticks = input<ChartTick[]>([]);
   readonly bands = input<ChartBand[]>([]);
   readonly label = input('');
-  /** Index of the highlighted bar. */
-  readonly selected = input<number | null>(null);
+  /** The highlighted bars. */
+  readonly selected = input<BarRange | null>(null);
 
-  /** The bar tapped or dragged onto. */
-  readonly barSelect = output<number>();
+  /** The bars tapped or dragged across. */
+  readonly barPick = output<BarPick>();
   readonly #max = computed(() => Math.max(1, ...this.bars().map((b) => b.forward + b.reverse)));
 
   readonly width = computed(() => this.bars().length * BAR_W);
@@ -68,13 +74,19 @@ export class PatternOilChartComponent {
   );
 
   readonly selectedColumn = computed(() => {
-    const i = this.selected();
-    return i === null || i < 0 || i >= this.bars().length ? null : { x: i * BAR_W, width: BAR_W };
+    const range = this.selected();
+    if (!range) {
+      return null;
+    }
+    const from = Math.max(0, range.from);
+    const to = Math.min(this.bars().length - 1, range.to);
+    return to < from ? null : { x: from * BAR_W, width: (to - from + 1) * BAR_W };
   });
   readonly baseline = PLOT_H;
   readonly barWidth = BAR_W - 1;
 
   readonly plotHeight = PLOT_H;
+  #anchor = 0;
   #last: number | null = null;
 
   onPointer(event: PointerEvent): void {
@@ -88,10 +100,13 @@ export class PatternOilChartComponent {
       return;
     }
     const index = Math.min(count - 1, Math.max(0, Math.floor(((event.clientX - rect.left) / rect.width) * count)));
-    // a tap always reports (so tapping the selected bar can clear it), a drag only on a new bar
-    if (event.type === 'pointerdown' || index !== this.#last) {
+    if (event.type === 'pointerdown') {
+      this.#anchor = index;
       this.#last = index;
-      this.barSelect.emit(index);
+      this.barPick.emit({ range: { from: index, to: index }, start: true });
+    } else if (index !== this.#last) {
+      this.#last = index;
+      this.barPick.emit({ range: { from: Math.min(this.#anchor, index), to: Math.max(this.#anchor, index) }, start: false });
     }
   }
 }

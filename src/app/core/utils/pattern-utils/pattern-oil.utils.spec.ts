@@ -1,7 +1,7 @@
 import { makePattern } from 'src/testing/fixtures';
 
 import { ForwardsData } from '../../models/pattern.model';
-import { blockRatios, oilByBoard, oilByFoot, patternFacts, patternRatioColor, rowBoards, rowOilPerBoard } from './pattern-oil.utils';
+import { blockRatios, oilByBoard, oilByFoot, patternFacts, patternRatioColor, rowBoards, rowOilPerBoard, sumBars } from './pattern-oil.utils';
 
 function row(start: string, stop: string, load: string, mics: string, from: string, to: string, totalOil = ''): ForwardsData {
   return { number: '', start, stop, load, mics, speed: '', buf: '', tank: '', total_oil: totalOil, distance_start: from, distance_end: to };
@@ -90,5 +90,15 @@ describe('pattern oil utils', () => {
     expect(patternRatioColor('5:1')).toBe('#ed8e07');
     expect(patternRatioColor('10:1')).toBe('green');
     expect(patternRatioColor(undefined)).toBe('blue');
+  });
+
+  it('adds up a run of bars, clipped to the bars there are', () => {
+    const bars = [
+      { forward: 1, reverse: 2 },
+      { forward: 3, reverse: 4 },
+      { forward: 5, reverse: 6 },
+    ];
+    expect(sumBars(bars, { from: 1, to: 2 })).toEqual({ forward: 8, reverse: 10 });
+    expect(sumBars(bars, { from: 2, to: 9 })).toEqual({ forward: 5, reverse: 6 });
   });
 });

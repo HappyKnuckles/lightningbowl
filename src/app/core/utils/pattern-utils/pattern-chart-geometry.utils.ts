@@ -41,16 +41,16 @@ export function chartPointToLane(x: number, y: number): { board: number | null; 
   };
 }
 
-/** A board's stripe on the chart, from the foul line to `toFt`. */
-export function boardStripe(board: number, toFt: number): ChartRect {
+/** Boards `from` to `to` (1-39 from the left, both included) on the chart, from the foul line to `toFt`. */
+export function boardStripe(from: number, to: number, toFt: number): ChartRect {
   const top = yOf(Math.min(LANE_FT, Math.max(1, toFt)));
-  return { x: xOf(board - 1), width: xOf(board) - xOf(board - 1), y: top, height: yOf(0) - top };
+  return { x: xOf(from - 1), width: xOf(to) - xOf(from - 1), y: top, height: yOf(0) - top };
 }
 
-/** A one-foot band across the lane on the chart. */
-export function footBand(foot: number): ChartRect {
-  const top = yOf(foot + 1);
-  return { x: xOf(0), width: LANE_W, y: top, height: yOf(foot) - top };
+/** Feet `from` to `to` (0-based, both included) as a band across the lane on the chart. */
+export function footBand(from: number, to: number): ChartRect {
+  const top = yOf(to + 1);
+  return { x: xOf(0), width: LANE_W, y: top, height: yOf(from) - top };
 }
 
 /** A board as the pattern sheets write it: 1L-19L from the left, 20 in the middle, 19R-1R from the right. */

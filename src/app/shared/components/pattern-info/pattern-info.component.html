@@ -55,9 +55,9 @@
         [bands]="ratios()"
         [bars]="byBoard()"
         [color]="color()"
-        [selected]="selectedBoardIndex()"
+        [selected]="boardRange()"
         [ticks]="boardTicks"
-        (barSelect)="selectBoard($event + 1)"></app-pattern-oil-chart>
+        (barPick)="boardRange.set(pickRange(boardRange(), $event))"></app-pattern-oil-chart>
       <span class="info-tile-detail readout">{{ boardReadout() }}</span>
     </div>
     <div class="info-tile chart-tile">
@@ -66,9 +66,9 @@
         label="Oil per foot, front to back"
         [bars]="byFoot()"
         [color]="color()"
-        [selected]="selectedFoot()"
+        [selected]="footRange()"
         [ticks]="footTicks()"
-        (barSelect)="selectFoot($event)"></app-pattern-oil-chart>
+        (barPick)="footRange.set(pickRange(footRange(), $event))"></app-pattern-oil-chart>
       <span class="info-tile-detail readout">{{ footReadout() }}</span>
     </div>
   </div>

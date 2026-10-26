@@ -1,26 +1,116 @@
-.pattern-container {
-  display: flex;
+// The chart and the panel next to it are as tall as the chart is at a third of the width, but never
+// taller than the screen (appFitScreen caps it). The chart keeps its proportions, the panel takes the
+// rest of the width and the graphs share its height.
+.pattern-split {
+  display: grid;
+  height: calc(34vw * 832 / 216);
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 8px;
-  margin: 8px 16px;
+  margin: 8px max(16px, calc((100% - 640px) / 2)); // centred, at most 640px wide
 
-  .pattern-info {
-    display: grid;
-    width: 55%;
+  .lane {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 216 / 832; // the pattern chart's drawing (lightningbowl-patterns chart_generator.py)
+    max-width: 34vw; // the graphs need the width more than the chart
 
-    ion-chip {
-      justify-content: center;
-      border-radius: var(--card-border-radius);
-      border: 1px solid var(--ion-thin-border-color, #ffffff12);
-      background: var(--ion-card-background);
-
-      &:first-child {
-        margin-top: 0;
-      }
-
-      &:last-child {
-        margin-bottom: 0;
-      }
+    img,
+    .lane-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
+
+    img {
+      object-fit: contain;
+      object-position: top;
+    }
+
+    .lane-overlay {
+      cursor: crosshair;
+      touch-action: none; // dragging along the lane picks feet instead of scrolling
+    }
+
+    .highlight {
+      fill: #1f6feb;
+      fill-opacity: 0.35;
+      stroke: #1f6feb;
+      stroke-width: 1;
+    }
+  }
+}
+
+.info-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--ion-thin-border-color, #ffffff12);
+  background: var(--ion-card-background);
+}
+
+.info-tile-label,
+.info-tile-detail {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
+
+.info-tile-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+// Right of the lane: the headline numbers, then two oil graphs sharing the rest of the height.
+.pattern-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pattern-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+
+  .wide {
+    grid-column: span 2;
+  }
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.readout {
+  min-height: 1lh; // one line, so the graphs don't jump when it changes
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.chart-tile {
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-start;
+  gap: 8px;
+
+  app-pattern-oil-chart {
+    flex: 1;
   }
 }
 
@@ -37,13 +127,13 @@ ion-grid {
   }
 
   .header-row {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 500;
     letter-spacing: 0.01rem;
   }
 
   .data-row {
-    font-size: .65rem;
+    font-size: 0.65rem;
     line-height: 1.2;
 
     &:nth-child(even) {

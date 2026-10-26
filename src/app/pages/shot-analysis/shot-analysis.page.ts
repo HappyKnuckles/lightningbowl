@@ -1,5 +1,5 @@
 import { Component, computed, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core';
-import { RangeCustomEvent } from '@ionic/angular';
+import { ModalController, RangeCustomEvent } from '@ionic/angular';
 import {
   IonButton,
   IonButtons,
@@ -73,6 +73,7 @@ const LOUPE_CSS_PX = 112;
   selector: 'app-shot-analysis',
   templateUrl: './shot-analysis.page.html',
   styleUrls: ['./shot-analysis.page.scss'],
+  providers: [ModalController],
   imports: [
     IonButton,
     IonButtons,

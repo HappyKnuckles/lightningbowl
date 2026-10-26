@@ -24,7 +24,8 @@
     "e2e": "playwright test --config=playwright.e2e.config.ts",
     "e2e:ui": "playwright test --config=playwright.e2e.config.ts --ui",
     "e2e:headed": "playwright test --config=playwright.e2e.config.ts --headed",
-    "e2e:report": "playwright show-report playwright/.e2e-report"
+    "e2e:report": "playwright show-report playwright/.e2e-report",
+    "generate:pattern-api": "openapi-generator-cli generate --generator-key pattern-api"
   },
   "private": true,
   "dependencies": {
@@ -84,6 +85,7 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.0.0",
     "@ionic/angular-toolkit": "11.0.1",
+    "@openapitools/openapi-generator-cli": "^2.42.0",
     "@playwright/test": "^1.49.0",
     "@types/d3": "^7.4.3",
     "@types/events": "^3.0.3",

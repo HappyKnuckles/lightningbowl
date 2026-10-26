@@ -2,6 +2,14 @@
   position: relative;
   display: block;
   min-height: 80px;
+  cursor: pointer;
+  touch-action: pan-y; // horizontal drags pick bars, vertical ones still scroll
+  user-select: none;
+}
+
+.selected-column {
+  fill: var(--ion-text-color, #fff);
+  fill-opacity: 0.15;
 }
 
 .chart {

@@ -1,5 +1,23 @@
 <div appFitScreen class="pattern-split">
-  <img alt="Pattern chart" class="lane" [src]="imagesUrl + pattern().chart_standard" />
+  <div class="lane">
+    <img alt="Pattern chart" [src]="imagesUrl + pattern().chart_standard" />
+    <!-- same proportions as the chart, so the highlights land on its boards and feet -->
+    <svg
+      #overlay
+      aria-hidden="true"
+      class="lane-overlay"
+      preserveAspectRatio="xMidYMin meet"
+      [attr.viewBox]="overlayViewBox"
+      (pointerdown)="onLanePointer($event)"
+      (pointermove)="onLanePointer($event)">
+      @if (boardStripe(); as stripe) {
+        <rect class="highlight" [attr.height]="stripe.height" [attr.width]="stripe.width" [attr.x]="stripe.x" [attr.y]="stripe.y" />
+      }
+      @if (footBand(); as band) {
+        <rect class="highlight" [attr.height]="band.height" [attr.width]="band.width" [attr.x]="band.x" [attr.y]="band.y" />
+      }
+    </svg>
+  </div>
   <div class="pattern-panel">
     <div class="pattern-facts">
       @if (facts().distance) {
@@ -37,11 +55,21 @@
         [bands]="ratios()"
         [bars]="byBoard()"
         [color]="color()"
-        [ticks]="boardTicks"></app-pattern-oil-chart>
+        [selected]="selectedBoardIndex()"
+        [ticks]="boardTicks"
+        (barSelect)="selectBoard($event + 1)"></app-pattern-oil-chart>
+      <span class="info-tile-detail readout">{{ boardReadout() }}</span>
     </div>
     <div class="info-tile chart-tile">
       <span class="info-tile-label">Front to back · ft</span>
-      <app-pattern-oil-chart label="Oil per foot, front to back" [bars]="byFoot()" [color]="color()" [ticks]="footTicks()"></app-pattern-oil-chart>
+      <app-pattern-oil-chart
+        label="Oil per foot, front to back"
+        [bars]="byFoot()"
+        [color]="color()"
+        [selected]="selectedFoot()"
+        [ticks]="footTicks()"
+        (barSelect)="selectFoot($event)"></app-pattern-oil-chart>
+      <span class="info-tile-detail readout">{{ footReadout() }}</span>
     </div>
   </div>
 </div>

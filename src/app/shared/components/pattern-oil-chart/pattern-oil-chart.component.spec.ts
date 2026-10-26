@@ -52,4 +52,27 @@ describe('PatternOilChartComponent', () => {
     expect(el.querySelector('.bands')).toBeNull();
     expect(el.querySelector('svg')?.classList.contains('with-bands')).toBe(false);
   });
+
+  it('highlights the selected bar', () => {
+    const el = render({ bars: Array.from({ length: 4 }, () => ({ forward: 1, reverse: 0 })), selected: 2 });
+    expect(el.querySelector('.selected-column')?.getAttribute('x')).toBe('20');
+  });
+
+  it('reports the bar under a tap, and while dragging only new bars', () => {
+    const el = render({ bars: Array.from({ length: 4 }, () => ({ forward: 1, reverse: 0 })) });
+    el.style.width = '400px';
+    el.style.height = '100px';
+    document.body.appendChild(el);
+    const picked: number[] = [];
+    fixture.componentInstance.barSelect.subscribe((i) => picked.push(i));
+    const left = el.getBoundingClientRect().left;
+
+    el.dispatchEvent(new PointerEvent('pointerdown', { clientX: left + 150, buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 160, buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 350, buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 50, buttons: 0 }));
+
+    expect(picked).toEqual([1, 3]);
+    el.remove();
+  });
 });

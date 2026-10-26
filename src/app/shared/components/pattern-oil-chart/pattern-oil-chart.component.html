@@ -6,6 +6,9 @@
   </div>
 }
 <svg class="chart" preserveAspectRatio="none" role="img" [attr.aria-label]="label()" [attr.viewBox]="viewBox()" [class.with-bands]="bands().length">
+  @if (selectedColumn(); as column) {
+    <rect class="selected-column" y="0" [attr.height]="plotHeight" [attr.width]="column.width" [attr.x]="column.x" />
+  }
   @for (y of grid(); track y) {
     <line class="grid" x1="0" [attr.x2]="width()" [attr.y1]="y" [attr.y2]="y" />
   }

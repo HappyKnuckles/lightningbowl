@@ -45,11 +45,36 @@ describe('PatternInfoComponent', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
 
-    expect(el.querySelector('img.lane')?.getAttribute('src')).toContain('chart.svg');
+    expect(el.querySelector('.lane img')?.getAttribute('src')).toContain('chart.svg');
     const values = [...el.querySelectorAll('.info-tile-value')].map((v) => v.textContent?.trim());
     expect(values).toEqual(['37 ft', '2.92:1', '26.51 mL']);
     expect(el.querySelectorAll('app-pattern-oil-chart').length).toBe(2);
     expect(component.byFoot().length).toBe(37);
     expect(component.ratios()[3].label).toBe('1:1');
+  });
+
+  it('marks a board picked on the graph on the lane and reads out its oil', () => {
+    fixture.componentRef.setInput('pattern', makePattern({ distance: "37'", forwards_data: [row('2L', '2R', '0', '24')], reverse_data: [] }));
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(0);
+
+    component.selectBoard(12);
+    fixture.detectChanges();
+
+    expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(1);
+    expect(component.boardReadout()).toBe('Board 12L · 90 µL · 90 ↑ 0 ↓');
+
+    component.selectBoard(12); // tapping it again clears it
+    expect(component.selectedBoard()).toBeNull();
+  });
+
+  it('reads out a picked foot and says when there is no oil', () => {
+    fixture.componentRef.setInput('pattern', makePattern({ distance: "37'", forwards_data: [row('2L', '2R', '0', '24')], reverse_data: [] }));
+    component.selectFoot(30);
+    fixture.detectChanges();
+
+    expect(component.footReadout()).toBe('30–31 ft · no oil');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.lane-overlay .highlight').length).toBe(1);
   });
 });

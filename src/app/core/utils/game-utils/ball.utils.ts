@@ -81,6 +81,21 @@ export function getBallTracking(game: Pick<Game, 'ballTracking' | 'frames'>): Ba
   return hasThrowLevelBalls(game.frames ?? []) ? 'throw' : 'game';
 }
 
+/**
+ * Ball mode of a game being entered. A game keeps its own mode once it carries ball data;
+ * one without any follows `fallback` (the user's default), even if it was flagged before:
+ * closing the game's ball picker with nothing picked flags it 'game' without adding data,
+ * and that must not stop a later switch of the default from applying to it.
+ */
+export function resolveBallTracking(game: Pick<Game, 'ballTracking' | 'balls' | 'frames'>, fallback: BallTracking): BallTracking {
+  const throwBalls = hasThrowLevelBalls(game.frames ?? []);
+  const gameBalls = (game.balls ?? []).length > 0;
+  if (game.ballTracking && (throwBalls || gameBalls)) return game.ballTracking;
+  if (throwBalls) return 'throw';
+  if (gameBalls) return 'game';
+  return fallback;
+}
+
 /** Whether any throw carries a ball, i.e. whether per-throw data exists at all. */
 export function hasThrowLevelBalls(frames: Frame[]): boolean {
   return frames.some((frame) => (frame.throws ?? []).some((t) => t.ball?.name));
@@ -163,14 +178,34 @@ export function getGameBallNames(game: Game, arsenal?: Pick<Ball, 'ball_name' | 
  * tenth carries first ball, spare ball, first ball.
  *
  * Only throws before the given position, in play order, are considered.
+ *
+ * `previousGames` (oldest first) carries the selection across games: a game's first frames
+ * default to the first ball and spare ball the earlier games ended on. A ball of the right
+ * kind from an earlier game beats a ball of the other kind from this game, so the first spare
+ * shot of game two takes the spare ball, not the strike ball just thrown.
  */
-export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throwIndex: number): ThrowBall | undefined {
+export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throwIndex: number, previousGames: Frame[][] = []): ThrowBall | undefined {
   const targetFrame = frames[frameIndex];
   const wantFirstBall = targetFrame ? isFirstBallThrow(targetFrame, frameIndex, throwIndex) : throwIndex === 0;
 
-  let sameKindBall: ThrowBall | undefined;
-  let latestBall: ThrowBall | undefined;
+  let previous: CarriedBalls = {};
+  for (const gameFrames of previousGames) {
+    const carried = collectCarriedBalls(gameFrames, wantFirstBall, gameFrames.length, 0);
+    previous = { sameKind: carried.sameKind ?? previous.sameKind, latest: carried.latest ?? previous.latest };
+  }
+  const current = collectCarriedBalls(frames, wantFirstBall, frameIndex, throwIndex);
 
+  return current.sameKind ?? previous.sameKind ?? current.latest ?? previous.latest;
+}
+
+interface CarriedBalls {
+  sameKind?: ThrowBall;
+  latest?: ThrowBall;
+}
+
+/** Last ball of the wanted kind and last ball at all, among throws before (`frameIndex`, `throwIndex`). */
+function collectCarriedBalls(frames: Frame[], wantFirstBall: boolean, frameIndex: number, throwIndex: number): CarriedBalls {
+  const carried: CarriedBalls = {};
   for (let f = 0; f <= Math.min(frameIndex, frames.length - 1); f++) {
     const frame = frames[f];
     const throws = frame?.throws ?? [];
@@ -178,14 +213,24 @@ export function getCarryOverThrowBall(frames: Frame[], frameIndex: number, throw
       if (f === frameIndex && t >= throwIndex) break;
       const ball = throws[t]?.ball;
       if (!ball?.name) continue;
-      latestBall = ball;
+      carried.latest = ball;
       if (isFirstBallThrow(frame, f, t) === wantFirstBall) {
-        sameKindBall = ball;
+        carried.sameKind = ball;
       }
     }
   }
+  return carried;
+}
 
-  return sameKindBall ?? latestBall;
+/**
+ * Frames whose throw balls are limited to the arsenal (copies; the input is left alone), so a
+ * ball carried over from an older game is never one the user has since removed.
+ */
+export function keepArsenalThrowBalls(frames: Frame[], arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): Frame[] {
+  return frames.map((frame) => ({
+    ...frame,
+    throws: (frame.throws ?? []).map((t) => (t.ball && !findBallInArsenal(t.ball, arsenal) ? { ...t, ball: undefined } : t)),
+  }));
 }
 
 // Mutators
@@ -244,10 +289,15 @@ export function clearPendingBall(frame: Frame, throwIndex: number): void {
 
 /**
  * Ball to show for a throw: what it was recorded with, else the pick waiting for it, else the
- * ball carried over from earlier throws. A recorded throw answers for itself, absence included —
+ * ball carried over from earlier throws (and earlier games, see `getCarryOverThrowBall`). A recorded throw answers for itself, absence included —
  * carrying a ball onto it would undo the user clearing the pick.
  */
-export function getThrowBallForPosition(frames: Frame[], frameIndex: number, throwIndex: number): ThrowBall | undefined {
+export function getThrowBallForPosition(
+  frames: Frame[],
+  frameIndex: number,
+  throwIndex: number,
+  previousGames: Frame[][] = [],
+): ThrowBall | undefined {
   const frame = frames[frameIndex];
   const recordedThrow = frame?.throws?.[throwIndex];
   if (recordedThrow) return recordedThrow.ball;
@@ -255,5 +305,5 @@ export function getThrowBallForPosition(frames: Frame[], frameIndex: number, thr
   const pending = getPendingBall(frame, throwIndex);
   if (pending !== undefined) return pending ?? undefined;
 
-  return getCarryOverThrowBall(frames, frameIndex, throwIndex);
+  return getCarryOverThrowBall(frames, frameIndex, throwIndex, previousGames);
 }

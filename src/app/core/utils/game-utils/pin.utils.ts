@@ -148,7 +148,13 @@ export function isMakeableSplit(pinsLeftStanding: number[]): boolean {
 
 // Pin processing
 
-export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex: number, pinsKnockedDown: number[]): PinThrowResult {
+export function processPinThrow(
+  frames: Frame[],
+  frameIndex: number,
+  throwIndex: number,
+  pinsKnockedDown: number[],
+  previousGames: Frame[][] = [],
+): PinThrowResult {
   const updatedFrames: Frame[] = structuredClone(frames);
   ensureFrameStructure(updatedFrames, frameIndex, throwIndex);
 
@@ -184,7 +190,7 @@ export function processPinThrow(frames: Frame[], frameIndex: number, throwIndex:
   if (pendingBall !== undefined) {
     frame.throws[throwIndex].ball = pendingBall ?? undefined;
   } else if (!frame.throws[throwIndex].ball) {
-    frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex);
+    frame.throws[throwIndex].ball = getCarryOverThrowBall(updatedFrames, frameIndex, throwIndex, previousGames);
   }
   clearPendingBall(frame, throwIndex);
 

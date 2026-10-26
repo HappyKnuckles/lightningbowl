@@ -222,3 +222,11 @@
   gap: 8px;
   padding: 8px 16px 24px;
 }
+
+// On wide screens the lane sets the row height from its width (the shot lane's drawing at its
+// shortest, MIN_LANE_RATIO: 216 × 812 units), so it isn't squashed into the height of the tiles.
+@media (min-width: 672px) {
+  app-shot-lane.info-visual {
+    aspect-ratio: 216 / 812;
+  }
+}

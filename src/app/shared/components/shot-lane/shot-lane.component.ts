@@ -13,6 +13,11 @@ import { boardToX, distanceToY, LANE_ARROWS, LANE_BOARDS, LANE_LENGTH_FT } from 
 const LANE_W = 156;
 const LANE_H = 640;
 const MIN_LANE_H = 320;
+/**
+ * Shortest the lane may get relative to its width. In a wide, low box (tiles on a desktop) the lane
+ * would otherwise come out stubby; this keeps it long and the drawing narrows to fit the height instead.
+ */
+const MIN_LANE_RATIO = 5;
 const GUTTER = 10;
 const PAD_X = 30;
 const PAD_TOP = 8;
@@ -171,7 +176,7 @@ export class ShotLaneComponent {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
           const total = (height / width) * (LANE_W + 2 * PAD_X);
-          this.#laneH.set(Math.max(MIN_LANE_H, total - PAD_TOP - PAD_BOTTOM));
+          this.#laneH.set(Math.max(MIN_LANE_H, LANE_W * MIN_LANE_RATIO, total - PAD_TOP - PAD_BOTTOM));
         }
       });
       observer.observe(host);

@@ -1,0 +1,35 @@
+@if (bands().length) {
+  <div class="bands">
+    @for (band of bandMarks(); track band.from) {
+      <span [style.left.%]="band.left" [style.width.%]="band.width">{{ band.label }}</span>
+    }
+  </div>
+}
+<svg class="chart" preserveAspectRatio="none" role="img" [attr.aria-label]="label()" [attr.viewBox]="viewBox()" [class.with-bands]="bands().length">
+  @for (y of grid(); track y) {
+    <line class="grid" x1="0" [attr.x2]="width()" [attr.y1]="y" [attr.y2]="y" />
+  }
+  @for (bar of rects(); track bar.key) {
+    <rect
+      class="forward"
+      [attr.fill]="color()"
+      [attr.height]="bar.forward.height"
+      [attr.width]="barWidth"
+      [attr.x]="bar.x"
+      [attr.y]="bar.forward.y" />
+    <rect
+      class="reverse"
+      [attr.fill]="color()"
+      [attr.height]="bar.reverse.height"
+      [attr.width]="barWidth"
+      [attr.x]="bar.x"
+      [attr.y]="bar.reverse.y" />
+  }
+  <line class="baseline" x1="0" [attr.x2]="width()" [attr.y1]="baseline" [attr.y2]="baseline" />
+</svg>
+<!-- labels in HTML keep their size while the bars stretch -->
+<div class="ticks">
+  @for (tick of tickMarks(); track tick.at) {
+    <span [style.left.%]="tick.left">{{ tick.label }}</span>
+  }
+</div>

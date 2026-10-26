@@ -1,26 +1,81 @@
-.pattern-container {
-  display: flex;
+// The lane and the panel next to it are as tall as the screen allows (appFitScreen sets the height).
+// The lane takes the width its proportions need at that height, the panel the rest.
+.pattern-split {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 8px;
-  margin: 8px 16px;
+  margin: 8px max(16px, calc((100% - 640px) / 2)); // centred, at most 640px wide
 
-  .pattern-info {
-    display: grid;
-    width: 55%;
+  .lane {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 216 / 812; // the lane drawing at its shortest (pattern-lane MIN_LANE_RATIO)
+    max-width: 30vw; // the graphs need the width more than the lane: it gets longer instead
+  }
+}
 
-    ion-chip {
-      justify-content: center;
-      border-radius: var(--card-border-radius);
-      border: 1px solid var(--ion-thin-border-color, #ffffff12);
-      background: var(--ion-card-background);
+.info-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--ion-thin-border-color, #ffffff12);
+  background: var(--ion-card-background);
+}
 
-      &:first-child {
-        margin-top: 0;
-      }
+.info-tile-label,
+.info-tile-detail {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
 
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
+.info-tile-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+// Right of the lane: the headline numbers, then two oil graphs sharing the rest of the height.
+.pattern-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pattern-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+
+  .wide {
+    grid-column: span 2;
+  }
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.chart-tile {
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-start;
+  gap: 8px;
+
+  app-pattern-oil-chart {
+    flex: 1;
   }
 }
 

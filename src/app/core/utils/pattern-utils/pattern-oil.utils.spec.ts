@@ -1,0 +1,153 @@
+import { makePattern } from 'src/testing/fixtures';
+
+import { ForwardsData } from '../../models/pattern.model';
+import {
+  blockRatios,
+  oilByBoard,
+  oilByFoot,
+  parseBoardEdge,
+  patternDistanceFt,
+  patternFacts,
+  patternOilRects,
+  patternRatioColor,
+  rowBoards,
+  rowOilPerBoard,
+} from './pattern-oil.utils';
+
+function row(start: string, stop: string, load: string, mics: string, from: string, to: string, totalOil = ''): ForwardsData {
+  return { number: '', start, stop, load, mics, speed: '', buf: '', tank: '', total_oil: totalOil, distance_start: from, distance_end: to };
+}
+
+describe('pattern oil utils', () => {
+  it('reads the boards a row covers from either edge', () => {
+    expect(rowBoards({ start: '2L', stop: '2R' })).toEqual([2, 38]);
+    expect(rowBoards({ start: '10R', stop: '12L' })).toEqual([12, 30]);
+    expect(rowBoards({ start: '1L', stop: '1R' })).toEqual([1, 39]);
+  });
+
+  it('takes the oil per board from loads and mics, not the scraped total', () => {
+    // "720" is how some patterns were scraped instead of "0.720" mL
+    expect(rowOilPerBoard(row('12L', '11R', '1', '40', '23.52', '26.04', '720'))).toBe(40);
+    expect(rowOilPerBoard(row('2L', '2R', '0', '45', '30', '37'))).toBe(0);
+  });
+
+  it('adds up the oil on each board per direction', () => {
+    const pattern = makePattern({
+      forwards_data: [row('2L', '2R', '2', '45', '0', '2'), row('10L', '10R', '3', '45', '17', '24')],
+      reverse_data: [row('9L', '9R', '2', '45', '30', '25')],
+    });
+    const bars = oilByBoard(pattern);
+
+    expect(bars.length).toBe(39);
+    expect(bars[0]).toEqual({ forward: 0, reverse: 0 });
+    expect(bars[1]).toEqual({ forward: 90, reverse: 0 }); // board 2: first row only
+    expect(bars[9]).toEqual({ forward: 225, reverse: 90 }); // board 10: both forward rows and the reverse row
+    expect(bars[19]).toEqual({ forward: 225, reverse: 90 });
+  });
+
+  it('spreads each row over the feet it covers, also on the way back', () => {
+    const pattern = makePattern({
+      forwards_data: [row('1L', '1R', '1', '10', '0', '2.5')], // 390 µL over 2.5 ft
+      reverse_data: [row('1L', '1R', '1', '10', '4', '2')], // 390 µL over 2 ft
+    });
+    const bars = oilByFoot(pattern, 4);
+
+    expect(bars.length).toBe(4);
+    expect(bars[0].forward).toBeCloseTo(156, 5);
+    expect(bars[2].forward).toBeCloseTo(78, 5); // half of the third foot
+    expect(bars[2].reverse).toBeCloseTo(195, 5);
+    expect(bars[3].reverse).toBeCloseTo(195, 5);
+  });
+
+  it('gives the centre-to-block ratios like a pattern sheet', () => {
+    const pattern = makePattern({
+      forwards_data: [row('1L', '1R', '1', '30', '0', '10'), row('10L', '10R', '2', '30', '0', '10')],
+      reverse_data: [],
+    });
+    const ratios = blockRatios(oilByBoard(pattern));
+
+    expect(ratios.map((r) => r.label)).toEqual(['3', '1.36', '1', '1:1', '1', '1.36', '3']);
+    expect(ratios[0]).toMatchObject({ from: 3, to: 7 });
+  });
+
+  it('shows a dash for a block without oil', () => {
+    const pattern = makePattern({ forwards_data: [row('10L', '10R', '1', '30', '0', '10')], reverse_data: [] });
+    expect(blockRatios(oilByBoard(pattern))[0].label).toBe('–');
+  });
+
+  it('sums up the headline numbers with their categories', () => {
+    expect(patternFacts(makePattern({ distance: "37'", ratio: '2.92:1', volume: '26.51', forward: '13.64', reverse: '12.87' }))).toEqual({
+      distance: '37 ft',
+      length: 'Medium',
+      ratio: '2.92:1',
+      difficulty: 'Hard',
+      volume: '26.51 mL',
+      forward: '13.64 mL',
+      reverse: '12.87 mL',
+    });
+    expect(patternFacts(makePattern({ distance: '', ratio: undefined, volume: '', forward: '', reverse: '' }))).toEqual({
+      distance: undefined,
+      length: undefined,
+      ratio: undefined,
+      difficulty: undefined,
+      volume: undefined,
+      forward: undefined,
+      reverse: undefined,
+    });
+  });
+
+  describe('drawing like the pattern charts', () => {
+    const drawn = (start: string, stop: string, totalOil: string, from: string, to: string) => row(start, stop, '', '', from, to, totalOil);
+    // cut down from a 37 ft, 2.92:1 house shot: oil out to 24.64 ft going down, buffed on the way back
+    const PATTERN = makePattern({
+      distance: "37'",
+      ratio: '2.92:1',
+      forwards_data: [
+        drawn('2L', '2R', '3.330', '0.00', '1.96'),
+        drawn('10L', '10R', '2.835', '17.08', '24.64'),
+        drawn('2L', '2R', '0', '24.64', '37.00'),
+      ],
+      reverse_data: [drawn('2L', '2R', '0', '37.00', '30.00'), drawn('9L', '9R', '2.070', '30.00', '24.96'), drawn('2L', '2R', '0', '8.16', '0.00')],
+    });
+
+    it('reads boards from either edge like the chart generator', () => {
+      expect(parseBoardEdge('2L')).toBe(2);
+      expect(parseBoardEdge('10R')).toBe(29);
+      expect(parseBoardEdge(' 1r ')).toBe(38);
+    });
+
+    it('colours by ratio like the charts', () => {
+      expect(patternRatioColor('2.92:1')).toBe('red');
+      expect(patternRatioColor('5:1')).toBe('#ed8e07');
+      expect(patternRatioColor('10:1')).toBe('green');
+      expect(patternRatioColor(undefined)).toBe('blue');
+    });
+
+    it('reads the oil length', () => {
+      expect(patternDistanceFt(PATTERN)).toBe(37);
+      expect(patternDistanceFt(makePattern({ distance: '' }))).toBeNull();
+    });
+
+    it('layers a wash, the oiled forward passes and the reverse passes, including the ones ending at the foul line', () => {
+      const rects = patternOilRects(PATTERN);
+      expect(rects.map((r) => [r.key, r.opacity])).toEqual([
+        ['wash', 0.1],
+        ['forward-0', 0.5],
+        ['forward-1', 0.5],
+        ['reverse-1', 0.3],
+        ['reverse-2', 0.3],
+      ]);
+      expect(rects[0]).toMatchObject({ left: 1, right: 38, fromFt: 0, toFt: 37 });
+      expect(rects[2]).toMatchObject({ left: 10, right: 29, fromFt: 17.08, toFt: 24.64 });
+      expect(rects[4]).toMatchObject({ fromFt: 0, toFt: 8.16 });
+    });
+
+    it('adds a lighter wash for the forward length when the passes end at different distances', () => {
+      const pattern = makePattern({ forwards_data: [drawn('2L', '2R', '3', '0', '40')], reverse_data: [drawn('2L', '2R', '3', '30', '0')] });
+      expect(patternOilRects(pattern).slice(0, 2)).toMatchObject([
+        { key: 'wash-forward', opacity: 0.05, toFt: 40 },
+        { key: 'wash', opacity: 0.1, toFt: 30 },
+      ]);
+    });
+  });
+});

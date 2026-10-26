@@ -1,0 +1,77 @@
+:host {
+  position: relative;
+  display: block;
+  min-height: 80px;
+}
+
+.chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 16px); // ticks below
+
+  &.with-bands {
+    top: 20px;
+    height: calc(100% - 36px); // ratio bands above
+  }
+}
+
+.grid {
+  stroke: var(--ion-color-medium);
+  stroke-opacity: 0.2;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.baseline {
+  stroke: var(--ion-color-medium);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.forward {
+  fill-opacity: 0.85;
+}
+
+.reverse {
+  fill-opacity: 0.4;
+}
+
+.bands,
+.ticks {
+  position: absolute;
+  inset-inline: 0;
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--ion-color-medium);
+
+  span {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+}
+
+.bands {
+  top: 0;
+  height: 16px;
+
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    border-inline: 1px solid var(--ion-card-background);
+    border-radius: 4px;
+    background: rgba(var(--ion-text-color-rgb, 255, 255, 255), 0.08);
+    color: var(--ion-text-color);
+    transform: none;
+  }
+}
+
+.ticks {
+  bottom: 0;
+  height: 12px;
+}

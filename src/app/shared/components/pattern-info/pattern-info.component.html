@@ -1,12 +1,48 @@
-<div class="pattern-container">
-  <img [src]="imagesUrl + pattern().chart_standard" style="width: 50%; height: auto; border-radius: var(--card-border-radius)" alt="Pattern image" />
-  <div class="pattern-info">
-    <ion-chip>Distance: {{ pattern().distance }}ft</ion-chip>
-    <ion-chip>Volume: {{ pattern().volume }}mL</ion-chip>
-    <ion-chip>Ratio: {{ pattern().ratio }}</ion-chip>
-    <ion-chip>{{ getLength() }} Length</ion-chip>
-    <ion-chip>{{ getVolume() }} Volume</ion-chip>
-    <ion-chip>{{ getDifficulty() }} Difficulty</ion-chip>
+<div appFitScreen class="pattern-split">
+  <app-pattern-lane class="lane" [pattern]="pattern()"></app-pattern-lane>
+  <div class="pattern-panel">
+    <div class="pattern-facts">
+      @if (facts().distance) {
+        <div class="info-tile">
+          <span class="info-tile-label">Distance</span>
+          <span class="info-tile-value">{{ facts().distance }}</span>
+          <span class="info-tile-detail">{{ facts().length }}</span>
+        </div>
+      }
+      @if (facts().ratio) {
+        <div class="info-tile">
+          <span class="info-tile-label">Ratio</span>
+          <span class="info-tile-value">{{ facts().ratio }}</span>
+          <span class="info-tile-detail">{{ facts().difficulty }}</span>
+        </div>
+      }
+      @if (facts().volume) {
+        <div class="info-tile wide">
+          <span class="info-tile-label">Volume</span>
+          <span class="info-tile-value">{{ facts().volume }}</span>
+          @if (facts().forward || facts().reverse) {
+            <span class="info-tile-detail split">
+              <span><ion-icon name="arrow-up-outline"></ion-icon>{{ facts().forward ?? "–" }} forward</span>
+              <span><ion-icon name="arrow-down-outline"></ion-icon>{{ facts().reverse ?? "–" }} reverse</span>
+            </span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="info-tile chart-tile">
+      <span class="info-tile-label">Left to right · ratios</span>
+      <app-pattern-oil-chart
+        label="Oil per board, left to right"
+        [bands]="ratios()"
+        [bars]="byBoard()"
+        [color]="color()"
+        [ticks]="boardTicks"></app-pattern-oil-chart>
+    </div>
+    <div class="info-tile chart-tile">
+      <span class="info-tile-label">Front to back · ft</span>
+      <app-pattern-oil-chart label="Oil per foot, front to back" [bars]="byFoot()" [color]="color()" [ticks]="footTicks()"></app-pattern-oil-chart>
+    </div>
   </div>
 </div>
 

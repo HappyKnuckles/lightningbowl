@@ -404,26 +404,18 @@ ion-segment {
     gap: 8px;
   }
 
-  // Stat card: label at the top, value and detail at the bottom, so a tile stretched next to a long
-  // lane reads as laid out rather than empty.
   .info-tile {
-    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: center;
     min-width: 0;
-    padding: 12px;
-    overflow: hidden;
+    padding: 8px 12px;
     border-radius: var(--card-border-radius);
     border: 1px solid var(--ion-thin-border-color, #ffffff12);
     background: var(--ion-card-background);
 
-    &.highlight::before {
-      content: '';
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 4px;
-      background: #e5394a;
+    &.highlight {
+      border-color: rgba(229, 57, 74, 0.4);
     }
   }
 
@@ -433,20 +425,8 @@ ion-segment {
     color: var(--ion-color-medium);
   }
 
-  .info-tile-label {
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
   .info-tile-value {
-    margin-top: auto;
-    font-size: 1.375rem;
+    font-size: 1.125rem;
     font-weight: 600;
-    line-height: 1.2;
-  }
-
-  .info-tile-detail {
-    line-height: 1.3;
   }
 }

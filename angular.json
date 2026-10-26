@@ -157,7 +157,7 @@
               "watch": false,
               "coverage": true,
               "coverageInclude": ["src/app/**/*.ts"],
-              "coverageExclude": ["src/**/*.spec.ts", "src/**/*.model.ts", "src/app/core/constants/**"],
+              "coverageExclude": ["src/**/*.spec.ts", "src/**/*.model.ts", "src/app/core/constants/**", "src/app/core/api/**"],
               "coverageReporters": ["text-summary", "json-summary", "lcov"],
               "coverageThresholds": { "lines": 50 }
             }

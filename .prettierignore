@@ -32,4 +32,7 @@ ios
 .angular
 vercel
 
+# Generated API clients (npm run generate:pattern-api)
+src/app/core/api
+
 README.md

@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.26.0",
+    "generators": {
+      "pattern-api": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "https://raw.githubusercontent.com/HappyKnuckles/lightningbowl-patterns/master/openapi.json",
+        "output": "src/app/core/api/pattern-api",
+        "additionalProperties": {
+          "ngVersion": "21.0.0",
+          "fileNaming": "kebab-case",
+          "supportsES6": true,
+          "serviceSuffix": "Api",
+          "serviceFileSuffix": ".api",
+          "providedIn": "root",
+          "stringEnums": true
+        }
+      }
+    }
+  }
+}

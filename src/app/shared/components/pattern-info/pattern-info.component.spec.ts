@@ -37,6 +37,7 @@ describe('PatternInfoComponent', () => {
         volume: '26.51',
         forward: '13.64',
         reverse: '12.87',
+        chart_standard: 'chart.svg',
         forwards_data: [row('2L', '2R', '0', '24')],
         reverse_data: [row('9L', '9R', '30', '25')],
       }),
@@ -44,7 +45,7 @@ describe('PatternInfoComponent', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
 
-    expect(el.querySelectorAll('app-pattern-lane .oil').length).toBeGreaterThan(0);
+    expect(el.querySelector('img.lane')?.getAttribute('src')).toContain('chart.svg');
     const values = [...el.querySelectorAll('.info-tile-value')].map((v) => v.textContent?.trim());
     expect(values).toEqual(['37 ft', '2.92:1', '26.51 mL']);
     expect(el.querySelectorAll('app-pattern-oil-chart').length).toBe(2);

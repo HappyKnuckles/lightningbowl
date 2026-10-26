@@ -20,16 +20,16 @@ import { FitScreenDirective } from './fit-screen.directive';
 class HostComponent {}
 
 describe('FitScreenDirective', () => {
-  it('fills the visible content height below where the element starts', async () => {
+  it('caps the height at the visible content below where the element starts', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     document.body.appendChild(fixture.nativeElement);
     fixture.detectChanges();
 
     const el = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('#fit')!;
-    await vi.waitFor(() => expect(el.style.height).not.toBe(''), { timeout: 3000 });
+    await vi.waitFor(() => expect(el.style.maxHeight).not.toBe(''), { timeout: 3000 });
 
     // 600 px of content, 100 px above, 8 px kept free below
-    expect(el.style.height).toBe('492px');
+    expect(el.style.maxHeight).toBe('492px');
     fixture.nativeElement.remove();
   });
 });

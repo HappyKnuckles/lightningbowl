@@ -1,18 +1,7 @@
 import { makePattern } from 'src/testing/fixtures';
 
 import { ForwardsData } from '../../models/pattern.model';
-import {
-  blockRatios,
-  oilByBoard,
-  oilByFoot,
-  parseBoardEdge,
-  patternDistanceFt,
-  patternFacts,
-  patternOilRects,
-  patternRatioColor,
-  rowBoards,
-  rowOilPerBoard,
-} from './pattern-oil.utils';
+import { blockRatios, oilByBoard, oilByFoot, patternFacts, patternRatioColor, rowBoards, rowOilPerBoard } from './pattern-oil.utils';
 
 function row(start: string, stop: string, load: string, mics: string, from: string, to: string, totalOil = ''): ForwardsData {
   return { number: '', start, stop, load, mics, speed: '', buf: '', tank: '', total_oil: totalOil, distance_start: from, distance_end: to };
@@ -96,58 +85,10 @@ describe('pattern oil utils', () => {
     });
   });
 
-  describe('drawing like the pattern charts', () => {
-    const drawn = (start: string, stop: string, totalOil: string, from: string, to: string) => row(start, stop, '', '', from, to, totalOil);
-    // cut down from a 37 ft, 2.92:1 house shot: oil out to 24.64 ft going down, buffed on the way back
-    const PATTERN = makePattern({
-      distance: "37'",
-      ratio: '2.92:1',
-      forwards_data: [
-        drawn('2L', '2R', '3.330', '0.00', '1.96'),
-        drawn('10L', '10R', '2.835', '17.08', '24.64'),
-        drawn('2L', '2R', '0', '24.64', '37.00'),
-      ],
-      reverse_data: [drawn('2L', '2R', '0', '37.00', '30.00'), drawn('9L', '9R', '2.070', '30.00', '24.96'), drawn('2L', '2R', '0', '8.16', '0.00')],
-    });
-
-    it('reads boards from either edge like the chart generator', () => {
-      expect(parseBoardEdge('2L')).toBe(2);
-      expect(parseBoardEdge('10R')).toBe(29);
-      expect(parseBoardEdge(' 1r ')).toBe(38);
-    });
-
-    it('colours by ratio like the charts', () => {
-      expect(patternRatioColor('2.92:1')).toBe('red');
-      expect(patternRatioColor('5:1')).toBe('#ed8e07');
-      expect(patternRatioColor('10:1')).toBe('green');
-      expect(patternRatioColor(undefined)).toBe('blue');
-    });
-
-    it('reads the oil length', () => {
-      expect(patternDistanceFt(PATTERN)).toBe(37);
-      expect(patternDistanceFt(makePattern({ distance: '' }))).toBeNull();
-    });
-
-    it('layers a wash, the oiled forward passes and the reverse passes, including the ones ending at the foul line', () => {
-      const rects = patternOilRects(PATTERN);
-      expect(rects.map((r) => [r.key, r.opacity])).toEqual([
-        ['wash', 0.1],
-        ['forward-0', 0.5],
-        ['forward-1', 0.5],
-        ['reverse-1', 0.3],
-        ['reverse-2', 0.3],
-      ]);
-      expect(rects[0]).toMatchObject({ left: 1, right: 38, fromFt: 0, toFt: 37 });
-      expect(rects[2]).toMatchObject({ left: 10, right: 29, fromFt: 17.08, toFt: 24.64 });
-      expect(rects[4]).toMatchObject({ fromFt: 0, toFt: 8.16 });
-    });
-
-    it('adds a lighter wash for the forward length when the passes end at different distances', () => {
-      const pattern = makePattern({ forwards_data: [drawn('2L', '2R', '3', '0', '40')], reverse_data: [drawn('2L', '2R', '3', '30', '0')] });
-      expect(patternOilRects(pattern).slice(0, 2)).toMatchObject([
-        { key: 'wash-forward', opacity: 0.05, toFt: 40 },
-        { key: 'wash', opacity: 0.1, toFt: 30 },
-      ]);
-    });
+  it('colours by ratio like the pattern charts', () => {
+    expect(patternRatioColor('2.92:1')).toBe('red');
+    expect(patternRatioColor('5:1')).toBe('#ed8e07');
+    expect(patternRatioColor('10:1')).toBe('green');
+    expect(patternRatioColor(undefined)).toBe('blue');
   });
 });

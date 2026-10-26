@@ -6,9 +6,10 @@ const MIN_HEIGHT_PX = 360;
 const BOTTOM_GAP_PX = 8;
 
 /**
- * Sizes the element to the visible height of its `ion-content` below where it starts, so it fills
- * the screen exactly when the page is scrolled to the top. Follows resizes of the content and of
- * everything above the element (e.g. a card that appears once data has loaded).
+ * Caps the element's height (`max-height`) at the visible height of its `ion-content` below where it
+ * starts, so it never runs off the screen when the page is scrolled to the top; give it a `height`
+ * to fill that space. Follows resizes of the content and of everything above the element (e.g. a card
+ * that appears once data has loaded).
  */
 @Directive({
   selector: '[appFitScreen]',
@@ -29,7 +30,7 @@ export class FitScreenDirective {
         // the scroll area runs under a translucent header / tab bar and is padded for them
         const bottomPadding = parseFloat(getComputedStyle(scroll).paddingBottom) || 0;
         const available = scroll.clientHeight - top - bottomPadding - BOTTOM_GAP_PX;
-        el.style.height = `${Math.max(MIN_HEIGHT_PX, Math.floor(available))}px`;
+        el.style.maxHeight = `${Math.max(MIN_HEIGHT_PX, Math.floor(available))}px`;
       };
 
       const observer = new ResizeObserver(update);

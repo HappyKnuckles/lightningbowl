@@ -6,8 +6,8 @@ import { arrowDownOutline, arrowUpOutline } from 'ionicons/icons';
 import { FitScreenDirective } from 'src/app/core/directives/fit-screen/fit-screen.directive';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { blockRatios, oilByBoard, oilByFoot, patternFacts, patternRatioColor } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
+import { environment } from 'src/environments/environment';
 
-import { PatternLaneComponent } from '../pattern-lane/pattern-lane.component';
 import { PatternOilChartComponent } from '../pattern-oil-chart/pattern-oil-chart.component';
 
 /** Board labels under the left-to-right chart: 1, 5, 10 … 20 … 10, 5, 1 counted from each edge. */
@@ -15,14 +15,14 @@ const BOARD_TICKS = [1, 5, 10, 15, 20, 25, 30, 35, 39].map((b) => ({ at: b - 1, 
 
 @Component({
   selector: 'app-pattern-info',
-  imports: [IonListHeader, IonGrid, IonRow, IonCol, IonIcon, FitScreenDirective, PatternLaneComponent, PatternOilChartComponent],
+  imports: [IonListHeader, IonGrid, IonRow, IonCol, IonIcon, FitScreenDirective, PatternOilChartComponent],
   templateUrl: './pattern-info.component.html',
   styleUrl: './pattern-info.component.scss',
 })
 export class PatternInfoComponent {
   pattern = input.required<Pattern>();
-
   readonly facts = computed(() => patternFacts(this.pattern()));
+
   readonly color = computed(() => patternRatioColor(this.pattern().ratio));
   readonly byBoard = computed(() => oilByBoard(this.pattern()));
   readonly ratios = computed(() => blockRatios(this.byBoard()).map((r) => ({ from: r.from - 1, to: r.to - 1, label: r.label })));
@@ -42,6 +42,7 @@ export class PatternInfoComponent {
       .filter((ft) => ft % 5 === 0)
       .map((ft) => ({ at: ft - 1, label: `${ft}` })),
   );
+  readonly imagesUrl = environment.imagesUrl;
   readonly boardTicks = BOARD_TICKS;
 
   constructor() {

@@ -144,37 +144,7 @@ export function patternFacts(pattern: Pattern): PatternFacts {
   };
 }
 
-/**
- * Oil of a pattern drawn the way the pattern charts are (lightningbowl-patterns
- * `scraper/chart_generator.py`), so the shot lane and the charts show the same thing.
- */
-
-/** One rectangle of oil: x in boards from the lane's left edge (0 to 39), y in feet from the foul line. */
-export interface OilRect {
-  fromFt: number;
-  key: string;
-  left: number;
-  opacity: number;
-  right: number;
-  toFt: number;
-}
-
-interface DrawnRow {
-  distance_end: string;
-  distance_start: string;
-  start: string;
-  stop: string;
-  total_oil?: string;
-}
-
-/** "nL" is n boards from the left edge, "nR" n boards from the right edge. */
-export function parseBoardEdge(value: string): number {
-  const text = String(value).trim().toUpperCase();
-  const n = parseFloat(text.replace(/[^\d.]/g, '')) || 0;
-  return text.endsWith('R') ? BOARDS - n : n;
-}
-
-/** Colour of the oil by the pattern's ratio, like the charts: red under 4:1, orange up to 8:1, green above, blue without one. */
+/** Colour of the oil by the pattern's ratio, the same as on the pattern charts: red under 4:1, orange up to 8:1, green above, blue without one. */
 export function patternRatioColor(ratio: string | undefined): string {
   const value = parseFloat(String(ratio ?? '0:1').split(':')[0]) || 0;
   if (value >= 1 && value < 4) {
@@ -184,49 +154,4 @@ export function patternRatioColor(ratio: string | undefined): string {
     return '#ed8e07';
   }
   return value >= 8 ? 'green' : 'blue';
-}
-
-/** Oil length in feet ("37'" → 37), or null when the pattern has none. */
-export function patternDistanceFt(pattern: Pattern): number | null {
-  const ft = parseFloat(pattern.distance);
-  return Number.isFinite(ft) && ft > 0 ? ft : null;
-}
-
-const maxDistance = (rows: DrawnRow[]) => Math.max(0, ...rows.map((r) => Math.max(num(r.distance_start), num(r.distance_end))));
-
-function toRect(row: DrawnRow, opacity: number, key: string): OilRect {
-  const a = parseBoardEdge(row.start);
-  const b = parseBoardEdge(row.stop);
-  const d1 = num(row.distance_start);
-  const d2 = num(row.distance_end);
-  return { key, left: Math.min(a, b), right: Math.max(a, b), fromFt: Math.min(d1, d2), toFt: Math.max(d1, d2), opacity };
-}
-
-/**
- * The chart's layers, bottom to top: a light wash over the whole oiled length, the forward passes
- * at 50 % and the reverse passes at 30 %, so boards that get oil more often come out darker.
- */
-export function patternOilRects(pattern: Pattern): OilRect[] {
-  const forward: DrawnRow[] = pattern.forwards_data ?? [];
-  const reverse: DrawnRow[] = pattern.reverse_data ?? [];
-  const forwardMax = maxDistance(forward);
-  const reverseMax = maxDistance(reverse);
-  const wash = { start: '1L', stop: '1R', distance_start: '0' };
-
-  const rects: OilRect[] = [];
-  if (reverseMax !== forwardMax) {
-    rects.push(toRect({ ...wash, distance_end: `${forwardMax}` }, 0.05, 'wash-forward'));
-  }
-  rects.push(toRect({ ...wash, distance_end: `${reverseMax}` }, 0.1, 'wash'));
-  forward.forEach((row, i) => {
-    if (Math.trunc(num(row.total_oil)) !== 0) {
-      rects.push(toRect(row, 0.5, `forward-${i}`));
-    }
-  });
-  reverse.forEach((row, i) => {
-    if (Math.trunc(num(row.total_oil)) !== 0 || num(row.distance_end) === 0) {
-      rects.push(toRect(row, 0.3, `reverse-${i}`));
-    }
-  });
-  return rects.filter((r) => r.right > r.left && r.toFt > r.fromFt);
 }

@@ -97,7 +97,7 @@ export function describeCalculatedRow(row: PatternRow | undefined): string {
 /** Headline numbers of a calculation, for the preview. */
 export function calculationFacts(calculation: PatternCalculation): { label: string; value: string; detail?: string }[] {
   return [
-    { label: 'Distance', value: calculation.distance.replace("'", ' ft') },
+    { label: 'Distance', value: calculation.distance.replace(/'$/, ' ft') },
     { label: 'Ratio', value: calculation.ratio ?? '–' },
     { label: 'Volume', value: `${calculation.volume} mL`, detail: `↑ ${calculation.forward} · ↓ ${calculation.reverse}` },
   ];

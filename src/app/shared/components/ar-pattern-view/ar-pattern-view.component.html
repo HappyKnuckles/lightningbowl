@@ -1,0 +1,71 @@
+<!--
+  One element, because it is handed to WebXR as the DOM overlay root: during a
+  session the browser lifts exactly this subtree over the camera feed.
+-->
+<div #arRoot class="ar-root" [class.sheet]="showsNotice()">
+  @if (isUnsupported()) {
+    <!-- Only reached where Quick Look could not take over: no lane to track. -->
+    <div class="notice">
+      <h2>AR is not available here</h2>
+      <p>{{ message() }}</p>
+      <p class="fallback-label">Showing {{ pattern().title }} flat instead.</p>
+      <app-pattern-canvas [pattern]="pattern()" />
+      <p class="diagnostics">{{ diagnostics() }}</p>
+      <ion-button fill="clear" size="small" (click)="close()">Close</ion-button>
+    </div>
+  } @else if (phase() === "failed") {
+    <div class="notice">
+      <h2>Could not start AR</h2>
+      <p>{{ message() }}</p>
+      <ion-button (click)="retry()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Try again
+      </ion-button>
+      <p class="diagnostics">{{ diagnostics() }}</p>
+      <ion-button fill="clear" size="small" (click)="close()">Close</ion-button>
+    </div>
+  } @else if (isScanning()) {
+    <div class="coaching">
+      <p class="headline">Point down the lane</p>
+      <p class="detail">Move the phone slowly so it can find the floor.</p>
+      <ion-button (click)="session.beginCalibration()">
+        <ion-icon slot="start" name="locate-outline"></ion-icon>
+        Line up the lane
+      </ion-button>
+    </div>
+  } @else if (isCalibrating()) {
+    <app-ar-lane-calibrator [taps]="session.taps()" (tapped)="onCalibrationTap($event)" />
+
+    <div class="coaching bottom">
+      <p class="headline">Tap the {{ session.tapsRemaining() }} highlighted arrows</p>
+      @if (message(); as warning) {
+        <p class="warning">{{ warning }}</p>
+      }
+      <ion-button fill="clear" size="small" (click)="session.undoTap()">
+        <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+        Undo
+      </ion-button>
+    </div>
+  } @else if (isLive()) {
+    <app-ar-pattern-hud
+      [pattern]="activePattern()"
+      [patterns]="patterns()"
+      [confidence]="session.confidence()"
+      (patternSelected)="onPatternSelected($event)" />
+
+    <ion-button class="recalibrate" fill="solid" size="small" (click)="session.beginCalibration()">
+      <ion-icon slot="start" name="refresh-outline"></ion-icon>
+      Recalibrate
+    </ion-button>
+  }
+  <!--
+    Nothing is drawn while starting: the camera permission prompt is the only
+    thing that should be on screen between the tap and the lane.
+  -->
+
+  @if (isSessionLive()) {
+    <ion-button class="leave" fill="solid" size="small" color="dark" (click)="close()">
+      <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+    </ion-button>
+  }
+</div>

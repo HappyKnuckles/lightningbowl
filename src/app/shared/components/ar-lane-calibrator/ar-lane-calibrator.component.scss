@@ -1,0 +1,72 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.surface {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.target {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+
+  .ring {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--ion-color-primary-contrast, #fff);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgb(0 0 0 / 35%);
+  }
+
+  .label {
+    font-size: 0.75rem;
+    color: var(--ion-color-primary-contrast, #fff);
+    text-shadow: 0 1px 3px rgb(0 0 0 / 70%);
+  }
+
+  &.active {
+    opacity: 1;
+
+    .ring {
+      border-color: var(--ion-color-primary);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+  }
+
+  &.done {
+    opacity: 0.35;
+
+    .ring {
+      background: var(--ion-color-success);
+      border-color: var(--ion-color-success);
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .target.active .ring {
+    animation: none;
+  }
+}

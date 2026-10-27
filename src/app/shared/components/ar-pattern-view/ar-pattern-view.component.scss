@@ -1,0 +1,122 @@
+// Over everything, including the pattern detail modal this is opened from —
+// Ionic's overlays run from z-index 20000, so this has to clear them. During a
+// WebXR session the browser lifts .ar-root over the camera itself, so this only
+// has to hold up before and after one.
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+}
+
+.ar-root {
+  position: absolute;
+  inset: 0;
+  // Transparent by default so the camera shows through, and untouchable so a
+  // starting session never swallows taps meant for the page underneath.
+  pointer-events: none;
+}
+
+// Only the states that actually say something take the screen.
+.ar-root.sheet {
+  overflow-y: auto;
+  background: var(--ion-background-color);
+  pointer-events: auto;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 32px 16px;
+  padding: 16px;
+  border-radius: var(--card-border-radius);
+  background: var(--ion-card-background);
+  text-align: center;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.125rem;
+  }
+
+  p {
+    margin: 0 0 12px;
+    font-size: 0.875rem;
+    color: var(--ion-color-medium);
+  }
+
+  .fallback-label {
+    margin-top: 16px;
+  }
+
+  // Deliberately visible: iOS Safari has no reachable console on a phone, so
+  // the state that decided this branch has to be readable on screen.
+  .diagnostics {
+    margin: 8px 0 0;
+    font-family: ui-monospace, monospace;
+    font-size: 0.625rem;
+    color: var(--ion-color-medium);
+    word-break: break-word;
+  }
+}
+
+.coaching {
+  position: absolute;
+  right: 16px;
+  left: 16px;
+  top: calc(24px + var(--ion-safe-area-top, 0px));
+  z-index: 3;
+  padding: 16px;
+  border-radius: var(--card-border-radius);
+  background: rgb(0 0 0 / 55%);
+  text-align: center;
+  pointer-events: auto;
+
+  &.bottom {
+    top: auto;
+    bottom: calc(24px + var(--ion-safe-area-bottom, 0px));
+  }
+
+  .headline {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .detail {
+    margin: 0 0 12px;
+    font-size: 0.875rem;
+    color: rgb(255 255 255 / 75%);
+  }
+
+  .warning {
+    margin: 0 0 8px;
+    font-size: 0.875rem;
+    color: var(--ion-color-warning);
+  }
+}
+
+// The calibrator is tapped across its whole surface, and the HUD is a sheet of
+// its own — both opt back in to pointer events.
+app-ar-lane-calibrator,
+app-ar-pattern-hud {
+  pointer-events: auto;
+}
+
+.recalibrate {
+  position: absolute;
+  top: calc(16px + var(--ion-safe-area-top, 0px));
+  right: 16px;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+// The way out while a session owns the screen, where there is no header.
+.leave {
+  position: absolute;
+  top: calc(16px + var(--ion-safe-area-top, 0px));
+  left: 16px;
+  z-index: 4;
+  pointer-events: auto;
+}

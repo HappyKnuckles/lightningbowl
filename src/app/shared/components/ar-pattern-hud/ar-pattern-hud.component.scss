@@ -1,0 +1,49 @@
+:host {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+}
+
+.hud {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px calc(12px + var(--ion-safe-area-bottom, 0px));
+  background: linear-gradient(to top, rgb(0 0 0 / 72%), rgb(0 0 0 / 0%));
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .meta {
+    font-size: 0.875rem;
+    color: rgb(255 255 255 / 75%);
+  }
+}
+
+.picker {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  ion-chip {
+    flex: 0 0 auto;
+  }
+}

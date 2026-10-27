@@ -18,7 +18,7 @@
     "importHelpers": true,
     "target": "es2022",
     "module": "es2020",
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "vitest/globals", "webxr"],
     "useDefineForClassFields": false,
     "paths": {
       "src/*": ["./src/*"]

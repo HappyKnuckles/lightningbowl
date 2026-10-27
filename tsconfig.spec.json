@@ -3,7 +3,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node", "webxr"]
   },
   "files": ["src/zone-flags.ts", "src/testing/test-providers.ts"],
   "include": ["src/**/*.spec.ts", "src/**/*.d.ts"]

@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.lane {
+  display: block;
+  width: 100%;
+  border-radius: var(--card-border-radius);
+}
+
+.no-data {
+  margin: 0;
+  padding: 16px 0;
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+  text-align: center;
+}

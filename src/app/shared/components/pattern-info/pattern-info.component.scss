@@ -3,6 +3,13 @@
   gap: 8px;
   margin: 8px 16px;
 
+  .pattern-image {
+    width: 45%;
+    height: auto;
+    align-self: flex-start;
+    border-radius: var(--card-border-radius);
+  }
+
   .pattern-info {
     display: grid;
     width: 55%;

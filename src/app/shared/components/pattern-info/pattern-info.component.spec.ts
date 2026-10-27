@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PatternInfoComponent } from './pattern-info.component';
-import { makePattern } from 'src/testing/fixtures';
 
 describe('PatternInfoComponent', () => {
   let component: PatternInfoComponent;

@@ -1,0 +1,85 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button color="medium" (click)="cancel()">Cancel</ion-button>
+    </ion-buttons>
+    <ion-title>{{ isEdit() ? "Edit League" : "New League" }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button [disabled]="!!error() || saving()" [strong]="true" (click)="save()">Save</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input
+        autocapitalize="words"
+        label="Name"
+        labelPlacement="stacked"
+        maxlength="80"
+        placeholder="e.g. Thursday Night League"
+        [value]="name()"
+        (ionInput)="setName($event)"></ion-input>
+    </ion-item>
+  </ion-list>
+
+  <ion-segment class="type" [value]="type()" (ionChange)="setType($event)">
+    <ion-segment-button value="league"><ion-label>League</ion-label></ion-segment-button>
+    <ion-segment-button value="tournament"><ion-label>Tournament</ion-label></ion-segment-button>
+  </ion-segment>
+
+  @if (type() === "league") {
+    <ion-list-header>
+      <ion-label>Seasons</ion-label>
+    </ion-list-header>
+    <ion-note class="hint">A season runs until the next one starts. Games count toward the season of the day they were played.</ion-note>
+    <ion-list lines="full">
+      @for (season of seasons(); track season.id) {
+        <ion-item class="season">
+          <ion-input
+            label="Season"
+            labelPlacement="stacked"
+            placeholder="Named after its start"
+            [helperText]="isEdit() ? (seasonGameCounts()[season.id] ?? 0) + ' games' : undefined"
+            [value]="season.name"
+            (ionInput)="setSeason(season.id, 'name', $event)"></ion-input>
+          <ion-input
+            class="season-start"
+            label="Starts"
+            labelPlacement="stacked"
+            type="date"
+            [value]="season.start"
+            (ionInput)="setSeason(season.id, 'start', $event)"></ion-input>
+          <ion-button aria-label="Remove season" color="danger" fill="clear" slot="end" (click)="removeSeason(season.id)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-item>
+      } @empty {
+        <ion-item>
+          <ion-label color="medium">No seasons: all games count together.</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+    <ion-button class="new-season" expand="block" fill="clear" (click)="startNewSeason()">
+      <ion-icon name="add-outline" slot="start"></ion-icon>
+      Start new season
+    </ion-button>
+  } @else {
+    <ion-note class="hint">Tournaments have no seasons.</ion-note>
+  }
+
+  @if (isEdit()) {
+    <ion-button class="delete" color="danger" expand="block" fill="clear" (click)="delete()">Delete league</ion-button>
+  }
+</ion-content>
+
+@if (error(); as message) {
+  <ion-footer>
+    <ion-toolbar>
+      <ion-text color="medium"
+        ><p class="error">{{ message }}</p></ion-text
+      >
+    </ion-toolbar>
+  </ion-footer>
+}

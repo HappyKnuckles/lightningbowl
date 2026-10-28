@@ -4,6 +4,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { Game } from 'src/app/core/models/game.model';
 import { makeGame } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { AppFacade } from './app.facade';
@@ -59,10 +60,10 @@ describe('AppFacade', () => {
     patternsStore.loadAllPatterns.mockResolvedValue(undefined);
     patternsStore.loadPatternImageMap.mockResolvedValue(undefined);
 
-    leaguesStore = createSpyObj<LeaguesStore>(['loadLeagues', 'addLeague', 'deleteLeague', 'clearLeagues']);
+    leaguesStore = createSpyObj<LeaguesStore>(['loadLeagues', 'addLeague', 'deleteLeague', 'clearLeagues', 'getLeague', 'saveLeague']);
     leaguesStore.loadLeagues.mockResolvedValue([]);
-    leaguesStore.addLeague.mockResolvedValue(undefined);
     leaguesStore.deleteLeague.mockResolvedValue(undefined);
+    leaguesStore.saveLeague.mockResolvedValue(undefined);
 
     settingsStore = createSpyObj<SettingsStore>(['loadPinInputMode', 'loadBallTracking', 'loadHandedness', 'loadFit', 'loadLayoutPresets']);
 
@@ -137,7 +138,9 @@ describe('AppFacade', () => {
   });
 
   describe('editLeague', () => {
-    it('replaces the league and moves its games over', async () => {
+    it('renames the league, keeping its type and seasons, and moves its games over in order', async () => {
+      const season = { id: 's1', name: '2026/27', start: 1 };
+      leaguesStore.getLeague.mockReturnValue({ name: 'Monday', type: 'tournament', seasons: [season], createdAt: 5 });
       gamesStore.games.mockReturnValue([
         makeGame({ gameId: 'g1', league: 'Monday' }),
         makeGame({ gameId: 'g2', league: 'Friday' }),
@@ -146,18 +149,32 @@ describe('AppFacade', () => {
 
       await facade.editLeague('Tuesday', 'Monday');
 
-      expect(leaguesStore.deleteLeague).toHaveBeenCalledWith('Monday');
-      expect(leaguesStore.addLeague).toHaveBeenCalledWith('Tuesday');
+      expect(leaguesStore.saveLeague).toHaveBeenCalledWith({ name: 'Tuesday', type: 'tournament', seasons: [season], createdAt: 5 }, 'Monday');
       const savedGames = gamesStore.saveGamesToLocalStorage.mock.calls[0][0];
-      expect(savedGames.map((g) => g.league)).toEqual(['Tuesday', 'Friday', undefined]);
-      expect(gamesStore.updateGamesInMemory).toHaveBeenCalled();
+      expect(savedGames.map((g) => g.gameId)).toEqual(['g1']);
+      expect(savedGames[0].league).toBe('Tuesday');
+      const ordered = gamesStore.updateGamesInMemory.mock.calls[0][0]([]);
+      expect(ordered.map((g: Game) => [g.gameId, g.league])).toEqual([
+        ['g1', 'Tuesday'],
+        ['g2', 'Friday'],
+        ['g3', undefined],
+      ]);
       expect(analyticsService.trackLeagueEdited).toHaveBeenCalled();
     });
 
     it('rethrows and leaves the games untouched when the rename fails', async () => {
-      leaguesStore.addLeague.mockRejectedValue(new Error('quota'));
+      leaguesStore.saveLeague.mockRejectedValue(new Error('quota'));
 
       await expect(facade.editLeague('Tuesday', 'Monday')).rejects.toThrow('quota');
+      expect(gamesStore.saveGamesToLocalStorage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateLeague', () => {
+    it('only saves the league when the name stays', async () => {
+      await facade.updateLeague({ name: 'Monday', type: 'league', seasons: [], createdAt: 0 }, 'Monday');
+
+      expect(leaguesStore.saveLeague).toHaveBeenCalled();
       expect(gamesStore.saveGamesToLocalStorage).not.toHaveBeenCalled();
     });
   });

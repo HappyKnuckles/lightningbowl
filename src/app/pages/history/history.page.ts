@@ -143,8 +143,7 @@ export class HistoryPage {
       const input = event.target as HTMLInputElement;
       if (!input.files || input.files.length === 0) return;
       const file = input.files[0];
-      const gameData = await this.excelService.readExcelData(file);
-      await this.excelService.transformData(gameData);
+      await this.excelService.importExcelFile(file);
       this.toastService.showToast(TOAST_MESSAGES.excelFileUploadSuccess, 'checkmark-outline');
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.excelFileUploadError, 'bug', true);

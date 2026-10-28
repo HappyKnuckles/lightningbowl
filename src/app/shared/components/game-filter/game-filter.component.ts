@@ -29,6 +29,8 @@ import { GameFilterService } from 'src/app/core/services/game-filter/game-filter
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { seasonRanges } from 'src/app/core/utils/league-utils/league.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
@@ -73,6 +75,31 @@ export class GameFilterComponent implements OnInit {
       .flat()
       .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index);
   });
+  /** Every season of every league, newest first; picking one filters to its league and dates. */
+  readonly seasonOptions = computed(() =>
+    this.leaguesStore.leagueList().flatMap((league) =>
+      seasonRanges(league)
+        .reverse()
+        .map((range) => ({
+          key: `${league.name}\u0000${range.season.id}`,
+          label: `${league.name} · ${range.season.name}`,
+          filter: this.gameFilterService.leagueFilter(league.name, range.from, range.to),
+        })),
+    ),
+  );
+  /** The season the filter shows exactly, if it does. */
+  readonly selectedSeason = computed(() => {
+    const filters = this.gameFilterService.filters();
+    const sameDay = (a?: string, b?: string) => !!a && !!b && this.utilsService.areDatesEqual(a, b);
+    const match = this.seasonOptions().find(
+      ({ filter }) =>
+        filters.leagues.length === 1 &&
+        filters.leagues[0] === filter.leagues[0] &&
+        sameDay(filters.startDate, filter.startDate) &&
+        sameDay(filters.endDate, filter.endDate),
+    );
+    return match?.key ?? '';
+  });
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
@@ -83,6 +110,7 @@ export class GameFilterComponent implements OnInit {
     public ballsStore: BallsStore,
     private utilsService: UtilsService,
     private analyticsService: AnalyticsService,
+    private leaguesStore: LeaguesStore,
   ) {
     addIcons({ chevronExpandOutline });
   }
@@ -162,6 +190,17 @@ export class GameFilterComponent implements OnInit {
   updateDateFilter(key: 'startDate' | 'endDate', value: string | string[] | null | undefined): void {
     const date = Array.isArray(value) ? value[0] : value;
     this.updateFilter(key, date ?? undefined);
+  }
+
+  selectSeason(key: string): void {
+    const option = this.seasonOptions().find((candidate) => candidate.key === key);
+    const filter = option?.filter ?? {
+      leagues: ['all'],
+      timeRange: TimeRange.ALL,
+      startDate: this.defaultFilters.startDate,
+      endDate: this.defaultFilters.endDate,
+    };
+    this.gameFilterService.filters.update((filters) => ({ ...filters, ...filter }));
   }
 
   reset(): void {

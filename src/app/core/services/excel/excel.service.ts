@@ -6,6 +6,7 @@ import { isPlatform } from '@ionic/angular';
 import type { Workbook, Worksheet } from 'exceljs';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
+import { League } from 'src/app/core/models/league.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -13,6 +14,15 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { findBallInArsenal, formatThrowBall, getGameBalls } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
+import {
+  createLeague,
+  defaultSeasonName,
+  fromDateInput,
+  newSeasonId,
+  sortSeasons,
+  startOfDay,
+  toDateInput,
+} from '../../utils/league-utils/league.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
@@ -29,6 +39,8 @@ type ExcelRow = Record<string, ExcelCellValue>;
  * permission alert for a plain cancel.
  */
 export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
+
+const LEAGUE_SHEET_NAME = 'Leagues';
 
 const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -78,23 +90,35 @@ export class ExcelService {
 
   async readExcelData(file: File): Promise<ExcelRow[]> {
     try {
-      const ExcelJS = await this.loadExcelJs();
-      const workbook = new ExcelJS.Workbook();
-      const buffer = await this.fileToBuffer(file);
-      await workbook.xlsx.load(buffer);
-      const worksheet = workbook.worksheets[0];
-      const gameData: ExcelRow[] = [];
-      worksheet.eachRow((row) => {
-        const rowData: Record<string, any> = {};
-        row.eachCell((cell, colNumber) => {
-          rowData[worksheet.getRow(1).getCell(colNumber).value as string] = cell.value;
-        });
-        gameData.push(rowData);
-      });
-      return gameData;
+      const workbook = await this.loadWorkbook(file);
+      return this.worksheetRows(workbook.worksheets[0]);
     } catch (error) {
       console.error('Error reading Excel data:', error);
       throw new Error(`Failed to read Excel file: ${error}`);
+    }
+  }
+
+  /**
+   * Imports an Excel file: the games from its first sheet and, from files exported since leagues had
+   * types and seasons, the leagues sheet with them.
+   */
+  async importExcelFile(file: File): Promise<void> {
+    let workbook: Workbook;
+    try {
+      workbook = await this.loadWorkbook(file);
+    } catch (error) {
+      console.error('Error reading Excel data:', error);
+      throw new Error(`Failed to read Excel file: ${error}`);
+    }
+    const leagueSheet = workbook.getWorksheet(LEAGUE_SHEET_NAME);
+    // the first row is the header
+    const leagues = leagueSheet ? this.readLeagueRows(this.worksheetRows(leagueSheet).slice(1)) : [];
+    await this.transformData(this.worksheetRows(workbook.worksheets[0]));
+    for (const league of leagues) {
+      const existing = this.leaguesStore.getLeague(league.name);
+      // a sheet without seasons for a league doesn't take away seasons set up here
+      const seasons = league.seasons.length || !existing ? league.seasons : existing.seasons;
+      await this.leaguesStore.saveLeague({ ...league, seasons, createdAt: existing?.createdAt || league.createdAt });
     }
   }
 
@@ -317,6 +341,11 @@ export class ExcelService {
       const allLeaves = this.statsService.allLeaves();
       if (allLeaves.length > 0) {
         this.addLeaveStatsWorksheet(workbook, allLeaves);
+      }
+
+      const leagues = this.leaguesStore.leagueList();
+      if (leagues.length > 0) {
+        this.addLeagueWorksheet(workbook, leagues);
       }
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -752,6 +781,57 @@ export class ExcelService {
       colNum = Math.floor((colNum - 1) / 26);
     }
     return result;
+  }
+
+  /** Leagues with their type and seasons, one row per season, so an import can restore them. */
+  private addLeagueWorksheet(workbook: Workbook, leagues: League[]): void {
+    const worksheet = workbook.addWorksheet(LEAGUE_SHEET_NAME);
+    const headers = ['League', 'Type', 'Season', 'Season Start'];
+    const rows = leagues.flatMap((league) => {
+      const type = league.type === 'tournament' ? 'Tournament' : 'League';
+      if (league.seasons.length === 0) return [{ League: league.name, Type: type, Season: '', 'Season Start': '' }];
+      return league.seasons.map((season) => ({ League: league.name, Type: type, Season: season.name, 'Season Start': toDateInput(season.start) }));
+    });
+    this.addTable(worksheet, 'LeagueTable', 'A1', headers, rows);
+    this.setColumnWidths(worksheet, headers, rows, 1);
+  }
+
+  /** Leagues from the rows of the leagues sheet; rows without a usable start add no season. */
+  private readLeagueRows(rows: ExcelRow[]): League[] {
+    const leagues = new Map<string, League>();
+    for (const row of rows) {
+      const name = String(row['League'] ?? '').trim();
+      if (!name) continue;
+      const league = leagues.get(name) ?? createLeague(name, String(row['Type'] ?? '').toLowerCase() === 'tournament' ? 'tournament' : 'league');
+      const startCell = row['Season Start'];
+      const start = startCell instanceof Date ? startOfDay(startCell.getTime()) : fromDateInput(String(startCell ?? ''));
+      if (start !== undefined && league.type === 'league') {
+        const seasonName = String(row['Season'] ?? '').trim() || defaultSeasonName(start);
+        league.seasons = sortSeasons([...league.seasons, { id: newSeasonId(), name: seasonName, start }]);
+      }
+      leagues.set(name, league);
+    }
+    return [...leagues.values()];
+  }
+
+  /** A sheet's rows by their header (the first row), header row included as the first entry. */
+  private worksheetRows(worksheet: Worksheet): ExcelRow[] {
+    const rows: ExcelRow[] = [];
+    worksheet.eachRow((row) => {
+      const rowData: Record<string, any> = {};
+      row.eachCell((cell, colNumber) => {
+        rowData[worksheet.getRow(1).getCell(colNumber).value as string] = cell.value;
+      });
+      rows.push(rowData);
+    });
+    return rows;
+  }
+
+  private async loadWorkbook(file: File): Promise<Workbook> {
+    const ExcelJS = await this.loadExcelJs();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await this.fileToBuffer(file));
+    return workbook;
   }
 
   private addTable(worksheet: Worksheet, name: string, ref: string, headers: string[], rows: Record<string, ExcelCellValue>[]): void {

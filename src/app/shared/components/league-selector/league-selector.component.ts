@@ -17,6 +17,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  ModalController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { addOutline, checkmarkOutline, createOutline, trashOutline, trophyOutline } from 'ionicons/icons';
@@ -25,8 +26,10 @@ import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { HiddenLeagueSelectionService } from 'src/app/core/services/hidden-league/hidden-league.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { currentSeason } from 'src/app/core/utils/league-utils/league.utils';
+
+import { LeagueFormComponent } from '../league-form/league-form.component';
 
 @Component({
   selector: 'app-league-selector',
@@ -67,10 +70,20 @@ export class LeagueSelectorComponent implements OnInit {
   private recentLeagues = signal<string[]>(this.readRecentLeagues());
 
   private analyticsService = inject(AnalyticsService);
+  private modalController = inject(ModalController);
+
+  /** Under each name: "Tournament", or the season games added now count toward. */
+  readonly leagueDetails = computed(() => {
+    const details: Record<string, string> = {};
+    for (const league of this.leaguesStore.leagueList()) {
+      const season = currentSeason(league);
+      details[league.name] = league.type === 'tournament' ? 'Tournament' : season ? `Season ${season.name}` : '';
+    }
+    return details;
+  });
 
   constructor(
     public leaguesStore: LeaguesStore,
-    private appFacade: AppFacade,
     private toastService: ToastService,
     private alertController: AlertController,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
@@ -125,8 +138,19 @@ export class LeagueSelectorComponent implements OnInit {
     if (this.isAddPage()) {
       this.selectLeague(league);
     } else {
-      void this.openEditAlert(league);
+      void this.openLeagueForm(league);
     }
+  }
+
+  /** Type, seasons, name: everything about a league, in the league form. */
+  async openLeagueForm(name: string): Promise<void> {
+    const league = this.leaguesStore.getLeague(name) ?? (await this.leaguesStore.addLeague(name));
+    const modal = await this.modalController.create({ component: LeagueFormComponent, componentProps: { league } });
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss<{ name: string }>();
+    if (name !== this.selectedLeague()) return;
+    if (role === 'confirm' && data && data.name !== name) this.applySelection(data.name);
+    if (role === 'delete') this.applySelection('');
   }
 
   async createLeague(): Promise<void> {
@@ -145,38 +169,6 @@ export class LeagueSelectorComponent implements OnInit {
       console.error('Error adding league:', error);
       this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
     }
-  }
-
-  async openEditAlert(league: string): Promise<void> {
-    const alert = await this.alertController.create({
-      header: 'Edit League',
-      message: 'Enter the new league name',
-      inputs: [{ name: 'league', type: 'text', value: league, placeholder: 'League name', cssClass: 'league-alert-input' }],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Save',
-          handler: async (data: { league: string }) => {
-            const newName = data.league?.trim();
-            if (!newName || newName === league) return;
-            try {
-              await this.appFacade.editLeague(newName, league);
-              this.toastService.showToast(TOAST_MESSAGES.leagueEditSuccess, 'checkmark-outline');
-              if (league === this.selectedLeague()) {
-                this.applySelection(newName);
-              }
-            } catch (error) {
-              console.error('Error editing league:', error);
-              this.toastService.showToast(TOAST_MESSAGES.leagueEditError, 'bug', true);
-            }
-          },
-        },
-      ],
-    });
-    await alert.present();
   }
 
   async openDeleteAlert(league: string): Promise<void> {

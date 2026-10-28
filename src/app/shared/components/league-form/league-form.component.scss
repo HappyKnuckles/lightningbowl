@@ -1,0 +1,36 @@
+.type {
+  width: auto;
+  margin: 16px;
+}
+
+.hint {
+  display: block;
+  padding: 0 16px 8px;
+  font-size: 0.75rem;
+}
+
+.season {
+  .season-start {
+    flex: 0 0 160px;
+    align-self: flex-start;
+  }
+
+  ion-button {
+    margin-inline-start: 0;
+  }
+}
+
+.new-season,
+.delete {
+  margin: 8px 16px;
+}
+
+.delete {
+  margin-top: 32px;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+}

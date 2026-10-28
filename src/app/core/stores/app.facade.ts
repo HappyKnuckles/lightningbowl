@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { League } from 'src/app/core/models/league.model';
+import { createLeague } from 'src/app/core/utils/league-utils/league.utils';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -81,20 +83,23 @@ export class AppFacade {
     }
   }
 
+  /** Renames a league, keeping its type and seasons, and moves its games over. */
   async editLeague(newLeague: string, oldLeague: string): Promise<void> {
+    const existing = this.leaguesStore.getLeague(oldLeague) ?? createLeague(oldLeague);
+    await this.updateLeague({ ...existing, name: newLeague }, oldLeague);
+  }
+
+  /** Saves a league (type, seasons, name). When it was renamed, its games move to the new name. */
+  async updateLeague(league: League, previousName: string): Promise<void> {
     try {
-      await this.leaguesStore.deleteLeague(oldLeague);
-      await this.leaguesStore.addLeague(newLeague);
-      const games = this.gamesStore.games();
-      const updatedGames = games.map((game) => {
-        if (game.league === oldLeague) {
-          return { ...game, league: newLeague };
-        }
-        return game;
-      });
+      await this.leaguesStore.saveLeague(league, previousName);
+      if (league.name !== previousName) {
+        const updatedGames = this.gamesStore.games().map((game) => (game.league === previousName ? { ...game, league: league.name } : game));
+        await this.gamesStore.saveGamesToLocalStorage(updatedGames.filter((game) => game.league === league.name));
+        // saving moves the saved games to the top; keep the order they had
+        this.gamesStore.updateGamesInMemory(() => updatedGames);
+      }
       this.analyticsService.trackLeagueEdited();
-      await this.gamesStore.saveGamesToLocalStorage(updatedGames);
-      this.gamesStore.updateGamesInMemory(() => updatedGames);
     } catch (error) {
       console.error('Error editing league:', error);
       throw error;

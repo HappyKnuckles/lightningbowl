@@ -35,6 +35,20 @@ describe('LeaguesStore', () => {
       expect(store.leagues()).toEqual(['Friday', 'Tuesday', 'Monday']);
     });
 
+    it('reads leagues saved as plain names as leagues without seasons, next to saved league objects', async () => {
+      const season = { id: 's1', name: '2026/27', start: 100 };
+      storageRepository.loadByPrefix.mockResolvedValue(['Monday', { name: 'Cup', type: 'tournament', seasons: [], createdAt: 3 }, { name: 'Friday', type: 'league', seasons: [season], createdAt: 4 }]);
+
+      await store.loadLeagues();
+
+      expect(store.leagueList()).toEqual([
+        { name: 'Friday', type: 'league', seasons: [season], createdAt: 4 },
+        { name: 'Cup', type: 'tournament', seasons: [], createdAt: 3 },
+        { name: 'Monday', type: 'league', seasons: [], createdAt: 0 },
+      ]);
+      expect(store.getLeague('Cup')?.type).toBe('tournament');
+    });
+
     it('rethrows storage failures', async () => {
       storageRepository.loadByPrefix.mockRejectedValue(new Error('storage down'));
 
@@ -46,14 +60,48 @@ describe('LeaguesStore', () => {
     it('persists the league under its key and appends it', async () => {
       await store.addLeague('Monday');
 
-      expect(storageRepository.set).toHaveBeenCalledWith('league_Monday', 'Monday');
+      expect(storageRepository.set).toHaveBeenCalledWith('league_Monday', expect.objectContaining({ name: 'Monday', type: 'league', seasons: [] }));
       expect(store.leagues()).toEqual(['Monday']);
+    });
+
+    it('keeps an existing league of that name as it is', async () => {
+      const season = { id: 's1', name: '2026/27', start: 100 };
+      await store.addLeague({ name: 'Monday', type: 'league', seasons: [season], createdAt: 1 });
+      storageRepository.set.mockClear();
+
+      const league = await store.addLeague('Monday');
+
+      expect(storageRepository.set).not.toHaveBeenCalled();
+      expect(league.seasons).toEqual([season]);
     });
 
     it('rethrows storage failures', async () => {
       storageRepository.set.mockRejectedValue(new Error('quota'));
 
       await expect(store.addLeague('Monday')).rejects.toThrow('quota');
+    });
+  });
+
+  describe('saveLeague', () => {
+    it('stores a renamed league under its new key, in the same place in the list', async () => {
+      await store.addLeague('Monday');
+      await store.addLeague('Friday');
+      await store.addLeague('Sunday');
+
+      await store.saveLeague({ name: 'Tuesday', type: 'league', seasons: [], createdAt: 0 }, 'Friday');
+
+      expect(storageRepository.remove).toHaveBeenCalledWith('league_Friday');
+      expect(storageRepository.set).toHaveBeenLastCalledWith('league_Tuesday', expect.objectContaining({ name: 'Tuesday' }));
+      expect(store.leagues()).toEqual(['Monday', 'Tuesday', 'Sunday']);
+    });
+
+    it('updates a league in place when the name stays', async () => {
+      await store.addLeague('Monday');
+
+      await store.saveLeague({ name: 'Monday', type: 'tournament', seasons: [], createdAt: 0 });
+
+      expect(storageRepository.remove).not.toHaveBeenCalled();
+      expect(store.getLeague('Monday')?.type).toBe('tournament');
     });
   });
 

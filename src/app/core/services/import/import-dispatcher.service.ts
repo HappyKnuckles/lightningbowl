@@ -24,8 +24,7 @@ export class ImportDispatcherService {
     const importType = await this.detectImportType(file);
 
     if (importType === 'excel') {
-      const gameData = await this.excelService.readExcelData(file);
-      await this.excelService.transformData(gameData);
+      await this.excelService.importExcelFile(file);
       return { type: 'excel' };
     }
 

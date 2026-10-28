@@ -38,14 +38,19 @@
         }
         @for (league of filteredLeagues(); track league) {
           <ion-item-sliding #sliding>
-            <ion-item-options side="start" (ionSwipe)="openEditAlert(league); sliding.closeOpened()">
-              <ion-item-option expandable (click)="openEditAlert(league); sliding.closeOpened()">
+            <ion-item-options side="start" (ionSwipe)="openLeagueForm(league); sliding.closeOpened()">
+              <ion-item-option expandable (click)="openLeagueForm(league); sliding.closeOpened()">
                 <ion-icon name="create-outline"></ion-icon>
               </ion-item-option>
             </ion-item-options>
 
             <ion-item button [detail]="false" (click)="onLeagueTap(league)">
-              <ion-label>{{ league }}</ion-label>
+              <ion-label>
+                {{ league }}
+                @if (leagueDetails()[league]) {
+                  <p>{{ leagueDetails()[league] }}</p>
+                }
+              </ion-label>
               @if (isAddPage() && selectedLeague() === league) {
                 <ion-icon name="checkmark-outline" slot="end"></ion-icon>
               }

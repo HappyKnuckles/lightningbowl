@@ -189,8 +189,8 @@ export class LeaguePage {
   });
   /** Season id, or 'all'. */
   selectedSeason = signal<string>(ALL_SEASONS);
-  readonly #selectedRange = computed<SeasonRange | undefined>(() =>
-    this.seasonOptions().find((option) => option.range.season.id === this.selectedSeason())?.range,
+  readonly #selectedRange = computed<SeasonRange | undefined>(
+    () => this.seasonOptions().find((option) => option.range.season.id === this.selectedSeason())?.range,
   );
   readonly detailGames = computed(() => {
     const range = this.#selectedRange();

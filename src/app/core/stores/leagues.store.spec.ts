@@ -37,7 +37,11 @@ describe('LeaguesStore', () => {
 
     it('reads leagues saved as plain names as leagues without seasons, next to saved league objects', async () => {
       const season = { id: 's1', name: '2026/27', start: 100 };
-      storageRepository.loadByPrefix.mockResolvedValue(['Monday', { name: 'Cup', type: 'tournament', seasons: [], createdAt: 3 }, { name: 'Friday', type: 'league', seasons: [season], createdAt: 4 }]);
+      storageRepository.loadByPrefix.mockResolvedValue([
+        'Monday',
+        { name: 'Cup', type: 'tournament', seasons: [], createdAt: 3 },
+        { name: 'Friday', type: 'league', seasons: [season], createdAt: 4 },
+      ]);
 
       await store.loadLeagues();
 

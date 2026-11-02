@@ -27,6 +27,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  ActionSheetController,
   ModalController,
 } from '@ionic/angular/standalone';
 import Chart from 'chart.js/auto';
@@ -36,6 +37,7 @@ import {
   cameraOutline,
   checkmarkOutline,
   chevronBack,
+  chevronDownOutline,
   chevronForward,
   createOutline,
   documentTextOutline,
@@ -76,11 +78,27 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
 const PRACTICE = 'Practice';
 const ALL_SEASONS = 'all';
 
+const VIEW_STORAGE_KEY = 'leagueView';
+type LeagueView = 'all' | 'league' | 'tournament';
+const VIEW_TITLES: Record<LeagueView, string> = { all: 'All Events', league: 'Leagues', tournament: 'Tournaments' };
+
 /** What a league's row in the list shows besides its all-time numbers. */
 interface LeagueSummary {
   isTournament: boolean;
+  finished: boolean;
+  sanctioned: boolean;
+  note?: string;
   /** The running season, when the league has seasons. */
   season?: { name: string; games: number; average: number };
+}
+
+function readStoredView(): LeagueView {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    return stored === 'league' || stored === 'tournament' ? stored : 'all';
+  } catch {
+    return 'all';
+  }
 }
 
 @Component({
@@ -139,11 +157,22 @@ export class LeaguePage {
     return sortGamesByLeagues(games, true);
   });
 
-  /** Leagues with games (most played first), then saved leagues without games yet. */
+  /** Leagues with games (most played first), then saved leagues without games yet; finished ones last. */
   leagueKeys: Signal<string[]> = computed(() => {
     const withGames = Object.keys(this.gamesByLeague());
     const withoutGames = this.leaguesStore.leagues().filter((league) => !withGames.includes(league));
-    return [...withGames, ...withoutGames];
+    const all = [...withGames, ...withoutGames];
+    const isFinished = (name: string) => !!this.leaguesStore.getLeague(name)?.finished;
+    return [...all.filter((name) => !isFinished(name)), ...all.filter(isFinished)];
+  });
+
+  /** Which events the list shows; practice only shows with all of them. */
+  readonly view = signal<LeagueView>(readStoredView());
+  readonly viewTitle = computed(() => VIEW_TITLES[this.view()]);
+  readonly shownLeagueKeys = computed(() => {
+    const view = this.view();
+    if (view === 'all') return this.leagueKeys();
+    return this.leagueKeys().filter((name) => name !== PRACTICE && (this.leaguesStore.getLeague(name)?.type ?? 'league') === view);
   });
 
   overallStats: Signal<Stats> = computed(() => {
@@ -160,7 +189,12 @@ export class LeaguePage {
     for (const name of this.leagueKeys()) {
       const league = this.leaguesStore.getLeague(name);
       const season = currentSeason(league);
-      const summary: LeagueSummary = { isTournament: league?.type === 'tournament' };
+      const summary: LeagueSummary = {
+        isTournament: league?.type === 'tournament',
+        finished: !!league?.finished,
+        sanctioned: !!league?.sanctioned,
+        note: league?.note,
+      };
       if (season) {
         const range = seasonRanges(league).find((candidate) => candidate.season.id === season.id)!;
         const games = (this.gamesByLeague()[name] ?? []).filter((game) => isInRange(game.date, range));
@@ -260,6 +294,7 @@ export class LeaguePage {
     public loadingService: LoadingService,
     private alertController: AlertController,
     private modalController: ModalController,
+    private actionSheetController: ActionSheetController,
     private toastService: ToastService,
     private chartService: ChartGenerationService,
     private hiddenLeagueSelectionService: HiddenLeagueSelectionService,
@@ -272,6 +307,7 @@ export class LeaguePage {
       trashOutline,
       createOutline,
       chevronBack,
+      chevronDownOutline,
       chevronForward,
       cameraOutline,
       shareOutline,
@@ -389,6 +425,28 @@ export class LeaguePage {
         this.generatePinChart(isReload);
       }
     }
+  }
+
+  async chooseView(): Promise<void> {
+    const sheet = await this.actionSheetController.create({
+      header: 'Show',
+      buttons: [
+        ...(Object.keys(VIEW_TITLES) as LeagueView[]).map((view) => ({
+          text: VIEW_TITLES[view],
+          role: view === this.view() ? 'selected' : undefined,
+          handler: () => {
+            this.view.set(view);
+            try {
+              localStorage.setItem(VIEW_STORAGE_KEY, view);
+            } catch {
+              // the view is only a convenience
+            }
+          },
+        })),
+        { text: 'Cancel', role: 'cancel' },
+      ],
+    });
+    await sheet.present();
   }
 
   /** New league or tournament. */

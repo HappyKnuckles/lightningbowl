@@ -16,7 +16,9 @@ import {
   IonSegment,
   IonSegmentButton,
   IonText,
+  IonTextarea,
   IonTitle,
+  IonToggle,
   IonToolbar,
   ModalController,
 } from '@ionic/angular/standalone';
@@ -30,17 +32,21 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { normalizeHandicap } from 'src/app/core/utils/league-utils/handicap.utils';
 import {
   defaultSeasonName,
   fromDateInput,
   isInRange,
   newSeasonId,
   nextSeasonDraft,
+  parseNumber,
   seasonRanges,
   sortSeasons,
   toDateInput,
   withNewSeason,
 } from 'src/app/core/utils/league-utils/league.utils';
+
+type HandicapField = 'basis' | 'percentage' | 'max' | 'startingAverage';
 
 /** A season as it is being edited: the start is the value of a date input. */
 interface SeasonDraft {
@@ -72,7 +78,9 @@ interface SeasonDraft {
     IonSegment,
     IonSegmentButton,
     IonText,
+    IonTextarea,
     IonTitle,
+    IonToggle,
     IonToolbar,
   ],
   templateUrl: './league-form.component.html',
@@ -112,20 +120,33 @@ export class LeagueFormComponent implements OnInit {
   /** Newest first, the way they are listed. */
   readonly seasons = signal<SeasonDraft[]>([]);
 
+  readonly hasHandicap = signal(false);
+
+  /** Handicap rule as typed. */
+  readonly handicap = signal<Record<HandicapField, string>>({ basis: '220', percentage: '90', max: '', startingAverage: '' });
   readonly error = computed(() => {
     const name = this.name().trim();
     if (!name) return 'Enter a name.';
     const taken = this.#leaguesStore.leagues().some((other) => other !== this.league?.name && other.toLowerCase() === name.toLowerCase());
-    if (taken) return 'A league with this name already exists.';
+    if (taken) return 'An event with this name already exists.';
     if (this.type() === 'league') {
       const starts = this.seasons().map((season) => fromDateInput(season.start));
       if (starts.some((start) => start === undefined)) return 'Every season needs a start date.';
       if (new Set(starts).size !== starts.length) return "Two seasons can't start on the same day.";
     }
+    if (this.hasHandicap()) {
+      const { basis, percentage, max, startingAverage } = this.handicap();
+      if (!(parseNumber(basis)! > 0)) return 'Enter the handicap basis, e.g. 220.';
+      const percent = parseNumber(percentage);
+      if (!(percent! > 0) || percent! > 100) return 'Enter the handicap percentage, 1 to 100.';
+      if ([max, startingAverage].some((value) => value.trim() && !(parseNumber(value)! >= 0))) return 'Max and starting average must be numbers.';
+    }
     return null;
   });
-
   readonly saving = signal(false);
+  readonly finished = signal(false);
+  readonly sanctioned = signal(false);
+  readonly note = signal('');
 
   constructor() {
     addIcons({ addOutline, trashOutline });
@@ -137,6 +158,19 @@ export class LeagueFormComponent implements OnInit {
       this.name.set(league.name);
       this.type.set(league.type);
       this.seasons.set(this.#toDrafts(league.seasons));
+      this.finished.set(!!league.finished);
+      this.sanctioned.set(!!league.sanctioned);
+      this.note.set(league.note ?? '');
+      if (league.handicap) {
+        const { basis, percentage, max, startingAverage } = league.handicap;
+        this.hasHandicap.set(true);
+        this.handicap.set({
+          basis: `${basis}`,
+          percentage: `${percentage}`,
+          max: max === undefined ? '' : `${max}`,
+          startingAverage: startingAverage === undefined ? '' : `${startingAverage}`,
+        });
+      }
     } else {
       // most leagues are tracked by season: start with one beginning today
       this.seasons.set(this.#toDrafts([{ id: newSeasonId(), ...nextSeasonDraft() }]));
@@ -150,6 +184,19 @@ export class LeagueFormComponent implements OnInit {
 
   setType(event: CustomEvent): void {
     this.type.set(event.detail.value === 'tournament' ? 'tournament' : 'league');
+  }
+
+  setToggle(field: 'finished' | 'sanctioned' | 'hasHandicap', event: CustomEvent): void {
+    this[field].set(!!event.detail.checked);
+  }
+
+  setNote(event: CustomEvent): void {
+    this.note.set(String(event.detail.value ?? ''));
+  }
+
+  setHandicap(field: HandicapField, event: CustomEvent): void {
+    const value = String(event.detail.value ?? '');
+    this.handicap.update((handicap) => ({ ...handicap, [field]: value }));
   }
 
   setSeason(id: string, field: 'name' | 'start', event: CustomEvent): void {
@@ -202,7 +249,7 @@ export class LeagueFormComponent implements OnInit {
     const league = this.league;
     if (!league) return;
     const alert = await this.#alertCtrl.create({
-      header: 'Delete league?',
+      header: 'Delete event?',
       message: `"${league.name}" and its seasons are removed. Its games stay in your history.`,
       buttons: [
         { text: 'Cancel', role: 'cancel' },
@@ -234,7 +281,21 @@ export class LeagueFormComponent implements OnInit {
             const start = fromDateInput(draft.start);
             return start === undefined ? [] : [{ id: draft.id, name: draft.name.trim() || defaultSeasonName(start), start }];
           });
-    return { name: this.name().trim(), type: this.type(), seasons: sortSeasons(seasons), createdAt: this.league?.createdAt ?? 0 };
+    const league: League = { name: this.name().trim(), type: this.type(), seasons: sortSeasons(seasons), createdAt: this.league?.createdAt ?? 0 };
+    if (this.finished()) league.finished = true;
+    if (this.sanctioned()) league.sanctioned = true;
+    if (this.note().trim()) league.note = this.note().trim();
+    if (this.hasHandicap()) {
+      const { basis, percentage, max, startingAverage } = this.handicap();
+      const rule = normalizeHandicap({
+        basis: parseNumber(basis),
+        percentage: parseNumber(percentage),
+        max: parseNumber(max),
+        startingAverage: parseNumber(startingAverage),
+      });
+      if (rule) league.handicap = rule;
+    }
+    return league;
   }
 
   #toDrafts(seasons: Season[]): SeasonDraft[] {

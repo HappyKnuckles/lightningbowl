@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 const mockLeaguesStore = {
   leagues: vi.fn().mockReturnValue([]),
   leagueList: vi.fn().mockReturnValue([]),
+  getLeague: vi.fn().mockReturnValue(undefined),
   addLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 

@@ -71,6 +71,8 @@ import { GameReadonlyComponent } from '../game-readonly/game-readonly.component'
 import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { GameCardTemplateDirective } from './game-card-template.directive';
+import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { calculateHandicaps } from 'src/app/core/utils/league-utils/handicap.utils';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 
 interface MonthRow {
@@ -166,6 +168,7 @@ export class GameListComponent implements OnInit {
   public ballsStore = inject(BallsStore);
   public settingsStore = inject(SettingsStore);
   public patternsStore = inject(PatternsStore);
+  private leaguesStore = inject(LeaguesStore);
 
   private alertController = inject(AlertController);
   private toastService = inject(ToastService);
@@ -185,6 +188,17 @@ export class GameListComponent implements OnInit {
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
+
+  /** Handicap and handicap total of games in events with handicap; averages come from all games. */
+  handicaps = computed(() => {
+    const handicaps = calculateHandicaps(this.gamesStore.games(), this.leaguesStore.leaguesByName());
+    const totals = new Map<string, { handicap: number; total: number }>();
+    for (const game of this.games()) {
+      const handicap = handicaps.get(game.gameId);
+      if (handicap !== undefined) totals.set(game.gameId, { handicap, total: game.totalScore + handicap });
+    }
+    return totals;
+  });
 
   showingGames = computed(() => {
     const games = this.sortedGames();

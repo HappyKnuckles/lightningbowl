@@ -14,11 +14,13 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { findBallInArsenal, formatThrowBall, getGameBalls } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
+import { normalizeHandicap } from '../../utils/league-utils/handicap.utils';
 import {
   createLeague,
   defaultSeasonName,
   fromDateInput,
   newSeasonId,
+  parseNumber,
   sortSeasons,
   startOfDay,
   toDateInput,
@@ -783,30 +785,67 @@ export class ExcelService {
     return result;
   }
 
-  /** Leagues with their type and seasons, one row per season, so an import can restore them. */
+  /** Leagues with their settings and seasons, one row per season, so an import can restore them. */
   private addLeagueWorksheet(workbook: Workbook, leagues: League[]): void {
     const worksheet = workbook.addWorksheet(LEAGUE_SHEET_NAME);
-    const headers = ['League', 'Type', 'Season', 'Season Start'];
+    const headers = [
+      'League',
+      'Type',
+      'Season',
+      'Season Start',
+      'Finished',
+      'Sanctioned',
+      'Handicap Basis',
+      'Handicap %',
+      'Handicap Max',
+      'Starting Average',
+      'Note',
+    ];
     const rows = leagues.flatMap((league) => {
-      const type = league.type === 'tournament' ? 'Tournament' : 'League';
-      if (league.seasons.length === 0) return [{ League: league.name, Type: type, Season: '', 'Season Start': '' }];
-      return league.seasons.map((season) => ({ League: league.name, Type: type, Season: season.name, 'Season Start': toDateInput(season.start) }));
+      const settings: Record<string, ExcelCellValue> = {
+        League: league.name,
+        Type: league.type === 'tournament' ? 'Tournament' : 'League',
+        Finished: league.finished ? 'true' : '',
+        Sanctioned: league.sanctioned ? 'true' : '',
+        'Handicap Basis': league.handicap?.basis ?? '',
+        'Handicap %': league.handicap?.percentage ?? '',
+        'Handicap Max': league.handicap?.max ?? '',
+        'Starting Average': league.handicap?.startingAverage ?? '',
+        Note: league.note ?? '',
+      };
+      if (league.seasons.length === 0) return [{ ...settings, Season: '', 'Season Start': '' }];
+      return league.seasons.map((season) => ({ ...settings, Season: season.name, 'Season Start': toDateInput(season.start) }));
     });
     this.addTable(worksheet, 'LeagueTable', 'A1', headers, rows);
     this.setColumnWidths(worksheet, headers, rows, 1);
   }
 
-  /** Leagues from the rows of the leagues sheet; rows without a usable start add no season. */
+  /** Leagues from the rows of the leagues sheet (settings from a league's first row); rows without a usable start add no season. */
   private readLeagueRows(rows: ExcelRow[]): League[] {
     const leagues = new Map<string, League>();
+    const text = (value: ExcelCellValue | undefined) => String(value ?? '').trim();
+    const number = (value: ExcelCellValue | undefined) => (typeof value === 'number' ? value : parseNumber(text(value)));
     for (const row of rows) {
-      const name = String(row['League'] ?? '').trim();
+      const name = text(row['League']);
       if (!name) continue;
-      const league = leagues.get(name) ?? createLeague(name, String(row['Type'] ?? '').toLowerCase() === 'tournament' ? 'tournament' : 'league');
+      let league = leagues.get(name);
+      if (!league) {
+        league = createLeague(name, text(row['Type']).toLowerCase() === 'tournament' ? 'tournament' : 'league');
+        if (text(row['Finished']).toLowerCase() === 'true') league.finished = true;
+        if (text(row['Sanctioned']).toLowerCase() === 'true') league.sanctioned = true;
+        if (text(row['Note'])) league.note = text(row['Note']);
+        const handicap = normalizeHandicap({
+          basis: number(row['Handicap Basis']),
+          percentage: number(row['Handicap %']),
+          max: number(row['Handicap Max']),
+          startingAverage: number(row['Starting Average']),
+        });
+        if (handicap) league.handicap = handicap;
+      }
       const startCell = row['Season Start'];
-      const start = startCell instanceof Date ? startOfDay(startCell.getTime()) : fromDateInput(String(startCell ?? ''));
+      const start = startCell instanceof Date ? startOfDay(startCell.getTime()) : fromDateInput(text(startCell));
       if (start !== undefined && league.type === 'league') {
-        const seasonName = String(row['Season'] ?? '').trim() || defaultSeasonName(start);
+        const seasonName = text(row['Season']) || defaultSeasonName(start);
         league.seasons = sortSeasons([...league.seasons, { id: newSeasonId(), name: seasonName, start }]);
       }
       leagues.set(name, league);

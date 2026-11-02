@@ -77,7 +77,8 @@ export class LeagueSelectorComponent implements OnInit {
     const details: Record<string, string> = {};
     for (const league of this.leaguesStore.leagueList()) {
       const season = currentSeason(league);
-      details[league.name] = league.type === 'tournament' ? 'Tournament' : season ? `Season ${season.name}` : '';
+      const kind = league.type === 'tournament' ? 'Tournament' : season ? `Season ${season.name}` : '';
+      details[league.name] = league.finished ? [kind, 'Finished'].filter(Boolean).join(' · ') : kind;
     }
     return details;
   });
@@ -102,7 +103,9 @@ export class LeagueSelectorComponent implements OnInit {
     this.hiddenLeagueSelectionService.selectionState();
     const savedJson = localStorage.getItem('leagueSelection');
     const savedSelection: Record<string, boolean> = savedJson ? JSON.parse(savedJson) : {};
-    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false);
+    // finished events take no new games, but one the game is already in stays pickable
+    const isOpen = (league: string) => !this.leaguesStore.getLeague(league)?.finished || league === this.selectedLeague();
+    const visibleLeagues = savedLeagues.filter((league) => savedSelection[league] !== false && isOpen(league));
     return this.sortByRecency([...new Set([...visibleLeagues, ...this.leagues()])]);
   });
 

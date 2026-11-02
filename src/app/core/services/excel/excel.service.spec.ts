@@ -317,7 +317,16 @@ describe('ExcelService', () => {
             { id: 'b', name: '2026/27', start: day('2026-09-03') },
           ],
         },
-        { name: 'Cup', type: 'tournament', createdAt: 1, seasons: [] },
+        {
+          name: 'Cup',
+          type: 'tournament',
+          createdAt: 1,
+          seasons: [],
+          finished: true,
+          sanctioned: true,
+          note: 'Lanes 1-8',
+          handicap: { basis: 220, percentage: 90, max: 60, startingAverage: 175 },
+        },
       ]);
 
       await service.importExcelFile(file);
@@ -334,6 +343,13 @@ describe('ExcelService', () => {
         ],
         ['Cup', 'tournament', []],
       ]);
+      expect(saved[1]).toMatchObject({
+        finished: true,
+        sanctioned: true,
+        note: 'Lanes 1-8',
+        handicap: { basis: 220, percentage: 90, max: 60, startingAverage: 175 },
+      });
+      expect(saved[0].handicap).toBeUndefined();
     });
 
     it('keeps seasons set up here when the file has none for that league', async () => {

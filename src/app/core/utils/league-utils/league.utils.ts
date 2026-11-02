@@ -1,5 +1,6 @@
 import { Game } from '../../models/game.model';
 import { League, LeagueType, Season, SeasonRange } from '../../models/league.model';
+import { normalizeHandicap } from './handicap.utils';
 
 /** Start of the local day `date` is in. */
 export function startOfDay(date: number): number {
@@ -41,12 +42,18 @@ export function normalizeLeague(value: unknown): League | null {
   const seasons = Array.isArray(stored.seasons)
     ? stored.seasons.filter((season): season is Season => !!season && typeof season.start === 'number' && typeof season.name === 'string')
     : [];
-  return {
+  const league: League = {
     name: stored.name,
     type: stored.type === 'tournament' ? 'tournament' : 'league',
     seasons: sortSeasons(seasons.map((season) => ({ ...season, id: season.id || newSeasonId() }))),
     createdAt: typeof stored.createdAt === 'number' ? stored.createdAt : 0,
   };
+  if (stored.finished === true) league.finished = true;
+  if (stored.sanctioned === true) league.sanctioned = true;
+  if (typeof stored.note === 'string' && stored.note.trim()) league.note = stored.note;
+  const handicap = normalizeHandicap(stored.handicap);
+  if (handicap) league.handicap = handicap;
+  return league;
 }
 
 /** Each season with the dates it covers: until the next one starts, the first one from the beginning. */
@@ -121,4 +128,12 @@ export function fromDateInput(value: string): number | undefined {
   if (!match) return undefined;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   return Number.isNaN(date.getTime()) ? undefined : date.getTime();
+}
+
+/** "37,5" and "37.5" both read as 37.5; empty or not a number is undefined. */
+export function parseNumber(value: string): number | undefined {
+  const text = value.trim().replace(',', '.');
+  if (text === '') return undefined;
+  const number = Number(text);
+  return Number.isFinite(number) ? number : undefined;
 }

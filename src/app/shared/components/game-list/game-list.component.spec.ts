@@ -33,6 +33,8 @@ const mockPatternsStore = {
 
 const mockLeaguesStore = {
   leagues: vi.fn().mockReturnValue([]),
+  leagueList: vi.fn().mockReturnValue([]),
+  leaguesByName: vi.fn().mockReturnValue(new Map()),
 };
 
 describe('GameListComponent', () => {

@@ -23,6 +23,26 @@ export interface League {
   /** Sorted by start. Empty when seasons aren't tracked for this league. */
   seasons: Season[];
   createdAt: number;
+  /** Over: listed after the running events and not offered when adding games. */
+  finished?: boolean;
+  /** Sanctioned by a bowling association (USBC, DBU, …). */
+  sanctioned?: boolean;
+  note?: string;
+  /** How handicap is given; absent for scratch events. */
+  handicap?: HandicapRule;
+}
+
+/**
+ * Handicap from the average: (basis − average) × percentage, rounded down, never below 0 and at
+ * most `max`. The average is the bowler's average in the event before the day of the game (that
+ * season's, when the league has seasons), or `startingAverage` until there is one.
+ */
+export interface HandicapRule {
+  basis: number;
+  /** 0–100. */
+  percentage: number;
+  max?: number;
+  startingAverage?: number;
 }
 
 /** A season with the date range it covers. */

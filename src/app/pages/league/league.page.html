@@ -17,7 +17,16 @@
         <ion-button type="button" class="action-sheet" fill="clear" (click)="cancelEdit()"> Cancel </ion-button>
       </ion-buttons>
     }
-    <ion-title> Leagues </ion-title>
+    <ion-title>
+      @if (isVisibilityEdit()) {
+        Leagues
+      } @else {
+        <button class="view-picker" type="button" (click)="chooseView()">
+          {{ viewTitle() }}
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </button>
+      }
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -37,7 +46,7 @@
   } @else if (noLeaguesShown() && !isVisibilityEdit()) {
     <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
   } @else {
-    @for (league of leagueKeys(); track league) {
+    @for (league of shownLeagueKeys(); track league) {
       @if (isVisibilityEdit()) {
         @if (leagueSelectionState(); as selectionState) {
           <div class="sliding">
@@ -216,8 +225,16 @@
   <ion-label class="game-info">
     <div class="title">
       {{ league }}
-      @if (leagueSummaries()[league]?.isTournament) {
-        <span class="type-tag">Tournament</span>
+      @if (leagueSummaries()[league]; as summary) {
+        @if (summary.isTournament) {
+          <span class="type-tag">Tournament</span>
+        }
+        @if (summary.sanctioned) {
+          <span class="type-tag">Sanctioned</span>
+        }
+        @if (summary.finished) {
+          <span class="type-tag finished">Finished</span>
+        }
       }
     </div>
     @if (statsByLeague()[league]; as stats) {
@@ -236,6 +253,9 @@
           no games yet
         }
       </div>
+    }
+    @if (leagueSummaries()[league]?.note; as note) {
+      <div class="note-line">{{ note }}</div>
     }
   </ion-label>
 </ng-template>

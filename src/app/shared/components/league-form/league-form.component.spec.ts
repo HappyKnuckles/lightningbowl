@@ -76,7 +76,7 @@ describe('LeagueFormComponent', () => {
     expect(component.error()).toBe('Enter a name.');
 
     component.setName(input('sunday'));
-    expect(component.error()).toBe('A league with this name already exists.');
+    expect(component.error()).toBe('An event with this name already exists.');
 
     await component.save();
     expect(leaguesStore.addLeague).not.toHaveBeenCalled();
@@ -128,5 +128,45 @@ describe('LeagueFormComponent', () => {
     await component.save();
 
     expect(appFacade.updateLeague.mock.calls[0][0].seasons).toEqual([{ id: 's', name: 'Fall', start: day('2026-09-10') }]);
+  });
+
+  it('saves handicap, sanctioned, finished and note', async () => {
+    const league: League = { name: 'Thursday', type: 'league', seasons: [], createdAt: 5 };
+    leagueList.set([league]);
+    create(league);
+    const toggle = (checked: boolean) => new CustomEvent('ionChange', { detail: { checked } });
+
+    component.setToggle('hasHandicap', toggle(true));
+    component.setHandicap('basis', input('210'));
+    component.setHandicap('percentage', input('80'));
+    component.setHandicap('startingAverage', input('175,5'));
+    component.setToggle('sanctioned', toggle(true));
+    component.setToggle('finished', toggle(true));
+    component.setNote(input(' Lanes 1-8 '));
+    await component.save();
+
+    expect(appFacade.updateLeague.mock.calls[0][0]).toEqual({
+      name: 'Thursday',
+      type: 'league',
+      seasons: [],
+      createdAt: 5,
+      finished: true,
+      sanctioned: true,
+      note: 'Lanes 1-8',
+      handicap: { basis: 210, percentage: 80, startingAverage: 175.5 },
+    });
+  });
+
+  it('needs a basis and a percentage up to 100 for a handicap', () => {
+    create();
+    component.setName(input('Thursday'));
+    component.setToggle('hasHandicap', new CustomEvent('ionChange', { detail: { checked: true } }));
+
+    component.setHandicap('percentage', input('120'));
+    expect(component.error()).toBe('Enter the handicap percentage, 1 to 100.');
+
+    component.setHandicap('percentage', input('90'));
+    component.setHandicap('basis', input(''));
+    expect(component.error()).toBe('Enter the handicap basis, e.g. 220.');
   });
 });

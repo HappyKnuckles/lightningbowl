@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-button color="medium" (click)="cancel()">Cancel</ion-button>
     </ion-buttons>
-    <ion-title>{{ isEdit() ? "Edit League" : "New League" }}</ion-title>
+    <ion-title>{{ isEdit() ? "Edit Event" : "New Event" }}</ion-title>
     <ion-buttons slot="end">
       <ion-button [disabled]="!!error() || saving()" [strong]="true" (click)="save()">Save</ion-button>
     </ion-buttons>
@@ -69,8 +69,83 @@
     <ion-note class="hint">Tournaments have no seasons.</ion-note>
   }
 
+  <ion-list-header>
+    <ion-label>Handicap</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-toggle [checked]="hasHandicap()" (ionChange)="setToggle('hasHandicap', $event)">Add handicap to games</ion-toggle>
+    </ion-item>
+    @if (hasHandicap()) {
+      <ion-item>
+        <ion-input
+          inputmode="numeric"
+          label="Basis"
+          labelPlacement="stacked"
+          placeholder="220"
+          [value]="handicap().basis"
+          (ionInput)="setHandicap('basis', $event)"></ion-input>
+        <ion-input
+          inputmode="decimal"
+          label="Percentage"
+          labelPlacement="stacked"
+          placeholder="90"
+          [value]="handicap().percentage"
+          (ionInput)="setHandicap('percentage', $event)"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          inputmode="numeric"
+          label="Max (optional)"
+          labelPlacement="stacked"
+          placeholder="No max"
+          [value]="handicap().max"
+          (ionInput)="setHandicap('max', $event)"></ion-input>
+        <ion-input
+          inputmode="decimal"
+          label="Starting average"
+          labelPlacement="stacked"
+          placeholder="Optional"
+          [value]="handicap().startingAverage"
+          (ionInput)="setHandicap('startingAverage', $event)"></ion-input>
+      </ion-item>
+    }
+  </ion-list>
+  @if (hasHandicap()) {
+    <ion-note class="hint">
+      Handicap = (basis − average) × percentage, rounded down. It uses your average before each day you bowl, in that season; the starting average
+      counts until you have one.
+    </ion-note>
+  }
+
+  <ion-list-header>
+    <ion-label>Details</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-toggle [checked]="sanctioned()" (ionChange)="setToggle('sanctioned', $event)">Sanctioned</ion-toggle>
+    </ion-item>
+    @if (isEdit()) {
+      <ion-item>
+        <ion-toggle [checked]="finished()" (ionChange)="setToggle('finished', $event)">
+          Finished
+          <p class="toggle-hint">Listed at the end, not offered for new games</p>
+        </ion-toggle>
+      </ion-item>
+    }
+    <ion-item>
+      <ion-textarea
+        autoGrow="true"
+        label="Note"
+        labelPlacement="stacked"
+        placeholder="Center, team, lane assignments, …"
+        [value]="note()"
+        (ionInput)="setNote($event)"></ion-textarea>
+    </ion-item>
+  </ion-list>
+
   @if (isEdit()) {
-    <ion-button class="delete" color="danger" expand="block" fill="clear" (click)="delete()">Delete league</ion-button>
+    <ion-button class="delete" color="danger" expand="block" fill="clear" (click)="delete()">Delete event</ion-button>
   }
 </ion-content>
 

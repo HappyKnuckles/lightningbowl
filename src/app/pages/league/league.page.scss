@@ -63,6 +63,20 @@
     background: rgba(var(--ion-color-primary-rgb), 0.16);
   }
 
+  .type-tag.finished {
+    color: var(--ion-color-medium);
+    background: rgba(var(--ion-color-medium-rgb), 0.16);
+  }
+
+  .note-line {
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   .season-line {
     margin-top: 4px;
     font-size: 0.875rem;
@@ -102,5 +116,20 @@
 
   .new-season {
     --color: var(--ion-color-primary);
+  }
+}
+
+.view-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  background: none;
+
+  ion-icon {
+    font-size: 0.875rem;
   }
 }

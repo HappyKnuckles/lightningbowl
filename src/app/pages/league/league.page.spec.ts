@@ -88,6 +88,22 @@ describe('LeaguePage', () => {
     expect(component.leagueSummaries()['Cup'].isTournament).toBe(true);
   });
 
+  it('lists finished events last and narrows the list to leagues or tournaments', () => {
+    leagueList.set([
+      { name: 'Old', type: 'league', seasons: [], createdAt: 0, finished: true },
+      { name: 'Cup', type: 'tournament', seasons: [], createdAt: 0 },
+      { name: 'Thursday', type: 'league', seasons: [], createdAt: 0 },
+    ]);
+    gamesSignal.set([makeGame({ gameId: 'a', league: 'Old' }), makeGame({ gameId: 'b' })]);
+
+    expect(component.leagueKeys()).toEqual(['Practice', 'Cup', 'Thursday', 'Old']);
+    component.view.set('league');
+    expect(component.shownLeagueKeys()).toEqual(['Thursday', 'Old']);
+    component.view.set('tournament');
+    expect(component.shownLeagueKeys()).toEqual(['Cup']);
+    expect(component.viewTitle()).toBe('Tournaments');
+  });
+
   it('summarises the running season of a league in the list', () => {
     leagueList.set([thursday]);
     gamesSignal.set([

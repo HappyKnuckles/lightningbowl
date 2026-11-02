@@ -149,9 +149,9 @@ export class LeagueFormComponent implements OnInit {
     }
     return null;
   });
-  readonly saving = signal(false);
   /** What keeps the event from being saved, except a missing name, which the disabled Save already shows. */
   readonly footerError = computed(() => (this.name().trim() ? this.error() : null));
+  readonly saving = signal(false);
   readonly finished = signal(false);
   readonly sanctioned = signal(false);
   readonly note = signal('');

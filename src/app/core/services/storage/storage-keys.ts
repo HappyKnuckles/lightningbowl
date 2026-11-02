@@ -16,4 +16,5 @@ export const StorageKeys = {
 export const SETTINGS_KEYS = {
   bowlerFit: 'bowler_fit',
   layoutPresets: 'layout_presets',
+  dailyMinigame: 'daily_minigame_v1',
 } as const;

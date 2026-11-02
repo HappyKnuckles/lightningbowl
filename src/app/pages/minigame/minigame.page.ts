@@ -1,10 +1,20 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonButtons } from '@ionic/angular/standalone';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy, computed, signal } from '@angular/core';
+import { IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonButtons, IonRange } from '@ionic/angular/standalone';
 
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ImpactStyle } from '@capacitor/haptics';
 import { addIcons } from 'ionicons';
 import { refresh } from 'ionicons/icons';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { SETTINGS_KEYS } from 'src/app/core/services/storage/storage-keys';
+import { minigameDelivery, stepMinigamePhysics } from 'src/app/core/utils/game-utils/minigame-physics.utils';
+import {
+  dailyMinigameLane,
+  minigameFrameComplete,
+  minigameRackSize,
+  minigameScores,
+  minigameThrowLabels,
+} from 'src/app/core/utils/game-utils/minigame.utils';
 
 interface Particle {
   x: number;
@@ -36,8 +46,6 @@ interface Ball {
   spinning: boolean;
   curve: number;
   trail: { x: number; y: number; alpha: number }[];
-  distanceTraveled: number; // Track how far the ball has traveled
-  curveStartDistance: number; // Distance at which curve starts to take effect
   inGutter: boolean; // Track if ball is in the gutter
 }
 
@@ -48,19 +56,69 @@ interface Arrow {
   visible: boolean;
 }
 
+interface SavedMinigame {
+  date: string;
+  frames: number[][];
+  pins: Pin[];
+  gutters: number;
+}
+
 @Component({
   selector: 'app-bowling-minigame',
   templateUrl: './minigame.page.html',
   styleUrls: ['./minigame.page.scss'],
-  imports: [IonButtons, IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon],
+  imports: [IonButtons, IonContent, IonHeader, IonTitle, IonMenuButton, IonToolbar, IonButton, IonIcon, IonRange],
 })
 export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('gameCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  readonly mode = signal<'daily' | 'practice'>('daily');
+  readonly date = signal(new Date().toISOString().slice(0, 10));
+  private readonly practiceDate = signal('2026-01-01');
+  readonly lane = computed(() => dailyMinigameLane(this.mode() === 'daily' ? this.date() : this.practiceDate()));
+  readonly frames = signal<number[][]>([[]]);
+  readonly frameIndex = computed(() => this.frames().length - 1);
+  readonly ballNumber = computed(() => this.frames().at(-1)!.length + 1);
+  readonly scores = computed(() => minigameScores(this.frames()));
+  readonly score = computed(
+    () =>
+      this.scores()
+        .filter((score) => score !== null)
+        .at(-1) ?? 0,
+  );
+  readonly gameState = signal<'ready' | 'aiming' | 'rolling' | 'settling' | 'complete'>('ready');
+  readonly scorecard = computed(() =>
+    Array.from({ length: 10 }, (_, index) => ({
+      number: index + 1,
+      throws: minigameThrowLabels(this.frames()[index] ?? [], index),
+      score: this.scores()[index],
+      active: index === this.frameIndex() && this.gameState() !== 'complete',
+    })),
+  );
+  readonly loading = signal(true);
+  readonly canRoll = computed(() => !this.loading() && (this.gameState() === 'ready' || this.gameState() === 'aiming'));
+  readonly canChangeMode = computed(() => !this.loading() && ['ready', 'complete'].includes(this.gameState()));
+  readonly hook = signal(0);
+  readonly hookLabel = computed(() => (this.hook() === 0 ? 'Straight' : `Hooks ${this.hook() < 0 ? 'left' : 'right'} ${Math.abs(this.hook())}`));
+  readonly aim = signal(0);
+  readonly power = signal(0);
+  readonly gutters = signal(0);
+  readonly storageError = signal(false);
+  readonly status = signal('Drag to line up, then swipe up to roll.');
+  pinsKnocked = 0;
+
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
-  private animationId!: number;
-  private gameState: 'ready' | 'aiming' | 'rolling' | 'finished' = 'ready';
+  private animationId = 0;
+  private dailySave: SavedMinigame | null = null;
+  private settleTicks = 0;
+  private rollTicks = 0;
+  private lastTick = 0;
+  private accumulator = 0;
+  private chargeStart = 0;
+  private pointerId: number | null = null;
+  private startBallX = 0;
+  private swipeStart = 0;
 
   // Game objects
   private ball: Ball = {
@@ -72,8 +130,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     spinning: false,
     curve: 0,
     trail: [],
-    distanceTraveled: 0,
-    curveStartDistance: 85, // Start curving earlier - after traveling 80 pixels
     inGutter: false,
   };
 
@@ -86,9 +142,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   private readonly LANE_HEIGHT = 600;
   private readonly PIN_WIDTH = 24;
   private readonly PIN_HEIGHT = 50;
-  private readonly GRAVITY = 0.5;
-  private readonly FRICTION = 0.98;
-  private readonly CURVE_FORCE = 0.175; // 15% reduction from 0.25 (0.25 * 0.85)
 
   // Touch/mouse tracking
   private isDragging = false;
@@ -97,15 +150,27 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
   private aimX = 0;
   private aimY = 0;
 
-  score = 0;
-  pinsKnocked = 0;
-
-  constructor(private hapticService: HapticService) {
+  constructor(
+    private hapticService: HapticService,
+    private storage: StorageRepository,
+  ) {
     addIcons({ refresh });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.setupGame();
+    try {
+      const saved = await this.storage.get<SavedMinigame>(SETTINGS_KEYS.dailyMinigame);
+      if (saved?.date === this.date()) {
+        this.dailySave = saved;
+        this.restoreDaily();
+      }
+    } catch (error) {
+      this.storageError.set(true);
+      console.warn('Unable to load daily bowling game.', error);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   ngAfterViewInit() {
@@ -116,7 +181,6 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.canvas.width = this.LANE_WIDTH;
     this.canvas.height = this.LANE_HEIGHT;
 
-    this.setupEventListeners();
     this.gameLoop();
   }
 
@@ -126,30 +190,145 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  ionViewDidEnter() {
+    if (this.canvas && !this.animationId) this.gameLoop();
+  }
+
+  ionViewWillLeave() {
+    cancelAnimationFrame(this.animationId);
+    this.animationId = 0;
+    this.lastTick = 0;
+    this.accumulator = 0;
+    this.cancelGesture();
+  }
+
+  pointerStart(event: PointerEvent) {
+    if (!this.canRoll() || this.pointerId !== null || event.button !== 0 || this.chargeStart) return;
+    event.preventDefault();
+    this.canvas.focus({ preventScroll: true });
+    this.canvas.setPointerCapture(event.pointerId);
+    this.pointerId = event.pointerId;
+    const { x, y } = this.pointerPosition(event);
+    this.startX = this.aimX = x;
+    this.startY = this.aimY = y;
+    this.startBallX = this.ball.x;
+    this.swipeStart = performance.now();
+    this.isDragging = true;
+    this.gameState.set('aiming');
+  }
+
+  pointerMove(event: PointerEvent) {
+    if (event.pointerId !== this.pointerId || !this.isDragging) return;
+    const { x, y } = this.pointerPosition(event);
+    this.aimX = x;
+    this.aimY = y;
+    // Horizontal dragging moves the starting position; an upward flick supplies the delivery angle.
+    if (this.startY - y < 24 && Math.abs(x - this.startX) > Math.abs(y - this.startY)) {
+      this.ball.x = Math.max(34, Math.min(this.LANE_WIDTH - 34, this.startBallX + x - this.startX));
+      this.startX = x;
+      this.startY = y;
+      this.startBallX = this.ball.x;
+      this.swipeStart = performance.now();
+    }
+  }
+
+  pointerEnd(event: PointerEvent) {
+    if (event.pointerId !== this.pointerId) return;
+    this.pointerMove(event);
+    const up = this.startY - this.aimY;
+    const sideways = this.aimX - this.startX;
+    const elapsed = Math.max(80, performance.now() - this.swipeStart);
+    this.cancelGesture();
+    if (up >= 24) this.roll(Math.min(1, up / elapsed), Math.max(-0.45, Math.min(0.45, sideways / up)));
+  }
+
+  cancelGesture() {
+    if (this.pointerId !== null && this.canvas?.hasPointerCapture(this.pointerId)) this.canvas.releasePointerCapture(this.pointerId);
+    this.pointerId = null;
+    this.isDragging = false;
+    this.chargeStart = 0;
+    this.power.set(0);
+    if (this.gameState() === 'aiming') this.gameState.set('ready');
+  }
+
+  keyDown(event: KeyboardEvent) {
+    if (!this.canRoll()) return;
+    if (!['ArrowLeft', 'ArrowRight', 'a', 'd', '[', ']', ' '].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'ArrowLeft') this.ball.x = Math.max(34, this.ball.x - 6);
+    if (event.key === 'ArrowRight') this.ball.x = Math.min(this.LANE_WIDTH - 34, this.ball.x + 6);
+    if (event.key === 'a') this.aim.update((aim) => Math.max(-0.3, aim - 0.025));
+    if (event.key === 'd') this.aim.update((aim) => Math.min(0.3, aim + 0.025));
+    if (event.key === '[') this.hook.update((hook) => Math.max(-5, hook - 1));
+    if (event.key === ']') this.hook.update((hook) => Math.min(5, hook + 1));
+    if (event.key === ' ' && !event.repeat && !this.chargeStart) this.chargeStart = performance.now();
+  }
+
+  keyUp(event: KeyboardEvent) {
+    if (event.key !== ' ' || !this.chargeStart) return;
+    event.preventDefault();
+    const power = this.power();
+    this.chargeStart = 0;
+    this.roll(power);
+  }
+
+  roll(power = 0.65, angle = this.aim()) {
+    if (!this.canRoll()) return;
+    this.cancelGesture();
+    Object.assign(this.ball, minigameDelivery(power, angle, this.hook()));
+    this.ball.spinning = this.hook() !== 0;
+    this.gameState.set('rolling');
+    this.status.set('Rolling…');
+    this.rollTicks = 0;
+    this.hapticService.vibrate(ImpactStyle.Medium);
+  }
+
+  selectMode(mode: 'daily' | 'practice') {
+    if (!this.canChangeMode() || mode === this.mode()) return;
+    this.cancelGesture();
+    this.mode.set(mode);
+    if (mode === 'daily') {
+      this.date.set(new Date().toISOString().slice(0, 10));
+      if (this.dailySave?.date !== this.date()) this.dailySave = null;
+    }
+    this.setupGame();
+    if (mode === 'daily') this.restoreDaily();
+  }
+
+  resetGame() {
+    if (this.mode() !== 'practice' || !this.canChangeMode()) return;
+    this.practiceDate.update((date) => new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10));
+    this.setupGame();
+  }
+
   private setupGame() {
     this.setupPins();
     this.setupArrows();
     this.resetBall();
     this.particles = [];
-    this.score = 0;
     this.pinsKnocked = 0;
-    this.gameState = 'ready';
+    this.frames.set([[]]);
+    this.gutters.set(0);
+    this.gameState.set('ready');
+    this.status.set('Drag to line up, then swipe up to roll.');
+    this.chargeStart = 0;
+    this.power.set(0);
   }
 
   private setupPins() {
     this.pins = [];
     const pinPositions = [
       // Evenly spaced bowling pin formation - maximum even spacing for both X and Y
-      [45, 25],
-      [100, 25],
-      [180, 25],
-      [235, 25],
-      [72, 50],
-      [140, 50],
-      [208, 50],
-      [100, 75],
-      [180, 75],
-      [140, 100],
+      [62, 32],
+      [114, 32],
+      [166, 32],
+      [218, 32],
+      [88, 64],
+      [140, 64],
+      [192, 64],
+      [114, 96],
+      [166, 96],
+      [140, 128],
     ];
 
     pinPositions.forEach(([x, y]) => {
@@ -232,489 +411,54 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       spinning: false,
       curve: 0,
       trail: [],
-      distanceTraveled: 0,
-      curveStartDistance: 90, // Start curving earlier - after traveling 80 pixels
       inGutter: false,
     };
   }
 
-  private setupEventListeners() {
-    // Mouse events
-    this.canvas.addEventListener('mousedown', (e) => this.handleStart(e.offsetX, e.offsetY));
-    this.canvas.addEventListener('mousemove', (e) => this.handleMove(e.offsetX, e.offsetY));
-    this.canvas.addEventListener('mouseup', () => this.handleEnd());
-
-    // Touch events
-    this.canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const rect = this.canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      this.handleStart(touch.clientX - rect.left, touch.clientY - rect.top);
-    });
-
-    this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const rect = this.canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      this.handleMove(touch.clientX - rect.left, touch.clientY - rect.top);
-    });
-
-    this.canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      this.handleEnd();
-    });
+  private pointerPosition(event: PointerEvent) {
+    const rect = this.canvas.getBoundingClientRect();
+    return { x: ((event.clientX - rect.left) / rect.width) * this.LANE_WIDTH, y: ((event.clientY - rect.top) / rect.height) * this.LANE_HEIGHT };
   }
 
-  private handleStart(x: number, y: number) {
-    if (this.gameState !== 'ready') return;
-
-    this.isDragging = true;
-    this.startX = x;
-    this.startY = y;
-    this.gameState = 'aiming';
-    this.hapticService.vibrate(ImpactStyle.Light);
-  }
-
-  private handleMove(x: number, y: number) {
-    if (!this.isDragging || this.gameState !== 'aiming') return;
-
-    this.aimX = x;
-    this.aimY = y;
-  }
-
-  private handleEnd() {
-    if (!this.isDragging || this.gameState !== 'aiming') return;
-
-    this.isDragging = false;
-    this.throwBallFromSwipe();
-    this.gameState = 'rolling';
-    this.hapticService.vibrate(ImpactStyle.Medium);
-  }
-
-  private throwBallFromSwipe() {
-    const deltaX = this.aimX - this.startX;
-    const deltaY = this.aimY - this.startY;
-    const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-    // 15% reduction in speed for more controlled movement
-    const speedMultiplier = 0.068; // Reduced from 0.08 by 15% (0.08 * 0.85 = 0.068)
-
-    // Direct mapping of finger movement to ball velocity
-    this.ball.velocityX = deltaX * speedMultiplier;
-    this.ball.velocityY = deltaY * speedMultiplier;
-
-    // Ensure minimum forward speed if user swipes mostly horizontally
-    if (Math.abs(this.ball.velocityY) < 0.85) {
-      this.ball.velocityY = -0.85; // Reduced minimum forward movement (15% less)
+  private gameLoop(timestamp = performance.now()) {
+    // Fixed physics steps make identical shots behave alike on 60/120 Hz screens.
+    this.accumulator += Math.min(timestamp - (this.lastTick || timestamp), 100);
+    this.lastTick = timestamp;
+    while (this.accumulator >= 1000 / 60) {
+      this.update();
+      this.accumulator -= 1000 / 60;
     }
-
-    // Improved curve detection - only curve if gesture shows actual curvature
-    let curveAmount = 0;
-
-    if (totalDistance > 25) {
-      // Require meaningful gesture length
-      // Only apply curve if there's significant horizontal movement AND it's not a straight horizontal swipe
-      const minHorizontalMovement = 15;
-      const verticalComponent = Math.abs(deltaY);
-
-      // Check if this is actually a curved gesture, not just horizontal movement
-      if (Math.abs(deltaX) > minHorizontalMovement && verticalComponent > Math.abs(deltaX) * 0.3) {
-        // This gesture has both horizontal and sufficient vertical movement - could be curved
-        const curveSensitivity = 0.017; // 15% reduction from 0.02 (0.02 * 0.85 = 0.017)
-        curveAmount = deltaX * curveSensitivity;
-      }
-      // If it's mostly horizontal (low vertical component), no curve is applied
-    }
-
-    this.ball.curve = curveAmount;
-    this.ball.spinning = Math.abs(curveAmount) > 0.01; // Only spin if there's meaningful curve
-
-    // Reset distance tracking for new throw
-    this.ball.distanceTraveled = 0;
-  }
-
-  private gameLoop() {
-    this.update();
+    if (this.chargeStart) this.power.set(Math.min(1, (performance.now() - this.chargeStart) / 1000));
     this.render();
-    this.animationId = requestAnimationFrame(() => this.gameLoop());
+    this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
   }
 
   private update() {
-    if (this.gameState === 'rolling') {
-      this.updateBall();
-      this.updatePins();
+    if (this.gameState() === 'rolling') {
+      this.stepPhysics(true);
       this.updateParticles();
-      this.checkCollisions();
-
-      // TODO 2 second timer after ball reaches certain Y then finish, state not setting
-      // need to adjust pin fall for this
-      // Check if ball has passed the pins (y < 0) or gone off screen
-      if (
-        this.ball.y < -100 ||
-        this.ball.y > this.LANE_HEIGHT + 50 ||
-        (Math.abs(this.ball.velocityX) < 0.015 && Math.abs(this.ball.velocityY) < 0.015)
-      ) {
-        this.gameState = 'finished';
-        this.calculateScore();
-
-        // Auto-reset after 2 seconds
-        setTimeout(() => {
-          this.resetGame();
-        }, 2000);
+      if (this.ball.y < -60 || ++this.rollTicks > 420) {
+        this.gameState.set('settling');
+        this.settleTicks = 90;
       }
+    } else if (this.gameState() === 'settling') {
+      this.stepPhysics(false);
+      this.updateParticles();
+      if (--this.settleTicks <= 0) this.finishShot();
     }
   }
 
-  private updateBall() {
-    // Calculate distance traveled this frame
-    const speed = Math.sqrt(this.ball.velocityX * this.ball.velocityX + this.ball.velocityY * this.ball.velocityY);
-    this.ball.distanceTraveled += speed;
-
-    // Add current position to trail
-    if (this.ball.spinning) {
-      this.ball.trail.push({ x: this.ball.x, y: this.ball.y, alpha: 1.0 });
-
-      // Limit trail length
-      if (this.ball.trail.length > 15) {
-        this.ball.trail.shift();
-      }
-
-      // Fade trail
-      this.ball.trail.forEach((point, index) => {
-        point.alpha = index / this.ball.trail.length;
-      });
-    }
-
-    // Apply curve only after breakpoint distance - with good curve strength
-    if (this.ball.spinning && this.ball.distanceTraveled > this.ball.curveStartDistance) {
-      // Calculate curve intensity based on distance past breakpoint
-      const curveProgress = Math.min((this.ball.distanceTraveled - this.ball.curveStartDistance) / 100, 1.0);
-      // Good curve strength like before, but with slight speed dependency to prevent infinite curve
-      const speedFactor = Math.max(speed / 4.0, 0.3); // Minimum 30% curve strength
-      const curveMultiplier = curveProgress * 0.6 * speedFactor; // Restored good curve strength
-
-      // Negative curve value for correct direction (left swipe = left curve)
-      this.ball.velocityX += -this.ball.curve * this.CURVE_FORCE * curveMultiplier;
-    }
-
-    // Update position
-    this.ball.x += this.ball.velocityX;
-    this.ball.y += this.ball.velocityY;
-
-    // Apply normal friction - not too strong
-    this.ball.velocityX *= 0.996; // Reduced friction so curve works better
-    this.ball.velocityY *= 0.997; // Light friction on forward movement
-
-    // Curve effect decays very slowly so it continues working
-    if (this.ball.spinning) {
-      this.ball.curve *= 0.9995; // Very slow curve decay
-    }
-
-    // Gutter mechanics - realistic bowling lane behavior
-    const gutterWidth = 18;
-    const gutterBoundaryLeft = gutterWidth + this.ball.radius / 2; // Gutter starts when ball is halfway over
-    const gutterBoundaryRight = this.LANE_WIDTH - gutterWidth - this.ball.radius / 2;
-
-    if (!this.ball.inGutter) {
-      // Check if ball is entering gutter (halfway over the boundary)
-      if (this.ball.x < gutterBoundaryLeft || this.ball.x > gutterBoundaryRight) {
-        this.ball.inGutter = true;
-        this.hapticService.vibrate(ImpactStyle.Medium); // Gutter entry feedback
-
-        // Position ball in center of gutter
-        if (this.ball.x < gutterBoundaryLeft) {
-          this.ball.x = gutterWidth / 2; // Left gutter center
-        } else {
-          this.ball.x = this.LANE_WIDTH - gutterWidth / 2; // Right gutter center
-        }
-
-        // Reduce horizontal velocity significantly when entering gutter
-        this.ball.velocityX *= 0.3;
-        // Stop curve when in gutter
-        this.ball.curve = 0;
-        this.ball.spinning = false;
-      }
-    } else {
-      // Ball is in gutter - keep it there and let it roll to the end
-      // Constrain ball to gutter bounds
-      if (this.ball.x < gutterWidth / 2) {
-        this.ball.x = gutterWidth / 2; // Left gutter
-      } else if (this.ball.x > this.LANE_WIDTH - gutterWidth / 2) {
-        this.ball.x = this.LANE_WIDTH - gutterWidth / 2; // Right gutter
-      }
-
-      // Very minimal horizontal movement in gutter
-      this.ball.velocityX *= 0.95;
-    }
-  }
-
-  private updatePins() {
-    this.pins.forEach((pin, index) => {
-      if (pin.fallen) {
-        // Apply physics to fallen pins
-        pin.x += pin.velocityX;
-        pin.y += pin.velocityY;
-
-        // Check for collisions with other pins during movement
-        this.checkMovingPinCollisions(pin, index);
-
-        // Apply friction - pins lose energy over time
-        pin.velocityX *= this.FRICTION;
-        pin.velocityY *= this.FRICTION;
-
-        // Apply gravity effect (pins fall down)
-        pin.velocityY += this.GRAVITY * 0.15;
-
-        // Update falling animation with more realistic physics
-        if (pin.fallingAngle < Math.PI / 2) {
-          // Falling speed based on current velocity
-          const fallingSpeed = Math.sqrt(pin.velocityX * pin.velocityX + pin.velocityY * pin.velocityY);
-          pin.fallingAngle += 0.1 + fallingSpeed * 0.02; // Faster pins fall faster
-        }
-
-        // Keep pins within reasonable bounds
-        if (pin.x < 0) {
-          pin.x = 0;
-          pin.velocityX = Math.abs(pin.velocityX) * 0.3; // Bounce off edges with energy loss
-        }
-        if (pin.x > this.LANE_WIDTH) {
-          pin.x = this.LANE_WIDTH;
-          pin.velocityX = -Math.abs(pin.velocityX) * 0.3;
-        }
-        if (pin.y > this.LANE_HEIGHT) {
-          pin.y = this.LANE_HEIGHT;
-          pin.velocityY = -Math.abs(pin.velocityY) * 0.2; // Less bouncy on lane surface
-        }
-
-        // Stop very slow pins to prevent infinite tiny movements
-        if (Math.abs(pin.velocityX) < 0.1 && Math.abs(pin.velocityY) < 0.1) {
-          pin.velocityX = 0;
-          pin.velocityY = 0;
-        }
-      }
-    });
-  }
-
-  private checkMovingPinCollisions(movingPin: Pin, movingPinIndex: number) {
-    this.pins.forEach((otherPin, otherIndex) => {
-      if (movingPinIndex === otherIndex) return; // Don't check collision with self
-
-      const dx = otherPin.x - movingPin.x;
-      const dy = otherPin.y - movingPin.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const collisionDistance = this.PIN_WIDTH + 3; // Slightly larger collision area
-
-      if (distance < collisionDistance && distance > 0) {
-        // Collision detected!
-        const movingSpeed = Math.sqrt(movingPin.velocityX * movingPin.velocityX + movingPin.velocityY * movingPin.velocityY);
-
-        if (!otherPin.fallen && movingSpeed > 0.5) {
-          // Moving pin knocks down standing pin
-          otherPin.fallen = true;
-
-          // Calculate collision angle and transfer momentum
-          const collisionAngle = Math.atan2(dy, dx);
-          const momentumTransfer = movingSpeed * 0.6;
-
-          otherPin.velocityX = Math.cos(collisionAngle) * momentumTransfer + movingPin.velocityX * 0.3;
-          otherPin.velocityY = Math.sin(collisionAngle) * momentumTransfer + movingPin.velocityY * 0.3;
-
-          // Slow down the moving pin
-          movingPin.velocityX *= 0.7;
-          movingPin.velocityY *= 0.7;
-
-          this.pinsKnocked++;
-          this.hapticService.vibrate(ImpactStyle.Light);
-          this.createParticles(otherPin.x, otherPin.y);
-        } else if (otherPin.fallen) {
-          // Both pins are fallen - prevent overlap by pushing them apart
-          const overlap = collisionDistance - distance;
-          if (overlap > 0) {
-            const separationX = (dx / distance) * overlap * 0.5;
-            const separationY = (dy / distance) * overlap * 0.5;
-
-            // Push pins apart
-            movingPin.x -= separationX;
-            movingPin.y -= separationY;
-            otherPin.x += separationX;
-            otherPin.y += separationY;
-
-            // Exchange some momentum for realistic collision
-            const tempVelX = movingPin.velocityX * 0.4;
-            const tempVelY = movingPin.velocityY * 0.4;
-            movingPin.velocityX += otherPin.velocityX * 0.2 - tempVelX;
-            movingPin.velocityY += otherPin.velocityY * 0.2 - tempVelY;
-            otherPin.velocityX += tempVelX;
-            otherPin.velocityY += tempVelY;
-          }
-        } else {
-          // Moving pin hits standing pin but not enough speed to knock it down
-          // Just push the moving pin back slightly to prevent overlap
-          const pushBackX = (dx / distance) * (collisionDistance - distance) * 0.5;
-          const pushBackY = (dy / distance) * (collisionDistance - distance) * 0.5;
-          movingPin.x -= pushBackX;
-          movingPin.y -= pushBackY;
-
-          // Reduce moving pin's velocity
-          movingPin.velocityX *= 0.8;
-          movingPin.velocityY *= 0.8;
-        }
-      }
-    });
-  }
-
-  private checkCollisions() {
-    // Only check pin collisions if ball is not in gutter
-    if (this.ball.inGutter) {
-      return; // Balls in gutter don't hit pins
-    }
-
-    this.pins.forEach((pin) => {
-      if (!pin.fallen) {
-        const dx = this.ball.x - pin.x;
-        const dy = this.ball.y - pin.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < this.ball.radius + pin.width / 2) {
-          // Pin hit!
-          this.hitPin(pin, dx, dy, distance);
-        }
-      }
-    });
-
-    // Check pin-to-pin collisions
-    this.checkPinToPinCollisions();
-  }
-
-  private hitPin(pin: Pin, dx: number, dy: number, distance: number) {
-    pin.fallen = true;
-
-    // Calculate ball's momentum and entry angle
-    const ballSpeed = Math.sqrt(this.ball.velocityX * this.ball.velocityX + this.ball.velocityY * this.ball.velocityY);
-
-    // Calculate impact angle (angle from pin to ball)
-    const impactAngle = Math.atan2(-dy, -dx);
-
-    // Transfer momentum based on entry angle and ball speed
-    const momentumTransfer = ballSpeed * 0.6; // 60% of ball momentum transfers
-    const angleInfluence = 0.8; // How much impact angle affects direction
-
-    // Pin velocity based on impact angle and ball momentum
-    pin.velocityX = Math.cos(impactAngle) * momentumTransfer * angleInfluence + this.ball.velocityX * 0.4; // 40% from ball's actual velocity
-    pin.velocityY = Math.sin(impactAngle) * momentumTransfer * angleInfluence + this.ball.velocityY * 0.4;
-
-    // Add some controlled randomness for realism (less than before)
-    pin.velocityX += (Math.random() - 0.5) * 1.5;
-    pin.velocityY += (Math.random() - 0.5) * 1.5;
-
-    // Calculate ball deflection based on collision physics
-    const ballMass = 16; // Standard bowling ball weight
-    const pinMass = 3.5; // Standard pin weight
-    const totalMass = ballMass + pinMass;
-
-    // Conservation of momentum - ball deflection
-    const deflectionFactor = pinMass / totalMass;
-    const normalX = dx / distance;
-    const normalY = dy / distance;
-
-    // Apply deflection to ball
-    this.ball.velocityX += normalX * ballSpeed * deflectionFactor * 0.3;
-    this.ball.velocityY += normalY * ballSpeed * deflectionFactor * 0.3;
-
-    // Ball loses some energy in the collision but maintains most of its momentum
-    this.ball.velocityX *= 0.88; // Less energy loss for more realistic carry
-    this.ball.velocityY *= 0.92;
-    this.ball.curve *= 0.95; // Slight curve reduction
-
-    this.hapticService.vibrate(ImpactStyle.Heavy);
-    this.pinsKnocked++;
-    this.createParticles(pin.x, pin.y);
-  }
-
-  private checkPinToPinCollisions() {
-    for (let i = 0; i < this.pins.length; i++) {
-      const pin1 = this.pins[i];
-      if (!pin1.fallen) continue;
-
-      for (let j = i + 1; j < this.pins.length; j++) {
-        const pin2 = this.pins[j];
-
-        // Check collision between moving pin and standing pin
-        if (pin1.fallen && !pin2.fallen) {
-          this.checkPinCollision(pin1, pin2);
-        } else if (!pin1.fallen && pin2.fallen) {
-          this.checkPinCollision(pin2, pin1);
-        }
-        // Also check fallen pin to fallen pin collisions for realistic pile-up
-        else if (pin1.fallen && pin2.fallen) {
-          this.checkFallenPinCollision(pin1, pin2);
-        }
-      }
-    }
-  }
-
-  private checkPinCollision(movingPin: Pin, standingPin: Pin) {
-    const dx = standingPin.x - movingPin.x;
-    const dy = standingPin.y - movingPin.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const minDistance = this.PIN_WIDTH + 2;
-
-    if (distance < minDistance && distance > 0) {
-      const movingPinSpeed = Math.sqrt(movingPin.velocityX * movingPin.velocityX + movingPin.velocityY * movingPin.velocityY);
-
-      // Only knock down if moving pin has sufficient speed
-      if (movingPinSpeed > 0.8) {
-        standingPin.fallen = true;
-
-        // Calculate collision angle
-        const collisionAngle = Math.atan2(dy, dx);
-
-        // Transfer momentum based on collision physics
-        const momentumTransfer = movingPinSpeed * 0.7;
-        standingPin.velocityX = Math.cos(collisionAngle) * momentumTransfer;
-        standingPin.velocityY = Math.sin(collisionAngle) * momentumTransfer;
-
-        // Add some spin effect from the moving pin
-        standingPin.velocityX += movingPin.velocityX * 0.3;
-        standingPin.velocityY += movingPin.velocityY * 0.3;
-
-        // Slow down the moving pin
-        movingPin.velocityX *= 0.7;
-        movingPin.velocityY *= 0.7;
-
-        this.pinsKnocked++;
-        this.hapticService.vibrate(ImpactStyle.Light);
-        this.createParticles(standingPin.x, standingPin.y);
-      }
-    }
-  }
-
-  private checkFallenPinCollision(pin1: Pin, pin2: Pin) {
-    const dx = pin2.x - pin1.x;
-    const dy = pin2.y - pin1.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const minDistance = this.PIN_WIDTH + 1;
-
-    if (distance < minDistance && distance > 0) {
-      // Simple elastic collision between fallen pins
-      const overlap = minDistance - distance;
-      const separationX = (dx / distance) * overlap * 0.5;
-      const separationY = (dy / distance) * overlap * 0.5;
-
-      // Separate the pins
-      pin1.x -= separationX;
-      pin1.y -= separationY;
-      pin2.x += separationX;
-      pin2.y += separationY;
-
-      // Exchange some velocity for realistic bouncing
-      const tempX = pin1.velocityX * 0.3;
-      const tempY = pin1.velocityY * 0.3;
-      pin1.velocityX += pin2.velocityX * 0.3 - tempX;
-      pin1.velocityY += pin2.velocityY * 0.3 - tempY;
-      pin2.velocityX += tempX - pin2.velocityX * 0.3;
-      pin2.velocityY += tempY - pin2.velocityY * 0.3;
-    }
+  private stepPhysics(includeBall: boolean) {
+    const wasInGutter = this.ball.inGutter;
+    const knocked = stepMinigamePhysics(includeBall ? this.ball : null, this.pins, this.lane());
+    this.pinsKnocked += knocked.length;
+    knocked.forEach((pin) => this.createParticles(pin.x, pin.y));
+    if (knocked.length) this.hapticService.vibrate(ImpactStyle.Light);
+    if (!wasInGutter && this.ball.inGutter) this.hapticService.vibrate(ImpactStyle.Medium);
+    if (!includeBall) return;
+    this.ball.trail.push({ x: this.ball.x, y: this.ball.y, alpha: 1 });
+    if (this.ball.trail.length > 12) this.ball.trail.shift();
+    this.ball.trail.forEach((point, index) => (point.alpha = index / this.ball.trail.length));
   }
 
   private render() {
@@ -730,11 +474,11 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
 
   private renderLane() {
     // Lane background
-    this.ctx.fillStyle = '#8B4513';
+    this.ctx.fillStyle = '#d5ae72';
     this.ctx.fillRect(0, 0, this.LANE_WIDTH, this.LANE_HEIGHT);
 
     // Lane wood texture (39 vertical lines) - adjusted spacing for smaller lane
-    this.ctx.strokeStyle = '#654321';
+    this.ctx.strokeStyle = 'rgba(100, 65, 30, 0.2)';
     this.ctx.lineWidth = 1;
     const lineSpacing = this.LANE_WIDTH / 39; // Calculate spacing for 39 vertical lines
     for (let i = 0; i < 39; i++) {
@@ -749,6 +493,33 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     this.ctx.fillStyle = '#333';
     this.ctx.fillRect(0, 0, 18, this.LANE_HEIGHT);
     this.ctx.fillRect(this.LANE_WIDTH - 18, 0, 18, this.LANE_HEIGHT);
+    const oilEnd = this.LANE_HEIGHT - 50 - (this.lane().oilLength / 60) * 420;
+    const oil = this.ctx.createLinearGradient(0, oilEnd, 0, this.LANE_HEIGHT - 70);
+    oil.addColorStop(0, 'rgba(120, 185, 210, 0.02)');
+    oil.addColorStop(1, 'rgba(120, 185, 210, 0.24)');
+    this.ctx.fillStyle = oil;
+    this.ctx.fillRect(18, oilEnd, this.LANE_WIDTH - 36, this.LANE_HEIGHT - 70 - oilEnd);
+    this.ctx.strokeStyle = 'rgba(80, 45, 20, 0.5)';
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(18, this.LANE_HEIGHT - 85);
+    this.ctx.lineTo(this.LANE_WIDTH - 18, this.LANE_HEIGHT - 85);
+    this.ctx.stroke();
+    if (this.canRoll()) {
+      this.ctx.save();
+      this.ctx.setLineDash([6, 8]);
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      const preview = { ...this.ball, ...minigameDelivery(this.chargeStart ? this.power() : 0.65, this.aim(), this.hook()) };
+      this.ctx.moveTo(preview.x, preview.y);
+      for (let tick = 0; tick < 80 && preview.y > 160 && !preview.inGutter; tick++) {
+        stepMinigamePhysics(preview, [], this.lane());
+        this.ctx.lineTo(preview.x, preview.y);
+      }
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
   }
 
   private renderPins() {
@@ -883,7 +654,10 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
       this.ctx.fillStyle = '#1a1a1a'; // Darker than normal ball
     } else {
       // Normal ball
-      this.ctx.fillStyle = '#000';
+      const gradient = this.ctx.createRadialGradient(this.ball.x - 8, this.ball.y - 8, 2, this.ball.x, this.ball.y, this.ball.radius);
+      gradient.addColorStop(0, '#9d8bd4');
+      gradient.addColorStop(1, '#312350');
+      this.ctx.fillStyle = gradient;
     }
     this.ctx.beginPath();
     this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, 2 * Math.PI);
@@ -951,32 +725,48 @@ export class MinigamePage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private calculateScore() {
-    this.score = this.pinsKnocked * 10;
-    if (this.pinsKnocked === 10) {
-      this.score += 20; // Strike bonus
+  private finishShot() {
+    const index = this.frameIndex();
+    const frame = [...this.frames()[index], this.pinsKnocked];
+    const complete = minigameFrameComplete(frame, index);
+    const frames = this.frames().map((previous, i) => (i === index ? frame : previous));
+    const label = minigameThrowLabels(frame, index).at(-1);
+    const gutter = this.ball.inGutter && this.pinsKnocked === 0;
+    this.status.set(
+      gutter
+        ? 'Gutter ball. Adjust your line and try again.'
+        : label === 'X'
+          ? 'Strike! Beautiful shot.'
+          : label === '/'
+            ? 'Spare! Nicely picked up.'
+            : `${this.pinsKnocked} pins down. Find your line.`,
+    );
+    if (gutter) this.gutters.update((count) => count + 1);
+    if (complete && index < 9) frames.push([]);
+    this.frames.set(frames);
+    if (minigameRackSize(frame, index) === 10) this.setupPins();
+    else this.pins = this.pins.filter((pin) => !pin.fallen);
+    this.particles = [];
+    this.pinsKnocked = 0;
+    this.resetBall();
+    this.gameState.set(complete && index === 9 ? 'complete' : 'ready');
+    if (this.gameState() === 'complete') this.status.set(`Game complete! You scored ${this.score()}.`);
+    if (this.mode() === 'daily') {
+      this.dailySave = { date: this.date(), frames, pins: structuredClone(this.pins), gutters: this.gutters() };
+      void this.storage.set(SETTINGS_KEYS.dailyMinigame, this.dailySave).catch((error: unknown) => {
+        this.storageError.set(true);
+        console.warn('Unable to save daily bowling game.', error);
+      });
     }
   }
 
-  resetGame() {
-    this.setupGame();
-  }
-
-  get gameStatus(): string {
-    switch (this.gameState) {
-      case 'ready':
-        return 'Swipe to throw the ball!';
-      case 'aiming':
-        return 'Keep swiping...';
-      case 'rolling':
-        return 'Ball is rolling...';
-      case 'finished':
-        if (this.pinsKnocked === 10) {
-          return '🎉 STRIKE! Auto-resetting in 2 seconds...';
-        }
-        return `${this.pinsKnocked}/10 pins down! Resetting in 2 seconds...`;
-      default:
-        return '';
-    }
+  private restoreDaily() {
+    if (!this.dailySave) return;
+    this.frames.set(structuredClone(this.dailySave.frames));
+    this.pins = structuredClone(this.dailySave.pins);
+    this.gutters.set(this.dailySave.gutters);
+    const complete = this.frameIndex() === 9 && minigameFrameComplete(this.frames()[9], 9);
+    this.gameState.set(complete ? 'complete' : 'ready');
+    this.status.set(complete ? `Game complete! You scored ${this.score()}.` : 'Daily game resumed. Find your line.');
   }
 }

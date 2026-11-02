@@ -4,8 +4,8 @@
       <ion-menu-button menu="main-menu"></ion-menu-button>
     </ion-buttons>
     <ion-title>Minigame</ion-title>
-    <ion-buttons slot="end" class="action-sheet">
-      <ion-button expand="block" color="primary" (click)="resetGame()" class="reset-button">
+    <ion-buttons slot="end">
+      <ion-button aria-label="New practice game" [disabled]="mode() !== 'practice' || !canChangeMode()" (click)="resetGame()">
         <ion-icon name="refresh" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -13,34 +13,129 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="bowling-minigame-content">
-  <!-- Game Status (just the status, no score) -->
-  <!-- <div class="game-status">
-          <h2>{{ gameStatus }}</h2>
-        </div> -->
+  <main class="bowling-game">
+    <div class="game-heading">
+      <div>
+        <p class="eyebrow">Lightning lanes</p>
+        <h1>{{ mode() === "daily" ? "Your daily ten frames" : "Find your pocket" }}</h1>
+      </div>
+      <div class="total-score">
+        <strong>{{ score() }}</strong
+        ><span>Score</span>
+      </div>
+    </div>
 
-  <!-- Game Canvas -->
-  <div class="canvas-container">
-    <canvas #gameCanvas class="game-canvas"></canvas>
-  </div>
+    <div class="mode-switch" role="group" aria-label="Game mode">
+      <ion-button
+        [fill]="mode() === 'daily' ? 'solid' : 'clear'"
+        [attr.aria-pressed]="mode() === 'daily'"
+        [disabled]="!canChangeMode()"
+        (click)="selectMode('daily')"
+        >Daily</ion-button
+      >
+      <ion-button
+        [fill]="mode() === 'practice' ? 'solid' : 'clear'"
+        [attr.aria-pressed]="mode() === 'practice'"
+        [disabled]="!canChangeMode()"
+        (click)="selectMode('practice')"
+        >Practice</ion-button
+      >
+      <span>{{ mode() === "daily" ? date() + " · UTC" : "Unlimited games" }}</span>
+    </div>
 
-  <!-- Score Display - Now at Bottom -->
-  <!-- <div class="score-display">
-          <div class="score-item">
-            <span class="score-label">Score:</span>
-            <span class="score-value">{{ score }}</span>
+    <section class="scorecard" aria-label="Scoresheet">
+      @for (frame of scorecard(); track frame.number) {
+        <div class="score-frame" [class.active]="frame.active" [attr.aria-label]="'Frame ' + frame.number">
+          <span class="frame-number">{{ frame.number }}</span>
+          <div class="throws">
+            @for (roll of frame.throws; track $index) {
+              <span>{{ roll }}</span>
+            }
           </div>
-          <div class="score-item">
-            <span class="score-label">Pins:</span>
-            <span class="score-value">{{ pinsKnocked }}/10</span>
-          </div>
-        </div> -->
+          <strong>{{ frame.score ?? "·" }}</strong>
+        </div>
+      }
+    </section>
 
-  <!-- Instructions -->
-  <div class="instructions">
-    <h3>How to Play:</h3>
-    <ul>
-      <li>Swipe in any direction - ball follows your finger!</li>
-      <li>Game auto-resets after each throw!</li>
-    </ul>
-  </div>
+    <div class="lane-info">
+      <strong
+        >{{ lane().name }} <span>· {{ lane().oilLength }} ft oil</span></strong
+      >
+      <span>{{ gameState() === "complete" ? "Final score" : "Frame " + (frameIndex() + 1) + " / 10 · Ball " + ballNumber() }}</span>
+    </div>
+
+    <div class="canvas-container">
+      <canvas
+        #gameCanvas
+        class="game-canvas"
+        tabindex="0"
+        role="application"
+        aria-label="Bowling lane"
+        aria-describedby="bowling-controls"
+        (pointerdown)="pointerStart($event)"
+        (pointermove)="pointerMove($event)"
+        (pointerup)="pointerEnd($event)"
+        (pointercancel)="cancelGesture()"
+        (lostpointercapture)="cancelGesture()"
+        (keydown)="keyDown($event)"
+        (keyup)="keyUp($event)"
+        (blur)="cancelGesture()">
+        Use the Roll ball button to play, or focus the lane for keyboard controls.
+      </canvas>
+      @if (gameState() === "complete") {
+        <div class="game-result" role="status">
+          <p class="eyebrow">{{ mode() === "daily" ? "Daily lane complete" : "Practice complete" }}</p>
+          <h2>{{ score() }} <span>/ 300</span></h2>
+          <p>{{ gutters() === 0 ? "Gutter-free game. Great control!" : gutters() + " gutter balls. Keep finding your line." }}</p>
+          <ion-button (click)="mode() === 'daily' ? selectMode('practice') : resetGame()">{{
+            mode() === "daily" ? "Keep practicing" : "Bowl again"
+          }}</ion-button>
+        </div>
+      }
+    </div>
+
+    <p class="game-status" role="status" aria-live="polite">{{ loading() ? "Loading your daily lane…" : status() }}</p>
+
+    <section class="game-controls" aria-label="Delivery controls">
+      <div class="hook-label">
+        <strong>Hook</strong><span>{{ hookLabel() }}</span>
+      </div>
+      <ion-range
+        aria-label="Hook"
+        [min]="-5"
+        [max]="5"
+        [step]="1"
+        [snaps]="true"
+        [value]="hook()"
+        [disabled]="!canRoll()"
+        (ionInput)="hook.set(+$event.detail.value)"></ion-range>
+      <div class="power-meter" role="progressbar" aria-label="Throw power" [attr.aria-valuenow]="power() * 100" aria-valuemin="0" aria-valuemax="100">
+        <div [style.width.%]="power() * 100"></div>
+      </div>
+      <ion-button expand="block" [disabled]="!canRoll()" (click)="roll()">Roll ball</ion-button>
+    </section>
+
+    <details class="instructions" id="bowling-controls">
+      <summary>How to play</summary>
+      <p>
+        Drag sideways to line up, then flick upward to roll. A faster swipe adds power; its angle sets your aim. Set your hook before each delivery.
+        Oil keeps the ball straight until it reaches the dry back end.
+      </p>
+      <p>
+        Keyboard: focus the lane, use ← / → to move, A / D to aim and [ / ] to change hook. Hold Space to build power, then release to roll. Or use
+        Roll ball for a preset-power delivery.
+      </p>
+      <p>
+        Ten frames, real bowling scoring: X = strike, / = spare, – = miss. Bonuses appear once your next throws resolve them. Earn bonus balls in
+        frame ten with a strike or spare.
+      </p>
+      <p>
+        Daily has one saved game per UTC date, with the same lane for everyone. Practice as often as you like. Mini-game scores stay separate from
+        your tracked games.
+      </p>
+    </details>
+    @if (storageError()) {
+      <p class="storage-warning">Your daily game could not be saved or restored. You can still play on this screen.</p>
+    }
+  </main>
 </ion-content>

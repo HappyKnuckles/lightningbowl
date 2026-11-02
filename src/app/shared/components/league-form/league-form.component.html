@@ -67,7 +67,7 @@
         <ion-label color="primary">Start new season</ion-label>
       </ion-item>
     </ion-list>
-    <p class="hint">A season runs until the next one starts. Swipe a season to remove it; its games then count toward the season before.</p>
+    <p class="hint">A season runs until the next one starts.</p>
   }
 
   <h2 class="sec-heading"><span>Handicap</span><span class="divider-line"></span></h2>
@@ -148,7 +148,7 @@
   }
 </ion-content>
 
-@if (error(); as message) {
+@if (footerError(); as message) {
   <ion-footer>
     <ion-toolbar>
       <ion-text color="medium"

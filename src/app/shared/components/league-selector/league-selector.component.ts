@@ -156,21 +156,18 @@ export class LeagueSelectorComponent implements OnInit {
     if (role === 'delete') this.applySelection('');
   }
 
+  /** Opens the New Event form with the searched name, and picks the event once it's saved. */
   async createLeague(): Promise<void> {
     const name = this.creatableName();
     if (!name) return;
-    try {
-      await this.leaguesStore.addLeague(name);
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveSuccess, 'add');
-      void this.analyticsService.trackLeagueCreated({ name });
-      if (this.isAddPage()) {
-        this.selectLeague(name);
-      } else {
-        this.searchTerm.set('');
-      }
-    } catch (error) {
-      console.error('Error adding league:', error);
-      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
+    const modal = await this.modalController.create({ component: LeagueFormComponent, componentProps: { suggestedName: name } });
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss<{ name: string }>();
+    if (role !== 'confirm' || !data) return;
+    if (this.isAddPage()) {
+      this.selectLeague(data.name);
+    } else {
+      this.searchTerm.set('');
     }
   }
 

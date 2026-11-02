@@ -84,14 +84,6 @@
   }
 }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  text-align: center;
-}
-
 // Season picker of the opened league: All, then the seasons newest first, then a new one.
 .seasons {
   --min-height: 0;

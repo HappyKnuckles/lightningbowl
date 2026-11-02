@@ -36,13 +36,7 @@
   </ion-refresher>
 
   @if (leagueKeys().length <= 0 && !loadingService.isLoading()) {
-    <div class="no-game-text empty">
-      <ion-text>Add your league or tournament to follow its stats, season by season.</ion-text>
-      <ion-button fill="outline" (click)="addLeague()">
-        <ion-icon name="add-outline" slot="start"></ion-icon>
-        Add league
-      </ion-button>
-    </div>
+    <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
   } @else if (noLeaguesShown() && !isVisibilityEdit()) {
     <ion-text class="no-game-text" (longPressed)="editVisibility()" [delay]="1000" appLongPress> No leagues selected to show! </ion-text>
   } @else {
@@ -118,7 +112,7 @@
           </ion-buttons>
         </ion-toolbar>
 
-        @if (league !== practice && detailLeague()?.type !== "tournament") {
+        @if (league !== practice && detailLeague()?.type !== "tournament" && detailAllGames().length > 0) {
           <ion-toolbar class="seasons">
             <div class="season-chips">
               <ion-chip
@@ -143,79 +137,85 @@
           </ion-toolbar>
         }
 
-        <ion-toolbar>
-          <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)">
-            @for (segment of segments; track segment) {
-              <ion-segment-button [value]="segment" [contentId]="segment + '-' + league">
-                <ion-label class="segment-label">{{ segment }}</ion-label>
-              </ion-segment-button>
-            }
-          </ion-segment>
-        </ion-toolbar>
+        @if (detailAllGames().length > 0) {
+          <ion-toolbar>
+            <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChanged($event)">
+              @for (segment of segments; track segment) {
+                <ion-segment-button [value]="segment" [contentId]="segment + '-' + league">
+                  <ion-label class="segment-label">{{ segment }}</ion-label>
+                </ion-segment-button>
+              }
+            </ion-segment>
+          </ion-toolbar>
+        }
       </ion-header>
 
       <ion-content #modalContent>
-        <ion-segment-view>
-          <ion-segment-content id="Overall-{{ league }}">
-            <section class="tab">
-              @if (detailGames().length === 0) {
-                <ion-text class="no-game-text"> No games in this season yet. </ion-text>
-              } @else {
+        @if (detailAllGames().length === 0) {
+          <ion-text class="no-game-text"> Start playing a few games to see your stats here! </ion-text>
+        } @else {
+          <ion-segment-view>
+            <ion-segment-content id="Overall-{{ league }}">
+              <section class="tab">
+                @if (detailGames().length === 0) {
+                  <ion-text class="no-game-text"> No games in this season yet. </ion-text>
+                } @else {
+                  <app-stat-display
+                    [statDefinitions]="statDefinitions"
+                    [title]="detailTitle()"
+                    [currentStats]="detailStats()"
+                    [prevStats]="compareStats()">
+                  </app-stat-display>
+                  @for (highlight of detailHighlights(); track highlight.title) {
+                    <app-stat-highlight-item
+                      [title]="highlight.title"
+                      [item]="highlight.item"
+                      [allItems]="highlight.allItems"
+                      [sortMode]="highlight.sortMode"
+                      [totalGames]="detailStats().totalGames"
+                      [emptyMessage]="highlight.emptyMessage"
+                      [imageUrlBase]="highlight.imageUrlBase"
+                      [roundImage]="highlight.roundImage">
+                    </app-stat-highlight-item>
+                  }
+                }
+                <h2 class="sec-heading" [hidden]="detailGames().length === 0"><span>Score Analysis</span><span class="divider-line"></span></h2>
+                <figure class="chart-card" [hidden]="detailGames().length === 0">
+                  <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+                </figure>
+              </section>
+            </ion-segment-content>
+
+            <ion-segment-content id="Spares-{{ league }}">
+              <section class="tab">
+                <app-stat-spare [title]="'Spare Stats'" [prevStats]="compareStats()" [stats]="detailStats()" id="league-spareStats"> </app-stat-spare>
+                <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
+                <figure class="chart-card">
+                  <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+                </figure>
+              </section>
+            </ion-segment-content>
+
+            <ion-segment-content id="Pins-{{ league }}">
+              <section class="tab">
                 <app-stat-display
-                  [statDefinitions]="statDefinitions"
-                  [title]="detailTitle()"
+                  [title]="'Pin Stats'"
+                  [statDefinitions]="PIN_STAT_DEFINITIONS"
                   [currentStats]="detailStats()"
                   [prevStats]="compareStats()">
                 </app-stat-display>
-                @for (highlight of detailHighlights(); track highlight.title) {
-                  <app-stat-highlight-item
-                    [title]="highlight.title"
-                    [item]="highlight.item"
-                    [allItems]="highlight.allItems"
-                    [sortMode]="highlight.sortMode"
-                    [totalGames]="detailStats().totalGames"
-                    [emptyMessage]="highlight.emptyMessage"
-                    [imageUrlBase]="highlight.imageUrlBase"
-                    [roundImage]="highlight.roundImage">
-                  </app-stat-highlight-item>
-                }
-              }
-              <h2 class="sec-heading" [hidden]="detailGames().length === 0"><span>Score Analysis</span><span class="divider-line"></span></h2>
-              <figure class="chart-card" [hidden]="detailGames().length === 0">
-                <canvas #scoreChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-              </figure>
-            </section>
-          </ion-segment-content>
+                <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="detailLeaves().best"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="detailLeaves().worst"></app-stat-pin-leave>
+                <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="detailLeaves().common" [allLeaves]="detailLeaves().all">
+                </app-stat-pin-leave>
+              </section>
+            </ion-segment-content>
 
-          <ion-segment-content id="Spares-{{ league }}">
-            <section class="tab">
-              <app-stat-spare [title]="'Spare Stats'" [prevStats]="compareStats()" [stats]="detailStats()" id="league-spareStats"> </app-stat-spare>
-              <h2 class="sec-heading"><span>Spare Distribution</span><span class="divider-line"></span></h2>
-              <figure class="chart-card">
-                <canvas #pinChart class="average-score" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-              </figure>
-            </section>
-          </ion-segment-content>
-
-          <ion-segment-content id="Pins-{{ league }}">
-            <section class="tab">
-              <app-stat-display
-                [title]="'Pin Stats'"
-                [statDefinitions]="PIN_STAT_DEFINITIONS"
-                [currentStats]="detailStats()"
-                [prevStats]="compareStats()">
-              </app-stat-display>
-              <app-stat-pin-leave [title]="'Strongest Spares'" [leaveStats]="detailLeaves().best"></app-stat-pin-leave>
-              <app-stat-pin-leave [title]="'Weakest Spares'" [leaveStats]="detailLeaves().worst"></app-stat-pin-leave>
-              <app-stat-pin-leave [title]="'Most Common Leaves'" [leaveStats]="detailLeaves().common" [allLeaves]="detailLeaves().all">
-              </app-stat-pin-leave>
-            </section>
-          </ion-segment-content>
-
-          <ion-segment-content id="Games-{{ league }}">
-            <app-game-list [games]="detailGames()" [isLeaguePage]="true" [batchSize]="30"> </app-game-list>
-          </ion-segment-content>
-        </ion-segment-view>
+            <ion-segment-content id="Games-{{ league }}">
+              <app-game-list [games]="detailGames()" [isLeaguePage]="true" [batchSize]="30"> </app-game-list>
+            </ion-segment-content>
+          </ion-segment-view>
+        }
       </ion-content>
     }
   </ng-template>

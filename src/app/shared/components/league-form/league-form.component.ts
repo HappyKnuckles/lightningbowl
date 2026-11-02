@@ -103,6 +103,8 @@ export class LeagueFormComponent implements OnInit {
   // plain inputs: ModalController hands componentProps over by assigning them
   @Input() league?: League;
   @Input() newSeason = false;
+  /** Name to start a new event with, e.g. what was typed in the league picker. */
+  @Input() suggestedName = '';
 
   readonly isEdit = computed(() => !!this.league);
   readonly #leagueGames = computed(() => {
@@ -148,6 +150,8 @@ export class LeagueFormComponent implements OnInit {
     return null;
   });
   readonly saving = signal(false);
+  /** What keeps the event from being saved, except a missing name, which the disabled Save already shows. */
+  readonly footerError = computed(() => (this.name().trim() ? this.error() : null));
   readonly finished = signal(false);
   readonly sanctioned = signal(false);
   readonly note = signal('');
@@ -176,6 +180,7 @@ export class LeagueFormComponent implements OnInit {
         });
       }
     } else {
+      this.name.set(this.suggestedName.trim());
       // most leagues are tracked by season: start with one beginning today
       this.seasons.set(this.#toDrafts([{ id: newSeasonId(), ...nextSeasonDraft() }]));
     }

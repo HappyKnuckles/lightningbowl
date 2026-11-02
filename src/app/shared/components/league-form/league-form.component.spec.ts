@@ -71,12 +71,24 @@ describe('LeagueFormComponent', () => {
     expect(modalCtrl.dismiss).toHaveBeenCalledWith(saved, 'confirm');
   });
 
+  it('starts with the name typed in the league picker', () => {
+    fixture = TestBed.createComponent(LeagueFormComponent);
+    component = fixture.componentInstance;
+    component.suggestedName = ' Friday Doubles ';
+    fixture.detectChanges();
+
+    expect(component.name()).toBe('Friday Doubles');
+  });
+
   it('needs a name that no other league has', async () => {
     create();
     expect(component.error()).toBe('Enter a name.');
+    // a missing name only disables Save, the footer stays empty
+    expect(component.footerError()).toBeNull();
 
     component.setName(input('sunday'));
     expect(component.error()).toBe('An event with this name already exists.');
+    expect(component.footerError()).toBe('An event with this name already exists.');
 
     await component.save();
     expect(leaguesStore.addLeague).not.toHaveBeenCalled();

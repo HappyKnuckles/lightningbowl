@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, output, viewChild } from '@angular/core';
 
 import { BarRange, OilBar } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
 
@@ -22,6 +22,16 @@ export interface ChartBand {
 const BAR_W = 10;
 const PLOT_H = 100;
 const GRID_LINES = 3;
+const NICE_STEPS = [1, 2, 2.5, 5, 10];
+
+/** The smallest "round" step (1, 2, 2.5 or 5 times a power of ten, at least 1) that is at least `raw`. */
+export function niceStep(raw: number): number {
+  if (raw <= 1) {
+    return 1;
+  }
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  return NICE_STEPS.find((s) => s * magnitude >= raw - 1e-9)! * magnitude;
+}
 
 /**
  * Oil as stacked bars, forward passes below and reverse passes on top, like a pattern sheet's
@@ -36,18 +46,22 @@ const GRID_LINES = 3;
   host: { '(pointerdown)': 'onPointer($event)', '(pointermove)': 'onPointer($event)' },
 })
 export class PatternOilChartComponent {
-  readonly #host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   readonly bars = input.required<OilBar[]>();
   readonly color = input('red');
   readonly ticks = input<ChartTick[]>([]);
   readonly bands = input<ChartBand[]>([]);
   readonly label = input('');
+  /** Unit of the bar values, shown on the top y-axis label. */
+  readonly unit = input('µL');
   /** The highlighted bars. */
   readonly selected = input<BarRange | null>(null);
-
   /** The bars tapped or dragged across. */
   readonly barPick = output<BarPick>();
-  readonly #max = computed(() => Math.max(1, ...this.bars().map((b) => b.forward + b.reverse)));
+
+  private readonly plot = viewChild.required<ElementRef<HTMLElement>>('plot');
+  readonly #step = computed(() => niceStep(Math.max(0, ...this.bars().map((b) => b.forward + b.reverse)) / GRID_LINES));
+  /** Top of the y-axis: the fullest bar rounded up to a whole number of round steps. */
+  readonly #max = computed(() => this.#step() * GRID_LINES);
 
   readonly width = computed(() => this.bars().length * BAR_W);
   readonly viewBox = computed(() => `0 0 ${this.width()} ${PLOT_H}`);
@@ -67,6 +81,15 @@ export class PatternOilChartComponent {
     }),
   );
   readonly grid = computed(() => Array.from({ length: GRID_LINES }, (_, i) => (PLOT_H * i) / GRID_LINES));
+  /** Y-axis labels from the top grid line down to the baseline; `top` in % of the plot height. */
+  readonly axisLabels = computed(() =>
+    Array.from({ length: GRID_LINES + 1 }, (_, i) => {
+      const value = Number((this.#max() - i * this.#step()).toFixed(1));
+      return { top: (i / GRID_LINES) * 100, label: i === 0 ? `${value} ${this.unit()}`.trim() : `${value}` };
+    }),
+  );
+  /** Width of the axis column in `ch`, sized to its longest label. */
+  readonly axisWidth = computed(() => Math.max(...this.axisLabels().map((l) => l.label.length)) + 1);
   readonly tickMarks = computed(() => this.ticks().map((t) => ({ ...t, left: (((t.at + 0.5) * BAR_W) / this.width()) * 100 })));
 
   readonly bandMarks = computed(() =>
@@ -94,7 +117,7 @@ export class PatternOilChartComponent {
     if (event.type === 'pointermove' && event.buttons === 0) {
       return;
     }
-    const rect = this.#host.getBoundingClientRect();
+    const rect = this.plot().nativeElement.getBoundingClientRect();
     const count = this.bars().length;
     if (rect.width === 0 || count === 0) {
       return;

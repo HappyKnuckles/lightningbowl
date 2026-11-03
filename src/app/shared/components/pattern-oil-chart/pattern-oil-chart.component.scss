@@ -1,10 +1,39 @@
 :host {
   position: relative;
-  display: block;
+  display: flex;
   min-height: 80px;
   cursor: pointer;
   touch-action: pan-y; // horizontal drags pick bars, vertical ones still scroll
   user-select: none;
+}
+
+// y-axis labels sit in their own column; the plot takes the rest
+.axis {
+  position: relative;
+  flex: none;
+  margin-top: 6px; // room for the top label's upper half
+  margin-bottom: 16px; // ticks below
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--ion-color-medium);
+  pointer-events: none;
+
+  &.with-bands {
+    margin-top: 20px; // ratio bands above
+  }
+
+  span {
+    position: absolute;
+    right: 4px;
+    white-space: nowrap;
+    transform: translateY(-50%);
+  }
+}
+
+.plot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 .selected-column {
@@ -14,10 +43,10 @@
 
 .chart {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 6px;
+  left: 0; // lines up with the axis
   width: 100%;
-  height: calc(100% - 16px); // ticks below
+  height: calc(100% - 22px); // ticks below
 
   &.with-bands {
     top: 20px;

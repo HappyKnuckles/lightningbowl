@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PatternOilChartComponent } from './pattern-oil-chart.component';
+import { niceStep, PatternOilChartComponent } from './pattern-oil-chart.component';
 
 describe('PatternOilChartComponent', () => {
   let fixture: ComponentFixture<PatternOilChartComponent>;
@@ -14,19 +14,37 @@ describe('PatternOilChartComponent', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
-  it('stacks the reverse oil on the forward oil, scaled to the fullest bar', () => {
+  it('stacks the reverse oil on the forward oil, scaled to the y-axis top', () => {
     const el = render({
       bars: [
-        { forward: 50, reverse: 50 },
-        { forward: 25, reverse: 0 },
+        { forward: 75, reverse: 75 },
+        { forward: 30, reverse: 0 },
       ],
     });
 
     const forward = [...el.querySelectorAll('.forward')].map((r) => Number(r.getAttribute('height')));
     const reverse = [...el.querySelectorAll('.reverse')].map((r) => Number(r.getAttribute('height')));
-    expect(forward).toEqual([50, 25]);
+    expect(forward).toEqual([50, 20]);
     expect(reverse).toEqual([50, 0]);
     expect(el.querySelector('.reverse')?.getAttribute('y')).toBe('0');
+  });
+
+  it('rounds the y-axis up to round steps', () => {
+    expect(niceStep(0)).toBe(1);
+    expect(niceStep(33.4)).toBe(50);
+    expect(niceStep(40)).toBe(50);
+    expect(niceStep(50)).toBe(50);
+    expect(niceStep(180)).toBe(200);
+    expect(niceStep(240)).toBe(250);
+    expect(niceStep(700)).toBe(1000);
+  });
+
+  it('labels the y-axis at each grid line, with the unit on top', () => {
+    const el = render({ bars: [{ forward: 100, reverse: 20 }], unit: 'µL' });
+
+    const labels = [...el.querySelectorAll<HTMLElement>('.axis span')];
+    expect(labels.map((l) => l.textContent?.trim())).toEqual(['150 µL', '100', '50', '0']);
+    expect(labels.map((l) => l.style.top)).toEqual(['0%', '33.3333%', '66.6667%', '100%']);
   });
 
   it('places tick and band labels over their bars', () => {
@@ -67,13 +85,15 @@ describe('PatternOilChartComponent', () => {
     document.body.appendChild(el);
     const picked: string[] = [];
     fixture.componentInstance.barPick.subscribe(({ range, start }) => picked.push(`${range.from}-${range.to}${start ? ' start' : ''}`));
-    const left = el.getBoundingClientRect().left;
+    // the plot sits right of the y-axis column, so positions are relative to it
+    const { left, width } = el.querySelector('.plot')!.getBoundingClientRect();
+    const at = (fraction: number) => left + width * fraction;
 
-    el.dispatchEvent(new PointerEvent('pointerdown', { clientX: left + 150, buttons: 1 }));
-    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 160, buttons: 1 })); // same bar: nothing new
-    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 350, buttons: 1 }));
-    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 50, buttons: 1 }));
-    el.dispatchEvent(new PointerEvent('pointermove', { clientX: left + 250, buttons: 0 })); // not pressed: ignored
+    el.dispatchEvent(new PointerEvent('pointerdown', { clientX: at(0.375), buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: at(0.4), buttons: 1 })); // same bar: nothing new
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: at(0.875), buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: at(0.125), buttons: 1 }));
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: at(0.625), buttons: 0 })); // not pressed: ignored
 
     expect(picked).toEqual(['1-1 start', '1-3', '0-1']);
     el.remove();

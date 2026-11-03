@@ -11,6 +11,7 @@ import { boardName, boardStripe, CHART_H, CHART_W, chartPointToLane, footBand } 
 import {
   BarRange,
   blockRatios,
+  formatOil,
   oilByBoard,
   oilByFoot,
   patternFacts,
@@ -173,10 +174,4 @@ export class PatternInfoComponent {
       this.footRange.set({ from: Math.min(anchor.foot, footIndex), to: Math.max(anchor.foot, footIndex) });
     }
   }
-}
-
-/** Oil on boards or feet: the total and how it splits into forward (↑) and reverse (↓) passes. */
-function formatOil(forward: number, reverse: number): string {
-  const total = Math.round(forward + reverse);
-  return total === 0 ? 'no oil' : `${total} µL · ${Math.round(forward)} ↑ ${Math.round(reverse)} ↓`;
 }

@@ -171,3 +171,9 @@ export function patternRatioColor(ratio: string | undefined): string {
   }
   return value >= 8 ? 'green' : 'blue';
 }
+
+/** Oil on boards or feet: the total and how it splits into forward (↑) and reverse (↓) passes. */
+export function formatOil(forward: number, reverse: number): string {
+  const total = Math.round(forward + reverse);
+  return total === 0 ? 'no oil' : `${total} µL · ${Math.round(forward)} ↑ ${Math.round(reverse)} ↓`;
+}

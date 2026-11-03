@@ -1,5 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, output, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import Chart from 'chart.js/auto';
 
+import { ChartTick, generateOilChart } from 'src/app/core/services/chart/generation/oil-chart-generator';
+import { ChartBand } from 'src/app/core/services/chart/plugins/oil-chart.plugin';
 import { BarRange, OilBar } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
 
 /** A picked run of bars; `start` is set on the tap that begins it, not while dragging it wider. */
@@ -8,35 +23,9 @@ export interface BarPick {
   start: boolean;
 }
 
-/** A label under the chart at a bar (0-based), or a band label over a range of bars above it. */
-export interface ChartTick {
-  at: number;
-  label: string;
-}
-export interface ChartBand {
-  from: number;
-  label: string;
-  to: number;
-}
-
-const BAR_W = 10;
-const PLOT_H = 100;
-const GRID_LINES = 3;
-const NICE_STEPS = [1, 2, 2.5, 5, 10];
-
-/** The smallest "round" step (1, 2, 2.5 or 5 times a power of ten, at least 1) that is at least `raw`. */
-export function niceStep(raw: number): number {
-  if (raw <= 1) {
-    return 1;
-  }
-  const magnitude = 10 ** Math.floor(Math.log10(raw));
-  return NICE_STEPS.find((s) => s * magnitude >= raw - 1e-9)! * magnitude;
-}
-
 /**
- * Oil as stacked bars, forward passes below and reverse passes on top, like a pattern sheet's
- * "left to right" and "front to back" graphs. Stretches to the size it's given. A tap picks the bar
- * under the finger, dragging picks every bar from there to the finger; the picked bars are highlighted.
+ * Oil per board or per foot as a stacked bar chart that stretches to the size it's given. A tap picks the
+ * bar under the finger, dragging picks every bar from there to the finger; the picked bars are highlighted.
  */
 @Component({
   selector: 'app-pattern-oil-chart',
@@ -53,72 +42,40 @@ export class PatternOilChartComponent {
   readonly label = input('');
   /** The highlighted bars. */
   readonly selected = input<BarRange | null>(null);
+
   /** The bars tapped or dragged across. */
   readonly barPick = output<BarPick>();
+  private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
-  private readonly plot = viewChild.required<ElementRef<HTMLElement>>('plot');
-  readonly #step = computed(() => niceStep(Math.max(0, ...this.bars().map((b) => b.forward + b.reverse)) / GRID_LINES));
-  /** Top of the y-axis: the fullest bar rounded up to a whole number of round steps. */
-  readonly #max = computed(() => this.#step() * GRID_LINES);
-
-  readonly width = computed(() => this.bars().length * BAR_W);
-  readonly viewBox = computed(() => `0 0 ${this.width()} ${PLOT_H}`);
-
-  readonly #y = (value: number) => PLOT_H - (value / this.#max()) * PLOT_H;
-
-  readonly rects = computed(() =>
-    this.bars().map((bar, i) => {
-      const forwardTop = this.#y(bar.forward);
-      const top = this.#y(bar.forward + bar.reverse);
-      return {
-        key: i,
-        x: i * BAR_W + 0.5,
-        forward: { y: forwardTop, height: PLOT_H - forwardTop },
-        reverse: { y: top, height: forwardTop - top },
-      };
-    }),
-  );
-  readonly grid = computed(() => Array.from({ length: GRID_LINES }, (_, i) => (PLOT_H * i) / GRID_LINES));
-  /** Y-axis values on the grid lines, top down (the baseline is 0 without saying); `top` in % of the plot height. */
-  readonly axisLabels = computed(() =>
-    Array.from({ length: GRID_LINES }, (_, i) => ({
-      top: (i / GRID_LINES) * 100,
-      label: `${Number((this.#max() - i * this.#step()).toFixed(1))}`,
-    })),
-  );
-  readonly tickMarks = computed(() => this.ticks().map((t) => ({ ...t, left: (((t.at + 0.5) * BAR_W) / this.width()) * 100 })));
-
-  readonly bandMarks = computed(() =>
-    this.bands().map((b) => ({ ...b, left: ((b.from * BAR_W) / this.width()) * 100, width: (((b.to - b.from + 1) * BAR_W) / this.width()) * 100 })),
-  );
-
-  readonly selectedColumn = computed(() => {
-    const range = this.selected();
-    if (!range) {
-      return null;
-    }
-    const from = Math.max(0, range.from);
-    const to = Math.min(this.bars().length - 1, range.to);
-    return to < from ? null : { x: from * BAR_W, width: (to - from + 1) * BAR_W };
-  });
-  readonly baseline = PLOT_H;
-  readonly barWidth = BAR_W - 1;
-
-  readonly plotHeight = PLOT_H;
+  readonly #rendered = signal(false);
+  /** The Chart.js instance, once the canvas is rendered. */
+  chart: Chart<'bar'> | undefined;
   #anchor = 0;
   #last: number | null = null;
+
+  constructor() {
+    afterNextRender(() => this.#rendered.set(true));
+    effect(() => {
+      const data = { bars: this.bars(), color: this.color(), ticks: this.ticks(), bands: this.bands(), selected: this.selected() };
+      if (this.#rendered()) {
+        this.chart = generateOilChart(this.canvas(), data, this.chart);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => this.chart?.destroy());
+  }
 
   onPointer(event: PointerEvent): void {
     // moves only count while pressed, so hovering with a mouse does nothing
     if (event.type === 'pointermove' && event.buttons === 0) {
       return;
     }
-    const rect = this.plot().nativeElement.getBoundingClientRect();
+    const area = this.chart?.chartArea;
     const count = this.bars().length;
-    if (rect.width === 0 || count === 0) {
+    if (!area || area.width <= 0 || count === 0) {
       return;
     }
-    const index = Math.min(count - 1, Math.max(0, Math.floor(((event.clientX - rect.left) / rect.width) * count)));
+    const x = event.clientX - this.canvas().nativeElement.getBoundingClientRect().left;
+    const index = Math.min(count - 1, Math.max(0, Math.floor(((x - area.left) / area.width) * count)));
     if (event.type === 'pointerdown') {
       this.#anchor = index;
       this.#last = index;

@@ -263,7 +263,16 @@ export class PatternPage implements OnInit {
     const modal = await this.modalCtrl.create({
       component: PatternFormComponent,
     });
-    return await modal.present();
+    await modal.present();
+    const { role } = await modal.onWillDismiss();
+    if (role === 'confirm') {
+      // show the new pattern: reload the list from the server, bypassing the page cache
+      this.currentPage = 1;
+      this.hasMoreData = true;
+      this.patterns.set([]);
+      this.lastLoadTime = 0;
+      await this.loadPatterns(undefined, true);
+    }
   }
 
   getRatioValue(ratio: string): number {

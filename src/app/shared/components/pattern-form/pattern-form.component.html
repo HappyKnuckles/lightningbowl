@@ -1,150 +1,175 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-buttons slot="start" style="padding: 4px">
+    <ion-buttons slot="start">
       <ion-button color="medium" (click)="cancel()">
         <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Add Pattern</ion-title>
+    <ion-title>New Pattern</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="reset()" [strong]="true"> Reset </ion-button>
+      <ion-button [disabled]="!canSave()" [strong]="true" (click)="save()">
+        @if (saving()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          Save
+        }
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <form [formGroup]="patternForm">
-    <h4 class="ion-padding">Pattern Data</h4>
-    <ion-list lines="full">
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Title" formControlName="title"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="30" label="Distance" formControlName="distance" type="number"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="2.00" label="Ratio" formControlName="ratio"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="12.74" label="Oil Forward" formControlName="forward" type="number"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="10.31" label="Oil Reverse" formControlName="reverse" type="number"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Volume" formControlName="volume" readonly="true" type="number"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="20" label="Pump" formControlName="pump" type="number"></ion-input>
-      </ion-item>
-
-      <ion-item>
-        <ion-input class="ion-text-right" placeholder="" label="Tanks" formControlName="tanks"></ion-input>
-      </ion-item>
-    </ion-list>
-
-    <h4 class="ion-padding">Forward Data</h4>
-    <div formArrayName="forwards_data">
-      @for (item of forwardsDataArray.controls; track item; let i = $index) {
-        <div [formGroupName]="i">
-          <div class="row-header">
-            <h5 class="ion-padding">Entry {{ i + 1 }}</h5>
-            <ion-button fill="clear" color="danger" (click)="removeForwardData(i)">
-              <ion-icon name="trash-outline"></ion-icon>
-            </ion-button>
-          </div>
-          <ion-list lines="full">
-            <ion-item>
-              <ion-input class="ion-text-right ion-text-capitalize" placeholder="2L" label="Start" formControlName="start"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right ion-text-capitalize" placeholder="2R" label="Stop" formControlName="stop"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="1" label="Load" formControlName="load"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="25" label="Mics" formControlName="mics"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="18" label="Speed" formControlName="speed"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="3" label="Buffer" formControlName="buf"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" label="Tank" formControlName="tank"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="20" label="Total Oil" formControlName="total_oil"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="0" label="Start Dist" formControlName="distance_start"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="22" label="End Dist" formControlName="distance_end"></ion-input>
-            </ion-item>
-          </ion-list>
+  <!-- live result: what the pattern API calculates from the machine settings below -->
+  <div class="preview">
+    <div class="preview-chart">
+      @if (chartPreview(); as chart) {
+        <img alt="Pattern chart preview" [src]="chart" />
+      } @else {
+        <div class="preview-chart-empty">
+          @if (calculating()) {
+            <ion-spinner name="crescent"></ion-spinner>
+          }
         </div>
       }
-      <ion-button expand="block" (click)="addForwardData()" size="small"> Add Forward Data </ion-button>
     </div>
-
-    <h4 class="ion-padding">Reverse Data</h4>
-    <div formArrayName="reverse_data">
-      @for (item of reverseDataArray.controls; track item; let i = $index) {
-        <div [formGroupName]="i">
-          <div class="row-header">
-            <h5 class="ion-padding">Entry {{ i + 1 }}</h5>
-            <ion-button fill="clear" color="danger" (click)="removeReverseData(i)">
-              <ion-icon name="trash-outline"></ion-icon>
-            </ion-button>
-          </div>
-          <ion-list lines="full">
-            <ion-item>
-              <ion-input class="ion-text-right ion-text-capitalize" placeholder="2L" label="Start" formControlName="start"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right ion-text-capitalize" placeholder="2R" label="Stop" formControlName="stop"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="1" label="Load" formControlName="load"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="25" label="Mics" formControlName="mics"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="18" label="Speed" formControlName="speed"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="3" label="Buffer" formControlName="buf"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" label="Tank" formControlName="tank"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="20" label="Total Oil" formControlName="total_oil"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="0" label="Start Dist" formControlName="distance_start"></ion-input>
-            </ion-item>
-            <ion-item>
-              <ion-input class="ion-text-right" placeholder="22" label="End Dist" formControlName="distance_end"></ion-input>
-            </ion-item>
-          </ion-list>
+    <div class="preview-facts">
+      @for (fact of facts(); track fact.label) {
+        <div class="fact">
+          <span class="fact-label">{{ fact.label }}</span>
+          <span class="fact-value">{{ fact.value }}</span>
+          @if (fact.detail) {
+            <span class="fact-detail">{{ fact.detail }}</span>
+          }
         </div>
       }
-      <ion-button expand="block" (click)="addReverseData()" size="small"> Add Reverse Data </ion-button>
+      @if (calculationError(); as error) {
+        <ion-text color="danger"><p class="preview-error">{{ error }}</p></ion-text>
+      } @else if (calculating()) {
+        <p class="preview-status">Calculating…</p>
+      } @else {
+        <p class="preview-status">Category: Custom Patterns</p>
+      }
     </div>
-  </form>
+  </div>
+
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input
+        label="Title"
+        labelPlacement="stacked"
+        maxlength="200"
+        placeholder="e.g. Thursday league house shot"
+        [value]="title()"
+        (ionInput)="setValue('title', $event)"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input
+        inputmode="decimal"
+        label="Pump (µL)"
+        labelPlacement="stacked"
+        placeholder="45"
+        [value]="pump()"
+        (ionInput)="setValue('pump', $event)"></ion-input>
+      <ion-input label="Tanks" labelPlacement="stacked" placeholder="optional" [value]="tanks()" (ionInput)="setValue('tanks', $event)"></ion-input>
+    </ion-item>
+  </ion-list>
+
+  <ion-list-header>
+    <ion-label>Forward</ion-label>
+  </ion-list-header>
+  <ion-note class="section-hint">One row per line of the machine program. Distances and oil are calculated.</ion-note>
+  @for (view of forwardRows(); track view.row.key) {
+    <ng-container [ngTemplateOutlet]="rowCard" [ngTemplateOutletContext]="{ $implicit: view, pass: 'forward' }"></ng-container>
+  }
+  <ion-button class="add-row" expand="block" fill="clear" (click)="addRow('forward')">
+    <ion-icon name="add-outline" slot="start"></ion-icon>
+    Add forward row
+  </ion-button>
+
+  <ion-list-header>
+    <ion-label>Reverse</ion-label>
+  </ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input
+        inputmode="decimal"
+        label="Reverse starts at (ft)"
+        labelPlacement="stacked"
+        [placeholder]="reverseStartPlaceholder()"
+        [value]="reverseStart()"
+        (ionInput)="setValue('reverseStart', $event)"></ion-input>
+    </ion-item>
+  </ion-list>
+  @for (view of reverseRows(); track view.row.key) {
+    <ng-container [ngTemplateOutlet]="rowCard" [ngTemplateOutletContext]="{ $implicit: view, pass: 'reverse' }"></ng-container>
+  }
+  <ion-button class="add-row" expand="block" fill="clear" (click)="addRow('reverse')">
+    <ion-icon name="add-outline" slot="start"></ion-icon>
+    Add reverse row
+  </ion-button>
 </ion-content>
 
-<ion-footer style="display: flex" class="ion-justify-content-center">
-  <ion-button class="confirm-btn" type="submit" [disabled]="!patternForm.valid" (click)="onSubmit()">Save Pattern</ion-button>
-</ion-footer>
+@if (saveError(); as error) {
+  <ion-footer>
+    <ion-toolbar>
+      <ion-text color="danger"><p class="save-error">{{ error }}</p></ion-text>
+    </ion-toolbar>
+  </ion-footer>
+}
+
+<ng-template #rowCard let-view let-pass="pass">
+  <div class="row-card">
+    <div class="row-head">
+      <span class="row-title">Row {{ view.number }}</span>
+      <span class="row-result">{{ view.result }}</span>
+      <ion-button aria-label="Duplicate row" fill="clear" size="small" (click)="duplicateRow(pass, view.row.key)">
+        <ion-icon name="copy-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <ion-button aria-label="Remove row" color="danger" fill="clear" size="small" (click)="removeRow(pass, view.row.key)">
+        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </div>
+    <div class="row-grid">
+      <ion-input fill="outline" label="From" labelPlacement="stacked" placeholder="2L" [value]="view.row.start" (ionInput)="setRowValue(pass, view.row.key, 'start', $event)"></ion-input>
+      <ion-input fill="outline" label="To" labelPlacement="stacked" placeholder="2R" [value]="view.row.stop" (ionInput)="setRowValue(pass, view.row.key, 'stop', $event)"></ion-input>
+      <ion-input
+        fill="outline"
+        inputmode="numeric"
+        label="Loads"
+        labelPlacement="stacked"
+        [value]="view.row.load"
+        (ionInput)="setRowValue(pass, view.row.key, 'load', $event)"></ion-input>
+      <ion-input
+        fill="outline"
+        inputmode="decimal"
+        label="Mics"
+        labelPlacement="stacked"
+        [value]="view.row.mics"
+        (ionInput)="setRowValue(pass, view.row.key, 'mics', $event)"></ion-input>
+      <ion-input
+        fill="outline"
+        inputmode="decimal"
+        label="Speed"
+        labelPlacement="stacked"
+        [value]="view.row.speed"
+        (ionInput)="setRowValue(pass, view.row.key, 'speed', $event)"></ion-input>
+      <ion-input
+        fill="outline"
+        inputmode="decimal"
+        label="Buffer"
+        labelPlacement="stacked"
+        [value]="view.row.buf"
+        (ionInput)="setRowValue(pass, view.row.key, 'buf', $event)"></ion-input>
+      <ion-input fill="outline" label="Tank" labelPlacement="stacked" placeholder="–" [value]="view.row.tank" (ionInput)="setRowValue(pass, view.row.key, 'tank', $event)"></ion-input>
+      @if (view.buffing) {
+        <ion-input
+          fill="outline"
+          inputmode="decimal"
+          label="Ends at (ft)"
+          labelPlacement="stacked"
+          [value]="view.row.distanceEnd"
+          (ionInput)="setRowValue(pass, view.row.key, 'distanceEnd', $event)"></ion-input>
+      }
+    </div>
+  </div>
+</ng-template>

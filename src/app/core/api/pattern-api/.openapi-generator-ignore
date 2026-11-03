@@ -1,0 +1,6 @@
+# Not needed by the app (standalone components, generated into the app itself)
+git_push.sh
+.gitignore
+api.module.ts
+README.md
+index.ts

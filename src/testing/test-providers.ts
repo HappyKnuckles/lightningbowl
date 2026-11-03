@@ -5,6 +5,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { provideIonicAngular } from '@ionic/angular/standalone';
 import { IonicStorageModule } from '@ionic/storage-angular';
+import { providePatternApi } from 'src/app/core/services/pattern/pattern-api.provider';
 
 /**
  * Providers applied to every TestBed by the `unit-test` builder (`providersFile`
@@ -22,4 +23,5 @@ export default [
   provideNoopAnimations(),
   provideRouter([]),
   importProvidersFrom(IonicStorageModule.forRoot()),
+  providePatternApi(),
 ];

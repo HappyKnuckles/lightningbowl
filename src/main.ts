@@ -9,6 +9,7 @@ import { IonicStorageModule } from '@ionic/storage-angular';
 import { inject as injectVercelAnalytics } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import { AppComponent } from './app/app.component';
+import { providePatternApi } from './app/core/services/pattern/pattern-api.provider';
 import { routes } from './app/app.routes';
 import { CloudSyncService } from './app/core/services/cloud-sync/cloud-sync.service';
 import { AppFacade } from './app/core/stores/app.facade';
@@ -34,6 +35,7 @@ bootstrapApplication(AppComponent, {
     provideAnimationsAsync(),
     provideIonicAngular({ innerHTMLTemplatesEnabled: true }),
     provideHttpClient(withInterceptorsFromDi()),
+    providePatternApi(),
     provideAppInitializer(() => {
       void inject(AppFacade)
         .init()

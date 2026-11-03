@@ -1,7 +1,7 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
 
-import { generateOilChart, OilChartData } from './oil-chart-generator';
+import { barIndexAt, generateOilChart, OilChartData } from './oil-chart-generator';
 
 describe('generateOilChart', () => {
   let canvas: HTMLCanvasElement;
@@ -21,6 +21,7 @@ describe('generateOilChart', () => {
 
   beforeEach(() => {
     canvas = document.createElement('canvas');
+    canvas.style.cssText = 'display:block;width:400px;height:100px';
     document.body.appendChild(canvas);
   });
 
@@ -62,5 +63,16 @@ describe('generateOilChart', () => {
     expect(updated).toBe(chart);
     expect(chart.data.datasets[0].data).toEqual([3]);
     expect(chart.options.layout!.padding).toEqual({ top: 0 });
+  });
+
+  it('finds the bar under a finger, clamped to the first and last bar', () => {
+    chart = generateOilChart(new ElementRef(canvas), data({ bars: Array.from({ length: 4 }, () => ({ forward: 1, reverse: 0 })) }));
+    const { left: canvasLeft } = canvas.getBoundingClientRect();
+    const { left, width } = chart.chartArea;
+    const at = (fraction: number) => canvasLeft + left + width * fraction;
+
+    expect([0.125, 0.375, 0.625, 0.875].map((f) => barIndexAt(chart!, at(f)))).toEqual([0, 1, 2, 3]);
+    expect(barIndexAt(chart, at(-0.5))).toBe(0);
+    expect(barIndexAt(chart, at(1.5))).toBe(3);
   });
 });

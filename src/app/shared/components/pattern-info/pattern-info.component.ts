@@ -1,10 +1,12 @@
-import { Component, computed, ElementRef, input, signal, viewChild } from '@angular/core';
+import { afterNextRender, Component, computed, DestroyRef, effect, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { IonCol, IonGrid, IonIcon, IonListHeader, IonRow } from '@ionic/angular/standalone';
+import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { arrowDownOutline, arrowUpOutline } from 'ionicons/icons';
 
 import { FitScreenDirective } from 'src/app/core/directives/fit-screen/fit-screen.directive';
 import { Pattern } from 'src/app/core/models/pattern.model';
+import { barIndexAt, generateOilChart } from 'src/app/core/services/chart/generation/oil-chart-generator';
 import { boardName, boardStripe, CHART_H, CHART_W, chartPointToLane, footBand } from 'src/app/core/utils/pattern-utils/pattern-chart-geometry.utils';
 import {
   BarRange,
@@ -17,20 +19,20 @@ import {
 } from 'src/app/core/utils/pattern-utils/pattern-oil.utils';
 import { environment } from 'src/environments/environment';
 
-import { BarPick, PatternOilChartComponent } from '../pattern-oil-chart/pattern-oil-chart.component';
-
 /** Board labels under the left-to-right chart: 1, 5, 10 … 20 … 10, 5, 1 counted from each edge. */
 const BOARD_TICKS = [1, 5, 10, 15, 20, 25, 30, 35, 39].map((b) => ({ at: b - 1, label: `${b <= 20 ? b : 40 - b}` }));
 
 @Component({
   selector: 'app-pattern-info',
-  imports: [IonListHeader, IonGrid, IonRow, IonCol, IonIcon, FitScreenDirective, PatternOilChartComponent],
+  imports: [IonListHeader, IonGrid, IonRow, IonCol, IonIcon, FitScreenDirective],
   templateUrl: './pattern-info.component.html',
   styleUrl: './pattern-info.component.scss',
 })
 export class PatternInfoComponent {
   pattern = input.required<Pattern>();
   readonly overlay = viewChild<ElementRef<SVGSVGElement>>('overlay');
+  readonly boardCanvas = viewChild.required<ElementRef<HTMLCanvasElement>>('boardCanvas');
+  readonly footCanvas = viewChild.required<ElementRef<HTMLCanvasElement>>('footCanvas');
   readonly facts = computed(() => patternFacts(this.pattern()));
   readonly color = computed(() => patternRatioColor(this.pattern().ratio));
 
@@ -86,21 +88,60 @@ export class PatternInfoComponent {
     const { forward, reverse } = sumBars(this.byFoot(), range);
     return `${range.from}–${range.to + 1} ft · ${formatOil(forward, reverse)}`;
   });
+  /** The oil graphs, once their canvases are rendered. */
+  readonly #charts = signal<{ board?: Chart<'bar'>; foot?: Chart<'bar'> } | null>(null);
   readonly imagesUrl = environment.imagesUrl;
-  readonly boardTicks = BOARD_TICKS;
 
+  readonly boardTicks = BOARD_TICKS;
   readonly overlayViewBox = `0 0 ${CHART_W} ${CHART_H}`;
   #laneAnchor: { board: number | null; foot: number | null } = { board: null, foot: null };
+  #graphAnchor = 0;
+  #graphLast: number | null = null;
 
   constructor() {
     addIcons({ arrowUpOutline, arrowDownOutline });
+    afterNextRender(() => this.#charts.set({}));
+    effect(() => {
+      const charts = this.#charts();
+      const color = this.color();
+      const board = { bars: this.byBoard(), color, ticks: this.boardTicks, bands: this.ratios(), selected: this.boardRange() };
+      const foot = { bars: this.byFoot(), color, ticks: this.footTicks(), bands: [], selected: this.footRange() };
+      if (charts) {
+        charts.board = generateOilChart(this.boardCanvas(), board, charts.board);
+        charts.foot = generateOilChart(this.footCanvas(), foot, charts.foot);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => {
+      this.#charts()?.board?.destroy();
+      this.#charts()?.foot?.destroy();
+    });
   }
 
-  /** The new pick on a graph: tapping the only picked bar again clears it, anything else replaces the pick. */
-  pickRange(current: BarRange | null, pick: BarPick): BarRange | null {
-    const { from, to } = pick.range;
-    const tappedSame = pick.start && current !== null && current.from === from && current.to === to;
-    return tappedSame ? null : pick.range;
+  /** A tap on a graph picks the bar under it; dragging picks every bar from there to the finger. */
+  onGraphPointer(event: PointerEvent, graph: 'board' | 'foot'): void {
+    // moves only count while pressed, so hovering with a mouse does nothing
+    if (event.type === 'pointermove' && event.buttons === 0) {
+      return;
+    }
+    const chart = this.#charts()?.[graph];
+    const index = chart ? barIndexAt(chart, event.clientX) : null;
+    if (index !== null) {
+      this.pickBar(graph, index, event.type === 'pointerdown');
+    }
+  }
+
+  /** Picks a bar on a graph: a tap (`start`) picks it alone, or clears it if it was the only one picked; a drag widens the pick to it. */
+  pickBar(graph: 'board' | 'foot', index: number, start: boolean): void {
+    const range = graph === 'board' ? this.boardRange : this.footRange;
+    if (start) {
+      const current = range();
+      this.#graphAnchor = index;
+      this.#graphLast = index;
+      range.set(current?.from === index && current.to === index ? null : { from: index, to: index });
+    } else if (index !== this.#graphLast) {
+      this.#graphLast = index;
+      range.set({ from: Math.min(this.#graphAnchor, index), to: Math.max(this.#graphAnchor, index) });
+    }
   }
 
   /** A tap on the lane picks the board and the distance under it; dragging picks everything from there to the finger. */

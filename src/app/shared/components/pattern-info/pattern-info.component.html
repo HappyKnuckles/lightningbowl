@@ -50,24 +50,15 @@
 
     <div class="info-tile chart-tile">
       <span class="info-tile-label readout">{{ boardReadout() }}</span>
-      <app-pattern-oil-chart
-        label="Oil per board, left to right"
-        [bands]="ratios()"
-        [bars]="byBoard()"
-        [color]="color()"
-        [selected]="boardRange()"
-        [ticks]="boardTicks"
-        (barPick)="boardRange.set(pickRange(boardRange(), $event))"></app-pattern-oil-chart>
+      <div class="oil-graph" (pointerdown)="onGraphPointer($event, 'board')" (pointermove)="onGraphPointer($event, 'board')">
+        <canvas #boardCanvas aria-label="Oil per board, left to right" role="img"></canvas>
+      </div>
     </div>
     <div class="info-tile chart-tile">
       <span class="info-tile-label readout">{{ footReadout() }}</span>
-      <app-pattern-oil-chart
-        label="Oil per foot, front to back"
-        [bars]="byFoot()"
-        [color]="color()"
-        [selected]="footRange()"
-        [ticks]="footTicks()"
-        (barPick)="footRange.set(pickRange(footRange(), $event))"></app-pattern-oil-chart>
+      <div class="oil-graph" (pointerdown)="onGraphPointer($event, 'foot')" (pointermove)="onGraphPointer($event, 'foot')">
+        <canvas #footCanvas aria-label="Oil per foot, front to back" role="img"></canvas>
+      </div>
     </div>
   </div>
 </div>

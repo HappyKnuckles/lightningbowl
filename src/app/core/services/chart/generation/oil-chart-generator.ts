@@ -37,6 +37,17 @@ export function generateOilChart(canvas: ElementRef<HTMLCanvasElement>, data: Oi
   return chart;
 }
 
+/** The bar under `clientX`, clamped to the first and last bar; null before the chart has a size. */
+export function barIndexAt(chart: Chart<'bar'>, clientX: number): number | null {
+  const area = chart.chartArea;
+  const count = chart.data.labels?.length ?? 0;
+  if (!area || area.width <= 0 || count === 0) {
+    return null;
+  }
+  const x = clientX - chart.canvas.getBoundingClientRect().left;
+  return Math.min(count - 1, Math.max(0, Math.floor(((x - area.left) / area.width) * count)));
+}
+
 function createOilChart(canvas: HTMLCanvasElement): Chart<'bar'> {
   const style = getComputedStyle(canvas);
   const text = style.getPropertyValue('--ion-text-color').trim() || '#fff';

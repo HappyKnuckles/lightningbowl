@@ -48,7 +48,7 @@ describe('PatternInfoComponent', () => {
     expect(el.querySelector('.lane img')?.getAttribute('src')).toContain('chart.svg');
     const values = [...el.querySelectorAll('.info-tile-value')].map((v) => v.textContent?.trim());
     expect(values).toEqual(['37 ft', '2.92:1', '26.51 mL']);
-    expect(el.querySelectorAll('app-pattern-oil-chart').length).toBe(2);
+    expect(el.querySelectorAll('.oil-graph canvas').length).toBe(2);
     expect(component.byFoot().length).toBe(37);
     expect(component.ratios()[3].label).toBe('1:1');
   });
@@ -59,15 +59,15 @@ describe('PatternInfoComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(0);
 
-    const tap = (index: number) =>
-      component.boardRange.set(component.pickRange(component.boardRange(), { range: { from: index, to: index }, start: true }));
+    const tap = (index: number) => component.pickBar('board', index, true);
     tap(11);
     fixture.detectChanges();
 
     expect(el.querySelectorAll('.lane-overlay .highlight').length).toBe(1);
     expect(component.boardReadout()).toBe('Board 12L · 90 µL · 90 ↑ 0 ↓');
 
-    component.boardRange.set(component.pickRange(component.boardRange(), { range: { from: 7, to: 11 }, start: false }));
+    component.pickBar('board', 7, false); // dragged from board 12L to 8L
+    component.pickBar('board', 7, false); // same bar again: no change
     expect(component.boardReadout()).toBe('Boards 8L–12L · 450 µL · 450 ↑ 0 ↓');
 
     tap(11); // a new tap starts over on that board

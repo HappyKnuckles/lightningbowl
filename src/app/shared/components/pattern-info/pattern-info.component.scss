@@ -109,8 +109,18 @@
   justify-content: flex-start;
   gap: 8px;
 
-  app-pattern-oil-chart {
+  .oil-graph {
+    position: relative;
     flex: 1;
+    min-height: 80px;
+    cursor: pointer;
+    touch-action: pan-y; // horizontal drags pick bars, vertical ones still scroll
+    user-select: none;
+
+    canvas {
+      position: absolute;
+      inset: 0;
+    }
   }
 }
 

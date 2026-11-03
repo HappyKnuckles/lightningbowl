@@ -39,12 +39,12 @@ describe('PatternOilChartComponent', () => {
     expect(niceStep(700)).toBe(1000);
   });
 
-  it('labels the y-axis at each grid line, with the unit on top', () => {
-    const el = render({ bars: [{ forward: 100, reverse: 20 }], unit: 'µL' });
+  it('labels the grid lines with their values, leaving out the baseline', () => {
+    const el = render({ bars: [{ forward: 100, reverse: 20 }] });
 
     const labels = [...el.querySelectorAll<HTMLElement>('.axis span')];
-    expect(labels.map((l) => l.textContent?.trim())).toEqual(['150 µL', '100', '50', '0']);
-    expect(labels.map((l) => l.style.top)).toEqual(['0%', '33.3333%', '66.6667%', '100%']);
+    expect(labels.map((l) => l.textContent?.trim())).toEqual(['150', '100', '50']);
+    expect(labels.map((l) => l.style.top)).toEqual(['0%', '33.3333%', '66.6667%']);
   });
 
   it('places tick and band labels over their bars', () => {

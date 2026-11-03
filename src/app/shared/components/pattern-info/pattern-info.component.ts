@@ -71,7 +71,7 @@ export class PatternInfoComponent {
   readonly boardReadout = computed(() => {
     const range = this.boardRange();
     if (range === null) {
-      return 'Tap or drag across boards on the graph or the lane';
+      return 'Left to right · µL';
     }
     const { forward, reverse } = sumBars(this.byBoard(), range);
     const boards = range.from === range.to ? `Board ${boardName(range.from + 1)}` : `Boards ${boardName(range.from + 1)}–${boardName(range.to + 1)}`;
@@ -81,7 +81,7 @@ export class PatternInfoComponent {
   readonly footReadout = computed(() => {
     const range = this.footRange();
     if (range === null) {
-      return 'Tap or drag across distances on the graph or the lane';
+      return 'Front to back · µL';
     }
     const { forward, reverse } = sumBars(this.byFoot(), range);
     return `${range.from}–${range.to + 1} ft · ${formatOil(forward, reverse)}`;

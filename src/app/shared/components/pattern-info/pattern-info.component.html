@@ -49,7 +49,7 @@
     </div>
 
     <div class="info-tile chart-tile">
-      <span class="info-tile-label">Left to right · ratios</span>
+      <span class="info-tile-label readout">{{ boardReadout() }}</span>
       <app-pattern-oil-chart
         label="Oil per board, left to right"
         [bands]="ratios()"
@@ -58,10 +58,9 @@
         [selected]="boardRange()"
         [ticks]="boardTicks"
         (barPick)="boardRange.set(pickRange(boardRange(), $event))"></app-pattern-oil-chart>
-      <span class="info-tile-detail readout">{{ boardReadout() }}</span>
     </div>
     <div class="info-tile chart-tile">
-      <span class="info-tile-label">Front to back · ft</span>
+      <span class="info-tile-label readout">{{ footReadout() }}</span>
       <app-pattern-oil-chart
         label="Oil per foot, front to back"
         [bars]="byFoot()"
@@ -69,7 +68,6 @@
         [selected]="footRange()"
         [ticks]="footTicks()"
         (barPick)="footRange.set(pickRange(footRange(), $event))"></app-pattern-oil-chart>
-      <span class="info-tile-detail readout">{{ footReadout() }}</span>
     </div>
   </div>
 </div>

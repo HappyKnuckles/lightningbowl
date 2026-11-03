@@ -1,9 +1,4 @@
 <!-- labels in HTML keep their size while the bars stretch -->
-<div aria-hidden="true" class="axis" [class.with-bands]="bands().length" [style.width.ch]="axisWidth()">
-  @for (tick of axisLabels(); track tick.top) {
-    <span [style.top.%]="tick.top">{{ tick.label }}</span>
-  }
-</div>
 <div #plot class="plot">
   @if (bands().length) {
     <div class="bands">
@@ -37,6 +32,12 @@
     }
     <line class="baseline" x1="0" [attr.x2]="width()" [attr.y1]="baseline" [attr.y2]="baseline" />
   </svg>
+  <!-- y values sit on their grid lines inside the plot, so the bars keep the full width -->
+  <div aria-hidden="true" class="axis" [class.with-bands]="bands().length">
+    @for (tick of axisLabels(); track tick.top) {
+      <span [style.top.%]="tick.top">{{ tick.label }}</span>
+    }
+  </div>
   <div class="ticks">
     @for (tick of tickMarks(); track tick.at) {
       <span [style.left.%]="tick.left">{{ tick.label }}</span>

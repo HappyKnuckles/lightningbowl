@@ -51,8 +51,6 @@ export class PatternOilChartComponent {
   readonly ticks = input<ChartTick[]>([]);
   readonly bands = input<ChartBand[]>([]);
   readonly label = input('');
-  /** Unit of the bar values, shown on the top y-axis label. */
-  readonly unit = input('µL');
   /** The highlighted bars. */
   readonly selected = input<BarRange | null>(null);
   /** The bars tapped or dragged across. */
@@ -81,15 +79,13 @@ export class PatternOilChartComponent {
     }),
   );
   readonly grid = computed(() => Array.from({ length: GRID_LINES }, (_, i) => (PLOT_H * i) / GRID_LINES));
-  /** Y-axis labels from the top grid line down to the baseline; `top` in % of the plot height. */
+  /** Y-axis values on the grid lines, top down (the baseline is 0 without saying); `top` in % of the plot height. */
   readonly axisLabels = computed(() =>
-    Array.from({ length: GRID_LINES + 1 }, (_, i) => {
-      const value = Number((this.#max() - i * this.#step()).toFixed(1));
-      return { top: (i / GRID_LINES) * 100, label: i === 0 ? `${value} ${this.unit()}`.trim() : `${value}` };
-    }),
+    Array.from({ length: GRID_LINES }, (_, i) => ({
+      top: (i / GRID_LINES) * 100,
+      label: `${Number((this.#max() - i * this.#step()).toFixed(1))}`,
+    })),
   );
-  /** Width of the axis column in `ch`, sized to its longest label. */
-  readonly axisWidth = computed(() => Math.max(...this.axisLabels().map((l) => l.label.length)) + 1);
   readonly tickMarks = computed(() => this.ticks().map((t) => ({ ...t, left: (((t.at + 0.5) * BAR_W) / this.width()) * 100 })));
 
   readonly bandMarks = computed(() =>

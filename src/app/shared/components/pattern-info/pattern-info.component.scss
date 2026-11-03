@@ -97,7 +97,7 @@
 }
 
 .readout {
-  min-height: 1lh; // one line, so the graphs don't jump when it changes
+  // the header: names the graph, or sums up the picked bars; one line, so the graph doesn't jump
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

@@ -39,9 +39,17 @@ import { GameDataTransformerService } from 'src/app/core/services/game-transform
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { HighScoreAlertService } from 'src/app/core/services/high-score-alert/high-score-alert.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { clearThrowBalls, getThrowBallForPosition, hasThrowLevelBalls, setThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
+import {
+  clearThrowBalls,
+  getThrowBallForPosition,
+  hasThrowLevelBalls,
+  keepArsenalThrowBalls,
+  resolveBallTracking,
+  setThrowBall,
+} from 'src/app/core/utils/game-utils/ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -75,6 +83,7 @@ interface GameVm {
   segment: string;
   selectedBall: ThrowBall | undefined;
   showBallSelector: boolean;
+  carryOverGames: Frame[][];
 }
 
 const enum SeriesMode {
@@ -183,6 +192,18 @@ export class AddGamePage implements OnInit {
   });
 
   /**
+   * Most recently saved game bowled with a ball per throw, limited to balls still in the arsenal.
+   * Seeds the carry-over of a new session, so the next game starts on the balls the last one ended on.
+   */
+  readonly #lastSavedThrowGameFrames = computed<Frame[] | undefined>(() => {
+    let latest: Game | undefined;
+    for (const game of this.gamesStore.games()) {
+      if (hasThrowLevelBalls(game.frames ?? []) && (!latest || game.date > latest.date)) latest = game;
+    }
+    return latest ? keepArsenalThrowBalls(latest.frames, this.ballsStore.arsenal()) : undefined;
+  });
+
+  /**
    * Everything one game's card and the deck read.
    */
   readonly gameVms = computed<GameVm[]>(() =>
@@ -202,6 +223,7 @@ export class AddGamePage implements OnInit {
       inputLocked: this.isPinPadLocked(index),
       showBallSelector: this.isThrowTracking(index),
       selectedBall: this.getCurrentThrowBall(index),
+      carryOverGames: this.getCarryOverGames(index),
     })),
   );
 
@@ -236,6 +258,7 @@ export class AddGamePage implements OnInit {
     private utilsService: UtilsService,
     private highScroreAlertService: HighScoreAlertService,
     private gamesStore: GamesStore,
+    private ballsStore: BallsStore,
     private analyticsService: AnalyticsService,
     private gameDraftService: GameDraftService,
     private gameStatsService: GameStatsService,
@@ -342,23 +365,34 @@ export class AddGamePage implements OnInit {
 
   /**
    * Per-throw picking needs the pin pad, so the sheet only offers it in pin input mode.
-   * Mirrors `GameComponent.ballTracking`: a game carrying ball data keeps its own mode, an
-   * untouched one follows the user's default — `getBallTracking` would call that one 'game'
-   * and silently drop the picker from a fresh game's sheet.
+   * Same rule as `GameComponent.ballTracking` (`resolveBallTracking`): a game carrying ball data
+   * keeps its own mode, one without follows the user's default — `getBallTracking` would call
+   * that one 'game' and silently drop the picker from a fresh game's sheet.
    */
   isThrowTracking(gameIndex: number): boolean {
     const game = this.games()[gameIndex];
     if (!game || !this.isPinInputMode()) return false;
-    if (game.ballTracking) return game.ballTracking === 'throw';
-    if (hasThrowLevelBalls(game.frames ?? [])) return true;
-    if ((game.balls ?? []).length > 0) return false;
-    return this.settingsStore.ballTracking() === 'throw';
+    return resolveBallTracking(game, this.settingsStore.ballTracking()) === 'throw';
+  }
+
+  /** Games a game's ball carry-over continues from, oldest first: the last saved game, then the earlier games of this series. */
+  getCarryOverGames(gameIndex: number): Frame[][] {
+    const lastSaved = this.#lastSavedThrowGameFrames();
+    const earlierInSeries = this.games()
+      .slice(0, gameIndex)
+      .map((game) => game.frames ?? []);
+    return lastSaved ? [lastSaved, ...earlierInSeries] : earlierInSeries;
   }
 
   /** Ball for the throw the sheet's pad is currently on. */
   getCurrentThrowBall(gameIndex: number): ThrowBall | undefined {
     const frames = this.games()[gameIndex]?.frames ?? [];
-    return getThrowBallForPosition(frames, this.getCurrentFrameIndex(gameIndex), this.getCurrentThrowIndex(gameIndex));
+    return getThrowBallForPosition(
+      frames,
+      this.getCurrentFrameIndex(gameIndex),
+      this.getCurrentThrowIndex(gameIndex),
+      this.getCarryOverGames(gameIndex),
+    );
   }
 
   /** Ball picked on the sheet's pad, applied to the throw the pad is currently on. */
@@ -370,7 +404,13 @@ export class AddGamePage implements OnInit {
     const state = this.pinModeState()[gameIndex];
     const game = this.games()[gameIndex];
 
-    const result = processPinThrow(game.frames, state.currentFrameIndex, state.currentThrowIndex, event.pinsKnockedDown);
+    const result = processPinThrow(
+      game.frames,
+      state.currentFrameIndex,
+      state.currentThrowIndex,
+      event.pinsKnockedDown,
+      this.getCarryOverGames(gameIndex),
+    );
 
     this.pinModeState.update((states) => {
       const newStates = [...states];
@@ -496,9 +536,10 @@ export class AddGamePage implements OnInit {
       games.map((g, i) => {
         if (i !== index) return g;
         // One selection for the game replaces any per-throw balls; the game component confirmed it.
+        // Picking nothing adds no ball data, so it leaves the game to follow the default mode.
         const frames = cloneFrames(g.frames);
         clearThrowBalls(frames);
-        return { ...g, frames, balls, ballTracking: 'game' as const };
+        return { ...g, frames, balls, ballTracking: balls.length > 0 ? ('game' as const) : undefined };
       }),
     );
   }

@@ -191,5 +191,11 @@ describe('AddGamePage', () => {
       expect(game.frames[0].throws[0].ball).toBeUndefined();
       expect(game.frames[0].throws[0].value).toBe(10);
     });
+
+    it('leaves a game with nothing picked to follow the default ball mode', () => {
+      component.onBallsChange([], 0);
+
+      expect(component.games()[0].ballTracking).toBeUndefined();
+    });
   });
 });

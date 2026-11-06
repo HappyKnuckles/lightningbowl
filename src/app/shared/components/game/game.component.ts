@@ -36,7 +36,7 @@ import { addIcons } from 'ionicons';
 import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';
 import { Ball } from 'src/app/core/models/ball.model';
-import { BallTracking, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { BallTracking, Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -57,6 +57,7 @@ import {
   getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
+  resolveBallTracking,
 } from 'src/app/core/utils/game-utils/ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
@@ -142,6 +143,8 @@ export class GameComponent implements OnInit {
   canSpare = input<boolean>(false);
   canUndo = input<boolean>(false);
   isGameComplete = input<boolean>(false);
+  /** Earlier games (oldest first) the ball carry-over continues from, see `getCarryOverThrowBall`. */
+  carryOverGames = input<Frame[][]>([]);
 
   // --- Outputs ---
   throwInput = output<{ frameIndex: number; throwIndex: number; value: string }>();
@@ -242,13 +245,7 @@ export class GameComponent implements OnInit {
    * an untouched one follows the user's default. Per-throw picking lives on the pin pad,
    * so it is only offered while pin input is on.
    */
-  ballTracking = computed<BallTracking>(() => {
-    const game = this.currentGame();
-    if (game.ballTracking) return game.ballTracking;
-    if (hasThrowLevelBalls(game.frames ?? [])) return 'throw';
-    if ((game.balls ?? []).length > 0) return 'game';
-    return this.settingsStore.ballTracking();
-  });
+  ballTracking = computed<BallTracking>(() => resolveBallTracking(this.currentGame(), this.settingsStore.ballTracking()));
 
   /** Per-throw picking needs the pin pad; everything else falls back to the game-level selection. */
   isThrowTracking = computed(() => this.ballTracking() === 'throw' && this.isPinInputMode());
@@ -302,7 +299,7 @@ export class GameComponent implements OnInit {
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
-    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex()),
+    getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex(), this.carryOverGames()),
   );
 
   /** Patterns sorted by how often they were played, most used first. */

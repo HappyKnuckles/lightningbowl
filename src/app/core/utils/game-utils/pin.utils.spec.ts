@@ -253,6 +253,15 @@ describe('pin.utils', () => {
       expect(result.updatedFrames[0].pendingBall).toBeUndefined();
     });
 
+    it('stamps the first throw of a new game with the ball the previous game ended on', () => {
+      const previousGame = emptyFrames();
+      previousGame[9].throws = [{ value: 10, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];
+
+      const result = processPinThrow(emptyFrames(), 0, 0, [1, 2, 3, 5, 8, 9], [previousGame]);
+
+      expect(result.updatedFrames[0].throws[0].ball).toEqual({ name: 'Phaze II', weight: '15' });
+    });
+
     it('leaves a ball already stamped on the throw alone when it is re-recorded', () => {
       const frames = emptyFrames();
       frames[0].throws = [{ value: 6, throwIndex: 1, ball: { name: 'Phaze II', weight: '15' } }];

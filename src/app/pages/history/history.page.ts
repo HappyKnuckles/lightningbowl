@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, isDevMode, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -68,7 +68,7 @@ export class HistoryPage {
   isRefreshing = signal(false);
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
-
+  readonly isDev = isDevMode();
   readonly currentFilters = this.gameFilterService.filters;
   readonly defaultFilters = this.gameFilterService.defaultFilters;
 

@@ -7,6 +7,10 @@ import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ioni
 import {
   IonButton,
   IonButtons,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
   IonCheckbox,
   IonChip,
   IonContent,
@@ -41,6 +45,7 @@ import {
   chevronForward,
   createOutline,
   documentTextOutline,
+  informationCircleOutline,
   shareOutline,
   statsChartOutline,
   trashOutline,
@@ -87,6 +92,8 @@ interface LeagueSummary {
   isTournament: boolean;
   finished: boolean;
   sanctioned: boolean;
+  /** Carried over from before leagues had a type, seasons and handicap; not set up since. */
+  needsReview: boolean;
   note?: string;
   /** The running season, when the league has seasons. */
   season?: { name: string; games: number; average: number };
@@ -124,6 +131,10 @@ function readStoredView(): LeagueView {
     IonMenuButton,
     IonToolbar,
     IonCheckbox,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
     FormsModule,
     GameListComponent,
     ReactiveFormsModule,
@@ -193,6 +204,7 @@ export class LeaguePage {
         isTournament: league?.type === 'tournament',
         finished: !!league?.finished,
         sanctioned: !!league?.sanctioned,
+        needsReview: !!league?.needsReview,
         note: league?.note,
       };
       if (season) {
@@ -205,6 +217,9 @@ export class LeaguePage {
     }
     return summaries;
   });
+
+  /** Names of the leagues carried over from the old league design that still need setting up. */
+  readonly leaguesNeedingReview = computed(() => this.leaguesStore.leaguesNeedingReview().map((league) => league.name));
 
   // ---- the opened league: all its games, or those of one season ----
 
@@ -312,6 +327,7 @@ export class LeaguePage {
       cameraOutline,
       shareOutline,
       documentTextOutline,
+      informationCircleOutline,
       statsChartOutline,
       trophyOutline,
     });
@@ -463,6 +479,16 @@ export class LeaguePage {
     }
   }
 
+  /** Keeps the carried-over leagues without seasons or handicap, so they stop asking to be set up. */
+  async keepLeaguesAsTheyAre(): Promise<void> {
+    try {
+      await this.leaguesStore.markLeaguesReviewed();
+      this.toastService.showToast(TOAST_MESSAGES.leaguesKeptAsTheyAre, 'checkmark-outline');
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.leagueSaveError, 'bug', true);
+    }
+  }
+
   /** Starts a new season of the opened league and shows it. */
   async startNewSeason(): Promise<void> {
     const name = this.selectedLeague();
@@ -470,16 +496,6 @@ export class LeaguePage {
     await this.editLeague(name, true);
     const season = currentSeason(this.leaguesStore.getLeague(name));
     if (season) this.selectSeason(season.id);
-  }
-
-  /** Shows the opened league (or season) on the stats tab, through the game filter. */
-  async showInStats(): Promise<void> {
-    const name = this.selectedLeague();
-    if (!name) return;
-    const range = this.#selectedRange();
-    this.gameFilterService.filterToLeague(name === PRACTICE ? '' : name, range?.from, range?.to);
-    this.selectedLeague.set(null);
-    await this.router.navigate(['/tabs/stats']);
   }
 
   async deleteLeague(league: string): Promise<void> {

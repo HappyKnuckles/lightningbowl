@@ -42,6 +42,7 @@ type ExcelRow = Record<string, ExcelCellValue>;
  */
 export type ExcelExportResult = 'success' | 'cancelled' | 'permission-denied';
 
+const GAME_SHEET_NAME = 'Game History';
 const LEAGUE_SHEET_NAME = 'Leagues';
 
 const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -66,7 +67,8 @@ export class ExcelService {
     try {
       const isTemplateExport = this.gamesStore.games().length === 0;
       const gamesForExport = isTemplateExport ? [this.createSampleGame()] : this.gamesStore.games();
-      const buffer = await this.generateExcelWorkbook(gamesForExport);
+      const leaguesForExport = isTemplateExport ? this.withSampleLeague(this.leaguesStore.leagueList()) : this.leaguesStore.leagueList();
+      const buffer = await this.generateExcelWorkbook(gamesForExport, leaguesForExport);
 
       const isIos = isPlatform('ios');
       if (isIos) {
@@ -101,8 +103,10 @@ export class ExcelService {
   }
 
   /**
-   * Imports an Excel file: the games from its first sheet and, from files exported since leagues had
-   * types and seasons, the leagues sheet with them.
+   * Imports an Excel file: the games from the game history sheet (the first sheet in files that don't
+   * name it) and, from files exported since leagues had types and seasons, the leagues sheet. A file
+   * with only a leagues sheet imports just the leagues. Files without one get their leagues from the
+   * games, as leagues without seasons.
    */
   async importExcelFile(file: File): Promise<void> {
     let workbook: Workbook;
@@ -115,7 +119,8 @@ export class ExcelService {
     const leagueSheet = workbook.getWorksheet(LEAGUE_SHEET_NAME);
     // the first row is the header
     const leagues = leagueSheet ? this.readLeagueRows(this.worksheetRows(leagueSheet).slice(1)) : [];
-    await this.transformData(this.worksheetRows(workbook.worksheets[0]));
+    const gameSheet = workbook.getWorksheet(GAME_SHEET_NAME) ?? workbook.worksheets.find((worksheet) => worksheet.name !== LEAGUE_SHEET_NAME);
+    if (gameSheet) await this.transformData(this.worksheetRows(gameSheet));
     for (const league of leagues) {
       const existing = this.leaguesStore.getLeague(league.name);
       // a sheet without seasons for a league doesn't take away seasons set up here
@@ -127,7 +132,6 @@ export class ExcelService {
   async transformData(data: ExcelRow[]): Promise<void> {
     try {
       const gameData: Game[] = [];
-      const leagueMap = new Set<string>();
       const ballMap = new Set<string>();
 
       for (let i = 1; i < data.length; i++) {
@@ -249,10 +253,6 @@ export class ExcelService {
           note: row['Notes'] as string,
         };
 
-        if (game.league !== undefined && game.league !== '') {
-          leagueMap.add(game.league);
-        }
-
         if (game.balls) {
           for (const ball of game.balls) {
             ballMap.add(this.formatBallDisplayName(ball));
@@ -271,10 +271,6 @@ export class ExcelService {
         gameData.push(game);
       }
 
-      for (const league of leagueMap.values()) {
-        await this.leaguesStore.addLeague(league);
-      }
-
       for (const ball of ballMap.values()) {
         const ballToAdd = this.resolveBallReference(ball);
         if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
@@ -282,6 +278,8 @@ export class ExcelService {
         }
       }
       const sortedGames = sortGameHistoryByDate(gameData);
+      // leagues the games refer to, created as they were before seasons when the file has no leagues sheet
+      await this.leaguesStore.migrateLeagues(sortedGames);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       this.gameFilterService.setDefaultFilters();
     } catch (error) {
@@ -290,7 +288,7 @@ export class ExcelService {
     }
   }
 
-  private async generateExcelWorkbook(gameHistory: Game[] = this.gamesStore.games()): Promise<ArrayBuffer> {
+  private async generateExcelWorkbook(gameHistory: Game[] = this.gamesStore.games(), leagues = this.leaguesStore.leagueList()): Promise<ArrayBuffer> {
     try {
       const gameData = this.getGameDataForExport(gameHistory);
       const { overall, spares, throwStats, strike, special, playFrequency, series, pinStats } = this.getStatsTablesForExport(
@@ -299,7 +297,11 @@ export class ExcelService {
 
       const ExcelJS = await this.loadExcelJs();
       const workbook = new ExcelJS.Workbook();
-      const gameWorksheet = workbook.addWorksheet('Game History');
+      const gameWorksheet = workbook.addWorksheet(GAME_SHEET_NAME);
+      // right after the games: the two sheets an import reads
+      if (leagues.length > 0) {
+        this.addLeagueWorksheet(workbook, leagues);
+      }
       const statsWorksheet = workbook.addWorksheet('Statistics');
 
       // Game History Table
@@ -343,11 +345,6 @@ export class ExcelService {
       const allLeaves = this.statsService.allLeaves();
       if (allLeaves.length > 0) {
         this.addLeaveStatsWorksheet(workbook, allLeaves);
-      }
-
-      const leagues = this.leaguesStore.leagueList();
-      if (leagues.length > 0) {
-        this.addLeagueWorksheet(workbook, leagues);
       }
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -800,6 +797,7 @@ export class ExcelService {
       'Handicap Max',
       'Starting Average',
       'Note',
+      'Needs Setup',
     ];
     const rows = leagues.flatMap((league) => {
       const settings: Record<string, ExcelCellValue> = {
@@ -812,12 +810,41 @@ export class ExcelService {
         'Handicap Max': league.handicap?.max ?? '',
         'Starting Average': league.handicap?.startingAverage ?? '',
         Note: league.note ?? '',
+        'Needs Setup': league.needsReview ? 'true' : '',
       };
       if (league.seasons.length === 0) return [{ ...settings, Season: '', 'Season Start': '' }];
       return league.seasons.map((season) => ({ ...settings, Season: season.name, 'Season Start': toDateInput(season.start) }));
     });
     this.addTable(worksheet, 'LeagueTable', 'A1', headers, rows);
+    this.addHeaderNotes(worksheet, 1, this.getLeagueNotes());
     this.setColumnWidths(worksheet, headers, rows, 1);
+  }
+
+  private getLeagueNotes(): Record<string, string> {
+    return {
+      League: 'League or tournament name, as used in the League column of the game history. One row per season; repeat the name for each.',
+      Type: 'League or Tournament. Tournaments have no seasons.',
+      Season: 'Optional. Season name, e.g. 2026/27. Leave empty to name it after the start date.',
+      'Season Start':
+        'Optional. Day the season starts, as YYYY-MM-DD. Leave empty for a league without seasons. The first season also takes all earlier games.',
+      Finished: 'Boolean value: true or false. Finished events are not offered when adding games.',
+      Sanctioned: 'Boolean value: true or false.',
+      'Handicap Basis': 'Optional. Handicap is (basis - average) x percentage. Leave the handicap columns empty for scratch.',
+      'Handicap %': 'Optional. Handicap percentage, 0-100.',
+      'Handicap Max': 'Optional. Highest handicap given.',
+      'Starting Average': 'Optional. Average used for the handicap until there is one in this league.',
+      Note: 'Optional free-text note.',
+      'Needs Setup':
+        'Boolean value: true or false. True for leagues carried over from before seasons that have not been set up yet; the app asks to set them up.',
+    };
+  }
+
+  /** The leagues with the example league of the sample game added, for the import template. */
+  private withSampleLeague(leagues: League[]): League[] {
+    const sample = this.createSampleGame().league!;
+    if (leagues.some((league) => league.name === sample)) return leagues;
+    const start = startOfDay(this.createSampleGame().date);
+    return [...leagues, createLeague(sample, 'league', [{ id: newSeasonId(), name: defaultSeasonName(start), start }])];
   }
 
   /** Leagues from the rows of the leagues sheet (settings from a league's first row); rows without a usable start add no season. */
@@ -834,6 +861,7 @@ export class ExcelService {
         if (text(row['Finished']).toLowerCase() === 'true') league.finished = true;
         if (text(row['Sanctioned']).toLowerCase() === 'true') league.sanctioned = true;
         if (text(row['Note'])) league.note = text(row['Note']);
+        if (text(row['Needs Setup']).toLowerCase() === 'true') league.needsReview = true;
         const handicap = normalizeHandicap({
           basis: number(row['Handicap Basis']),
           percentage: number(row['Handicap %']),
@@ -843,7 +871,11 @@ export class ExcelService {
         if (handicap) league.handicap = handicap;
       }
       const startCell = row['Season Start'];
-      const start = startCell instanceof Date ? startOfDay(startCell.getTime()) : fromDateInput(text(startCell));
+      // Excel keeps dates as UTC midnight; the day is what counts, in local time
+      const start =
+        startCell instanceof Date
+          ? new Date(startCell.getUTCFullYear(), startCell.getUTCMonth(), startCell.getUTCDate()).getTime()
+          : fromDateInput(text(startCell));
       if (start !== undefined && league.type === 'league') {
         const seasonName = text(row['Season']) || defaultSeasonName(start);
         league.seasons = sortSeasons([...league.seasons, { id: newSeasonId(), name: seasonName, start }]);

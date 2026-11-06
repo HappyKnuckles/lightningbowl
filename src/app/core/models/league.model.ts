@@ -30,6 +30,11 @@ export interface League {
   note?: string;
   /** How handicap is given; absent for scratch events. */
   handicap?: HandicapRule;
+  /**
+   * Carried over from before leagues had a type, seasons and handicap, so it may not match how the
+   * event is played. The user is asked to set it up; saving it in the league form clears this.
+   */
+  needsReview?: boolean;
 }
 
 /**

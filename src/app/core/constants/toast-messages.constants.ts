@@ -26,6 +26,7 @@ export const TOAST_MESSAGES = {
   leagueDeleteError: 'Error deleting league.',
   leagueEditSuccess: 'League edited successfully.',
   leagueEditError: 'Error editing league.',
+  leaguesKeptAsTheyAre: 'Leagues kept as they are. You can still edit them anytime.',
   patternLoadError: 'Error loading patterns.',
   patternAddError: 'Error adding pattern.',
   patternAddSuccess: 'Pattern added successfully.',

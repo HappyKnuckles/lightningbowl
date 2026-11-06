@@ -60,8 +60,17 @@ describe('AppFacade', () => {
     patternsStore.loadAllPatterns.mockResolvedValue(undefined);
     patternsStore.loadPatternImageMap.mockResolvedValue(undefined);
 
-    leaguesStore = createSpyObj<LeaguesStore>(['loadLeagues', 'addLeague', 'deleteLeague', 'clearLeagues', 'getLeague', 'saveLeague']);
+    leaguesStore = createSpyObj<LeaguesStore>([
+      'loadLeagues',
+      'addLeague',
+      'deleteLeague',
+      'clearLeagues',
+      'getLeague',
+      'saveLeague',
+      'migrateLeagues',
+    ]);
     leaguesStore.loadLeagues.mockResolvedValue([]);
+    leaguesStore.migrateLeagues.mockResolvedValue(undefined);
     leaguesStore.deleteLeague.mockResolvedValue(undefined);
     leaguesStore.saveLeague.mockResolvedValue(undefined);
 
@@ -130,6 +139,15 @@ describe('AppFacade', () => {
   });
 
   describe('loadInitialData', () => {
+    it('migrates the leagues against the loaded games', async () => {
+      const games = [makeGame({ league: 'Monday' })];
+      gamesStore.games.mockReturnValue(games);
+
+      await facade.loadInitialData(15);
+
+      expect(leaguesStore.migrateLeagues).toHaveBeenCalledWith(games);
+    });
+
     it('rethrows when a store fails to load', async () => {
       patternsStore.loadAllPatterns.mockRejectedValue(new Error('api down'));
 

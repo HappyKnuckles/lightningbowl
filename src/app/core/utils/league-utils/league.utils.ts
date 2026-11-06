@@ -53,7 +53,48 @@ export function normalizeLeague(value: unknown): League | null {
   if (typeof stored.note === 'string' && stored.note.trim()) league.note = stored.note;
   const handicap = normalizeHandicap(stored.handicap);
   if (handicap) league.handicap = handicap;
+  if (stored.needsReview === true) league.needsReview = true;
   return league;
+}
+
+/** Whether a league is stored the way it's saved now. Leagues from before seasons are plain names. */
+export function isCurrentLeagueShape(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const stored = value as Partial<League>;
+  return (
+    (stored.type === 'league' || stored.type === 'tournament') &&
+    typeof stored.createdAt === 'number' &&
+    Array.isArray(stored.seasons) &&
+    stored.seasons.every((season) => !!season?.id)
+  );
+}
+
+/**
+ * Leagues to save so the stored ones match the games: a league for every name games refer to that has
+ * none stored (older versions and imports could leave those behind), marked for the user to set up,
+ * and leagues without a creation date (plain names had none) take the date of their first game.
+ */
+export function leaguesToMigrate(leagues: League[], games: Game[]): League[] {
+  const firstGameDates = new Map<string, number>();
+  for (const game of games) {
+    if (!game.league?.trim()) continue;
+    const date = Number.isFinite(game.date) ? game.date : Infinity;
+    firstGameDates.set(game.league, Math.min(firstGameDates.get(game.league) ?? Infinity, date));
+  }
+  const firstGameDate = (name: string) => {
+    const date = firstGameDates.get(name);
+    return date !== undefined && Number.isFinite(date) ? date : undefined;
+  };
+
+  const known = new Set(leagues.map((league) => league.name));
+  const dated = leagues.flatMap((league) => {
+    const date = league.createdAt === 0 ? firstGameDate(league.name) : undefined;
+    return date === undefined ? [] : [{ ...league, createdAt: date }];
+  });
+  const missing = [...firstGameDates.keys()]
+    .filter((name) => !known.has(name))
+    .map((name) => ({ ...createLeague(name), createdAt: firstGameDate(name) ?? Date.now(), needsReview: true }));
+  return [...dated, ...missing];
 }
 
 /** Each season with the dates it covers: until the next one starts, the first one from the beginning. */

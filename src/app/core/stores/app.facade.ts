@@ -77,6 +77,8 @@ export class AppFacade {
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
+      // needs both leagues and games loaded
+      await this.leaguesStore.migrateLeagues(this.gamesStore.games());
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;

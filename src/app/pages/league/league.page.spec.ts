@@ -2,8 +2,6 @@ import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Game } from 'src/app/core/models/game.model';
 import { League } from 'src/app/core/models/league.model';
-import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
-import { Router } from '@angular/router';
 import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
@@ -32,6 +30,8 @@ const mockLeaguesStore = {
   leagueList,
   leagues: computed(() => leagueList().map((league) => league.name)),
   getLeague: (name?: string) => leagueList().find((league) => league.name === name),
+  leaguesNeedingReview: computed(() => leagueList().filter((league) => league.needsReview)),
+  markLeaguesReviewed: vi.fn().mockReturnValue(Promise.resolve()),
   addLeague: vi.fn().mockReturnValue(Promise.resolve()),
   deleteLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
@@ -74,6 +74,34 @@ describe('LeaguePage', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('leagues carried over from the old design', () => {
+    const card = () => (fixture.nativeElement as HTMLElement).querySelector('.review-card');
+
+    it('tells the user to set them up and tags each one', () => {
+      leagueList.set([{ name: 'Monday', type: 'league', seasons: [], createdAt: 0, needsReview: true }, thursday]);
+      fixture.detectChanges();
+
+      expect(component.leaguesNeedingReview()).toEqual(['Monday']);
+      expect(card()?.textContent).toContain('Your leagues were updated');
+      expect(card()?.textContent).toContain('Set up Monday');
+      expect(component.leagueSummaries()['Monday'].needsReview).toBe(true);
+      expect(component.leagueSummaries()['Thursday'].needsReview).toBe(false);
+    });
+
+    it('shows nothing when every league is set up', () => {
+      leagueList.set([thursday]);
+      fixture.detectChanges();
+
+      expect(card()).toBeNull();
+    });
+
+    it('keeps them as they are on request', async () => {
+      await component.keepLeaguesAsTheyAre();
+
+      expect(mockLeaguesStore.markLeaguesReviewed).toHaveBeenCalled();
+    });
   });
 
   it('should expose pin stat definitions used by stats page', () => {
@@ -171,21 +199,6 @@ describe('LeaguePage', () => {
       component.openLeague('Thursday');
 
       expect(component.selectedSeason()).toBe('all');
-    });
-
-    it('shows the opened season on the stats tab', async () => {
-      leagueList.set([thursday]);
-      gamesSignal.set(games());
-      const filter = TestBed.inject(GameFilterService);
-      const filterToLeague = vi.spyOn(filter, 'filterToLeague').mockImplementation(() => undefined);
-      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-      component.openLeague('Thursday');
-
-      await component.showInStats();
-
-      expect(filterToLeague).toHaveBeenCalledWith('Thursday', thursday.seasons[1].start, undefined);
-      expect(navigate).toHaveBeenCalledWith(['/tabs/stats']);
-      expect(component.selectedLeague()).toBeNull();
     });
   });
 });

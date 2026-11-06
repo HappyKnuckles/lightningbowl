@@ -43,7 +43,9 @@
     @if (gameFilterService.filteredGames().length <= 0 && !loadingService.isLoading()) {
       <ion-text class="no-game-text"> No games for this filter! </ion-text>
     } @else {
-      <!-- <ion-button (click)="deleteAll()">Delete</ion-button>-->
+      @if(isDev) {
+      <ion-button (click)="deleteAll()">Delete</ion-button>
+      }
       <app-game-list [games]="gameFilterService.filteredGames()"></app-game-list>
     }
   }

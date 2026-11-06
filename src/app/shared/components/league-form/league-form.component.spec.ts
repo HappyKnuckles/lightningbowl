@@ -114,6 +114,16 @@ describe('LeagueFormComponent', () => {
     expect(appFacade.updateLeague).toHaveBeenCalledWith({ name: 'City Cup', type: 'tournament', seasons: [], createdAt: 7 }, 'Cup');
   });
 
+  it('marks a league carried over from the old design as set up once it is saved', async () => {
+    const league: League = { name: 'Monday', type: 'league', seasons: [], createdAt: 7, needsReview: true };
+    leagueList.set([league]);
+    create(league);
+
+    await component.save();
+
+    expect(appFacade.updateLeague).toHaveBeenCalledWith({ name: 'Monday', type: 'league', seasons: [], createdAt: 7 }, 'Monday');
+  });
+
   it('starts the first season of a league with games and keeps those games in a season of their own', () => {
     const league: League = { name: 'Thursday', type: 'league', seasons: [], createdAt: 0 };
     games.set([

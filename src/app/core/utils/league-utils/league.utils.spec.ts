@@ -6,6 +6,8 @@ import {
   defaultSeasonName,
   fromDateInput,
   gamesInSeason,
+  isCurrentLeagueShape,
+  leaguesToMigrate,
   normalizeLeague,
   seasonForDate,
   seasonRanges,
@@ -96,5 +98,41 @@ describe('league utils', () => {
     expect(toDateInput(day('2026-09-03') + 3600000)).toBe('2026-09-03');
     expect(fromDateInput('2026-09-03')).toBe(day('2026-09-03'));
     expect(fromDateInput('03.09.2026')).toBeUndefined();
+  });
+});
+
+describe('league migration', () => {
+  it('tells leagues saved as plain names from leagues saved now', () => {
+    expect(isCurrentLeagueShape('Monday')).toBe(false);
+    expect(isCurrentLeagueShape({ name: 'Monday' })).toBe(false);
+    expect(isCurrentLeagueShape({ name: 'Monday', type: 'league', seasons: [{ name: '2026', start: 1 }], createdAt: 1 })).toBe(false);
+    expect(isCurrentLeagueShape({ name: 'Monday', type: 'league', seasons: [{ id: 's', name: '2026', start: 1 }], createdAt: 0 })).toBe(true);
+  });
+
+  it('creates leagues only games refer to, and dates undated leagues by their first game', () => {
+    const games = [
+      makeGame({ gameId: 'a', league: 'Monday', date: day('2025-03-01') }),
+      makeGame({ gameId: 'b', league: 'Monday', date: day('2024-10-01') }),
+      makeGame({ gameId: 'c', league: 'Orphan', date: day('2023-05-05') }),
+      makeGame({ gameId: 'd', league: 'Dated', date: day('2020-01-01') }),
+      makeGame({ gameId: 'e', league: '' }),
+      makeGame({ gameId: 'f', league: undefined }),
+    ];
+    const leagues: League[] = [
+      { name: 'Monday', type: 'league', seasons: [], createdAt: 0 },
+      { name: 'Dated', type: 'league', seasons: [], createdAt: 5 },
+      { name: 'Unplayed', type: 'league', seasons: [], createdAt: 0 },
+    ];
+
+    const migrated = leaguesToMigrate(leagues, games);
+
+    expect(migrated.map((league) => [league.name, league.type, league.seasons, league.createdAt, league.needsReview])).toEqual([
+      ['Monday', 'league', [], day('2024-10-01'), undefined],
+      ['Orphan', 'league', [], day('2023-05-05'), true],
+    ]);
+  });
+
+  it('has nothing to do when leagues and games match', () => {
+    expect(leaguesToMigrate([{ name: 'Monday', type: 'league', seasons: [], createdAt: 1 }], [makeGame({ league: 'Monday' })])).toEqual([]);
   });
 });

@@ -35,6 +35,28 @@
     <app-bowling-refresher [refreshing]="isRefreshing()"></app-bowling-refresher>
   </ion-refresher>
 
+  @if (leaguesNeedingReview().length > 0 && !isVisibilityEdit()) {
+    <ion-card class="review-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Your leagues were updated
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>
+          Leagues can now be tournaments and have seasons and handicap. Your existing leagues were carried over as leagues without seasons, so all
+          their games are counted together.
+        </p>
+        <p>To show them correctly, edit each league marked <strong>Needs setup</strong> and set its type, seasons and handicap.</p>
+        <div class="review-actions">
+          <ion-button size="small" (click)="editLeague(leaguesNeedingReview()[0])">Set up {{ leaguesNeedingReview()[0] }}</ion-button>
+          <ion-button size="small" fill="clear" (click)="keepLeaguesAsTheyAre()">Keep as they are</ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  }
+
   @if (leagueKeys().length <= 0 && !loadingService.isLoading()) {
     <ion-text class="no-game-text"> Start playing a few games to see your leagues here! </ion-text>
   } @else if (noLeaguesShown() && !isVisibilityEdit()) {
@@ -101,9 +123,6 @@
           </ion-buttons>
           <ion-title>{{ league }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button aria-label="Show in stats" (click)="showInStats()">
-              <ion-icon name="stats-chart-outline" slot="icon-only"></ion-icon>
-            </ion-button>
             @if (league !== practice) {
               <ion-button aria-label="Edit league" (click)="editLeague(league)">
                 <ion-icon name="create-outline" slot="icon-only"></ion-icon>
@@ -234,6 +253,9 @@
         }
         @if (summary.finished) {
           <span class="type-tag finished">Finished</span>
+        }
+        @if (summary.needsReview) {
+          <span class="type-tag review">Needs setup</span>
         }
       }
     </div>

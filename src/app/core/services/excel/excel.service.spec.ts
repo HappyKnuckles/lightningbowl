@@ -1,5 +1,4 @@
 import { League } from 'src/app/core/models/league.model';
-import { createLeague } from 'src/app/core/utils/league-utils/league.utils';
 import { TestBed } from '@angular/core/testing';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -21,7 +20,7 @@ describe('ExcelService', () => {
   beforeEach(() => {
     const gamesStoreSpy = createSpyObj(['games', 'saveGamesToLocalStorage']);
     const ballsStoreSpy = createSpyObj(['allBalls', 'arsenal', 'saveBallToArsenal']);
-    const leaguesStoreSpy = createSpyObj(['addLeague', 'getLeague', 'saveLeague', 'leagueList']);
+    const leaguesStoreSpy = createSpyObj(['migrateLeagues', 'getLeague', 'saveLeague', 'leagueList']);
 
     TestBed.configureTestingModule({
       providers: [
@@ -77,7 +76,7 @@ describe('ExcelService', () => {
     // Mock storage service methods
     mockBallsStore.allBalls.mockReturnValue([]);
     mockBallsStore.arsenal.mockReturnValue([]);
-    mockLeaguesStore.addLeague.mockResolvedValue(createLeague('League'));
+    mockLeaguesStore.migrateLeagues.mockResolvedValue(undefined);
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
 
@@ -155,7 +154,7 @@ describe('ExcelService', () => {
     // Mock storage service methods
     mockBallsStore.allBalls.mockReturnValue([]);
     mockBallsStore.arsenal.mockReturnValue([]);
-    mockLeaguesStore.addLeague.mockResolvedValue(createLeague('League'));
+    mockLeaguesStore.migrateLeagues.mockResolvedValue(undefined);
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
 
@@ -229,7 +228,7 @@ describe('ExcelService', () => {
     // key the throw as its own ball and split the ball's per-throw stats across two entries.
     mockBallsStore.allBalls.mockReturnValue([]);
     mockBallsStore.arsenal.mockReturnValue([]);
-    mockLeaguesStore.addLeague.mockResolvedValue(createLeague('League'));
+    mockLeaguesStore.migrateLeagues.mockResolvedValue(undefined);
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
 
@@ -306,6 +305,35 @@ describe('ExcelService', () => {
       mockLeaguesStore.getLeague.mockReturnValue(undefined);
     });
 
+    it('imports a file with only the leagues sheet as leagues, without games', async () => {
+      const ExcelJS = await loadExcelJs();
+      const workbook = new ExcelJS.Workbook();
+      (service as unknown as { addLeagueWorksheet: (workbook: unknown, leagues: League[]) => void }).addLeagueWorksheet(workbook, [
+        { name: 'Thursday', type: 'league', createdAt: 1, seasons: [{ id: 'a', name: '2026/27', start: day('2026-09-03') }] },
+      ]);
+      const file = new File([(await workbook.xlsx.writeBuffer()) as ArrayBuffer], 'leagues.xlsx');
+
+      await service.importExcelFile(file);
+
+      expect(mockGamesStore.saveGamesToLocalStorage).not.toHaveBeenCalled();
+      expect(mockLeaguesStore.saveLeague).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Thursday', seasons: [expect.objectContaining({ name: '2026/27', start: day('2026-09-03') })] }),
+      );
+    });
+
+    it('reads a season start Excel stored as a date as that day', async () => {
+      const ExcelJS = await loadExcelJs();
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Leagues');
+      sheet.addRow(['League', 'Type', 'Season', 'Season Start']);
+      sheet.addRow(['Thursday', 'League', '2026/27', new Date(Date.UTC(2026, 8, 3))]);
+      const file = new File([(await workbook.xlsx.writeBuffer()) as ArrayBuffer], 'leagues.xlsx');
+
+      await service.importExcelFile(file);
+
+      expect(mockLeaguesStore.saveLeague.mock.calls[0][0].seasons[0].start).toBe(day('2026-09-03'));
+    });
+
     it('restores the type and seasons of exported leagues', async () => {
       const file = await exportedFile([
         {
@@ -352,6 +380,21 @@ describe('ExcelService', () => {
       expect(saved[0].handicap).toBeUndefined();
     });
 
+    it('keeps a league waiting to be set up waiting after export and import', async () => {
+      const file = await exportedFile([
+        { name: 'Monday', type: 'league', createdAt: 1, seasons: [], needsReview: true },
+        { name: 'Friday', type: 'league', createdAt: 1, seasons: [] },
+      ]);
+
+      await service.importExcelFile(file);
+
+      const saved = mockLeaguesStore.saveLeague.mock.calls.map(([league]) => [league.name, league.needsReview]);
+      expect(saved).toEqual([
+        ['Monday', true],
+        ['Friday', undefined],
+      ]);
+    });
+
     it('keeps seasons set up here when the file has none for that league', async () => {
       const seasons = [{ id: 'x', name: '2026', start: day('2026-01-11') }];
       mockLeaguesStore.getLeague.mockReturnValue({ name: 'Sunday', type: 'league', createdAt: 5, seasons });
@@ -371,6 +414,8 @@ describe('ExcelService', () => {
       await service.importExcelFile(file);
 
       expect(mockGamesStore.saveGamesToLocalStorage).toHaveBeenCalled();
+      // the leagues come from the games, as leagues without seasons
+      expect(mockLeaguesStore.migrateLeagues).toHaveBeenCalled();
       expect(mockLeaguesStore.saveLeague).not.toHaveBeenCalled();
     });
   });

@@ -64,6 +64,22 @@ describe('PinInputComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('selectedBallThumbnail', () => {
+    it('uses the image URL the ball API gives as it is', () => {
+      arsenal.set([makeBall({ ball_name: 'IQ Tour', core_weight: '15', thumbnail_image: 'https://images.lightningbowl.de/balls/abc.png' })]);
+      fixture.componentRef.setInput('selectedBall', { name: 'IQ Tour', weight: '15' });
+
+      expect(component.selectedBallThumbnail()).toBe('https://images.lightningbowl.de/balls/abc.png');
+    });
+
+    it('completes a bowwwl.com path saved with an older arsenal ball', () => {
+      arsenal.set([makeBall({ ball_name: 'IQ Tour', core_weight: '15', thumbnail_image: '/sites/default/files/iq.png' })]);
+      fixture.componentRef.setInput('selectedBall', { name: 'IQ Tour', weight: '15' });
+
+      expect(component.selectedBallThumbnail()).toBe('https://bowwwl.com/sites/default/files/iq.png');
+    });
+  });
+
   describe('onBallAdd', () => {
     const iq = makeBall({ ball_id: 'b1', ball_name: 'IQ Tour', core_weight: '15' });
     const phaze = makeBall({ ball_id: 'b2', ball_name: 'Phaze II', core_weight: '15' });

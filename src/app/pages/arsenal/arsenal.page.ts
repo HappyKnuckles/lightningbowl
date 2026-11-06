@@ -82,6 +82,7 @@ import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 @Component({
   selector: 'app-arsenal',
@@ -170,7 +171,7 @@ export class ArsenalPage implements OnInit {
           name: ball.ball_name,
           displayName: `${ball.ball_name} ${ball.core_weight}lbs`,
           weight: ball.core_weight,
-          image: ball.ball_image || ball.thumbnail_image || '',
+          image: ballImageUrl(ball, 'ball'),
           tier: 'basic',
           gameCount: 0,
           detailedGameCount: 0,

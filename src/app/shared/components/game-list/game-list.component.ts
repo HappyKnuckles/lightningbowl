@@ -73,6 +73,7 @@ import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { GameCardTemplateDirective } from './game-card-template.directive';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 interface MonthRow {
   kind: 'month';
@@ -216,7 +217,7 @@ export class GameListComponent implements OnInit {
       vms[game.gameId] = {
         names,
         text: names.length > 0 ? names.join(', ') : 'None',
-        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        thumbnail: singleBall?.thumbnail_image ? ballImageUrl(singleBall) : null,
         throwTracked,
         throwSummary: throwTracked ? throwBallSummary(game) : '',
       };

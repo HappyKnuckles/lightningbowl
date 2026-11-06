@@ -68,6 +68,7 @@ import { LeagueSelectorComponent } from '../league-selector/league-selector.comp
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -193,7 +194,7 @@ export class GameComponent implements OnInit {
       const key = getThrowBallKey(ball);
       if (!thumbCache.has(key)) {
         const arsenalBall = findBallInArsenal(ball, arsenal);
-        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined);
       }
       return thumbCache.get(key);
     };

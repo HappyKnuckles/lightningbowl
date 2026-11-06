@@ -205,11 +205,11 @@ export interface components {
       us_int: string | null;
       /** @description Release date (YYYY-MM-DD), null if unknown. */
       release_date: string | null;
-      /** @description Absolute image URL, null if bowwwl.com has none. */
+      /** @description Absolute image URL, null if bowwwl.com has none: on images.lightningbowl.de once the image is copied there, on bowwwl.com until then. */
       ball_image: string | null;
-      /** @description Absolute image URL, null if bowwwl.com has none. */
+      /** @description Absolute image URL, null if bowwwl.com has none: on images.lightningbowl.de once the image is copied there, on bowwwl.com until then. */
       core_image: string | null;
-      /** @description Absolute image URL, null if bowwwl.com has none. */
+      /** @description Absolute image URL, null if bowwwl.com has none: on images.lightningbowl.de once the image is copied there, on bowwwl.com until then. */
       thumbnail_image: string | null;
       /** @description When bowwwl.com last changed the ball, as it reports it. */
       last_update: string | null;
@@ -273,6 +273,10 @@ export interface components {
         brands: number;
         cores: number;
         coverstocks: number;
+        /** @description Ball images copied to images.lightningbowl.de. */
+        images_copied: number;
+        /** @description Ball images not copied yet (new, or failed and waiting for a retry). */
+        images_pending: number;
       };
       lastSync: components['schemas']['SyncRun'] | null;
     };

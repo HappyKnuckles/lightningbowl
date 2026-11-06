@@ -14,6 +14,7 @@ import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/cor
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -76,7 +77,7 @@ export class PinInputComponent {
   /** Arsenal thumbnail of the currently selected ball, if available */
   readonly selectedBallThumbnail = computed<string | undefined>(() => {
     const arsenalBall = findBallInArsenal(this.selectedBall(), this.ballsStore.arsenal());
-    return arsenalBall?.thumbnail_image || undefined;
+    return arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined;
   });
 
   readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));

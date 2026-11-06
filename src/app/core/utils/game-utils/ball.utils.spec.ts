@@ -6,12 +6,14 @@ import {
   clearThrowBalls,
   countThrowBalls,
   getBallTracking,
+  resolveBallTracking,
   getCarryOverThrowBall,
   getGameBallNames,
   getGameBalls,
   getPendingBall,
   getThrowBallForPosition,
   getThrowBallKeys,
+  keepArsenalThrowBalls,
   setThrowBall,
 } from './ball.utils';
 
@@ -179,6 +181,27 @@ describe('getBallTracking', () => {
   });
 });
 
+describe('resolveBallTracking', () => {
+  const withThrowBall = () => [makeFrame(0, [makeThrow(0, [], { ball: { name: 'IQ Tour', weight: '15' } })])];
+
+  it('follows the default for a game without ball data, even one flagged before', () => {
+    expect(resolveBallTracking({ frames: [], balls: [] }, 'throw')).toBe('throw');
+    // closing the game's ball picker with nothing picked flags it 'game' without adding data
+    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: [] }, 'throw')).toBe('throw');
+    expect(resolveBallTracking({ ballTracking: 'throw', frames: [], balls: [] }, 'game')).toBe('game');
+  });
+
+  it('keeps the mode of a game that carries ball data', () => {
+    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
+    expect(resolveBallTracking({ ballTracking: 'throw', frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
+  });
+
+  it('reads the mode from the data when the game has no flag', () => {
+    expect(resolveBallTracking({ frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
+    expect(resolveBallTracking({ frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
+  });
+});
+
 describe('getThrowBallKeys', () => {
   it('returns each ball once, in first-use order', () => {
     const iq = { name: 'IQ Tour', weight: '15' };
@@ -283,6 +306,68 @@ describe('getCarryOverThrowBall', () => {
     const frames = framesFrom([{ frameIndex: 0, throws: [{ value: 10, throwIndex: 1, ball: strikeBall }] }]);
 
     expect(getCarryOverThrowBall(frames, 0, 1)).toEqual(strikeBall);
+  });
+
+  describe('across games', () => {
+    const otherBall = { name: 'Phaze II', weight: '15' };
+    // Previous game ending on a 9-1 spare: strike ball for first balls, spare ball for the spare.
+    const previousGame = (): Frame[] =>
+      framesFrom([
+        { frameIndex: 0, throws: [{ value: 10, throwIndex: 1, ball: otherBall }] },
+        {
+          frameIndex: 9,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: strikeBall },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: spareBall },
+            { value: 10, throwIndex: 3, ball: strikeBall },
+          ],
+        },
+      ]);
+
+    it('starts a new game on the first ball the previous game ended on', () => {
+      expect(getCarryOverThrowBall(emptyFrames(), 0, 0, [previousGame()])).toEqual(strikeBall);
+    });
+
+    it("takes the previous game's spare ball for the first spare shot, not this game's strike ball", () => {
+      const frames = framesFrom([{ frameIndex: 0, throws: [{ value: 7, throwIndex: 1, pinsLeftStanding: [4, 7, 10], ball: strikeBall }] }]);
+
+      expect(getCarryOverThrowBall(frames, 0, 1, [previousGame()])).toEqual(spareBall);
+    });
+
+    it("prefers this game's own picks over earlier games", () => {
+      const frames = framesFrom([{ frameIndex: 0, throws: [{ value: 10, throwIndex: 1, ball: otherBall }] }]);
+
+      expect(getCarryOverThrowBall(frames, 1, 0, [previousGame()])).toEqual(otherBall);
+    });
+
+    it('uses the most recent earlier game', () => {
+      const lastGame = framesFrom([{ frameIndex: 0, throws: [{ value: 10, throwIndex: 1, ball: otherBall }] }]);
+
+      expect(getCarryOverThrowBall(emptyFrames(), 0, 0, [previousGame(), lastGame])).toEqual(otherBall);
+    });
+
+    it('is shown for an untouched throw by getThrowBallForPosition', () => {
+      expect(getThrowBallForPosition(emptyFrames(), 0, 0, [previousGame()])).toEqual(strikeBall);
+    });
+  });
+
+  describe('keepArsenalThrowBalls', () => {
+    it('drops balls that are no longer in the arsenal without touching the input', () => {
+      const frames = framesFrom([
+        {
+          frameIndex: 0,
+          throws: [
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: strikeBall },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: spareBall },
+          ],
+        },
+      ]);
+
+      const kept = keepArsenalThrowBalls(frames, [{ ball_name: 'White Dot', core_weight: '15' }]);
+
+      expect(kept[0].throws.map((t) => t.ball)).toEqual([undefined, spareBall]);
+      expect(frames[0].throws[0].ball).toEqual(strikeBall);
+    });
   });
 });
 

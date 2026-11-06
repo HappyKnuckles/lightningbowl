@@ -170,6 +170,9 @@
             <div class="score-bar">
               <div class="score-fill" [style.--fill]="(game.totalScore / 300) * 100" [style.width.%]="(game.totalScore / 300) * 100"></div>
             </div>
+            @if (handicaps().get(game.gameId); as hcp) {
+              <div class="score-hcp">{{ hcp.total }} hcp (+{{ hcp.handicap }})</div>
+            }
           </div>
         </ion-item>
         @if (delayedClose.isVisible(game.gameId)) {

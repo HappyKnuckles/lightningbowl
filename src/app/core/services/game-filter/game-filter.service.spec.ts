@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { GameFilter } from 'src/app/core/models/filter.model';
+import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
 import { Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { createEmptyGame } from 'src/app/core/utils/game-utils/frame.utils';
@@ -181,5 +181,52 @@ describe('GameFilterService.filterGames', () => {
     });
 
     expect(ids(result)).toEqual([match.gameId]);
+  });
+});
+
+describe('GameFilterService league filters', () => {
+  let service: GameFilterService;
+  const at = (iso: string) => new Date(iso).getTime();
+  const localDay = (iso: string) => new Date(`${iso}T00:00:00`).getTime();
+  const game = (gameId: string, league: string, iso: string): Game => ({ ...createEmptyGame(), gameId, league, date: at(iso) });
+
+  beforeEach(() => {
+    localStorage.removeItem('game-filter');
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(GameFilterService);
+  });
+
+  it("shows a season's games of its league: from its first day to the day before the next season", () => {
+    const games = [
+      game('before', 'Thursday', '2026-09-02T20:00:00'),
+      game('first-day', 'Thursday', '2026-09-03T20:00:00'),
+      game('other-league', 'Sunday', '2026-09-10T20:00:00'),
+      game('last-day', 'Thursday', '2027-01-06T20:00:00'),
+      game('next-season', 'Thursday', '2027-01-07T20:00:00'),
+    ];
+    const filters = { ...service.defaultFilters, ...service.leagueFilter('Thursday', localDay('2026-09-03'), localDay('2027-01-07')) };
+
+    expect(service.filterGames(games, filters).map((g) => g.gameId)).toEqual(['first-day', 'last-day']);
+  });
+
+  it('keeps the whole time range open on the sides a season has no limit', () => {
+    const filters = service.leagueFilter('Thursday', undefined, undefined);
+
+    expect(filters).toEqual({
+      leagues: ['Thursday'],
+      timeRange: TimeRange.ALL,
+      startDate: service.defaultFilters.startDate,
+      endDate: service.defaultFilters.endDate,
+    });
+  });
+
+  it('replaces the other filters when going to a league and keeps the result', () => {
+    service.filters.set({ ...service.defaultFilters, minScore: 200, patterns: ['Cheetah'] });
+
+    service.filterToLeague('', localDay('2026-09-03'));
+
+    expect(service.filters()).toMatchObject({ minScore: 0, patterns: ['all'], leagues: [''] });
+    expect(JSON.parse(localStorage.getItem('game-filter')!).leagues).toEqual(['']);
+    localStorage.removeItem('game-filter');
   });
 });

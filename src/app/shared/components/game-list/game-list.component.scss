@@ -145,6 +145,14 @@ ion-item-divider {
       font-weight: 800;
     }
 
+    .score-hcp {
+      margin-top: 4px;
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      white-space: nowrap;
+    }
+
     // maybe
     // .score-text {
     //   text-align: right;

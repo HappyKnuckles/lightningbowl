@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, isDevMode, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -68,7 +68,7 @@ export class HistoryPage {
   isRefreshing = signal(false);
 
   gameFilterConfigs = GAME_FILTER_CONFIGS;
-
+  readonly isDev = isDevMode();
   readonly currentFilters = this.gameFilterService.filters;
   readonly defaultFilters = this.gameFilterService.defaultFilters;
 
@@ -143,8 +143,7 @@ export class HistoryPage {
       const input = event.target as HTMLInputElement;
       if (!input.files || input.files.length === 0) return;
       const file = input.files[0];
-      const gameData = await this.excelService.readExcelData(file);
-      await this.excelService.transformData(gameData);
+      await this.excelService.importExcelFile(file);
       this.toastService.showToast(TOAST_MESSAGES.excelFileUploadSuccess, 'checkmark-outline');
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.excelFileUploadError, 'bug', true);

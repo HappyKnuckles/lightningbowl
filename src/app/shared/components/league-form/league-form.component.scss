@@ -1,0 +1,44 @@
+.type {
+  width: 100%;
+  margin: 8px 0;
+}
+
+.sec-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 16px 8px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium);
+}
+
+.hint {
+  margin: 8px 16px 0;
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
+
+.season {
+  .season-games {
+    margin: 0 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .season-start {
+    flex: 0 0 136px;
+  }
+}
+
+.delete {
+  margin: 32px 16px 16px;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+}

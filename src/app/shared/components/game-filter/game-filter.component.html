@@ -132,6 +132,16 @@
         }
       </ion-select>
     </ion-item>
+    @if (seasonOptions().length) {
+      <ion-item>
+        <ion-select name="season" label="Season" interface="popover" [value]="selectedSeason()" (ionChange)="selectSeason($event.detail.value)">
+          <ion-select-option value="">Any</ion-select-option>
+          @for (option of seasonOptions(); track option.key) {
+            <ion-select-option [value]="option.key">{{ option.label }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+    }
     <ion-item
       id="ball-filter"
       class="ball-selector"

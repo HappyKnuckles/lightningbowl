@@ -105,6 +105,27 @@ export class GameFilterService {
     });
   }
 
+  /**
+   * The filter values that show one league ('' for practice), optionally only the games from `from`
+   * to before `to` (a season). Dates are compared by day here, so a range is passed as the middle
+   * of its first and last day, which keeps the day the same in every time zone.
+   */
+  leagueFilter(league: string, from?: number, to?: number): Pick<GameFilter, 'leagues' | 'timeRange' | 'startDate' | 'endDate'> {
+    const halfDay = 12 * 60 * 60 * 1000;
+    return {
+      leagues: [league],
+      timeRange: TimeRange.ALL,
+      startDate: from !== undefined ? new Date(from + halfDay).toISOString() : this.defaultFilters.startDate,
+      endDate: to !== undefined ? new Date(to - halfDay).toISOString() : this.defaultFilters.endDate,
+    };
+  }
+
+  /** Resets the filter to just one league (or one season of it) and keeps it. */
+  filterToLeague(league: string, from?: number, to?: number): void {
+    this.filters.set({ ...this.defaultFilters, ...this.leagueFilter(league, from, to) });
+    this.saveFilters();
+  }
+
   saveFilters(): void {
     localStorage.setItem('game-filter', JSON.stringify(this.filters()));
   }

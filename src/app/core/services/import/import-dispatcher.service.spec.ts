@@ -23,9 +23,8 @@ describe('ImportDispatcherService', () => {
   let pinpalService: SpyObj<PinpalService>;
 
   beforeEach(() => {
-    excelService = createSpyObj<ExcelService>(['readExcelData', 'transformData']);
-    excelService.readExcelData.mockResolvedValue([]);
-    excelService.transformData.mockResolvedValue(undefined);
+    excelService = createSpyObj<ExcelService>(['importExcelFile']);
+    excelService.importExcelFile.mockResolvedValue(undefined);
 
     pinpalService = createSpyObj<PinpalService>(['importFromFile']);
     pinpalService.importFromFile.mockResolvedValue(0);
@@ -40,16 +39,13 @@ describe('ImportDispatcherService', () => {
   });
 
   describe('excel imports', () => {
-    it('reads and transforms a file recognised by its extension', async () => {
+    it('imports a file recognised by its extension', async () => {
       const workbook = file('history.xlsx');
-      const parsed = [{ any: 'row' }];
-      excelService.readExcelData.mockResolvedValue(parsed);
 
       const result = await service.importFromFile(workbook);
 
       expect(result).toEqual({ type: 'excel' });
-      expect(excelService.readExcelData).toHaveBeenCalledWith(workbook);
-      expect(excelService.transformData).toHaveBeenCalledWith(parsed);
+      expect(excelService.importExcelFile).toHaveBeenCalledWith(workbook);
       expect(pinpalService.importFromFile).not.toHaveBeenCalled();
     });
 
@@ -75,7 +71,7 @@ describe('ImportDispatcherService', () => {
 
       expect(result).toEqual({ type: 'pinpal', importedGames: 42 });
       expect(pinpalService.importFromFile).toHaveBeenCalledWith(backup);
-      expect(excelService.readExcelData).not.toHaveBeenCalled();
+      expect(excelService.importExcelFile).not.toHaveBeenCalled();
     });
 
     it('finds the SQLite header further into the file', async () => {

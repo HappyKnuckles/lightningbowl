@@ -1,6 +1,7 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Game } from 'src/app/core/models/game.model';
+import { League } from 'src/app/core/models/league.model';
 import { PIN_STAT_DEFINITIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
@@ -24,8 +25,13 @@ const mockBallsStore = {
   allBalls: vi.fn().mockReturnValue([]),
 };
 
+const leagueList = signal<League[]>([]);
 const mockLeaguesStore = {
-  leagues: vi.fn().mockReturnValue([]),
+  leagueList,
+  leagues: computed(() => leagueList().map((league) => league.name)),
+  getLeague: (name?: string) => leagueList().find((league) => league.name === name),
+  leaguesNeedingReview: computed(() => leagueList().filter((league) => league.needsReview)),
+  markLeaguesReviewed: vi.fn().mockReturnValue(Promise.resolve()),
   addLeague: vi.fn().mockReturnValue(Promise.resolve()),
   deleteLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
@@ -34,11 +40,24 @@ const mockAppFacade = {
   editLeague: vi.fn().mockReturnValue(Promise.resolve()),
 };
 
+const day = (iso: string) => new Date(`${iso}T20:00:00`).getTime();
+const thursday: League = {
+  name: 'Thursday',
+  type: 'league',
+  createdAt: 0,
+  seasons: [
+    { id: 'old', name: '2025/26', start: new Date('2025-09-04T00:00:00').getTime() },
+    { id: 'new', name: '2026/27', start: new Date('2026-09-03T00:00:00').getTime() },
+  ],
+};
+
 describe('LeaguePage', () => {
   let component: LeaguePage;
   let fixture: ComponentFixture<LeaguePage>;
 
   beforeEach(async () => {
+    gamesSignal.set([]);
+    leagueList.set([]);
     await TestBed.configureTestingModule({
       imports: [LeaguePage],
       providers: [
@@ -57,87 +76,129 @@ describe('LeaguePage', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('leagues carried over from the old design', () => {
+    const card = () => (fixture.nativeElement as HTMLElement).querySelector('.review-card');
+
+    it('tells the user to set them up and tags each one', () => {
+      leagueList.set([{ name: 'Monday', type: 'league', seasons: [], createdAt: 0, needsReview: true }, thursday]);
+      fixture.detectChanges();
+
+      expect(component.leaguesNeedingReview()).toEqual(['Monday']);
+      expect(card()?.textContent).toContain('Your leagues were updated');
+      expect(card()?.textContent).toContain('Set up Monday');
+      expect(component.leagueSummaries()['Monday'].needsReview).toBe(true);
+      expect(component.leagueSummaries()['Thursday'].needsReview).toBe(false);
+    });
+
+    it('shows nothing when every league is set up', () => {
+      leagueList.set([thursday]);
+      fixture.detectChanges();
+
+      expect(card()).toBeNull();
+    });
+
+    it('keeps them as they are on request', async () => {
+      await component.keepLeaguesAsTheyAre();
+
+      expect(mockLeaguesStore.markLeaguesReviewed).toHaveBeenCalled();
+    });
+  });
+
   it('should expose pin stat definitions used by stats page', () => {
     expect(component.PIN_STAT_DEFINITIONS).toBe(PIN_STAT_DEFINITIONS);
   });
 
-  it('should calculate pattern stats per league', () => {
-    gamesSignal.set([makeGame({ league: 'League A' })]);
+  it('lists leagues with games first, then saved leagues that have none yet', () => {
+    leagueList.set([thursday, { name: 'Cup', type: 'tournament', seasons: [], createdAt: 0 }]);
+    gamesSignal.set([makeGame({ gameId: 'a', league: 'Thursday' }), makeGame({ gameId: 'b' })]);
 
-    const mostPlayedPattern = {
-      name: 'Pattern Most Played',
-      image: '',
-      avg: 200,
-      highestGame: 250,
-      lowestGame: 180,
-      gameCount: 5,
-    };
-    const bestPattern = {
-      name: 'Pattern Best',
-      image: '',
-      avg: 215,
-      highestGame: 270,
-      lowestGame: 190,
-      gameCount: 3,
-    };
-
-    const statService = TestBed.inject(GameStatsService);
-    vi.spyOn(statService, 'calculateMostPlayedPatternStats').mockReturnValue(mostPlayedPattern);
-    vi.spyOn(statService, 'calculateBestPatternStats').mockReturnValue(bestPattern);
-    vi.spyOn(statService, 'calculateAllPatternStats').mockReturnValue([mostPlayedPattern, bestPattern]);
-
-    expect(component.mostPlayedPatternsByLeague()['League A']).toEqual(mostPlayedPattern);
-    expect(component.bestPatternsByLeague()['League A']).toEqual(bestPattern);
-    expect(component.allPatternsByLeague()['League A']).toEqual([mostPlayedPattern, bestPattern]);
+    expect(component.leagueKeys()).toEqual(['Thursday', 'Practice', 'Cup']);
+    expect(component.leagueSummaries()['Cup'].isTournament).toBe(true);
   });
 
-  it('should calculate pin leave stats per league', () => {
-    gamesSignal.set([makeGame({ league: 'League A' })]);
+  it('lists finished events last and narrows the list to leagues or tournaments', () => {
+    leagueList.set([
+      { name: 'Old', type: 'league', seasons: [], createdAt: 0, finished: true },
+      { name: 'Cup', type: 'tournament', seasons: [], createdAt: 0 },
+      { name: 'Thursday', type: 'league', seasons: [], createdAt: 0 },
+    ]);
+    gamesSignal.set([makeGame({ gameId: 'a', league: 'Old' }), makeGame({ gameId: 'b' })]);
 
-    const allLeaves = [
-      {
-        pins: [7, 10],
-        occurrences: 3,
-        pickups: 1,
-        pickupPercentage: 33.3,
-      },
-    ];
-    const commonLeaves = [
-      {
-        pins: [7, 10],
-        occurrences: 3,
-        pickups: 1,
-        pickupPercentage: 33.3,
-      },
-    ];
-    const bestLeaves = [
-      {
-        pins: [2, 4],
-        occurrences: 2,
-        pickups: 2,
-        pickupPercentage: 100,
-      },
-    ];
-    const worstLeaves = [
-      {
-        pins: [4, 6, 7, 10],
-        occurrences: 2,
-        pickups: 0,
-        pickupPercentage: 0,
-      },
-    ];
+    expect(component.leagueKeys()).toEqual(['Practice', 'Cup', 'Thursday', 'Old']);
+    component.view.set('league');
+    expect(component.shownLeagueKeys()).toEqual(['Thursday', 'Old']);
+    component.view.set('tournament');
+    expect(component.shownLeagueKeys()).toEqual(['Cup']);
+    expect(component.viewTitle()).toBe('Tournaments');
+  });
 
+  it('summarises the running season of a league in the list', () => {
+    leagueList.set([thursday]);
+    gamesSignal.set([
+      makeGame({ gameId: 'a', league: 'Thursday', date: day('2025-10-02'), totalScore: 150 }),
+      makeGame({ gameId: 'b', league: 'Thursday', date: day('2026-09-03'), totalScore: 200 }),
+      makeGame({ gameId: 'c', league: 'Thursday', date: day('2026-09-10'), totalScore: 210 }),
+    ]);
+
+    expect(component.leagueSummaries()['Thursday'].season).toEqual({ name: '2026/27', games: 2, average: 205 });
+  });
+
+  it('calculates pattern and leave stats for the opened league only', () => {
+    const games = [makeGame({ gameId: 'a', league: 'League A' }), makeGame({ gameId: 'b', league: 'League B' })];
+    gamesSignal.set(games);
+    const allLeaves = [{ pins: [7, 10], occurrences: 3, pickups: 1, pickupPercentage: 33.3 }];
     const statService = TestBed.inject(GameStatsService);
+    const mostPlayed = vi.spyOn(statService, 'calculateMostPlayedPatternStats');
     vi.spyOn(statService, 'calculateAllLeaves').mockReturnValue(allLeaves);
-    vi.spyOn(statService, 'calculateMostCommonLeaves').mockReturnValue(commonLeaves);
-    vi.spyOn(statService, 'calculateBestSpares').mockReturnValue(bestLeaves);
-    vi.spyOn(statService, 'calculateWorstSpares').mockReturnValue(worstLeaves);
+    vi.spyOn(statService, 'calculateMostCommonLeaves').mockReturnValue(allLeaves);
+    vi.spyOn(statService, 'calculateBestSpares').mockReturnValue([]);
+    vi.spyOn(statService, 'calculateWorstSpares').mockReturnValue([]);
 
-    expect(component.leaveStatsByLeague()['League A']).toEqual({
-      all: allLeaves,
-      common: commonLeaves,
-      best: bestLeaves,
-      worst: worstLeaves,
+    component.openLeague('League A');
+    component.detailHighlights();
+
+    expect(mostPlayed).toHaveBeenCalledWith([games[0]]);
+    expect(component.detailLeaves()).toEqual({ all: allLeaves, common: allLeaves, best: [], worst: [] });
+  });
+
+  describe('seasons', () => {
+    const games = () => [
+      makeGame({ gameId: 'old', league: 'Thursday', date: day('2025-10-02') }),
+      makeGame({ gameId: 'new', league: 'Thursday', date: day('2026-09-10') }),
+    ];
+
+    it('opens a league on its running season and compares it with the season before', () => {
+      leagueList.set([thursday]);
+      gamesSignal.set(games());
+
+      component.openLeague('Thursday');
+
+      expect(component.selectedSeason()).toBe('new');
+      expect(component.seasonOptions().map((option) => option.range.season.id)).toEqual(['new', 'old']);
+      expect(component.detailGames().map((game) => game.gameId)).toEqual(['new']);
+      expect(component.detailTitle()).toBe('Season 2026/27 vs 2025/26');
+      expect(component.compareStats().totalGames).toBe(1);
+    });
+
+    it('shows all games compared with all games when "All" is picked', () => {
+      leagueList.set([thursday]);
+      gamesSignal.set(games());
+      component.openLeague('Thursday');
+
+      component.selectSeason('all');
+
+      expect(component.detailGames()).toHaveLength(2);
+      expect(component.detailTitle()).toBe('Overall Stats');
+      expect(component.compareStats().totalGames).toBe(2);
+    });
+
+    it('opens on all games while the running season has none yet', () => {
+      leagueList.set([thursday]);
+      gamesSignal.set([games()[0]]);
+
+      component.openLeague('Thursday');
+
+      expect(component.selectedSeason()).toBe('all');
     });
   });
 });

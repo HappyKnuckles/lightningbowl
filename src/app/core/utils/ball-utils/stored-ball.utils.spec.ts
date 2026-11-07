@@ -1,6 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { makeBall } from 'src/testing/fixtures';
-import { ballKey, parseStoredBall, toStoredBall } from './stored-ball.utils';
+import { ballKey, parseStoredBall, toStoredBall, withBallKeys } from './stored-ball.utils';
 
 describe('toStoredBall', () => {
   it('turns legacy string specs into numbers or null', () => {
@@ -55,5 +55,18 @@ describe('ballKey', () => {
     const ball = makeBall({ key: '1234-15' });
 
     expect(toStoredBall(ball)).toBe(ball);
+  });
+});
+
+describe('withBallKeys', () => {
+  it('fills in missing keys and keeps the ones the API sent', () => {
+    const sent = makeBall({ key: 'abc-15' });
+    const missing: Partial<Ball> = makeBall({ ball_id: '1234', core_weight: '14' });
+    delete missing.key;
+
+    const [first, second] = withBallKeys([sent, missing as Ball]);
+
+    expect(first).toBe(sent);
+    expect(second.key).toBe('1234-14');
   });
 });

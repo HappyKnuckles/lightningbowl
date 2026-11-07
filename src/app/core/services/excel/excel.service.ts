@@ -12,10 +12,11 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { parseStoredBall } from '../../utils/ball-utils/stored-ball.utils';
-import { findBallInArsenal, formatThrowBall, getGameBalls, normalizeBallKey } from '../../utils/game-utils/ball.utils';
+import { applyBallWeights, findBallInArsenal, formatThrowBall, getGameBalls, weightlessBallNames } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
+import { BallWeightService } from '../ball-weight/ball-weight.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { timestampedFileName } from 'src/app/core/utils/file-utils/file-name.utils';
 import { saveFileFromWeb } from 'src/app/core/utils/file-utils/web-file-save.utils';
@@ -46,6 +47,7 @@ export class ExcelService {
     private leaguesStore: LeaguesStore,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
+    private ballWeightService: BallWeightService,
   ) {}
 
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
@@ -103,7 +105,6 @@ export class ExcelService {
     try {
       const gameData: Game[] = [];
       const leagueMap = new Set<string>();
-      const ballMap = new Set<string>();
 
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
@@ -228,21 +229,6 @@ export class ExcelService {
           leagueMap.add(game.league);
         }
 
-        if (game.balls) {
-          for (const ball of game.balls) {
-            ballMap.add(this.formatBallDisplayName(ball));
-          }
-        }
-
-        for (const frame of game.frames) {
-          for (const throwData of frame.throws) {
-            if (throwData.ball?.name) {
-              const formattedName = this.formatBallDisplayName(formatThrowBall(throwData.ball));
-              if (formattedName) ballMap.add(formattedName);
-            }
-          }
-        }
-
         gameData.push(game);
       }
 
@@ -250,15 +236,30 @@ export class ExcelService {
         await this.leaguesStore.addLeague(league);
       }
 
+      // A ball the file names without a weight gets the weight the bowler picks; it's never guessed.
+      const chosen = await this.ballWeightService.askWeights(
+        gameData.flatMap((game) => weightlessBallNames(game)),
+        'Import',
+      );
+      const weighed = gameData.map((game) => applyBallWeights(game, chosen));
+
+      const ballValues = new Set(
+        weighed
+          .flatMap((game) => [...(game.balls ?? []), ...game.frames.flatMap((frame) => frame.throws.map((t) => formatThrowBall(t.ball)))])
+          .filter(Boolean),
+      );
       // Fetches balls the device doesn't know yet from the ball API (exact name), so they resolve below.
-      await this.ballsStore.resolveBallNames([...ballMap.values()]);
-      for (const ball of ballMap.values()) {
-        const ballToAdd = this.resolveBallReference(ball);
-        if (ballToAdd !== undefined && !this.ballsStore.arsenal().some((b) => b.ball_name === ballToAdd.ball_name)) {
+      await this.ballsStore.resolveBallNames([...ballValues]);
+      for (const value of ballValues) {
+        const ballToAdd = this.resolveBallReference(value);
+        const owned = this.ballsStore
+          .arsenal()
+          .some((b) => b.ball_id === ballToAdd?.ball_id && Number(b.core_weight) === Number(ballToAdd?.core_weight));
+        if (ballToAdd !== undefined && !owned) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
-      const sortedGames = sortGameHistoryByDate(gameData);
+      const sortedGames = sortGameHistoryByDate(weighed);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
       this.gameFilterService.setDefaultFilters();
     } catch (error) {
@@ -789,19 +790,13 @@ export class ExcelService {
   }
 
   /**
-   * The ball an Excel cell names. A cell with a weight ("Phaze II 15lbs") means that weight; a bare
-   * name means the weight `BallsStore.pickVariant` picks (the arsenal's own first), never just
-   * whichever weight happens to be cached first.
+   * The ball an Excel cell names, when the cell has a weight ("Phaze II 15lbs", "PhazeII15"). A
+   * name alone resolves to nothing: its weight is asked for, never guessed.
    */
   private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
     const raw = rawBallValue?.trim();
-    if (!raw) return undefined;
-    const known = this.ballsStore.findKnownBall(raw);
-    if (known) return known;
-    // looser spellings ("PhazeII15"): match leniently, then apply the same weight rule to a bare name
-    const loose = findBallInArsenal({ name: raw }, this.ballsStore.knownBalls());
-    if (!loose || parseStoredBall(raw).weight || normalizeBallKey(raw) !== normalizeBallKey(loose.ball_name)) return loose;
-    return this.ballsStore.pickVariant(this.ballsStore.knownBalls().filter((ball) => ball.ball_id === loose.ball_id)) ?? loose;
+    if (!raw || !parseStoredBall(raw).weight) return undefined;
+    return this.ballsStore.findKnownBall(raw) ?? findBallInArsenal({ name: raw }, this.ballsStore.knownBalls());
   }
 
   /**

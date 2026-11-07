@@ -9,8 +9,10 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
+import { applyBallWeights, weightlessBallNames } from '../../utils/game-utils/ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
+import { BallWeightService } from '../ball-weight/ball-weight.service';
 import { ToastService } from '../toast/toast.service';
 
 interface GameRow {
@@ -45,6 +47,7 @@ export class PinpalService {
     private scoreCalculator: GameScoreCalculatorService,
     private gameFilterService: GameFilterService,
     private toastService: ToastService,
+    private ballWeightService: BallWeightService,
   ) {}
 
   async importFromFile(file: File): Promise<number> {
@@ -62,10 +65,8 @@ export class PinpalService {
       // Ball candidates for name matching: known balls plus API search results
       // for every distinct ball name in the import.
       const availableBalls = await this.findBallCandidates(gameRows.map((row) => row.ballName));
-      const availableBallNames = availableBalls.map((b) => b.ball_name);
-      const availableBallsByName = this.variantByName(availableBalls);
+      const availableBallNames = [...new Set(availableBalls.map((b) => b.ball_name))];
       const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
-      const ballsToAddToArsenal = new Map<string, Ball>();
 
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
@@ -84,13 +85,6 @@ export class PinpalService {
 
         const matchedBall = this.findBestMatch(row.ballName, availableBallNames);
         const matchedPattern = this.findBestMatch(row.patternName, availablePatternNames);
-        const matchedBallObject = matchedBall ? availableBallsByName.get(matchedBall.toLowerCase()) : undefined;
-
-        if (matchedBallObject) {
-          const ballKey = `${matchedBallObject.ball_id}_${matchedBallObject.core_weight}`;
-          ballsToAddToArsenal.set(ballKey, matchedBallObject);
-        }
-
         games.push({
           gameId: `${timestamp}_${i}_${Math.random().toString(36).slice(2, 9)}`,
           date: this.parseDate(row.weekDate),
@@ -108,9 +102,17 @@ export class PinpalService {
         });
       }
 
-      const sortedGames = sortGameHistoryByDate(games);
+      // PinPal stores no weights: the bowler picks each ball's weight, nothing is guessed.
+      const chosen = await this.ballWeightService.askWeights(
+        games.flatMap((game) => weightlessBallNames(game)),
+        'Import',
+      );
+      const sortedGames = sortGameHistoryByDate(games.map((game) => applyBallWeights(game, chosen)));
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
-      const arsenalSaveResults = await Promise.allSettled([...ballsToAddToArsenal.values()].map((ball) => this.ballsStore.saveBallToArsenal(ball)));
+      const owned = (ball: Ball) =>
+        this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && Number(b.core_weight) === Number(ball.core_weight));
+      const toAdd = [...chosen.values()].filter((ball) => !owned(ball));
+      const arsenalSaveResults = await Promise.allSettled(toAdd.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {
         this.toastService.showToast("Import finished, but some balls couldn't be added to the arsenal.", 'bug-outline');
@@ -293,21 +295,6 @@ export class PinpalService {
 
     const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
     return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
-  }
-
-  /** One ball per name: the weight `BallsStore.pickVariant` picks, not whichever weight came last. */
-  private variantByName(balls: Ball[]): Map<string, Ball> {
-    const byName = new Map<string, Ball[]>();
-    for (const ball of balls) {
-      const name = ball.ball_name.toLowerCase();
-      byName.set(name, [...(byName.get(name) ?? []), ball]);
-    }
-    const chosen = new Map<string, Ball>();
-    for (const [name, variants] of byName) {
-      const ball = this.ballsStore.pickVariant(variants);
-      if (ball) chosen.set(name, ball);
-    }
-    return chosen;
   }
 
   private findBestMatch(input: string | null, available: string[]): string | null {

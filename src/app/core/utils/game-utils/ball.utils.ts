@@ -1,5 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallTracking, Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 import { isFirstBallThrow } from './frame.utils';
 
 // Keys & formatting
@@ -306,4 +307,52 @@ export function getThrowBallForPosition(
   if (pending !== undefined) return pending ?? undefined;
 
   return getCarryOverThrowBall(frames, frameIndex, throwIndex, previousGames);
+}
+
+// Weights
+
+/** A stored ball without a weight: a plain name, so which weight was thrown is unknown. */
+export function isWeightless(value: string | ThrowBall | undefined): boolean {
+  if (!value) return false;
+  if (typeof value === 'string') return !!value.trim() && !parseStoredBall(value).weight;
+  return !!value.name?.trim() && !value.weight && !parseStoredBall(value.name).weight;
+}
+
+/** The names a game stores without a weight, from the game's balls and its throws. */
+export function weightlessBallNames(game: Pick<Game, 'balls' | 'frames'>): string[] {
+  const names = (game.balls ?? []).filter((value) => isWeightless(value));
+  for (const frame of game.frames ?? []) {
+    for (const t of frame.throws ?? []) {
+      if (isWeightless(t.ball)) names.push(t.ball!.name);
+    }
+  }
+  return [...new Set(names.map((name) => name.trim()))];
+}
+
+/**
+ * Writes the weights the bowler picked into a game's weightless balls. `chosen` maps lower-cased
+ * names to the ball picked for them; names without a pick stay as they are. Returns the game
+ * itself when nothing changed.
+ */
+export function applyBallWeights<T extends Pick<Game, 'balls' | 'frames'>>(game: T, chosen: Map<string, Ball>): T {
+  const pick = (name: string) => chosen.get(name.trim().toLowerCase());
+  let changed = false;
+  const balls = game.balls?.map((value) => {
+    const ball = isWeightless(value) ? pick(value) : undefined;
+    if (!ball) return value;
+    changed = true;
+    return getThrowBallKey({ name: ball.ball_name, weight: ball.core_weight });
+  });
+  const frames = game.frames?.map((frame) => {
+    if (!frame.throws?.some((t) => isWeightless(t.ball) && pick(t.ball!.name))) return frame;
+    changed = true;
+    return {
+      ...frame,
+      throws: frame.throws.map((t) => {
+        const ball = isWeightless(t.ball) ? pick(t.ball!.name) : undefined;
+        return ball ? { ...t, ball: { name: ball.ball_name, weight: ball.core_weight } } : t;
+      }),
+    };
+  });
+  return changed ? { ...game, balls, frames } : game;
 }

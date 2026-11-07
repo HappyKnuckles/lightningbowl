@@ -128,19 +128,20 @@ export class BallStatsCalculatorService {
     const candidates = this.getBallCandidates();
 
     const byName = candidates.filter((ball) => this.normalizeBallName(ball.ball_name) === normalizedRawName);
-    // a stored weight is what was thrown; a bare name gets the weight BallsStore.pickVariant picks
-    const byNameAndWeight = rawWeight
-      ? byName.find((ball) => this.extractWeightToken(ball.core_weight) === rawWeight)
-      : this.ballsStore.pickVariant(byName);
-
+    // a stored weight is what was thrown; a name alone resolves to no weight at all (it gets asked
+    // for at startup, see BallWeightService), so its stats show the name without specs
+    if (!rawWeight) return undefined;
+    const byNameAndWeight = byName.find((ball) => this.extractWeightToken(ball.core_weight) === rawWeight);
     if (byNameAndWeight) return byNameAndWeight;
 
     const normalizedRaw = this.normalizeBallKey(raw);
-    return candidates.find((ball) => {
-      const byName = this.normalizeBallKey(ball.ball_name);
-      const byKey = this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`);
-      return normalizedRaw === byName || normalizedRaw === byKey;
-    });
+    return candidates.find((ball) => normalizedRaw === this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`));
+  }
+
+  /** Some weight of the ball a name alone means, for what all weights share (the image), never for its specs. */
+  private anyWeightOf(name: string): Ball | undefined {
+    const wanted = this.normalizeBallName(name);
+    return this.getBallCandidates().find((ball) => this.normalizeBallName(ball.ball_name) === wanted);
   }
 
   private formatBallDisplayName(rawBallValue: string | undefined): string {
@@ -260,8 +261,8 @@ export class BallStatsCalculatorService {
     const finalStats: Record<string, HighlightItemStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
-      const resolvedBall = this.resolveBallReference(ballName);
-      const ballImage = ballImageUrl(resolvedBall, 'ball');
+      // every weight of a ball has the same image, so a name alone still gets one (but no weight)
+      const ballImage = ballImageUrl(this.resolveBallReference(ballName) ?? this.anyWeightOf(ballName), 'ball');
       const strikeRate = stats.totalThrows > 0 ? Math.round((stats.totalStrikes / stats.totalThrows) * 100) : 0;
 
       finalStats[ballName] = {

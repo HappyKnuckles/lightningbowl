@@ -41,14 +41,7 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import {
-  ballValueMatches,
-  findBallInArsenal,
-  formatThrowBall,
-  getBallTracking,
-  getGameBallNames,
-  getThrowBallKey,
-} from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getBallTracking, getGameBallNames, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -74,7 +67,7 @@ import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahea
 import { GameCardTemplateDirective } from './game-card-template.directive';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
-import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ballPickerFor } from 'src/app/core/utils/ball-utils/ball-picker.utils';
 
 interface MonthRow {
   kind: 'month';
@@ -188,6 +181,12 @@ export class GameListComponent implements OnInit {
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
+  /** The ball typeahead's list and selection per game id. */
+  ballPickers = computed(() => {
+    const arsenal = this.ballsStore.arsenal();
+    const known = this.ballsStore.knownBalls();
+    return Object.fromEntries(this.games().map((game) => [game.gameId, ballPickerFor(game.balls, arsenal, known)]));
+  });
 
   showingGames = computed(() => {
     const games = this.sortedGames();
@@ -636,21 +635,6 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  getBallKeys(names: string[] | undefined): string[] {
-    return this.#gameBalls(names).map(ballKey);
-  }
-
-  /**
-   * What the ball typeahead lists before a search: the arsenal plus the game's own balls. A ball
-   * that left the arsenal must still be listed, or it starts out unselected and the next pick
-   * removes it from the game.
-   */
-  ballPickerItems(names: string[] | undefined): Ball[] {
-    const arsenal = this.ballsStore.arsenal();
-    const own = this.#gameBalls(names).filter((ball) => !arsenal.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight));
-    return [...arsenal, ...own];
-  }
-
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {
     const failed = await this.ballsStore.saveBallsToArsenal(balls);
     const saved = balls.filter((b) => !failed.includes(b));
@@ -682,11 +666,6 @@ export class GameListComponent implements OnInit {
     await alert.present();
     const { role } = await alert.onDidDismiss();
     return role === 'confirm';
-  }
-
-  #gameBalls(names: string[] | undefined): Ball[] {
-    if (!names?.length) return [];
-    return this.ballsStore.knownBalls().filter((ball) => names.some((name) => ballValueMatches(name, ball)));
   }
 }
 

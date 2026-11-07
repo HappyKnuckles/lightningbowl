@@ -3,6 +3,7 @@ import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
+import { toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -156,7 +157,7 @@ export class FavoritesService {
           // Old format — return keys for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Ball>((parsed as Ball[]).map((b) => [`${b.ball_id}-${b.core_weight}`, b]));
+          const map = new Map<string, Ball>((parsed as Ball[]).map(toStoredBall).map((b) => [`${b.ball_id}-${b.core_weight}`, b]));
           this._favoriteBalls.set(map);
         }
       }
@@ -174,7 +175,7 @@ export class FavoritesService {
   }
 
   private async migrateOldBallFavorites(keys: string[]): Promise<void> {
-    // Old keys are "ballId-coreWeight". Group by weight to minimise API calls.
+    // Old keys are "ballId-coreWeight".
     const weightGroups = new Map<number, string[]>();
     for (const key of keys) {
       const lastDash = key.lastIndexOf('-');
@@ -187,14 +188,15 @@ export class FavoritesService {
     }
 
     const matched: Ball[] = [];
-    for (const [weight, ballIds] of weightGroups) {
-      try {
-        const balls = await this.ballService.getBallsByWeight(weight);
+    try {
+      const allIds = [...weightGroups.values()].flat();
+      const balls = await this.ballService.getBallsByIds(allIds);
+      for (const [weight, ballIds] of weightGroups) {
         const idSet = new Set(ballIds);
-        matched.push(...balls.filter((b) => idSet.has(b.ball_id)));
-      } catch {
-        // skip this weight group if the fetch fails
+        matched.push(...balls.filter((b) => idSet.has(b.ball_id) && Number(b.core_weight) === weight));
       }
+    } catch {
+      // keep the old favorites keys if the lookup fails; it's retried on the next start
     }
 
     if (matched.length > 0) {

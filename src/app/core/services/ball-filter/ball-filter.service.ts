@@ -1,7 +1,11 @@
-import { computed, Injectable, Signal, signal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
+import { BallSortField, SortDirection } from 'src/app/core/models/sort.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { buildBallQueryParams } from 'src/app/core/utils/ball-query/ball-query.utils';
+import { BallService } from '../ball/ball.service';
+import { NetworkService } from '../network/network.service';
 import { UtilsService } from '../../utils/utils.service';
 
 @Injectable({
@@ -45,16 +49,48 @@ export class BallFilterService {
 
   readonly filters = signal<BallFilter>(this.loadInitialFilters());
 
+  /** Offline only: filters the known balls (online, the ball API filters). */
   readonly filteredBalls = computed(() => {
-    const balls = this.ballsStore.allBalls();
+    const balls = this.ballsStore.knownBalls();
     const filters = this.filters();
     return this.filterBalls(balls, filters);
   });
+
+  readonly #ballService = inject(BallService);
+  readonly #networkService = inject(NetworkService);
 
   constructor(
     private utilsService: UtilsService,
     private ballsStore: BallsStore,
   ) {}
+
+  /**
+   * How many balls match the filters: the whole catalog via the ball API when
+   * online (one-ball page, only `totalElements` is used), the known balls
+   * offline or when the request fails.
+   */
+  async countMatches(filters: BallFilter): Promise<number> {
+    if (this.#networkService.isOnline) {
+      try {
+        const params = buildBallQueryParams({
+          filters,
+          defaultFilters: this.defaultFilters,
+          favorites: [],
+          search: '',
+          // The order doesn't change the count; relevance sends no sort.
+          sort: { field: BallSortField.RELEVANCE, direction: SortDirection.DESC, label: '' },
+          arsenalIds: this.ballsStore.arsenal().map((ball) => ball.ball_id),
+          page: 0,
+          size: 1,
+        });
+        const page = await this.#ballService.searchBalls(params);
+        return page.page.totalElements;
+      } catch (error) {
+        console.error('Error counting balls:', error);
+      }
+    }
+    return this.filterBalls(this.ballsStore.knownBalls(), filters).length;
+  }
 
   saveFilters(): void {
     localStorage.setItem('ball-filter', JSON.stringify(this.filters()));
@@ -67,18 +103,20 @@ export class BallFilterService {
   filterBalls(balls: Ball[], filters: BallFilter): Ball[] {
     const filteredBalls = balls.filter((ball) => {
       return (
-        (filters.brands.length === 0 || filters.brands.includes(ball.brand_name)) &&
-        (filters.cores.length === 0 || filters.cores.includes(ball.core_name)) &&
-        (filters.coverstocks.length === 0 || filters.coverstocks.includes(ball.ball_name)) &&
+        (!filters.weight || ball.core_weight === filters.weight) &&
+        (filters.brands.length === 0 || filters.brands.includes(ball.brand_name ?? '')) &&
+        (filters.cores.length === 0 || filters.cores.includes(ball.core_name ?? '')) &&
+        (filters.coverstocks.length === 0 || filters.coverstocks.includes(ball.coverstock_name ?? '')) &&
         (filters.coverstockTypes.length === 0 || filters.coverstockTypes.includes(ball.coverstock_type as CoverstockType)) &&
         (filters.market === Market.ALL || filters.market === ball.us_int) &&
         (filters.coreType === CoreType.ALL || filters.coreType === ball.core_type) &&
         (!filters.availability || ball.availability === 'Available') &&
         (filters.releaseDate === 'all' || filters.releaseDate === ball.release_date) &&
-        filters.minRg <= parseFloat(ball.core_rg) &&
-        filters.maxRg >= parseFloat(ball.core_rg) &&
-        filters.minDiff <= parseFloat(ball.core_diff) &&
-        filters.maxDiff >= parseFloat(ball.core_diff) &&
+        // Missing specs become NaN and fail the range checks, as before.
+        filters.minRg <= (ball.core_rg ?? NaN) &&
+        filters.maxRg >= (ball.core_rg ?? NaN) &&
+        filters.minDiff <= (ball.core_diff ?? NaN) &&
+        filters.maxDiff >= (ball.core_diff ?? NaN) &&
         (!filters.inArsenal || this.ballsStore.arsenal().some((arsenalBall) => arsenalBall.ball_id === ball.ball_id))
       );
     });

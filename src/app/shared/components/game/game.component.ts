@@ -68,6 +68,7 @@ import { LeagueSelectorComponent } from '../league-selector/league-selector.comp
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -193,7 +194,7 @@ export class GameComponent implements OnInit {
       const key = getThrowBallKey(ball);
       if (!thumbCache.has(key)) {
         const arsenalBall = findBallInArsenal(ball, arsenal);
-        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined);
       }
       return thumbCache.get(key);
     };
@@ -427,16 +428,16 @@ export class GameComponent implements OnInit {
     if (!names) return [];
 
     return this.ballsStore
-      .allBalls()
+      .knownBalls()
       .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
       .map((ball) => ball.ball_id);
   }
 
   // --- Passthrough Event Emitters ---
-  async onBallAdd(ballIds: string[]) {
+  async onBallAdd(selected: Ball[]) {
     if (!(await this.confirmReplaceThrowBalls())) return;
-    const allBalls = this.ballsStore.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+    // picked balls may come from an API search, so keep them resolvable offline
+    void this.ballsStore.rememberBalls(selected);
     this.ballsChanged.emit(selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })));
     this.saveBallToArsenal(selected);
   }

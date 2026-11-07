@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { IonContent } from '@ionic/angular/standalone';
-import { ModalController } from '@ionic/angular';
+import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { GenericTypeaheadComponent } from './generic-typeahead.component';
@@ -128,5 +128,79 @@ describe('GenericTypeaheadComponent', () => {
     component.ngOnDestroy();
 
     expect(component.selectedItemsChange.emit).not.toHaveBeenCalled();
+  });
+
+  describe('api paging', () => {
+    const page = (ids: string[]): TestItem[] => ids.map((id) => ({ id, name: id }));
+    let apiPageFn: ReturnType<typeof vi.fn>;
+
+    const initPaged = async (): Promise<void> => {
+      fixture.componentRef.setInput('config', { ...CONFIG, searchMode: 'api', apiPageFn });
+      init();
+      await fixture.whenStable();
+    };
+
+    beforeEach(() => {
+      apiPageFn = vi.fn(async (term: string, pageNumber: number) =>
+        term
+          ? { items: page([`${term}-${pageNumber}`]), hasMore: false }
+          : { items: page([`p${pageNumber}-a`, `p${pageNumber}-b`]), hasMore: pageNumber < 1 },
+      );
+    });
+
+    it('lists the items first and then the first api page', async () => {
+      await initPaged();
+
+      expect(apiPageFn).toHaveBeenCalledWith('', 0);
+      expect(component.displayedItems().map((item) => item.id)).toEqual(['alpha', 'beta', 'gamma', 'p0-a', 'p0-b']);
+    });
+
+    it('skips api results that are already in the list', async () => {
+      apiPageFn.mockResolvedValueOnce({ items: [ITEMS[0], ...page(['p0-a'])], hasMore: false });
+      await initPaged();
+
+      expect(component.filteredItems().map((item) => item.id)).toEqual(['alpha', 'beta', 'gamma', 'p0-a']);
+    });
+
+    it('fetches the next page on infinite scroll once everything loaded is shown', async () => {
+      await initPaged();
+      const target = { complete: vi.fn(), disabled: false };
+
+      await component.loadData({ target } as unknown as InfiniteScrollCustomEvent);
+
+      expect(apiPageFn).toHaveBeenLastCalledWith('', 1);
+      expect(
+        component
+          .displayedItems()
+          .map((item) => item.id)
+          .slice(-2),
+      ).toEqual(['p1-a', 'p1-b']);
+      expect(target.complete).toHaveBeenCalled();
+      expect(target.disabled).toBe(true);
+    });
+
+    it('replaces the list with paged search results and restores browsing on clear', async () => {
+      await initPaged();
+
+      await search('Ro');
+      expect(apiPageFn).toHaveBeenLastCalledWith('ro', 0);
+      expect(component.displayedItems().map((item) => item.id)).toEqual(['ro-0']);
+
+      await search('');
+      expect(component.displayedItems().map((item) => item.id)).toEqual(['alpha', 'beta', 'gamma', 'p0-a', 'p0-b']);
+    });
+
+    it('ignores a response for a search term that is no longer current', async () => {
+      await initPaged();
+      let resolveSlow!: (value: { items: TestItem[]; hasMore: boolean }) => void;
+      apiPageFn.mockImplementationOnce(() => new Promise((resolve) => (resolveSlow = resolve)));
+
+      const slow = search('old');
+      await search('new');
+      resolveSlow({ items: page(['stale']), hasMore: false });
+      await slow;
+
+      expect(component.displayedItems().map((item) => item.id)).toEqual(['new-0']);
+    });
   });
 });

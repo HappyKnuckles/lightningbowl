@@ -7,6 +7,8 @@ import type { SeedProfileName } from '../../screenshots/lib/types';
 import type { Ball } from '../../../src/app/core/models/ball.model';
 import { installBowwwlMocks, installPatternMocks } from './api-mocks';
 import REAL_BALLS from '../../screenshots/fixtures-data/real-balls.json';
+// The fixture holds bowwwl.com's string specs; the ball API returns numbers.
+import { toStoredBall } from '../../../src/app/core/utils/ball-utils/stored-ball.utils';
 import { PATTERNS } from '../fixtures/patterns';
 
 /**
@@ -49,7 +51,7 @@ export class AppHarness {
     const { page, baseURL } = this;
 
     await installMocks(page);
-    if (opts.mockApi === 'balls') await installBowwwlMocks(page, REAL_BALLS as unknown as Ball[]);
+    if (opts.mockApi === 'balls') await installBowwwlMocks(page, (REAL_BALLS as unknown as Ball[]).map(toStoredBall));
     if (opts.mockApi === 'patterns') await installPatternMocks(page, PATTERNS);
     await installStabilizers(page);
 

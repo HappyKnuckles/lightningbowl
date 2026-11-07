@@ -15,7 +15,7 @@
       <div class="ball-selector-corner">
         <ion-button class="ball-icon-button" fill="clear" size="small" (click)="openBallSelector()">
           @if (selectedBallThumbnail(); as thumbnail) {
-            <img slot="icon-only" class="selected-ball-thumb" [src]="ballsStore.url + thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
+            <img slot="icon-only" class="selected-ball-thumb" [src]="thumbnail" [alt]="selectedBallDisplayName() + ' thumbnail'" />
           } @else {
             <ion-icon slot="icon-only" name="bowling-ball-outline"></ion-icon>
           }
@@ -68,7 +68,7 @@
 
 <ion-modal [isOpen]="isAddBallModalOpen()" (didDismiss)="closeAddBallModal()">
   <ng-template>
-    <app-generic-typeahead [items]="ballsStore.allBalls()" [config]="ballTypeaheadConfig" (selectedItemsChange)="onBallAdd($event)">
+    <app-generic-typeahead [items]="ballsStore.arsenal()" [config]="ballTypeaheadConfig" (selectedObjectsChange)="onBallAdd($event)">
     </app-generic-typeahead>
   </ng-template>
 </ion-modal>

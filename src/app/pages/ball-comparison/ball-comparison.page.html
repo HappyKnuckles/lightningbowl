@@ -66,7 +66,7 @@
               </div>
 
               <div class="ball-image-wrapper">
-                <ion-img [src]="url + ball.data.thumbnail_image" [alt]="ball.data.ball_name"></ion-img>
+                <ion-img [src]="ball.data | ballImage" [alt]="ball.data.ball_name"></ion-img>
               </div>
 
               <ion-card-header>
@@ -208,10 +208,10 @@
 <ion-modal #addBallModal [presentingElement]="presentingElement">
   <ng-template>
     <app-generic-typeahead
-      [items]="allBalls()"
+      [items]="pickerBalls()"
       [config]="ballTypeaheadConfig"
       [prevSelectedItems]="selectedBallIds()"
-      (selectedItemsChange)="onBallSelectionChange($event)">
+      (selectedObjectsChange)="onBallSelectionChange($event)">
     </app-generic-typeahead>
   </ng-template>
 </ion-modal>

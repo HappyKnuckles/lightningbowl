@@ -65,7 +65,7 @@ export class AppFacade {
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
         this.patternsStore.loadPatternImageMap(),
-        this.ballsStore.loadAllBalls(undefined, weight),
+        this.ballsStore.loadBallCache(),
         this.leaguesStore.loadLeagues(),
         this.gamesStore.loadGameHistory(),
         this.ballsStore.loadArsenal(),
@@ -75,6 +75,11 @@ export class AppFacade {
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
+      // Make the balls named in games available offline (fetches only unknown names).
+      void this.ballsStore.resolveBallNames(
+        this.gamesStore.games().flatMap((game) => game.balls ?? []),
+        weight,
+      );
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;

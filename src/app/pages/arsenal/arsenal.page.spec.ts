@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
@@ -12,17 +12,21 @@ describe('ArsenalPage', () => {
   let fixture: ComponentFixture<ArsenalPage>;
 
   const arsenal = signal<Ball[]>([]);
-  const allBalls = signal<Ball[]>([]);
+  const cachedBalls = signal<Ball[]>([]);
   const games = signal<Game[]>([]);
 
   beforeEach(() => {
     arsenal.set([]);
-    allBalls.set([]);
+    cachedBalls.set([]);
     games.set([]);
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: BallsStore, useValue: { arsenal, allBalls, url: '' } },
+        // the migrated store: the arsenal plus balls remembered from games (no full catalog on the device)
+        {
+          provide: BallsStore,
+          useValue: { arsenal, knownBalls: computed(() => [...arsenal(), ...cachedBalls()]), myBalls: arsenal, url: '' },
+        },
         { provide: GamesStore, useValue: { games } },
       ],
     });
@@ -42,7 +46,7 @@ describe('ArsenalPage', () => {
 
     it('leaves out balls that are no longer in the arsenal', () => {
       arsenal.set([hammer]);
-      allBalls.set([hammer, iq]);
+      cachedBalls.set([hammer, iq]);
       games.set([
         makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] }),
         makeGame({ gameId: 'g2', totalScore: 180, balls: ['IQ Tour15'] }),
@@ -53,7 +57,7 @@ describe('ArsenalPage', () => {
 
     it('includes an owned ball that has never been thrown', () => {
       arsenal.set([hammer, iq]);
-      allBalls.set([hammer, iq]);
+      cachedBalls.set([hammer, iq]);
       games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] })]);
 
       const never = component.ballStats().find((stats) => stats.name === 'IQ Tour');
@@ -64,7 +68,7 @@ describe('ArsenalPage', () => {
 
     it('does not list an owned ball twice once it has been thrown', () => {
       arsenal.set([hammer]);
-      allBalls.set([hammer]);
+      cachedBalls.set([hammer]);
       games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] })]);
 
       const stats = component.ballStats();
@@ -75,7 +79,7 @@ describe('ArsenalPage', () => {
 
     it('ignores the game filter so the numbers cover all time', () => {
       arsenal.set([hammer]);
-      allBalls.set([hammer]);
+      cachedBalls.set([hammer]);
       games.set([
         makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'], isPractice: true }),
         makeGame({ gameId: 'g2', totalScore: 100, balls: ['Hammer15'], league: 'Monday' }),

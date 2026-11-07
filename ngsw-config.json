@@ -21,7 +21,17 @@
   "dataGroups": [
     {
       "name": "ball-images",
-      "urls": ["https://bowwwl.com/sites/default/files/styles/medium/public/balls/**"],
+      "urls": ["https://images.lightningbowl.de/balls/**"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 1000,
+        "maxAge": "365d",
+        "timeout": "10s"
+      }
+    },
+    {
+      "name": "ball-images-bowwwl",
+      "urls": ["https://bowwwl.com/sites/default/files/**"],
       "cacheConfig": {
         "strategy": "performance",
         "maxSize": 500,

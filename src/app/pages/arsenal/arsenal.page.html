@@ -47,7 +47,7 @@
                 <ion-item button (click)="openBallDetail(ball)">
                   <ion-reorder slot="start">
                     <ion-thumbnail>
-                      <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                      <ion-img [src]="ball | ballImage"></ion-img>
                     </ion-thumbnail>
                   </ion-reorder>
                   <ion-label>
@@ -114,7 +114,7 @@
         <ion-item button [id]="ball.ball_id + ball.core_weight">
           <ion-reorder slot="start">
             <ion-thumbnail>
-              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+              <ion-img [src]="ball | ballImage"></ion-img>
             </ion-thumbnail>
           </ion-reorder>
 
@@ -174,7 +174,7 @@
               <ion-card-content>
                 <div class="coverstock-container">
                   <div class="coverstock-image">
-                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                    <ion-img [src]="ball | ballImage"></ion-img>
                   </div>
                   <div class="info-container">
                     <ion-text
@@ -202,9 +202,11 @@
               aria-label="View core balls">
               <ion-card-content>
                 <div class="core-container">
-                  <div class="core-image">
-                    <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
-                  </div>
+                  @if (ball.core_image) {
+                    <div class="core-image">
+                      <ion-img [src]="ball | ballImage: 'core'"></ion-img>
+                    </div>
+                  }
                   <div class="info-container">
                     <ion-text
                       >Type:&nbsp;
@@ -404,7 +406,7 @@
     <app-generic-typeahead
       [items]="ballsWithoutArsenal()"
       [config]="ballTypeaheadConfig"
-      (selectedItemsChange)="onBallSelectionChange($event)"
+      (selectedObjectsChange)="onBallSelectionChange($event)"
       [prevSelectedItems]="[]">
     </app-generic-typeahead>
   </ng-template>

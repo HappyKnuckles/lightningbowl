@@ -14,6 +14,7 @@ import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/cor
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 export interface ThrowConfirmedEvent {
   pinsKnockedDown: number[];
@@ -76,7 +77,7 @@ export class PinInputComponent {
   /** Arsenal thumbnail of the currently selected ball, if available */
   readonly selectedBallThumbnail = computed<string | undefined>(() => {
     const arsenalBall = findBallInArsenal(this.selectedBall(), this.ballsStore.arsenal());
-    return arsenalBall?.thumbnail_image || undefined;
+    return arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined;
   });
 
   readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));
@@ -126,17 +127,14 @@ export class PinInputComponent {
   }
 
   /**
-   * Balls picked from the full catalogue when the arsenal is still empty. Every pick is
+   * Balls picked from the ball API when the arsenal is still empty. Every pick is
    * saved, not just the first: adding three balls and getting one is the kind of silent
    * loss you only notice much later. A single ball is used for this throw straight away;
    * with several there is no way to know which one is in hand, so the arsenal picker opens
    * for the user to choose.
    */
-  async onBallAdd(ballIds: string[]): Promise<void> {
+  async onBallAdd(balls: Ball[]): Promise<void> {
     this.isAddBallModalOpen.set(false);
-
-    const allBalls = this.ballsStore.allBalls();
-    const balls = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
     if (balls.length === 0) return;
 
     const failed = await this.ballsStore.saveBallsToArsenal(balls);

@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Throw } from 'src/app/core/models/game.model';
 import { Pattern } from 'src/app/core/models/pattern.model';
+import { BallService } from 'src/app/core/services/ball/ball.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
@@ -45,6 +46,7 @@ describe('PinpalService', () => {
   let service: PinpalService;
   let gamesStore: SpyObj<GamesStore>;
   let ballsStore: SpyObj<BallsStore>;
+  let ballService: SpyObj<BallService>;
   let gameFilterService: SpyObj<GameFilterService>;
   let toastService: SpyObj<ToastService>;
   let scoreCalculator: SpyObj<GameScoreCalculatorService>;
@@ -112,7 +114,11 @@ describe('PinpalService', () => {
     gamesStore = createSpyObj<GamesStore>(['saveGamesToLocalStorage']);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
 
-    ballsStore = createSpyObj<BallsStore>(['saveBallToArsenal'], { allBalls });
+    // The app's known balls; the API search finds nothing unless a test says so.
+    ballsStore = createSpyObj<BallsStore>(['saveBallToArsenal', 'knownBalls']);
+    ballsStore.knownBalls.mockImplementation(() => allBalls());
+    ballService = createSpyObj<BallService>(['findBallsByText']);
+    ballService.findBallsByText.mockResolvedValue([]);
     ballsStore.saveBallToArsenal.mockResolvedValue([]);
 
     gameFilterService = createSpyObj<GameFilterService>(['setDefaultFilters']);
@@ -125,6 +131,7 @@ describe('PinpalService', () => {
       providers: [
         { provide: GamesStore, useValue: gamesStore },
         { provide: BallsStore, useValue: ballsStore },
+        { provide: BallService, useValue: ballService },
         { provide: PatternsStore, useValue: { allPatterns } },
         { provide: GameFilterService, useValue: gameFilterService },
         { provide: ToastService, useValue: toastService },
@@ -213,6 +220,17 @@ describe('PinpalService', () => {
       stubDatabase([{ pk: 1 }], { 1: frameRows() }, false);
 
       await expect(service.importFromFile(pinpalFile())).resolves.toBe(0);
+    });
+
+    it('searches the ball API for imported names it does not know', async () => {
+      const ball = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '15' });
+      ballService.findBallsByText.mockResolvedValue([ball]);
+      stubDatabase([{ pk: 1, ballName: 'Black Widow 3.0' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
+
+      await service.importFromFile(pinpalFile());
+
+      expect(ballService.findBallsByText).toHaveBeenCalledWith('Black Widow 3.0', undefined, 10);
+      expect(ballsStore.saveBallToArsenal).toHaveBeenCalledWith(ball);
     });
 
     it('matches balls and patterns against what the app knows and adds the ball to the arsenal', async () => {

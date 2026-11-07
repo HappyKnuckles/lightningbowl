@@ -131,10 +131,9 @@ describe('GameComponent', () => {
       const other = makeBall({ ball_id: 'o', ball_name: 'Other', core_weight: '15' });
       mockBallsStore.arsenal.mockReturnValue([owned]);
       mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
+      fixture.componentRef.setInput('game', makeGame({ balls: ['Retired15', 'Owned15'] }));
 
-      expect(component.ballPickerItems(['Retired15', 'Owned15'])).toEqual([owned, retired]);
-      expect(component.getBallIds(['Retired15'])).toEqual(['r']);
-      expect(component.ballPickerItems(undefined)).toEqual([owned]);
+      expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a', 'r'] });
     });
   });
 });

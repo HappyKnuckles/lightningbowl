@@ -8,7 +8,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { ballKey, formatStoredBall, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ballKey, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {
@@ -126,29 +126,12 @@ export class BallsStore {
   }
 
   /**
-   * How to show a ball stored in a game: "Name 15lbs" when a weight was
-   * stored with it, else the plain name, plus the matching known ball (for
-   * its image), if any.
-   */
-  describeStoredBall(value: string): { label: string; ball: Ball | undefined } {
-    const ball = this.findKnownBall(value);
-    const isPlainName = ball?.ball_name.toLowerCase() === value.trim().toLowerCase();
-    return { label: isPlainName ? value.trim() : formatStoredBall(parseStoredBall(value)), ball };
-  }
-
-  /**
    * Resolves ball names (as stored in games) to balls: known balls first, the
    * rest from the ball API by exact name when online. Resolved balls are
-   * remembered, so this works offline afterwards. Keys are lower-cased names.
+   * remembered, so `findKnownBall` finds them, also offline afterwards.
    */
-  async resolveBallNames(names: string[], preferredWeight?: number | string): Promise<Map<string, Ball>> {
-    const result = new Map<string, Ball>();
-    const missing: string[] = [];
-    for (const name of new Set(names.filter(Boolean))) {
-      const known = this.findKnownBall(name, preferredWeight);
-      if (known) result.set(name.toLowerCase(), known);
-      else missing.push(name);
-    }
+  async resolveBallNames(names: string[], preferredWeight?: number | string): Promise<void> {
+    const missing = [...new Set(names.filter(Boolean))].filter((name) => !this.findKnownBall(name, preferredWeight));
 
     if (missing.length > 0 && this.#networkService.isOnline) {
       try {
@@ -159,15 +142,10 @@ export class BallsStore {
         // name can't pick up a weight nobody threw.
         const meant = missing.map((value) => this.#meantVariant(value, fetched, preferredWeight)).filter((ball): ball is Ball => ball !== undefined);
         await this.rememberBalls(meant);
-        for (const name of missing) {
-          const ball = this.findKnownBall(name, preferredWeight);
-          if (ball) result.set(name.toLowerCase(), ball);
-        }
       } catch (error) {
         console.error('Error resolving ball names:', error);
       }
     }
-    return result;
   }
 
   /** Re-fetches cached balls so their data stays current (pull-to-refresh). */

@@ -46,6 +46,8 @@ describe('BallsPage', () => {
       arsenal: signal<Ball[]>([]),
       saveBallToArsenal: vi.fn().mockResolvedValue([]),
       removeFromArsenal: vi.fn().mockResolvedValue(undefined),
+      refreshKnownBalls: vi.fn().mockResolvedValue(undefined),
+      loadArsenal: vi.fn().mockResolvedValue(undefined),
     };
     const mockBallFilterService = {
       filters: signal({}),
@@ -237,6 +239,20 @@ describe('BallsPage', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(ballService.searchBalls).not.toHaveBeenCalled();
+  });
+
+  it('still reloads the list on pull-to-refresh when refreshing the cached balls fails', async () => {
+    const store = TestBed.inject(BallsStore) as unknown as { refreshKnownBalls: ReturnType<typeof vi.fn> };
+    store.refreshKnownBalls.mockRejectedValue(new Error('offline'));
+    ballService.searchBalls.mockResolvedValue(page([ball('A')]));
+    const event = { target: { complete: vi.fn() } };
+
+    await component.handleRefresh(event as never);
+
+    expect(ballService.searchBalls).toHaveBeenCalled();
+    expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['A']);
+    expect(TestBed.inject(ToastService).showToast).not.toHaveBeenCalled();
+    expect(event.target.complete).toHaveBeenCalled();
   });
 
   it('sends the search term to the API', async () => {

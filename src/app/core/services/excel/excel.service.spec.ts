@@ -84,7 +84,7 @@ describe('ExcelService', () => {
 
   it('should support legacy Pattern field in transformData', async () => {
     // Mock storage service methods
-    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
+    mockBallsStore.resolveBallNames.mockResolvedValue(undefined);
     mockBallsStore.arsenal.mockReturnValue([]);
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
@@ -162,7 +162,7 @@ describe('ExcelService', () => {
 
   it('should prefer new Patterns field over legacy Pattern field', async () => {
     // Mock storage service methods
-    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
+    mockBallsStore.resolveBallNames.mockResolvedValue(undefined);
     mockBallsStore.arsenal.mockReturnValue([]);
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
@@ -290,7 +290,7 @@ describe('ExcelService', () => {
     const heavy = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
     mockBallsStore.knownBalls.mockReturnValue([light, heavy]);
     mockBallsStore.arsenal.mockReturnValue([]);
-    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
+    mockBallsStore.resolveBallNames.mockResolvedValue(undefined);
     mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
     mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
     mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());

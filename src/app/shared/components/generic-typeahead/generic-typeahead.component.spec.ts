@@ -223,10 +223,7 @@ describe('GenericTypeaheadComponent with the ball config', () => {
     fixture.componentRef.setInput('items', [fourteen, fifteen]);
     fixture.componentRef.setInput(
       'config',
-      createBallTypeaheadConfig(
-        async () => [],
-        async () => ({ items: [], hasMore: false }),
-      ),
+      createBallTypeaheadConfig(async () => ({ items: [], hasMore: false })),
     );
     fixture.componentRef.setInput('prevSelectedItems', ['p-15']);
     fixture.detectChanges();

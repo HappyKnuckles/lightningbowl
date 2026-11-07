@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, Injectable, Signal, signal } from '@angular/core';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import { BallSortField, SortDirection } from 'src/app/core/models/sort.model';
@@ -56,12 +56,11 @@ export class BallFilterService {
     return this.filterBalls(balls, filters);
   });
 
-  readonly #ballService = inject(BallService);
-  readonly #networkService = inject(NetworkService);
-
   constructor(
     private utilsService: UtilsService,
     private ballsStore: BallsStore,
+    private ballService: BallService,
+    private networkService: NetworkService,
   ) {}
 
   /**
@@ -70,7 +69,7 @@ export class BallFilterService {
    * offline or when the request fails.
    */
   async countMatches(filters: BallFilter): Promise<number> {
-    if (this.#networkService.isOnline) {
+    if (this.networkService.isOnline) {
       try {
         const params = buildBallQueryParams({
           filters,
@@ -83,7 +82,7 @@ export class BallFilterService {
           page: 0,
           size: 1,
         });
-        const page = await this.#ballService.searchBalls(params);
+        const page = await this.ballService.searchBalls(params);
         return page.page.totalElements;
       } catch (error) {
         console.error('Error counting balls:', error);

@@ -22,10 +22,7 @@ export class TypeaheadConfigService {
   readonly core = BALL_CORE_TYPEAHEAD_CONFIG;
   readonly coverstock = BALL_COVERSTOCK_TYPEAHEAD_CONFIG;
   // Searches the ball API in the weight set in the ball filter (default 15 lb).
-  readonly ball = createBallTypeaheadConfig(
-    (term) => this.ballService.findBallsByText(term, this.ballFilterService.filters().weight),
-    (term, page) => this.ballService.findBallsPage(term, page, this.ballFilterService.filters().weight),
-  );
+  readonly ball = createBallTypeaheadConfig((term, page) => this.ballService.findBallsPage(term, page, this.ballFilterService.filters().weight));
   // readonly league = LEAGUE_TYPEAHEAD_CONFIG;
 
   readonly pattern = createPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));

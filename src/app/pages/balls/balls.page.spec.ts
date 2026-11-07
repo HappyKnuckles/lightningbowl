@@ -168,6 +168,77 @@ describe('BallsPage', () => {
     expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['New']);
   });
 
+  it('loads more of the list on screen, not of a search typed since', async () => {
+    ballService.searchBalls.mockResolvedValueOnce(page([ball('A')], 0, 2)).mockResolvedValueOnce(page([ball('B')], 1, 2));
+    await component.loadFirstPage();
+    // typed, but the debounced first page for it hasn't been requested yet
+    component.searchTerm.set('phaze');
+
+    await component.loadMore(infiniteEvent());
+
+    expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ page: '1' }));
+    expect(ballService.searchBalls.mock.lastCall![0]['search']).toBeUndefined();
+    expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['A', 'B']);
+  });
+
+  it('does not load more while the first page of a new query is loading', async () => {
+    ballService.searchBalls.mockResolvedValueOnce(page([ball('A')], 0, 3));
+    await component.loadFirstPage();
+    let resolveNew!: (value: BallPage) => void;
+    ballService.searchBalls.mockReturnValueOnce(new Promise<BallPage>((resolve) => (resolveNew = resolve)));
+    const newQuery = component.loadFirstPage();
+    const event = infiniteEvent();
+
+    await component.loadMore(event);
+
+    expect(ballService.searchBalls).toHaveBeenCalledTimes(2);
+    expect((event as { target: { complete: () => void } }).target.complete).toHaveBeenCalled();
+    resolveNew(page([ball('X')], 0, 3));
+    await newQuery;
+    ballService.searchBalls.mockResolvedValueOnce(page([ball('Y')], 1, 3));
+    await component.loadMore(infiniteEvent());
+    expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['X', 'Y']);
+  });
+
+  it('waits for the filter modal to close before reloading the list, then reloads once', async () => {
+    let close!: () => void;
+    const modal = {
+      present: vi.fn().mockResolvedValue(undefined),
+      onWillDismiss: () => new Promise<void>((resolve) => (close = resolve)),
+      onDidDismiss: () => new Promise<void>(() => undefined),
+    };
+    // the page provides its own ModalController
+    vi.spyOn(component['modalCtrl'], 'create').mockResolvedValue(modal as never);
+
+    await component.openFilterModal();
+    // every slider step in the modal is a new query
+    component.onQueryChange(true);
+    component.onQueryChange(true);
+    component.onQueryChange(true);
+    expect(ballService.searchBalls).not.toHaveBeenCalled();
+
+    close();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(ballService.searchBalls).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload after the filter modal when the filters did not change', async () => {
+    let close!: () => void;
+    const modal = {
+      present: vi.fn().mockResolvedValue(undefined),
+      onWillDismiss: () => new Promise<void>((resolve) => (close = resolve)),
+      onDidDismiss: () => new Promise<void>(() => undefined),
+    };
+    // the page provides its own ModalController
+    vi.spyOn(component['modalCtrl'], 'create').mockResolvedValue(modal as never);
+
+    await component.openFilterModal();
+    close();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(ballService.searchBalls).not.toHaveBeenCalled();
+  });
+
   it('sends the search term to the API', async () => {
     component.searchTerm.set('phaze');
 
@@ -184,6 +255,14 @@ describe('BallsPage', () => {
 
     expect(component.displayedBalls().map((b) => b.ball_name)).toEqual(['Phaze II']);
     expect(ballService.searchBalls).not.toHaveBeenCalled();
+  });
+
+  it('sorts all known balls offline before showing the first hundred', () => {
+    online.set(false);
+    knownBalls.set(Array.from({ length: 150 }, (_, i) => ball(`Ball ${i}`)));
+    TestBed.inject(BallSortService).sortBalls = vi.fn((balls: Ball[]) => [...balls].reverse()) as never;
+
+    expect(component.displayedBalls()[0].ball_id).toBe('Ball 149');
   });
 
   it('pages through known balls offline', () => {

@@ -425,12 +425,18 @@ export class GameComponent implements OnInit {
   }
 
   getBallIds(names: string[] | undefined): string[] {
-    if (!names) return [];
+    return this.#gameBalls(names).map((ball) => ball.ball_id);
+  }
 
-    return this.ballsStore
-      .knownBalls()
-      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
-      .map((ball) => ball.ball_id);
+  /**
+   * What the ball typeahead lists before a search: the arsenal plus the game's own balls. A ball
+   * that left the arsenal must still be listed, or it starts out unselected and the next pick
+   * removes it from the game.
+   */
+  ballPickerItems(names: string[] | undefined): Ball[] {
+    const arsenal = this.ballsStore.arsenal();
+    const own = this.#gameBalls(names).filter((ball) => !arsenal.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight));
+    return [...arsenal, ...own];
   }
 
   // --- Passthrough Event Emitters ---
@@ -491,5 +497,10 @@ export class GameComponent implements OnInit {
     await alert.present();
     const { role } = await alert.onDidDismiss();
     return role === 'confirm';
+  }
+
+  #gameBalls(names: string[] | undefined): Ball[] {
+    if (!names?.length) return [];
+    return this.ballsStore.knownBalls().filter((ball) => names.some((name) => ballValueMatches(name, ball)));
   }
 }

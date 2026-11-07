@@ -123,6 +123,12 @@ describe('BallsStore', () => {
       expect(store.findKnownBall('Phaze')).toBeUndefined();
     });
 
+    it('does not stand in another weight for a stored weight', async () => {
+      await store.rememberBalls([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '16' })]);
+
+      expect(store.findKnownBall('Phaze II15')).toBeUndefined();
+    });
+
     it('finds balls stored with their weight appended, in that weight', async () => {
       await store.rememberBalls([
         makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' }),
@@ -165,7 +171,30 @@ describe('BallsStore', () => {
       expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II']);
       expect(resolved.get('zen')).toEqual(zen);
       expect(resolved.get('phaze ii')).toEqual(phaze14);
-      expect(store.findKnownBall('Phaze II', 15)).toEqual(phaze15);
+      // only the weight that was meant is remembered, so a later bare-name lookup can't get another one
+      expect(store.knownBalls().filter((ball) => ball.ball_id === 'p')).toEqual([phaze14]);
+    });
+
+    it("remembers the weight a bare name means: the arsenal's own, else its usual weight, else the heaviest", async () => {
+      const variants = (id: string, name: string) =>
+        ['12', '14', '15', '16'].map((weight) => makeBall({ ball_id: id, ball_name: name, core_weight: weight }));
+      await store.saveBallsToArsenal([
+        makeBall({ ball_id: 'own', ball_name: 'Owned', core_weight: '14' }),
+        makeBall({ ball_id: 'x', ball_name: 'Other A', core_weight: '15' }),
+        makeBall({ ball_id: 'y', ball_name: 'Other B', core_weight: '15' }),
+      ]);
+      ballService.getBallsByNames.mockResolvedValue([...variants('own', 'Owned'), ...variants('n', 'New One')]);
+
+      const resolved = await store.resolveBallNames(['Owned', 'New One']);
+
+      expect(resolved.get('owned')?.core_weight).toBe('14');
+      expect(resolved.get('new one')?.core_weight).toBe('15');
+      expect(
+        store
+          .knownBalls()
+          .filter((ball) => ball.ball_id === 'n')
+          .map((ball) => ball.core_weight),
+      ).toEqual(['15']);
     });
 
     it('resolves values with the weight appended through the bare name', async () => {
@@ -210,6 +239,21 @@ describe('BallsStore', () => {
 
       expect(ballService.getBallsByIds).toHaveBeenCalledWith(['a', 'gone']);
       expect(store.knownBalls()).toEqual([fresh, gone]);
+    });
+
+    it('refreshes only the weights that were cached, once per ball', async () => {
+      await store.rememberBalls([makeBall({ ball_id: 'a', core_weight: '15' }), makeBall({ ball_id: 'a', core_weight: '14' })]);
+      ballService.getBallsByIds.mockResolvedValue(['12', '14', '15', '16'].map((weight) => makeBall({ ball_id: 'a', core_weight: weight })));
+
+      await store.refreshKnownBalls();
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['a']);
+      expect(
+        store
+          .knownBalls()
+          .map((ball) => ball.core_weight)
+          .sort(),
+      ).toEqual(['14', '15']);
     });
   });
 

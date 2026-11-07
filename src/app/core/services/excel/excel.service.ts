@@ -11,7 +11,8 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { findBallInArsenal, formatThrowBall, getGameBalls } from '../../utils/game-utils/ball.utils';
+import { parseStoredBall } from '../../utils/ball-utils/stored-ball.utils';
+import { findBallInArsenal, formatThrowBall, getGameBalls, normalizeBallKey } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -787,9 +788,20 @@ export class ExcelService {
     });
   }
 
+  /**
+   * The ball an Excel cell names. A cell with a weight ("Phaze II 15lbs") means that weight; a bare
+   * name means the weight `BallsStore.pickVariant` picks (the arsenal's own first), never just
+   * whichever weight happens to be cached first.
+   */
   private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
     const raw = rawBallValue?.trim();
-    return raw ? findBallInArsenal({ name: raw }, this.ballsStore.knownBalls()) : undefined;
+    if (!raw) return undefined;
+    const known = this.ballsStore.findKnownBall(raw);
+    if (known) return known;
+    // looser spellings ("PhazeII15"): match leniently, then apply the same weight rule to a bare name
+    const loose = findBallInArsenal({ name: raw }, this.ballsStore.knownBalls());
+    if (!loose || parseStoredBall(raw).weight || normalizeBallKey(raw) !== normalizeBallKey(loose.ball_name)) return loose;
+    return this.ballsStore.pickVariant(this.ballsStore.knownBalls().filter((ball) => ball.ball_id === loose.ball_id)) ?? loose;
   }
 
   /**

@@ -127,11 +127,11 @@ export class BallStatsCalculatorService {
 
     const candidates = this.getBallCandidates();
 
-    const byNameAndWeight = candidates.find((ball) => {
-      if (this.normalizeBallName(ball.ball_name) !== normalizedRawName) return false;
-      if (!rawWeight) return true;
-      return this.extractWeightToken(ball.core_weight) === rawWeight;
-    });
+    const byName = candidates.filter((ball) => this.normalizeBallName(ball.ball_name) === normalizedRawName);
+    // a stored weight is what was thrown; a bare name gets the weight BallsStore.pickVariant picks
+    const byNameAndWeight = rawWeight
+      ? byName.find((ball) => this.extractWeightToken(ball.core_weight) === rawWeight)
+      : this.ballsStore.pickVariant(byName);
 
     if (byNameAndWeight) return byNameAndWeight;
 

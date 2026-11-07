@@ -238,7 +238,7 @@
                     <ng-template>
                       <app-generic-typeahead
                         [config]="ballTypeaheadConfig"
-                        [items]="ballsStore.arsenal()"
+                        [items]="ballPickerItems(game.balls)"
                         [prevSelectedItems]="getBallIds(game.balls)"
                         (selectedObjectsChange)="onBallAdd($event, game, allBallsModal)">
                       </app-generic-typeahead>

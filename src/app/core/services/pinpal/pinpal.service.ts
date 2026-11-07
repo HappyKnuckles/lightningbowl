@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
+import { NetworkService } from 'src/app/core/services/network/network.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -31,11 +32,14 @@ interface RawFrameRow {
 })
 export class PinpalService {
   private static readonly SQLITE_HEADER = 'SQLite format 3';
+  /** Ball searches running at once during an import. */
+  private static readonly SEARCH_CONCURRENCY = 4;
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
     private ballsStore: BallsStore,
     private ballService: BallService,
+    private networkService: NetworkService,
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
@@ -59,7 +63,7 @@ export class PinpalService {
       // for every distinct ball name in the import.
       const availableBalls = await this.findBallCandidates(gameRows.map((row) => row.ballName));
       const availableBallNames = availableBalls.map((b) => b.ball_name);
-      const availableBallsByName = new Map(availableBalls.map((ball) => [ball.ball_name.toLowerCase(), ball]));
+      const availableBallsByName = this.variantByName(availableBalls);
       const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
       const ballsToAddToArsenal = new Map<string, Ball>();
 
@@ -263,16 +267,47 @@ export class PinpalService {
   }
 
   /**
-   * Fuzzy Matching Logik
+   * Known balls plus the top API matches for each name the known balls don't have exactly. Offline
+   * only the known balls; online at most a few searches at a time, however many names there are.
    */
-  /** Known balls plus the top API matches for each distinct name (skipped offline). */
   private async findBallCandidates(names: (string | null)[]): Promise<Ball[]> {
     const known = this.ballsStore.knownBalls();
+    const knownNames = new Set(known.map((ball) => ball.ball_name.toLowerCase()));
     const unique = [...new Set(names.map((name) => name?.trim()).filter((name): name is string => !!name))];
-    const searches = await Promise.allSettled(unique.map((name) => this.ballService.findBallsByText(name, undefined, 10)));
-    const found = searches.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
+    const unknown = unique.filter((name) => !knownNames.has(name.toLowerCase()));
+    if (unknown.length === 0 || this.networkService.isOffline) return known;
+
+    const found: Ball[] = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < unknown.length) {
+        const name = unknown[next++];
+        try {
+          found.push(...(await this.ballService.findBallsByText(name, undefined, 10)));
+        } catch (error) {
+          console.warn(`PinPal import: ball search for "${name}" failed`, error);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PinpalService.SEARCH_CONCURRENCY, unknown.length) }, worker));
+
     const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
     return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
+  }
+
+  /** One ball per name: the weight `BallsStore.pickVariant` picks, not whichever weight came last. */
+  private variantByName(balls: Ball[]): Map<string, Ball> {
+    const byName = new Map<string, Ball[]>();
+    for (const ball of balls) {
+      const name = ball.ball_name.toLowerCase();
+      byName.set(name, [...(byName.get(name) ?? []), ball]);
+    }
+    const chosen = new Map<string, Ball>();
+    for (const [name, variants] of byName) {
+      const ball = this.ballsStore.pickVariant(variants);
+      if (ball) chosen.set(name, ball);
+    }
+    return chosen;
   }
 
   private findBestMatch(input: string | null, available: string[]): string | null {

@@ -3,7 +3,7 @@ import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Game } from 'src/app/core/models/game.model';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { BallsStore, pickVariant } from 'src/app/core/stores/balls.store';
 import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { BallStatsCalculatorService } from './ball-stats-calculator.service';
 
@@ -33,7 +33,16 @@ describe('BallStatsCalculatorService', () => {
     arsenal.set([]);
     TestBed.configureTestingModule({
       // the calculator resolves stored ball names against the store's known balls
-      providers: [{ provide: BallsStore, useValue: { knownBalls: computed(() => [...allBalls(), ...arsenal()]), url: '' } }],
+      providers: [
+        {
+          provide: BallsStore,
+          useValue: {
+            knownBalls: computed(() => [...allBalls(), ...arsenal()]),
+            pickVariant: (variants: Ball[], weight?: number | string) => pickVariant(variants, weight, arsenal()),
+            url: '',
+          },
+        },
+      ],
     });
     calculator = TestBed.inject(BallStatsCalculatorService);
   });
@@ -218,5 +227,14 @@ describe('BallStatsCalculatorService', () => {
 
       expect(calculator.calculateBallStats(games)[0].lastUsed).toBe(500);
     });
+  });
+
+  it('counts a bare ball name toward the weight in the arsenal, whichever weight is known first', () => {
+    allBalls.set([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '12' })]);
+    arsenal.set([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' })]);
+
+    const [stats] = calculator.calculateAllBallStats([makeGame({ balls: ['Phaze II'], totalScore: 200 })]);
+
+    expect(stats.name).toContain('15');
   });
 });

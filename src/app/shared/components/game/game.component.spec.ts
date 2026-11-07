@@ -5,7 +5,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { GameComponent } from './game.component';
-import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
+import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 
 const mockSettingsStore = {
@@ -20,6 +20,7 @@ const mockPatternsStore = {
 const mockBallsStore = {
   allBalls: vi.fn().mockReturnValue([]),
   arsenal: vi.fn().mockReturnValue([]),
+  knownBalls: vi.fn().mockReturnValue([]),
 };
 
 describe('GameComponent', () => {
@@ -115,6 +116,25 @@ describe('GameComponent', () => {
       component.onDetailsToggle(toggleEvent(undefined, true));
 
       expect(component.detailsOpen()).toBe(true);
+    });
+  });
+
+  describe('ball typeahead items', () => {
+    afterEach(() => {
+      mockBallsStore.arsenal.mockReturnValue([]);
+      mockBallsStore.knownBalls.mockReturnValue([]);
+    });
+
+    it("lists the game's own balls next to the arsenal, so they start out selected", () => {
+      const owned = makeBall({ ball_id: 'a', ball_name: 'Owned', core_weight: '15' });
+      const retired = makeBall({ ball_id: 'r', ball_name: 'Retired', core_weight: '15' });
+      const other = makeBall({ ball_id: 'o', ball_name: 'Other', core_weight: '15' });
+      mockBallsStore.arsenal.mockReturnValue([owned]);
+      mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
+
+      expect(component.ballPickerItems(['Retired15', 'Owned15'])).toEqual([owned, retired]);
+      expect(component.getBallIds(['Retired15'])).toEqual(['r']);
+      expect(component.ballPickerItems(undefined)).toEqual([owned]);
     });
   });
 });

@@ -59,8 +59,3 @@ export function parseStoredBall(value: string): StoredBallValue {
   }
   return { name: trimmed };
 }
-
-/** "Name 15lbs", or just the name when no weight was recorded. */
-export function formatStoredBall({ name, weight }: StoredBallValue): string {
-  return weight ? `${name} ${weight}lbs` : name;
-}

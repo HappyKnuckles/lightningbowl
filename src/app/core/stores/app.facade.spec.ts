@@ -51,7 +51,7 @@ describe('AppFacade', () => {
 
     ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'loadArsenal', 'clearArsenal']);
     ballsStore.loadBallCache.mockResolvedValue(undefined);
-    ballsStore.resolveBallNames.mockResolvedValue(new Map());
+    ballsStore.resolveBallNames.mockResolvedValue(undefined);
     ballsStore.loadArsenal.mockResolvedValue(undefined);
 
     patternsStore = createSpyObj<PatternsStore>(['loadAllPatterns', 'loadPatternImageMap']);

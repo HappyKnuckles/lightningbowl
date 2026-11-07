@@ -1,6 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { makeBall } from 'src/testing/fixtures';
-import { formatStoredBall, parseStoredBall, toStoredBall } from './stored-ball.utils';
+import { ballKey, parseStoredBall, toStoredBall, withBallKeys } from './stored-ball.utils';
 
 describe('toStoredBall', () => {
   it('turns legacy string specs into numbers or null', () => {
@@ -24,7 +24,7 @@ describe('toStoredBall', () => {
   });
 });
 
-describe('parseStoredBall / formatStoredBall', () => {
+describe('parseStoredBall', () => {
   it('splits the weight off the name in every stored format', () => {
     for (const value of ['Phaze II15', 'Phaze II 15', 'Phaze II 15lbs', 'Phaze II 15 lb', 'Phaze II 15#']) {
       expect(parseStoredBall(value)).toEqual({ name: 'Phaze II', weight: '15' });
@@ -36,9 +36,37 @@ describe('parseStoredBall / formatStoredBall', () => {
     expect(parseStoredBall('Black Widow 3.0')).toEqual({ name: 'Black Widow 3.0' });
     expect(parseStoredBall('Hy-Road 40')).toEqual({ name: 'Hy-Road 40' });
   });
+});
 
-  it('formats as "Name 15lbs", or the plain name without a weight', () => {
-    expect(formatStoredBall({ name: 'Phaze II', weight: '15' })).toBe('Phaze II 15lbs');
-    expect(formatStoredBall({ name: 'Phaze II' })).toBe('Phaze II');
+describe('ballKey', () => {
+  it("uses the API's key, and builds the same for balls saved without one", () => {
+    expect(ballKey({ key: 'abc-15', ball_id: 'x', core_weight: '12' })).toBe('abc-15');
+    expect(ballKey({ ball_id: '1234', core_weight: '15' })).toBe('1234-15');
+  });
+
+  it('gives balls saved before the key existed their key when they are loaded', () => {
+    const saved: Partial<Ball> = makeBall({ ball_id: '1234', core_weight: '14', core_rg: 2.5, core_diff: 0.05, core_int_diff: 0 });
+    delete saved.key;
+
+    expect(toStoredBall(saved as Ball).key).toBe('1234-14');
+  });
+
+  it('leaves a ball that already has a key as it is', () => {
+    const ball = makeBall({ key: '1234-15' });
+
+    expect(toStoredBall(ball)).toBe(ball);
+  });
+});
+
+describe('withBallKeys', () => {
+  it('fills in missing keys and keeps the ones the API sent', () => {
+    const sent = makeBall({ key: 'abc-15' });
+    const missing: Partial<Ball> = makeBall({ ball_id: '1234', core_weight: '14' });
+    delete missing.key;
+
+    const [first, second] = withBallKeys([sent, missing as Ball]);
+
+    expect(first).toBe(sent);
+    expect(second.key).toBe('1234-14');
   });
 });

@@ -3,7 +3,7 @@ import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
-import { toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
+import { ballKey as keyOf, toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -79,7 +79,7 @@ export class FavoritesService {
   }
 
   toggleBallFavorite(ball: Ball): boolean {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
+    const ballKey = keyOf(ball);
     const currentFavorites = new Map(this._favoriteBalls());
     let isFavorited: boolean;
 
@@ -98,7 +98,7 @@ export class FavoritesService {
   }
 
   addBallFavorite(ball: Ball): void {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
+    const ballKey = keyOf(ball);
     const currentFavorites = new Map(this._favoriteBalls());
     currentFavorites.set(ballKey, ball);
     this._favoriteBalls.set(currentFavorites);
@@ -157,7 +157,7 @@ export class FavoritesService {
           // Old format — return keys for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Ball>((parsed as Ball[]).map(toStoredBall).map((b) => [`${b.ball_id}-${b.core_weight}`, b]));
+          const map = new Map<string, Ball>((parsed as Ball[]).map(toStoredBall).map((b) => [keyOf(b), b]));
           this._favoriteBalls.set(map);
         }
       }
@@ -200,7 +200,7 @@ export class FavoritesService {
     }
 
     if (matched.length > 0) {
-      this._favoriteBalls.set(new Map(matched.map((b) => [`${b.ball_id}-${b.core_weight}`, b])));
+      this._favoriteBalls.set(new Map(matched.map((b) => [keyOf(b), b])));
       this.saveFavoritesToStorage();
     }
   }

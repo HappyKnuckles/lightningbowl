@@ -210,7 +210,7 @@
     <app-generic-typeahead
       [items]="pickerBalls()"
       [config]="ballTypeaheadConfig"
-      [prevSelectedItems]="selectedBallIds()"
+      [prevSelectedItems]="selectedBallKeys()"
       (selectedObjectsChange)="onBallSelectionChange($event)">
     </app-generic-typeahead>
   </ng-template>

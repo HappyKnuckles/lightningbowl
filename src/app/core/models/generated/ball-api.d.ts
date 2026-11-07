@@ -33,7 +33,7 @@ export interface paths {
     };
     /**
      * Whole catalog as an array
-     * @description Every active ball (optionally one weight), newest first. Not paged.
+     * @description Every active ball (optionally one weight), newest first. Not paged. Needs `ADMIN_SECRET`.
      */
     get: operations['exportBalls'];
     put?: never;
@@ -142,28 +142,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Catalog size and last sync */
-    get: operations['getHealth'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/cron/sync': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
     /**
-     * Run the catalog sync
-     * @description Called nightly by Vercel Cron. Applies pending migrations, then imports from bowwwl.com.
+     * Catalog size and last sync
+     * @description Needs `ADMIN_SECRET`.
      */
-    get: operations['runSync'];
+    get: operations['getHealth'];
     put?: never;
     post?: never;
     delete?: never;
@@ -178,6 +161,11 @@ export interface components {
   schemas: {
     /** @description A ball in one weight. */
     Ball: {
+      /**
+       * @description Identifies this ball in this weight: `ball_id` and `core_weight` joined by "-", e.g. "1234-15" (the form `favorite` takes). Treat it as opaque.
+       * @example 1234-15
+       */
+      key: string;
       ball_id: string;
       ball_name: string;
       /** @description Weight in lbs as bowwwl.com spells it, e.g. "15". A ball exists once per weight; `ball_id` + `core_weight` identify it. */
@@ -299,11 +287,6 @@ export interface components {
         [key: string]: unknown;
       };
       errors: string[];
-    };
-    /** @description Another sync was still running. */
-    SyncSkipped: {
-      /** @constant */
-      skipped: true;
     };
     Error: {
       error: string;
@@ -442,6 +425,15 @@ export interface operations {
       };
       /** @description Invalid parameter. */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Missing or wrong secret. */
+      401: {
         headers: {
           [name: string]: unknown;
         };
@@ -785,6 +777,15 @@ export interface operations {
           'application/json': components['schemas']['Health'];
         };
       };
+      /** @description Missing or wrong secret. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
       /** @description Rate limit exceeded (100 requests per minute per IP). */
       429: {
         headers: {
@@ -810,62 +811,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['NotInitialized'];
-        };
-      };
-    };
-  };
-  runSync: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Finished run (`success` or `partial`). */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SyncRun'];
-        };
-      };
-      /** @description Missing or wrong secret. */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Error'];
-        };
-      };
-      /** @description Another run is in progress. */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SyncSkipped'];
-        };
-      };
-      /** @description Server error. */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Error'];
-        };
-      };
-      /** @description Every part of the run failed. */
-      502: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SyncRun'];
         };
       };
     };

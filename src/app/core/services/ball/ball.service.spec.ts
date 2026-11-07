@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
-import { BallPage } from 'src/app/core/models/ball.model';
+import { Ball, BallPage } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { makeBall } from 'src/testing/fixtures';
 import { BallService } from './ball.service';
@@ -29,6 +29,16 @@ describe('BallService', () => {
     req.flush(pageOf());
 
     expect((await result).content.length).toBe(1);
+  });
+
+  it('gives balls from an API without `key` one, and keeps the key the API sends', async () => {
+    const withoutKey: Partial<Ball> = makeBall({ ball_id: '7', core_weight: '14' });
+    delete withoutKey.key;
+    const result = service.searchBalls({});
+
+    http.expectOne((r) => r.url === `${api}balls`).flush(pageOf([withoutKey as Ball, makeBall({ key: 'from-api' })]));
+
+    expect((await result).content.map((ball) => ball.key)).toEqual(['7-14', 'from-api']);
   });
 
   it('finds balls with the same core at the same weight, excluding the ball itself', async () => {

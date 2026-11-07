@@ -5,6 +5,7 @@ import { BALL_API, BALL_LOOKUP_CHUNK } from 'src/app/core/constants/ball-api.con
 import { Ball, BallPage, BallQueryParams, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
+import { withBallKeys } from '../../utils/ball-utils/stored-ball.utils';
 import { NetworkService } from '../network/network.service';
 
 @Injectable({
@@ -24,7 +25,8 @@ export class BallService {
 
   /** Server-side search, filter, sort and paging (see `buildBallQueryParams`). */
   async searchBalls(params: BallQueryParams): Promise<BallPage> {
-    return firstValueFrom(this.http.get<BallPage>(this.url(BALL_API.balls), { params }));
+    const page = await firstValueFrom(this.http.get<BallPage>(this.url(BALL_API.balls), { params }));
+    return { ...page, content: withBallKeys(page.content) };
   }
 
   /** Text search for pickers: the best matches for `term`. */
@@ -59,7 +61,7 @@ export class BallService {
   async getBallVariant(ballId: string, weight: number | string): Promise<Ball | undefined> {
     const { path, params } = BALL_API.ball(ballId);
     try {
-      const variants = await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: String(weight) } }));
+      const variants = withBallKeys(await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: String(weight) } })));
       return variants.find((b) => Number(b.core_weight) === Number(weight));
     } catch (error) {
       if ((error as { status?: number }).status === 404) return undefined;
@@ -131,7 +133,9 @@ export class BallService {
   async getBallsByMovementPattern(ball: Ball): Promise<Ball[]> {
     try {
       const { path, params } = BALL_API.similar(ball.ball_id.toString());
-      const similar = await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: ball.core_weight, limit: '10' } }));
+      const similar = withBallKeys(
+        await firstValueFrom(this.http.get<Ball[]>(this.url(path), { params: { ...params, weight: ball.core_weight, limit: '10' } })),
+      );
       // add original ball back it to have a title for the modal at index 0 (workaround)
       return similar.length > 0 ? [ball, ...similar] : [];
     } catch (error) {

@@ -13,6 +13,7 @@ import { sameGameBall, toGameBall } from '../../utils/game-utils/ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface GameRow {
   pk: number;
@@ -288,8 +289,8 @@ export class PinpalService {
     };
     await Promise.all(Array.from({ length: Math.min(PinpalService.SEARCH_CONCURRENCY, unknown.length) }, worker));
 
-    const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
-    return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
+    const seen = new Set(known.map(ballKey));
+    return [...known, ...found.filter((b) => !seen.has(ballKey(b)))];
   }
 
   private findBestMatch(input: string | null, available: string[]): string | null {

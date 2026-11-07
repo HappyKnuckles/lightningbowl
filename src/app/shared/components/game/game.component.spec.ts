@@ -141,7 +141,7 @@ describe('GameComponent', () => {
         }),
       );
 
-      expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a', 'r'] });
+      expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a-15', 'r-15'] });
     });
   });
 });

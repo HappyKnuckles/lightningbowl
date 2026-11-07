@@ -1,12 +1,13 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { ThrowBall } from 'src/app/core/models/game.model';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 import { sameGameBall } from 'src/app/core/utils/game-utils/ball.utils';
 
 /** What the ball typeahead of one game starts with. */
 export interface BallPicker {
   /** The arsenal plus the game's own balls that aren't in it. */
   items: Ball[];
-  /** The game's balls, as the typeahead identifies them. */
+  /** The game's balls, by `ballKey`, as the typeahead identifies them. */
   selected: string[];
 }
 
@@ -19,6 +20,7 @@ export function ballPickerFor(balls: ThrowBall[] | undefined, arsenal: Ball[], k
   const own = balls?.length
     ? knownBalls.filter((ball) => balls.some((stored) => sameGameBall(stored, { name: ball.ball_name, weight: ball.core_weight })))
     : [];
-  const notInArsenal = own.filter((ball) => !arsenal.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight));
-  return { items: [...arsenal, ...notInArsenal], selected: own.map((ball) => ball.ball_id) };
+  const ownedKeys = new Set(arsenal.map(ballKey));
+  const notInArsenal = own.filter((ball) => !ownedKeys.has(ballKey(ball)));
+  return { items: [...arsenal, ...notInArsenal], selected: own.map(ballKey) };
 }

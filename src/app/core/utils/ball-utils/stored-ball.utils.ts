@@ -11,13 +11,28 @@ function toSpec(value: unknown): number | null {
 }
 
 /**
+ * A ball's identity in one weight: the API's `key` ("1234-15"), or the same built from `ball_id` and
+ * `core_weight` for a ball without one. Treat it as opaque; never parse it.
+ */
+export function ballKey(ball: Pick<Ball, 'ball_id' | 'core_weight'> & { key?: string }): string {
+  return ball.key || `${ball.ball_id}-${ball.core_weight}`;
+}
+
+/** Gives every ball its `key`, also balls from an API deployment from before it sent one. */
+export function withBallKeys(balls: Ball[]): Ball[] {
+  return balls.map((ball) => (ball.key ? ball : { ...ball, key: ballKey(ball) }));
+}
+
+/**
  * Brings a ball saved on the device (arsenal, favorites, ball cache) to the
  * current shape. Balls saved before the ball API have their specs as strings
  * ("2.50", "n/a"); the API returns numbers or null.
  */
 export function toStoredBall(ball: Ball): Ball {
-  if (SPEC_FIELDS.every((field) => typeof ball[field] === 'number' || ball[field] === null)) return ball;
-  const normalized = { ...ball };
+  const hasKey = typeof ball.key === 'string' && ball.key !== '';
+  if (hasKey && SPEC_FIELDS.every((field) => typeof ball[field] === 'number' || ball[field] === null)) return ball;
+  // balls saved before the API sent `key` get it here, so everything downstream can rely on it
+  const normalized = hasKey ? { ...ball } : { ...ball, key: ballKey(ball) };
   for (const field of SPEC_FIELDS) normalized[field] = toSpec(ball[field]);
   return normalized;
 }
@@ -48,9 +63,4 @@ export function parseStoredBall(value: string): StoredBallValue {
     if (weight >= MIN_WEIGHT && weight <= MAX_WEIGHT) return { name: match[1].trim(), weight: String(weight) };
   }
   return { name: trimmed };
-}
-
-/** "Name 15lbs", or just the name when no weight was recorded. */
-export function formatStoredBall({ name, weight }: StoredBallValue): string {
-  return weight ? `${name} ${weight}lbs` : name;
 }

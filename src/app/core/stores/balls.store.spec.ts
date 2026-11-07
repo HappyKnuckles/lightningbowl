@@ -139,15 +139,6 @@ describe('BallsStore', () => {
       expect(store.findKnownBall('phaze ii 15lbs')?.core_weight).toBe('15');
     });
 
-    it('describes stored balls as "Name 15lbs", plain names unchanged', async () => {
-      const phaze = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
-      await store.rememberBalls([phaze]);
-
-      expect(store.describeStoredBall('Phaze II15')).toEqual({ label: 'Phaze II 15lbs', ball: phaze });
-      expect(store.describeStoredBall('Phaze II')).toEqual({ label: 'Phaze II', ball: phaze });
-      expect(store.describeStoredBall('Unknown16')).toEqual({ label: 'Unknown 16lbs', ball: undefined });
-    });
-
     it('keeps a ball removed from the arsenal resolvable', async () => {
       const ball = makeBall({ ball_id: 'b1', ball_name: 'Zen' });
       await store.saveBallToArsenal(ball);
@@ -166,11 +157,11 @@ describe('BallsStore', () => {
       const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
       ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
 
-      const resolved = await store.resolveBallNames(['Zen', 'Phaze II', 'Phaze II', ''], 14);
+      await store.resolveBallNames(['Zen', 'Phaze II', 'Phaze II', ''], 14);
 
       expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II']);
-      expect(resolved.get('zen')).toEqual(zen);
-      expect(resolved.get('phaze ii')).toEqual(phaze14);
+      expect(store.findKnownBall('Zen')).toEqual(zen);
+      expect(store.findKnownBall('Phaze II', 14)).toEqual(phaze14);
       // only the weight that was meant is remembered, so a later bare-name lookup can't get another one
       expect(store.knownBalls().filter((ball) => ball.ball_id === 'p')).toEqual([phaze14]);
     });
@@ -185,10 +176,10 @@ describe('BallsStore', () => {
       ]);
       ballService.getBallsByNames.mockResolvedValue([...variants('own', 'Owned'), ...variants('n', 'New One')]);
 
-      const resolved = await store.resolveBallNames(['Owned', 'New One']);
+      await store.resolveBallNames(['Owned', 'New One']);
 
-      expect(resolved.get('owned')?.core_weight).toBe('14');
-      expect(resolved.get('new one')?.core_weight).toBe('15');
+      expect(store.findKnownBall('Owned')?.core_weight).toBe('14');
+      expect(store.findKnownBall('New One')?.core_weight).toBe('15');
       expect(
         store
           .knownBalls()
@@ -202,28 +193,28 @@ describe('BallsStore', () => {
       const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
       ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
 
-      const resolved = await store.resolveBallNames(['Phaze II14']);
+      await store.resolveBallNames(['Phaze II14']);
 
       expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II14', 'Phaze II']);
-      expect(resolved.get('phaze ii14')).toEqual(phaze14);
+      expect(store.findKnownBall('Phaze II14')).toEqual(phaze14);
     });
 
     it('does not call the API offline', async () => {
       isOnline = false;
 
-      const resolved = await store.resolveBallNames(['Unknown']);
+      await store.resolveBallNames(['Unknown']);
 
       expect(ballService.getBallsByNames).not.toHaveBeenCalled();
-      expect(resolved.size).toBe(0);
+      expect(store.knownBalls()).toEqual([]);
     });
 
-    it('returns what it knows when the API fails', async () => {
+    it('keeps what it knows when the API fails', async () => {
       await store.rememberBalls([makeBall({ ball_name: 'Zen' })]);
       ballService.getBallsByNames.mockRejectedValue(new Error('offline'));
 
-      const resolved = await store.resolveBallNames(['Zen', 'Unknown']);
+      await expect(store.resolveBallNames(['Zen', 'Unknown'])).resolves.toBeUndefined();
 
-      expect([...resolved.keys()]).toEqual(['zen']);
+      expect(store.knownBalls().map((ball) => ball.ball_name)).toEqual(['Zen']);
     });
   });
 

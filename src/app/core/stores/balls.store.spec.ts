@@ -112,15 +112,12 @@ describe('BallsStore', () => {
       expect(storageRepository.set).toHaveBeenLastCalledWith('ball_cache', [updated]);
     });
 
-    it('finds a known ball by name, preferring the given weight', async () => {
-      await store.rememberBalls([
-        makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' }),
-        makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '14' }),
-      ]);
+    it('never resolves a name without a weight, whatever weights are known', async () => {
+      await store.saveBallToArsenal(makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '14' }));
+      await store.rememberBalls([makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' })]);
 
-      expect(store.findKnownBall('zen', 14)?.core_weight).toBe('14');
-      expect(store.findKnownBall('Zen')?.core_weight).toBe('15');
-      expect(store.findKnownBall('Phaze')).toBeUndefined();
+      expect(store.findKnownBall('Zen')).toBeUndefined();
+      expect(store.findKnownBall('zen14')?.core_weight).toBe('14');
     });
 
     it('does not stand in another weight for a stored weight', async () => {
@@ -144,86 +141,88 @@ describe('BallsStore', () => {
       await store.rememberBalls([phaze]);
 
       expect(store.describeStoredBall('Phaze II15')).toEqual({ label: 'Phaze II 15lbs', ball: phaze });
-      expect(store.describeStoredBall('Phaze II')).toEqual({ label: 'Phaze II', ball: phaze });
+      expect(store.describeStoredBall('Phaze II')).toEqual({ label: 'Phaze II', ball: undefined });
       expect(store.describeStoredBall('Unknown16')).toEqual({ label: 'Unknown 16lbs', ball: undefined });
     });
 
     it('keeps a ball removed from the arsenal resolvable', async () => {
-      const ball = makeBall({ ball_id: 'b1', ball_name: 'Zen' });
+      const ball = makeBall({ ball_id: 'b1', ball_name: 'Zen', core_weight: '15' });
       await store.saveBallToArsenal(ball);
 
       await store.removeFromArsenal(ball);
 
-      expect(store.findKnownBall('Zen')).toEqual(ball);
+      expect(store.findKnownBall('Zen15')).toEqual(ball);
     });
   });
 
   describe('resolveBallNames', () => {
-    it('uses known balls and fetches only the unknown names', async () => {
-      const zen = makeBall({ ball_id: 'z', ball_name: 'Zen' });
+    it('uses known balls and fetches only the unknown ones, remembering just the weight named', async () => {
+      const zen = makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' });
       await store.rememberBalls([zen]);
       const phaze14 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' });
       const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
       ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
 
-      const resolved = await store.resolveBallNames(['Zen', 'Phaze II', 'Phaze II', ''], 14);
+      const resolved = await store.resolveBallNames(['Zen15', 'Phaze II14', 'Phaze II14', '']);
 
       expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II']);
-      expect(resolved.get('zen')).toEqual(zen);
-      expect(resolved.get('phaze ii')).toEqual(phaze14);
-      // only the weight that was meant is remembered, so a later bare-name lookup can't get another one
+      expect(resolved.get('zen15')).toEqual(zen);
+      expect(resolved.get('phaze ii14')).toEqual(phaze14);
       expect(store.knownBalls().filter((ball) => ball.ball_id === 'p')).toEqual([phaze14]);
     });
 
-    it("remembers the weight a bare name means: the arsenal's own, else its usual weight, else the heaviest", async () => {
-      const variants = (id: string, name: string) =>
-        ['12', '14', '15', '16'].map((weight) => makeBall({ ball_id: id, ball_name: name, core_weight: weight }));
-      await store.saveBallsToArsenal([
-        makeBall({ ball_id: 'own', ball_name: 'Owned', core_weight: '14' }),
-        makeBall({ ball_id: 'x', ball_name: 'Other A', core_weight: '15' }),
-        makeBall({ ball_id: 'y', ball_name: 'Other B', core_weight: '15' }),
-      ]);
-      ballService.getBallsByNames.mockResolvedValue([...variants('own', 'Owned'), ...variants('n', 'New One')]);
+    it('leaves names without a weight alone: their weight is asked for', async () => {
+      const resolved = await store.resolveBallNames(['Phaze II']);
 
-      const resolved = await store.resolveBallNames(['Owned', 'New One']);
-
-      expect(resolved.get('owned')?.core_weight).toBe('14');
-      expect(resolved.get('new one')?.core_weight).toBe('15');
-      expect(
-        store
-          .knownBalls()
-          .filter((ball) => ball.ball_id === 'n')
-          .map((ball) => ball.core_weight),
-      ).toEqual(['15']);
-    });
-
-    it('resolves values with the weight appended through the bare name', async () => {
-      const phaze14 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' });
-      const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
-      ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
-
-      const resolved = await store.resolveBallNames(['Phaze II14']);
-
-      expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II14', 'Phaze II']);
-      expect(resolved.get('phaze ii14')).toEqual(phaze14);
+      expect(ballService.getBallsByNames).not.toHaveBeenCalled();
+      expect(resolved.size).toBe(0);
     });
 
     it('does not call the API offline', async () => {
       isOnline = false;
 
-      const resolved = await store.resolveBallNames(['Unknown']);
+      const resolved = await store.resolveBallNames(['Unknown15']);
 
       expect(ballService.getBallsByNames).not.toHaveBeenCalled();
       expect(resolved.size).toBe(0);
     });
 
     it('returns what it knows when the API fails', async () => {
-      await store.rememberBalls([makeBall({ ball_name: 'Zen' })]);
+      await store.rememberBalls([makeBall({ ball_name: 'Zen', core_weight: '15' })]);
       ballService.getBallsByNames.mockRejectedValue(new Error('offline'));
 
-      const resolved = await store.resolveBallNames(['Zen', 'Unknown']);
+      const resolved = await store.resolveBallNames(['Zen15', 'Unknown15']);
 
-      expect([...resolved.keys()]).toEqual(['zen']);
+      expect([...resolved.keys()]).toEqual(['zen15']);
+    });
+  });
+
+  describe('weightOptions', () => {
+    it("lists every weight a name comes in, the API's and the known ones, lightest first", async () => {
+      const own14 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' });
+      await store.saveBallToArsenal(own14);
+      ballService.getBallsByNames.mockResolvedValue([
+        makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' }),
+        makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '12' }),
+        makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' }),
+      ]);
+
+      const { options, complete } = await store.weightOptions(['phaze ii', 'Unknown']);
+
+      expect(complete).toBe(true);
+      expect(options.get('phaze ii')?.map((ball) => ball.core_weight)).toEqual(['12', '14', '15']);
+      expect(options.get('Unknown')).toEqual([]);
+    });
+
+    it('offline, offers only the known weights and says the list may be incomplete', async () => {
+      isOnline = false;
+      await store.rememberBalls([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' })]);
+
+      const { options, complete } = await store.weightOptions(['Phaze II']);
+
+      expect(ballService.getBallsByNames).not.toHaveBeenCalled();
+      expect(complete).toBe(false);
+      expect(options.get('Phaze II')?.map((ball) => ball.core_weight)).toEqual(['15']);
     });
   });
 

@@ -15,6 +15,8 @@ import { ThemeChangerService } from './core/services/theme-changer/theme-changer
 import { PwaInstallService } from './core/services/pwa-install/pwa-install.service';
 import { PwaInstallPromptComponent } from './shared/components/pwa-install-prompt/pwa-install-prompt.component';
 import { AnalyticsService } from './core/services/analytics/analytics.service';
+import { BallWeightService } from './core/services/ball-weight/ball-weight.service';
+import { AppFacade } from './core/stores/app.facade';
 import { BowlingRefresherComponent } from './shared/components/bowling-refresher/bowling-refresher.component';
 import { SideMenuComponent } from './shared/components/side-menu/side-menu.component';
 
@@ -43,6 +45,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private pwaInstallService: PwaInstallService,
     private analyticsService: AnalyticsService,
     private router: Router,
+    private ballWeightService: BallWeightService,
+    private appFacade: AppFacade,
   ) {
     // Initialize service worker updates for all platforms
     this.initializeApp();
@@ -57,6 +61,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.greetUser();
+    // games saved with a ball but no weight: ask once which weight it was (once the games are loaded)
+    void this.appFacade.gamesLoaded
+      .then(() => this.ballWeightService.askForStoredGames())
+      .catch((error) => console.error('Error asking for ball weights:', error));
 
     await this.analyticsService.trackAppLaunched();
 

@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { makeGame } from 'src/testing/fixtures';
@@ -35,7 +34,6 @@ describe('AppFacade', () => {
         { provide: SettingsStore, useValue: settingsStore },
         { provide: BallService, useValue: ballService },
         { provide: AnalyticsService, useValue: analyticsService },
-        { provide: BallFilterService, useValue: { filters: () => ({ weight: '15' }) } },
       ],
     });
     facade = TestBed.inject(AppFacade);
@@ -85,7 +83,7 @@ describe('AppFacade', () => {
   });
 
   describe('init', () => {
-    it('creates storage and loads every store with the filtered ball weight', async () => {
+    it('creates storage and loads every store', async () => {
       await facade.init();
 
       expect(storageRepository.create).toHaveBeenCalled();
@@ -95,7 +93,7 @@ describe('AppFacade', () => {
       expect(settingsStore.loadFit).toHaveBeenCalled();
       expect(settingsStore.loadLayoutPresets).toHaveBeenCalled();
       expect(ballsStore.loadBallCache).toHaveBeenCalled();
-      expect(ballsStore.resolveBallNames).toHaveBeenCalledWith([], 15);
+      expect(ballsStore.resolveBallNames).toHaveBeenCalledWith([]);
       expect(gamesStore.loadGameHistory).toHaveBeenCalled();
       expect(leaguesStore.loadLeagues).toHaveBeenCalled();
       expect(patternsStore.loadAllPatterns).toHaveBeenCalled();
@@ -127,6 +125,16 @@ describe('AppFacade', () => {
       gamesStore.loadGameHistory.mockRejectedValue(new Error('storage down'));
 
       await expect(facade.init()).resolves.toBeUndefined();
+      await expect(facade.gamesLoaded).resolves.toBeUndefined();
+    });
+
+    it('says when the games are loaded, while patterns are still loading', async () => {
+      patternsStore.loadAllPatterns.mockReturnValue(new Promise(() => undefined));
+
+      void facade.init();
+
+      await expect(facade.gamesLoaded).resolves.toBeUndefined();
+      expect(gamesStore.loadGameHistory).toHaveBeenCalled();
     });
   });
 
@@ -134,7 +142,7 @@ describe('AppFacade', () => {
     it('rethrows when a store fails to load', async () => {
       patternsStore.loadAllPatterns.mockRejectedValue(new Error('api down'));
 
-      await expect(facade.loadInitialData(15)).rejects.toThrow('api down');
+      await expect(facade.loadInitialData()).rejects.toThrow('api down');
     });
   });
 

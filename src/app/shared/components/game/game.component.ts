@@ -49,7 +49,6 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import {
-  ballValueMatches,
   countThrowBalls,
   findBallInArsenal,
   formatThrowBall,
@@ -69,7 +68,7 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
-import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ballPickerFor } from 'src/app/core/utils/ball-utils/ball-picker.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -298,6 +297,8 @@ export class GameComponent implements OnInit {
     };
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
+  /** The ball typeahead's list and selection for this game. */
+  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
@@ -425,21 +426,6 @@ export class GameComponent implements OnInit {
     return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
 
-  getBallKeys(names: string[] | undefined): string[] {
-    return this.#gameBalls(names).map(ballKey);
-  }
-
-  /**
-   * What the ball typeahead lists before a search: the arsenal plus the game's own balls. A ball
-   * that left the arsenal must still be listed, or it starts out unselected and the next pick
-   * removes it from the game.
-   */
-  ballPickerItems(names: string[] | undefined): Ball[] {
-    const arsenal = this.ballsStore.arsenal();
-    const own = this.#gameBalls(names).filter((ball) => !arsenal.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight));
-    return [...arsenal, ...own];
-  }
-
   // --- Passthrough Event Emitters ---
   async onBallAdd(selected: Ball[]) {
     if (!(await this.confirmReplaceThrowBalls())) return;
@@ -498,10 +484,5 @@ export class GameComponent implements OnInit {
     await alert.present();
     const { role } = await alert.onDidDismiss();
     return role === 'confirm';
-  }
-
-  #gameBalls(names: string[] | undefined): Ball[] {
-    if (!names?.length) return [];
-    return this.ballsStore.knownBalls().filter((ball) => names.some((name) => ballValueMatches(name, ball)));
   }
 }

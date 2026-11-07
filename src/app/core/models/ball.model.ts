@@ -83,13 +83,3 @@ export type BallPage = Omit<ApiSchemas['BallPage'], 'content'> & { content: Ball
 
 /** Query-string values for `GET balls`; arrays become repeated parameters. */
 export type BallQueryParams = Record<string, string | string[]>;
-
-/** A ball stored without a weight, and the weights it comes in, for the bowler to pick from. */
-export interface BallWeightQuestion {
-  /** The name as the game stores it. */
-  name: string;
-  /** Every weight the ball comes in, lightest first. */
-  options: Ball[];
-  /** The option in the arsenal, if any, which starts out picked. */
-  owned?: Ball;
-}

@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { makeGame } from 'src/testing/fixtures';
+import { makeBall, makeGame } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { AppFacade } from './app.facade';
 import { BallsStore } from './balls.store';
@@ -44,12 +44,21 @@ describe('AppFacade', () => {
     storageRepository.create.mockResolvedValue(undefined);
     storageRepository.clear.mockResolvedValue(undefined);
 
-    gamesStore = createSpyObj<GamesStore>(['loadGameHistory', 'games', 'saveGamesToLocalStorage', 'updateGamesInMemory', 'clearGames']);
+    gamesStore = createSpyObj<GamesStore>([
+      'loadGameHistory',
+      'games',
+      'saveGamesToLocalStorage',
+      'updateGamesInMemory',
+      'clearGames',
+      'migrateBallWeights',
+    ]);
     gamesStore.loadGameHistory.mockResolvedValue([]);
+    gamesStore.migrateBallWeights.mockResolvedValue(undefined);
     gamesStore.games.mockReturnValue([]);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
 
-    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'loadArsenal', 'clearArsenal']);
+    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'loadArsenal', 'clearArsenal', 'arsenal']);
+    ballsStore.arsenal.mockReturnValue([]);
     ballsStore.loadBallCache.mockResolvedValue(undefined);
     ballsStore.resolveBallNames.mockResolvedValue(new Map());
     ballsStore.loadArsenal.mockResolvedValue(undefined);
@@ -125,16 +134,16 @@ describe('AppFacade', () => {
       gamesStore.loadGameHistory.mockRejectedValue(new Error('storage down'));
 
       await expect(facade.init()).resolves.toBeUndefined();
-      await expect(facade.gamesLoaded).resolves.toBeUndefined();
+      expect(gamesStore.migrateBallWeights).not.toHaveBeenCalled();
     });
 
-    it('says when the games are loaded, while patterns are still loading', async () => {
-      patternsStore.loadAllPatterns.mockReturnValue(new Promise(() => undefined));
+    it("gives the games' balls their weights from the loaded arsenal", async () => {
+      const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' })];
+      ballsStore.arsenal.mockReturnValue(arsenal);
 
-      void facade.init();
+      await facade.init();
 
-      await expect(facade.gamesLoaded).resolves.toBeUndefined();
-      expect(gamesStore.loadGameHistory).toHaveBeenCalled();
+      expect(gamesStore.migrateBallWeights).toHaveBeenCalledWith(arsenal);
     });
   });
 

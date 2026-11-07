@@ -5,7 +5,6 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { makeBall } from 'src/testing/fixtures';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { BallWeightService } from '../ball-weight/ball-weight.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { HapticService } from '../haptic/haptic.service';
@@ -19,7 +18,6 @@ describe('ExcelService', () => {
   let mockGamesStore: SpyObj<GamesStore>;
   let mockBallsStore: SpyObj<BallsStore>;
   let mockLeaguesStore: SpyObj<LeaguesStore>;
-  let askWeights: ReturnType<typeof vi.fn<BallWeightService['askWeights']>>;
 
   beforeEach(() => {
     const gamesStoreSpy = createSpyObj(['games', 'saveGamesToLocalStorage']);
@@ -27,7 +25,6 @@ describe('ExcelService', () => {
     ballsStoreSpy.knownBalls.mockReturnValue([]);
     ballsStoreSpy.findKnownBall.mockReturnValue(undefined);
     const leaguesStoreSpy = createSpyObj(['addLeague']);
-    askWeights = vi.fn<BallWeightService['askWeights']>().mockResolvedValue(new Map());
 
     TestBed.configureTestingModule({
       providers: [
@@ -61,7 +58,6 @@ describe('ExcelService', () => {
             setDefaultFilters: vi.fn(),
           },
         },
-        { provide: BallWeightService, useValue: { askWeights } },
         {
           provide: GameStatsService,
           useValue: {
@@ -280,17 +276,17 @@ describe('ExcelService', () => {
 
     const savedGames = mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)![0];
     expect(savedGames[0].frames[0].throws[0].ball).toEqual({ name: 'Rocket A.I.', weight: '15' });
-    expect(savedGames[0].frames[0].throws[1].ball).toEqual({ name: 'White Dot' });
+    expect(savedGames[0].frames[0].throws[1].ball).toEqual({ name: 'White Dot', weight: '15' });
   });
 
   describe('a ball the file names without a weight', () => {
     const light = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '12' });
     const heavy = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
 
-    async function importBareName(): Promise<Game> {
+    async function importBareName(arsenal: Ball[] = []): Promise<Game> {
       mockBallsStore.knownBalls.mockReturnValue([light, heavy]);
       mockBallsStore.findKnownBall.mockImplementation((value: string) => [light, heavy].find((ball) => value === `Phaze II${ball.core_weight}`));
-      mockBallsStore.arsenal.mockReturnValue([]);
+      mockBallsStore.arsenal.mockReturnValue(arsenal);
       mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
       mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
       mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
@@ -317,21 +313,18 @@ describe('ExcelService', () => {
       return mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)![0][0];
     }
 
-    it('asks for its weight, and imports and adds the picked one', async () => {
-      askWeights.mockResolvedValue(new Map<string, Ball>([['phaze ii', light]]));
+    it("imports it with the arsenal's weight", async () => {
+      const game = await importBareName([light]);
 
-      const game = await importBareName();
-
-      expect(askWeights).toHaveBeenCalledWith(['Phaze II'], 'Import');
-      expect(game.balls).toEqual(['Phaze II12']);
-      expect(mockBallsStore.saveBallToArsenal).toHaveBeenCalledExactlyOnceWith(light);
+      expect(game.balls).toEqual([{ name: 'Phaze II', weight: '12' }]);
+      expect(mockBallsStore.saveBallToArsenal).not.toHaveBeenCalled();
     });
 
-    it('keeps it without a weight and out of the arsenal when skipped', async () => {
+    it('imports it as 15 lbs when the arsenal lacks it, and adds that weight', async () => {
       const game = await importBareName();
 
-      expect(game.balls).toEqual(['Phaze II']);
-      expect(mockBallsStore.saveBallToArsenal).not.toHaveBeenCalled();
+      expect(game.balls).toEqual([{ name: 'Phaze II', weight: '15' }]);
+      expect(mockBallsStore.saveBallToArsenal).toHaveBeenCalledExactlyOnceWith(heavy);
     });
   });
 });

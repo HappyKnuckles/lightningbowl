@@ -3,7 +3,8 @@ import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { getBallTracking } from '../utils/game-utils/ball.utils';
+import { Ball } from 'src/app/core/models/ball.model';
+import { getBallTracking, migrateGameBalls } from '../utils/game-utils/ball.utils';
 import { sortGameHistoryByDate } from '../utils/sort-utils/sort.utils';
 
 @Injectable({ providedIn: 'root' })
@@ -48,10 +49,6 @@ export class GamesStore {
           game.patterns.sort();
           needsUpdate = true;
         }
-        if (game.balls && Array.isArray(game.balls) && !this.isSorted(game.balls)) {
-          game.balls.sort();
-          needsUpdate = true;
-        }
 
         // Migrate legacy string ball data to ThrowBall objects
         (game.frames || []).forEach((frame) => {
@@ -94,6 +91,25 @@ export class GamesStore {
     } finally {
       this.loadingService.setLoading(false);
     }
+  }
+
+  /**
+   * Gives every ball the loaded games store without a weight one (see `migrateGameBalls`) and
+   * saves the games that changed. Needs the arsenal, so it runs once both are loaded.
+   */
+  async migrateBallWeights(arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): Promise<void> {
+    const migrated = this.games()
+      .map((game) => [game, migrateGameBalls(game, arsenal)] as const)
+      .filter(([before, after]) => before !== after)
+      .map(([, after]) => after);
+    if (migrated.length === 0) return;
+    try {
+      await Promise.all(migrated.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
+    } catch (error) {
+      console.error('Error saving migrated ball weights:', error);
+    }
+    const byId = new Map(migrated.map((game) => [game.gameId, game]));
+    this.games.update((games) => games.map((game) => byId.get(game.gameId) ?? game));
   }
 
   async saveGameToLocalStorage(gameData: Game): Promise<void> {

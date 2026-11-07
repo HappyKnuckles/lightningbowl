@@ -10,7 +10,6 @@ import { GameFilterService } from 'src/app/core/services/game-filter/game-filter
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { BallWeightService } from 'src/app/core/services/ball-weight/ball-weight.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
@@ -48,7 +47,6 @@ describe('PinpalService', () => {
   let service: PinpalService;
   let gamesStore: SpyObj<GamesStore>;
   let ballsStore: SpyObj<BallsStore>;
-  let askWeights: ReturnType<typeof vi.fn<BallWeightService['askWeights']>>;
   let isOffline: boolean;
   let ballService: SpyObj<BallService>;
   let gameFilterService: SpyObj<GameFilterService>;
@@ -123,7 +121,6 @@ describe('PinpalService', () => {
     ballsStore.knownBalls.mockImplementation(() => allBalls());
     ballsStore.arsenal.mockReturnValue([]);
     // the bowler skips the weight question unless a test picks something
-    askWeights = vi.fn<BallWeightService['askWeights']>().mockResolvedValue(new Map());
     isOffline = false;
     ballService = createSpyObj<BallService>(['findBallsByText']);
     ballService.findBallsByText.mockResolvedValue([]);
@@ -152,7 +149,6 @@ describe('PinpalService', () => {
         { provide: GameFilterService, useValue: gameFilterService },
         { provide: ToastService, useValue: toastService },
         { provide: GameScoreCalculatorService, useValue: scoreCalculator },
-        { provide: BallWeightService, useValue: { askWeights } },
       ],
     });
     service = TestBed.inject(PinpalService);
@@ -242,7 +238,6 @@ describe('PinpalService', () => {
     it('searches the ball API for imported names it does not know', async () => {
       const ball = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '15' });
       ballService.findBallsByText.mockResolvedValue([ball]);
-      askWeights.mockResolvedValue(new Map<string, Ball>([['black widow 3.0', ball]]));
       stubDatabase([{ pk: 1, ballName: 'Black Widow 3.0' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 
       await service.importFromFile(pinpalFile());
@@ -251,28 +246,29 @@ describe('PinpalService', () => {
       expect(ballsStore.saveBallToArsenal).toHaveBeenCalledWith(ball);
     });
 
-    it('asks which weight each ball was, and stores and adds the picked one', async () => {
-      const heavy = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '15' });
+    it("takes the arsenal's weight for a ball (the heaviest when it holds several)", async () => {
       const light = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '12' });
-      ballService.findBallsByText.mockResolvedValue([heavy, light]);
-      askWeights.mockResolvedValue(new Map<string, Ball>([['black widow 3.0', light]]));
+      const middle = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '14' });
+      ballService.findBallsByText.mockResolvedValue([light, middle]);
+      ballsStore.arsenal.mockReturnValue([light, middle]);
       stubDatabase([{ pk: 1, ballName: 'Black Widow 3.0' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 
       await service.importFromFile(pinpalFile());
 
-      expect(askWeights).toHaveBeenCalledWith(['Black Widow 3.0'], 'Import');
-      expect(savedGames()[0].balls).toEqual(['Black Widow 3.012']);
-      expect(ballsStore.saveBallToArsenal).toHaveBeenCalledExactlyOnceWith(light);
+      expect(savedGames()[0].balls).toEqual([{ name: 'Black Widow 3.0', weight: '14' }]);
+      expect(ballsStore.saveBallToArsenal).not.toHaveBeenCalled();
     });
 
-    it('keeps a skipped ball without a weight and out of the arsenal', async () => {
-      allBalls.set([makeBall({ ball_id: 'b1', ball_name: 'Phaze II', core_weight: '15' })]);
-      stubDatabase([{ pk: 1, ballName: 'Phaze II' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
+    it('takes 15 lbs for a ball the arsenal lacks, and adds that weight', async () => {
+      const light = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '12' });
+      const heavy = makeBall({ ball_id: 'b9', ball_name: 'Black Widow 3.0', core_weight: '15' });
+      ballService.findBallsByText.mockResolvedValue([light, heavy]);
+      stubDatabase([{ pk: 1, ballName: 'Black Widow 3.0' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 
       await service.importFromFile(pinpalFile());
 
-      expect(savedGames()[0].balls).toEqual(['Phaze II']);
-      expect(ballsStore.saveBallToArsenal).not.toHaveBeenCalled();
+      expect(savedGames()[0].balls).toEqual([{ name: 'Black Widow 3.0', weight: '15' }]);
+      expect(ballsStore.saveBallToArsenal).toHaveBeenCalledExactlyOnceWith(heavy);
     });
 
     it('does not search offline, nor for names the app already knows', async () => {
@@ -317,12 +313,11 @@ describe('PinpalService', () => {
       const ball = makeBall({ ball_id: 'b1', ball_name: 'Phaze II', core_weight: '15' });
       allBalls.set([ball]);
       allPatterns.set([makePattern({ title: 'Shark 48' })]);
-      askWeights.mockResolvedValue(new Map<string, Ball>([['phaze ii', ball]]));
       stubDatabase([{ pk: 1, ballName: 'phaze ii', patternName: 'shark' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 
       await service.importFromFile(pinpalFile());
 
-      expect(savedGames()[0].balls).toEqual(['Phaze II15']);
+      expect(savedGames()[0].balls).toEqual([{ name: 'Phaze II', weight: '15' }]);
       expect(savedGames()[0].patterns).toEqual(['Shark 48']);
       expect(ballsStore.saveBallToArsenal).toHaveBeenCalledWith(ball);
     });
@@ -332,14 +327,13 @@ describe('PinpalService', () => {
 
       await service.importFromFile(pinpalFile());
 
-      expect(savedGames()[0].balls).toEqual(['Mystery Ball']);
+      expect(savedGames()[0].balls).toEqual([{ name: 'Mystery Ball', weight: '15' }]);
       expect(ballsStore.saveBallToArsenal).not.toHaveBeenCalled();
     });
 
     it('warns when a matched ball cannot be added to the arsenal', async () => {
-      const ball = makeBall({ ball_name: 'Phaze II' });
+      const ball = makeBall({ ball_name: 'Phaze II', core_weight: '15' });
       allBalls.set([ball]);
-      askWeights.mockResolvedValue(new Map<string, Ball>([['phaze ii', ball]]));
       ballsStore.saveBallToArsenal.mockRejectedValue(new Error('quota'));
       stubDatabase([{ pk: 1, ballName: 'Phaze II' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 

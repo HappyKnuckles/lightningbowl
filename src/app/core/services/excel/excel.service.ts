@@ -12,11 +12,10 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { parseStoredBall } from '../../utils/ball-utils/stored-ball.utils';
-import { applyBallWeights, findBallInArsenal, formatThrowBall, getGameBalls, weightlessBallNames } from '../../utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getGameBalls, migrateGameBalls, toGameBall } from '../../utils/game-utils/ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
-import { BallWeightService } from '../ball-weight/ball-weight.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { timestampedFileName } from 'src/app/core/utils/file-utils/file-name.utils';
 import { saveFileFromWeb } from 'src/app/core/utils/file-utils/web-file-save.utils';
@@ -47,7 +46,6 @@ export class ExcelService {
     private leaguesStore: LeaguesStore,
     private gameFilterService: GameFilterService,
     private statsService: GameStatsService,
-    private ballWeightService: BallWeightService,
   ) {}
 
   // TODO make one folder for all and one for each league and in there have stats and game history for the league
@@ -221,6 +219,7 @@ export class ExcelService {
                 .split(', ')
                 .map((ball) => this.formatBallDisplayName(ball))
                 .filter((ball) => !!ball)
+                .map((ball) => toGameBall(ball, this.ballsStore.arsenal()))
             : [],
           note: row['Notes'] as string,
         };
@@ -236,16 +235,15 @@ export class ExcelService {
         await this.leaguesStore.addLeague(league);
       }
 
-      // A ball the file names without a weight gets the weight the bowler picks; it's never guessed.
-      const chosen = await this.ballWeightService.askWeights(
-        gameData.flatMap((game) => weightlessBallNames(game)),
-        'Import',
-      );
-      const weighed = gameData.map((game) => applyBallWeights(game, chosen));
+      // A ball the file names without a weight gets the arsenal's weight for it, else the default.
+      const weighed = gameData.map((game) => migrateGameBalls(game, this.ballsStore.arsenal()));
 
       const ballValues = new Set(
         weighed
-          .flatMap((game) => [...(game.balls ?? []), ...game.frames.flatMap((frame) => frame.throws.map((t) => formatThrowBall(t.ball)))])
+          .flatMap((game) => [
+            ...(game.balls ?? []).map((ball) => formatThrowBall(ball)),
+            ...game.frames.flatMap((frame) => frame.throws.map((t) => formatThrowBall(t.ball))),
+          ])
           .filter(Boolean),
       );
       // Fetches balls the device doesn't know yet from the ball API (exact name), so they resolve below.
@@ -791,7 +789,7 @@ export class ExcelService {
 
   /**
    * The ball an Excel cell names, when the cell has a weight ("Phaze II 15lbs", "PhazeII15"). A
-   * name alone resolves to nothing: its weight is asked for, never guessed.
+   * name alone resolves to nothing here; `migrateGameBalls` gives it a weight.
    */
   private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
     const raw = rawBallValue?.trim();
@@ -832,48 +830,48 @@ export class ExcelService {
         {
           frameIndex: 1,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
-            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 1, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
-        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
-        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 2, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } }] },
+        { frameIndex: 3, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } }] },
         {
           frameIndex: 4,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10], ball: { name: 'Rocket A.I.' } },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [5], ball: { name: 'Rocket A.I.' } },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [7, 10], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [5], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
         {
           frameIndex: 5,
           throws: [
-            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.' } },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [3], ball: { name: 'Rocket A.I.' } },
+            { value: 9, throwIndex: 1, pinsLeftStanding: [10], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [3], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
         {
           frameIndex: 6,
           throws: [
-            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10], ball: { name: 'Rocket A.I.' } },
-            { value: 9, throwIndex: 2, pinsLeftStanding: [2], ball: { name: 'Rocket A.I.' } },
+            { value: 8, throwIndex: 1, pinsLeftStanding: [8, 10], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 9, throwIndex: 2, pinsLeftStanding: [2], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
         {
           frameIndex: 7,
           throws: [
-            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2], ball: { name: 'Rocket A.I.' } },
-            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2], ball: { name: 'Rocket A.I.' } },
+            { value: 3, throwIndex: 1, pinsLeftStanding: [4, 6, 7, 8, 9, 10, 2], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 4, throwIndex: 2, pinsLeftStanding: [6, 10, 2], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
-        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
-        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } }] },
+        { frameIndex: 8, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } }] },
+        { frameIndex: 9, throws: [{ value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } }] },
         {
           frameIndex: 10,
           throws: [
-            { value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
-            { value: 10, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
-            { value: 10, throwIndex: 3, pinsLeftStanding: [], ball: { name: 'Rocket A.I.' } },
+            { value: 10, throwIndex: 1, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 10, throwIndex: 2, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } },
+            { value: 10, throwIndex: 3, pinsLeftStanding: [], ball: { name: 'Rocket A.I.', weight: '15' } },
           ],
         },
       ],
@@ -886,7 +884,7 @@ export class ExcelService {
       league: 'Example League',
       note: 'Example note',
       patterns: ['2000 PWBA Foundation Games Plastic Ball Pattern', '2003 EBT Vienna Open'],
-      balls: ['Rocket A.I.'],
+      balls: [{ name: 'Rocket A.I.', weight: '15' }],
     };
   }
 

@@ -1,5 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
-import { ballValueMatches } from 'src/app/core/utils/game-utils/ball.utils';
+import { ThrowBall } from 'src/app/core/models/game.model';
+import { sameGameBall } from 'src/app/core/utils/game-utils/ball.utils';
 
 /** What the ball typeahead of one game starts with. */
 export interface BallPicker {
@@ -10,12 +11,14 @@ export interface BallPicker {
 }
 
 /**
- * The typeahead's list before a search, for a game with these stored ball values. A ball that has
+ * The typeahead's list before a search, for a game with these balls. A ball that has
  * left the arsenal must still be listed, or it starts out unselected and the next pick removes it
  * from the game.
  */
-export function ballPickerFor(names: string[] | undefined, arsenal: Ball[], knownBalls: Ball[]): BallPicker {
-  const own = names?.length ? knownBalls.filter((ball) => names.some((name) => ballValueMatches(name, ball))) : [];
+export function ballPickerFor(balls: ThrowBall[] | undefined, arsenal: Ball[], knownBalls: Ball[]): BallPicker {
+  const own = balls?.length
+    ? knownBalls.filter((ball) => balls.some((stored) => sameGameBall(stored, { name: ball.ball_name, weight: ball.core_weight })))
+    : [];
   const notInArsenal = own.filter((ball) => !arsenal.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight));
   return { items: [...arsenal, ...notInArsenal], selected: own.map((ball) => ball.ball_id) };
 }

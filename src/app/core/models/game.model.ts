@@ -89,7 +89,11 @@ export interface Game {
   note?: string;
   league?: string;
   patterns: string[];
-  /** Balls used. The user's selection in `game` tracking, derived from the throws in `throw` tracking. */
-  balls?: string[];
+  /**
+   * Balls used, each with its weight. The user's selection in `game` tracking, derived from the
+   * throws in `throw` tracking. Games stored before held strings ("Phaze", "Phaze 15lbs");
+   * `migrateGameBalls` converts them on load.
+   */
+  balls?: ThrowBall[];
   ballTracking?: BallTracking;
 }

@@ -66,10 +66,10 @@ describe('GameComponent', () => {
       const emitted = vi.fn();
       component.ballsChanged.subscribe(emitted);
 
-      await component.onBallSelect(['Hammer15'], modal);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
 
       expect(create).not.toHaveBeenCalled();
-      expect(emitted).toHaveBeenCalledWith(['Hammer15']);
+      expect(emitted).toHaveBeenCalledWith([{ name: 'Hammer', weight: '15' }]);
     });
 
     it('emits only once replacing the per-throw balls is confirmed', async () => {
@@ -78,12 +78,12 @@ describe('GameComponent', () => {
       component.ballsChanged.subscribe(emitted);
 
       answerPrompt('cancel');
-      await component.onBallSelect(['Hammer15'], modal);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
       expect(emitted).not.toHaveBeenCalled();
 
       answerPrompt('confirm');
-      await component.onBallSelect(['Hammer15'], modal);
-      expect(emitted).toHaveBeenCalledWith(['Hammer15']);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
+      expect(emitted).toHaveBeenCalledWith([{ name: 'Hammer', weight: '15' }]);
     });
   });
 
@@ -131,7 +131,15 @@ describe('GameComponent', () => {
       const other = makeBall({ ball_id: 'o', ball_name: 'Other', core_weight: '15' });
       mockBallsStore.arsenal.mockReturnValue([owned]);
       mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
-      fixture.componentRef.setInput('game', makeGame({ balls: ['Retired15', 'Owned15'] }));
+      fixture.componentRef.setInput(
+        'game',
+        makeGame({
+          balls: [
+            { name: 'Retired', weight: '15' },
+            { name: 'Owned', weight: '15' },
+          ],
+        }),
+      );
 
       expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a', 'r'] });
     });

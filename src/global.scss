@@ -375,9 +375,3 @@ ion-segment {
   --background: var(--ion-color-dark);
   --background: #252525;
 }
-
-// The ball weight question can open at startup, before a page presents its own sheet (the add
-// page's pin input); Ionic stacks overlays by creation order, so it needs a layer of its own.
-ion-modal.ball-weight-modal {
-  z-index: 30000 !important;
-}

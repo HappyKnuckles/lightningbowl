@@ -52,7 +52,7 @@ import {
   countThrowBalls,
   findBallInArsenal,
   formatThrowBall,
-  getGameBallNames,
+  getGameBallLabels,
   getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
@@ -153,7 +153,7 @@ export class GameComponent implements OnInit {
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
-  ballsChanged = output<string[]>();
+  ballsChanged = output<ThrowBall[]>();
   throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
@@ -239,7 +239,7 @@ export class GameComponent implements OnInit {
   });
 
   detailsAccordionValue = computed(() => (this.detailsOpen() ? GameComponent.DETAILS_ACCORDION : undefined));
-  ballsText = computed(() => getGameBallNames(this.currentGame(), this.ballsStore.arsenal()).join(', '));
+  ballsText = computed(() => getGameBallLabels(this.currentGame()).join(', '));
 
   /**
    * Which ball UI this game gets. A game that already carries ball data keeps its own mode;
@@ -431,7 +431,7 @@ export class GameComponent implements OnInit {
     if (!(await this.confirmReplaceThrowBalls())) return;
     // picked balls may come from an API search, so keep them resolvable offline
     void this.ballsStore.rememberBalls(selected);
-    this.ballsChanged.emit(selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })));
+    this.ballsChanged.emit(selected.map((b) => ({ name: b.ball_name, weight: b.core_weight })));
     this.saveBallToArsenal(selected);
   }
 
@@ -441,7 +441,7 @@ export class GameComponent implements OnInit {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  async onBallSelect(selectedBalls: string[], modal: IonModal) {
+  async onBallSelect(selectedBalls: ThrowBall[], modal: IonModal) {
     modal.dismiss();
     if (!(await this.confirmReplaceThrowBalls())) return;
     this.ballsChanged.emit(selectedBalls);

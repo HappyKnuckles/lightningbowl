@@ -10,13 +10,13 @@ import { SettingsStore } from './settings.store';
 
 @Injectable({ providedIn: 'root' })
 export class AppFacade {
-  #resolveGamesLoaded!: () => void;
-  #initPromise: Promise<void> | null = null;
   /**
    * Resolves once games, arsenal and ball cache are loaded (or failed to), without waiting for the
    * rest of startup: patterns and catalogs from the network can take long offline.
    */
-  readonly gamesLoaded = new Promise<void>((resolve) => (this.#resolveGamesLoaded = resolve));
+  readonly gamesLoaded: Promise<void>;
+  #resolveGamesLoaded!: () => void;
+  #initPromise: Promise<void> | null = null;
 
   constructor(
     private storageRepository: StorageRepository,
@@ -27,7 +27,9 @@ export class AppFacade {
     private settingsStore: SettingsStore,
     private ballService: BallService,
     private analyticsService: AnalyticsService,
-  ) {}
+  ) {
+    this.gamesLoaded = new Promise<void>((resolve) => (this.#resolveGamesLoaded = resolve));
+  }
 
   async init(): Promise<void> {
     if (this.#initPromise) {

@@ -4,6 +4,7 @@ import { ModalController } from '@ionic/angular/standalone';
 import { vi } from 'vitest';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -97,6 +98,22 @@ describe('BallWeightService', () => {
       await service.askWeights(['Zen']);
 
       expect(asked()).toEqual([{ name: 'Zen', options: [zen15], owned: undefined }]);
+    });
+
+    it('lifts the loading screen while asking, and restores it afterwards', async () => {
+      options.set('Phaze II', [phaze12, phaze15]);
+      const loading = TestBed.inject(LoadingService);
+      loading.setLoading(true);
+      let loadingWhileAsked: boolean | undefined;
+      create.mockImplementation(async () => ({
+        present: vi.fn(async () => (loadingWhileAsked = loading.isLoading())),
+        onWillDismiss: vi.fn(async () => ({ data: answer })),
+      }));
+
+      await service.askWeights(['Phaze II'], 'Import');
+
+      expect(loadingWhileAsked).toBe(false);
+      expect(loading.isLoading()).toBe(true);
     });
 
     it('remembers skipped names, so the startup question leaves them alone', async () => {

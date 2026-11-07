@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ModalController } from '@ionic/angular/standalone';
 import { Ball, BallWeightQuestion } from 'src/app/core/models/ball.model';
+import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -20,6 +21,7 @@ export class BallWeightService {
     private ballsStore: BallsStore,
     private gamesStore: GamesStore,
     private storageRepository: StorageRepository,
+    private loadingService: LoadingService,
   ) {}
 
   /**
@@ -47,16 +49,23 @@ export class BallWeightService {
     }
 
     if (questions.length > 0) {
-      const modal = await this.modalCtrl.create({
-        component: BallWeightPickerComponent,
-        componentProps: { questions, confirmText },
-        backdropDismiss: false,
-        // above sheets the current page presents later (the add page's pin input)
-        cssClass: 'ball-weight-modal',
-      });
-      await modal.present();
-      const { data } = await modal.onWillDismiss<Map<string, Ball>>();
-      for (const [name, ball] of data ?? []) chosen.set(name, ball);
+      // imports run behind the loading screen, which covers every overlay: lift it while asking
+      const wasLoading = this.loadingService.isLoading();
+      this.loadingService.setLoading(false);
+      try {
+        const modal = await this.modalCtrl.create({
+          component: BallWeightPickerComponent,
+          componentProps: { questions, confirmText },
+          backdropDismiss: false,
+          // above sheets the current page presents later (the add page's pin input)
+          cssClass: 'ball-weight-modal',
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss<Map<string, Ball>>();
+        for (const [name, ball] of data ?? []) chosen.set(name, ball);
+      } finally {
+        this.loadingService.setLoading(wasLoading);
+      }
       await this.rememberSkipped(questions.map((question) => question.name).filter((name) => !chosen.has(name.toLowerCase())));
     }
 

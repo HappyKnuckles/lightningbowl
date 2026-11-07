@@ -12,6 +12,8 @@ export const StorageKeys = {
   searchHistory: (context: string): string => `${STORAGE_PREFIX.searchHistory}_${context}`,
   /** Balls resolved from the ball API that aren't in the arsenal or favorites (see BallsStore.knownBalls). */
   ballCache: 'ball_cache',
+  /** Weightless ball names the bowler skipped in the weight question, so it isn't asked again. */
+  ballWeightSkipped: 'ball_weight_skipped',
 } as const;
 
 // Single-record keys.

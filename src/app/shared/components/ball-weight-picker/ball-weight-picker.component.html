@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Which weight?</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="skip()">Skip</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <p class="hint">These balls were saved without a weight. Pick the one you threw; a ball you leave open stays without a weight.</p>
+  <ion-list>
+    @for (row of rows(); track row.name) {
+      <div class="weight-row">
+        <ion-item lines="none">
+          <ion-avatar slot="start">
+            <img [src]="row.ball | ballImage" [alt]="row.ball.ball_name" />
+          </ion-avatar>
+          <ion-label>
+            <p>{{ row.ball.brand_name }}</p>
+            <h2>{{ row.ball.ball_name }}</h2>
+          </ion-label>
+        </ion-item>
+        <ion-segment [scrollable]="true" [value]="picked()[row.name]" (ionChange)="pick(row.name, $event.detail.value)">
+          @for (option of row.options; track option.value) {
+            <ion-segment-button [value]="option.value">
+              <ion-label>{{ option.label }}</ion-label>
+            </ion-segment-button>
+          }
+        </ion-segment>
+      </div>
+    }
+  </ion-list>
+</ion-content>
+<ion-footer>
+  <ion-toolbar>
+    <ion-button expand="block" (click)="confirm()">{{ confirmText }}</ion-button>
+  </ion-toolbar>
+</ion-footer>

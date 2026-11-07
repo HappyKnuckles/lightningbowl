@@ -1,6 +1,9 @@
 import { Frame, Throw } from 'src/app/core/models/game.model';
-import { makeFrame, makeGame, makeThrow } from 'src/testing/fixtures';
+import { makeBall, makeFrame, makeGame, makeThrow } from 'src/testing/fixtures';
 import {
+  applyBallWeights,
+  isWeightless,
+  weightlessBallNames,
   ballValueMatches,
   canonicalBallKey,
   clearThrowBalls,
@@ -407,5 +410,52 @@ describe('countThrowBalls / clearThrowBalls', () => {
     expect(cleared[1].pendingBall).toBeUndefined();
     expect(cleared[1].pendingBallThrowIndex).toBeUndefined();
     expect(cleared[0].throws.map((t) => t.value)).toEqual([9, 1]);
+  });
+});
+
+describe('isWeightless', () => {
+  it('is true for a name alone, false once a weight is stored', () => {
+    expect(isWeightless('Phaze II')).toBe(true);
+    expect(isWeightless('Black Widow 3.0')).toBe(true);
+    expect(isWeightless('Phaze II15')).toBe(false);
+    expect(isWeightless('Phaze II 15lbs')).toBe(false);
+    expect(isWeightless({ name: 'Phaze II' })).toBe(true);
+    expect(isWeightless({ name: 'Phaze II', weight: '15' })).toBe(false);
+    expect(isWeightless('')).toBe(false);
+    expect(isWeightless(undefined)).toBe(false);
+  });
+});
+
+describe('weightlessBallNames', () => {
+  it("collects the game's and the throws' names without a weight, once each", () => {
+    const game = makeGame({
+      balls: ['Phaze II', 'Zen15'],
+      frames: [makeFrame(0, [makeThrow(1, [7], { ball: { name: 'Phaze II' } }), makeThrow(2, [], { ball: { name: 'Spare', weight: '12' } })])],
+    });
+
+    expect(weightlessBallNames(game)).toEqual(['Phaze II']);
+  });
+});
+
+describe('applyBallWeights', () => {
+  const phaze14 = makeBall({ ball_name: 'Phaze II', core_weight: '14' });
+
+  it("writes the picked weight into the game's balls and its throws", () => {
+    const game = makeGame({
+      balls: ['phaze ii', 'Zen15'],
+      frames: [makeFrame(0, [makeThrow(1, [7], { ball: { name: 'Phaze II' } }), makeThrow(2, [])])],
+    });
+
+    const updated = applyBallWeights(game, new Map([['phaze ii', phaze14]]));
+
+    expect(updated.balls).toEqual(['Phaze II14', 'Zen15']);
+    expect(updated.frames[0].throws[0].ball).toEqual({ name: 'Phaze II', weight: '14' });
+    expect(updated.frames[0].throws[1]).toBe(game.frames[0].throws[1]);
+  });
+
+  it('returns the same game when nothing was picked for it', () => {
+    const game = makeGame({ balls: ['Zen'] });
+
+    expect(applyBallWeights(game, new Map([['phaze ii', phaze14]]))).toBe(game);
   });
 });

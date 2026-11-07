@@ -1,8 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { BallsStore, pickVariant } from 'src/app/core/stores/balls.store';
+import { Ball } from 'src/app/core/models/ball.model';
+import { Game } from 'src/app/core/models/game.model';
+import { BallsStore } from 'src/app/core/stores/balls.store';
 import { makeBall } from 'src/testing/fixtures';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
+import { BallWeightService } from '../ball-weight/ball-weight.service';
 import { GameFilterService } from '../game-filter/game-filter.service';
 import { GameStatsService } from '../game-stats/game-stats.service';
 import { HapticService } from '../haptic/haptic.service';
@@ -16,21 +19,15 @@ describe('ExcelService', () => {
   let mockGamesStore: SpyObj<GamesStore>;
   let mockBallsStore: SpyObj<BallsStore>;
   let mockLeaguesStore: SpyObj<LeaguesStore>;
+  let askWeights: ReturnType<typeof vi.fn<BallWeightService['askWeights']>>;
 
   beforeEach(() => {
     const gamesStoreSpy = createSpyObj(['games', 'saveGamesToLocalStorage']);
-    const ballsStoreSpy = createSpyObj<BallsStore>([
-      'resolveBallNames',
-      'knownBalls',
-      'arsenal',
-      'saveBallToArsenal',
-      'findKnownBall',
-      'pickVariant',
-    ]);
+    const ballsStoreSpy = createSpyObj<BallsStore>(['resolveBallNames', 'knownBalls', 'arsenal', 'saveBallToArsenal', 'findKnownBall']);
     ballsStoreSpy.knownBalls.mockReturnValue([]);
     ballsStoreSpy.findKnownBall.mockReturnValue(undefined);
-    ballsStoreSpy.pickVariant.mockImplementation((variants, weight) => pickVariant(variants, weight));
     const leaguesStoreSpy = createSpyObj(['addLeague']);
+    askWeights = vi.fn<BallWeightService['askWeights']>().mockResolvedValue(new Map());
 
     TestBed.configureTestingModule({
       providers: [
@@ -64,6 +61,7 @@ describe('ExcelService', () => {
             setDefaultFilters: vi.fn(),
           },
         },
+        { provide: BallWeightService, useValue: { askWeights } },
         {
           provide: GameStatsService,
           useValue: {
@@ -285,36 +283,55 @@ describe('ExcelService', () => {
     expect(savedGames[0].frames[0].throws[1].ball).toEqual({ name: 'White Dot' });
   });
 
-  it('adds the weight a bare ball name means to the arsenal, not whichever weight is cached first', async () => {
+  describe('a ball the file names without a weight', () => {
     const light = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '12' });
     const heavy = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
-    mockBallsStore.knownBalls.mockReturnValue([light, heavy]);
-    mockBallsStore.arsenal.mockReturnValue([]);
-    mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
-    mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
-    mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
-    mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
 
-    const header: Record<string, string> = {
-      Game: 'Game',
-      Date: 'Date',
-      'Total Score': 'Total Score',
-      'Frame Scores': 'Frame Scores',
-      Balls: 'Balls',
-    };
-    for (let i = 1; i <= 10; i++) header[`Frame ${i}`] = `Frame ${i}`;
-    const row: Record<string, string> = {
-      Game: '1',
-      Date: '1/1/2024',
-      'Frame 1': '9 / 1',
-      'Total Score': '10',
-      'Frame Scores': '10',
-      Balls: 'Phaze II',
-    };
+    async function importBareName(): Promise<Game> {
+      mockBallsStore.knownBalls.mockReturnValue([light, heavy]);
+      mockBallsStore.findKnownBall.mockImplementation((value: string) => [light, heavy].find((ball) => value === `Phaze II${ball.core_weight}`));
+      mockBallsStore.arsenal.mockReturnValue([]);
+      mockBallsStore.resolveBallNames.mockResolvedValue(new Map());
+      mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));
+      mockGamesStore.saveGamesToLocalStorage.mockReturnValue(Promise.resolve());
+      mockLeaguesStore.addLeague.mockReturnValue(Promise.resolve());
 
-    await service.transformData([header, row]);
+      const header: Record<string, string> = {
+        Game: 'Game',
+        Date: 'Date',
+        'Total Score': 'Total Score',
+        'Frame Scores': 'Frame Scores',
+        Balls: 'Balls',
+      };
+      for (let i = 1; i <= 10; i++) header[`Frame ${i}`] = `Frame ${i}`;
+      const row: Record<string, string> = {
+        Game: '1',
+        Date: '1/1/2024',
+        'Frame 1': '9 / 1',
+        'Total Score': '10',
+        'Frame Scores': '10',
+        Balls: 'Phaze II',
+      };
 
-    expect(mockBallsStore.saveBallToArsenal).toHaveBeenCalledWith(heavy);
-    expect(mockBallsStore.saveBallToArsenal).not.toHaveBeenCalledWith(light);
+      await service.transformData([header, row]);
+      return mockGamesStore.saveGamesToLocalStorage.mock.calls.at(-1)![0][0];
+    }
+
+    it('asks for its weight, and imports and adds the picked one', async () => {
+      askWeights.mockResolvedValue(new Map<string, Ball>([['phaze ii', light]]));
+
+      const game = await importBareName();
+
+      expect(askWeights).toHaveBeenCalledWith(['Phaze II'], 'Import');
+      expect(game.balls).toEqual(['Phaze II12']);
+      expect(mockBallsStore.saveBallToArsenal).toHaveBeenCalledExactlyOnceWith(light);
+    });
+
+    it('keeps it without a weight and out of the arsenal when skipped', async () => {
+      const game = await importBareName();
+
+      expect(game.balls).toEqual(['Phaze II']);
+      expect(mockBallsStore.saveBallToArsenal).not.toHaveBeenCalled();
+    });
   });
 });

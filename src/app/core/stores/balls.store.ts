@@ -22,37 +22,6 @@ function uniqueBalls(balls: Ball[]): Ball[] {
 const sameWeight = (a: number | string, b: number | string) => Number(a) === Number(b);
 
 /**
- * The weight a name alone most likely means, from variants of one ball: the variant in the
- * arsenal, then the preferred weight, then the weight most of the arsenal has, then the heaviest.
- */
-export function pickVariant(
-  variants: Ball[],
-  preferredWeight?: number | string,
-  arsenal: Pick<Ball, 'ball_id' | 'core_weight'>[] = [],
-): Ball | undefined {
-  const owned = variants.find((variant) =>
-    arsenal.some((ball) => ball.ball_id === variant.ball_id && sameWeight(ball.core_weight, variant.core_weight)),
-  );
-  if (owned) return owned;
-  for (const weight of [preferredWeight, usualWeight(arsenal)]) {
-    const match = weight === undefined ? undefined : variants.find((b) => sameWeight(b.core_weight, weight));
-    if (match) return match;
-  }
-  return [...variants].sort((a, b) => Number(b.core_weight) - Number(a.core_weight))[0];
-}
-
-/** The weight most balls in the arsenal have (the heavier one on a tie). */
-function usualWeight(arsenal: Pick<Ball, 'core_weight'>[]): string | undefined {
-  const counts = new Map<number, number>();
-  for (const { core_weight } of arsenal) {
-    const weight = Number(core_weight);
-    if (Number.isFinite(weight)) counts.set(weight, (counts.get(weight) ?? 0) + 1);
-  }
-  const [best] = [...counts].sort(([weightA, countA], [weightB, countB]) => countB - countA || weightB - weightA);
-  return best ? String(best[0]) : undefined;
-}
-
-/**
  * Balls the app works with offline. There is no full catalog on the device:
  * the balls page searches the ball API, and everything else uses
  * `knownBalls`: the arsenal, favorites, and balls resolved on demand (balls
@@ -105,24 +74,41 @@ export class BallsStore {
   }
 
   /**
-   * A known ball by name (case-insensitive), preferring the given weight. Also
-   * accepts names with the weight appended ("Phaze II15", "Phaze II 15lbs"),
-   * as games store them; that weight then wins over `preferredWeight`.
+   * The known ball a stored value means. Only values with a weight ("Phaze II15", "Phaze II 15lbs")
+   * resolve: a name alone doesn't say which weight was thrown, and no weight stands in for it.
    */
-  findKnownBall(name: string, preferredWeight?: number | string): Ball | undefined {
-    const byName = (ballName: string) => this.knownBalls().filter((b) => b.ball_name.toLowerCase() === ballName.toLowerCase());
-    const exact = byName(name.trim());
-    if (exact.length > 0) return this.pickVariant(exact, preferredWeight);
-
-    const parsed = parseStoredBall(name);
+  findKnownBall(value: string): Ball | undefined {
+    const parsed = parseStoredBall(value);
     if (!parsed.weight) return undefined;
-    // the stored weight is what was thrown: no other weight stands in for it
-    return byName(parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+    return this.#named(this.knownBalls(), parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
   }
 
-  /** Which of a ball's weights a bare name means; see `pickVariant`. */
-  pickVariant(variants: Ball[], preferredWeight?: number | string): Ball | undefined {
-    return pickVariant(variants, preferredWeight, this.arsenal());
+  /**
+   * Every weight each name comes in, lightest first, so the bowler can pick one: the known
+   * weights, plus the ball API's when online. `complete` says whether the API answered, i.e.
+   * whether a name with a single weight really exists in only that one. Keys are the names as given.
+   */
+  async weightOptions(names: string[]): Promise<{ options: Map<string, Ball[]>; complete: boolean }> {
+    const unique = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+    let fetched: Ball[] = [];
+    let complete = false;
+    if (unique.length > 0 && this.#networkService.isOnline) {
+      try {
+        fetched = await this.#ballService.getBallsByNames(unique);
+        complete = true;
+      } catch (error) {
+        console.error('Error loading ball weights:', error);
+      }
+    }
+    const options = new Map<string, Ball[]>();
+    for (const name of unique) {
+      const variants = uniqueBalls([...this.#named(fetched, name), ...this.#named(this.knownBalls(), name)]);
+      options.set(
+        name,
+        variants.sort((a, b) => Number(a.core_weight) - Number(b.core_weight)),
+      );
+    }
+    return { options, complete };
   }
 
   /**
@@ -137,31 +123,34 @@ export class BallsStore {
   }
 
   /**
-   * Resolves ball names (as stored in games) to balls: known balls first, the
-   * rest from the ball API by exact name when online. Resolved balls are
-   * remembered, so this works offline afterwards. Keys are lower-cased names.
+   * Resolves ball values as games store them ("Phaze II15") to balls: known balls first, the rest
+   * from the ball API by exact name when online. Resolved balls are remembered, so this works
+   * offline afterwards. Values without a weight are left alone; their weight is asked for.
    */
-  async resolveBallNames(names: string[], preferredWeight?: number | string): Promise<Map<string, Ball>> {
+  async resolveBallNames(values: string[]): Promise<Map<string, Ball>> {
     const result = new Map<string, Ball>();
     const missing: string[] = [];
-    for (const name of new Set(names.filter(Boolean))) {
-      const known = this.findKnownBall(name, preferredWeight);
-      if (known) result.set(name.toLowerCase(), known);
-      else missing.push(name);
+    for (const value of new Set(values.filter((value) => value && parseStoredBall(value).weight))) {
+      const known = this.findKnownBall(value);
+      if (known) result.set(value.toLowerCase(), known);
+      else missing.push(value);
     }
 
     if (missing.length > 0 && this.#networkService.isOnline) {
       try {
-        // Values may carry a weight ("Phaze II15"); look up both the value and the bare name.
-        const lookups = [...new Set(missing.flatMap((value) => [value, parseStoredBall(value).name]))];
-        const fetched = await this.#ballService.getBallsByNames(lookups);
-        // The API returns every weight; keep only the one each value means, so later lookups by
-        // name can't pick up a weight nobody threw.
-        const meant = missing.map((value) => this.#meantVariant(value, fetched, preferredWeight)).filter((ball): ball is Ball => ball !== undefined);
+        const fetched = await this.#ballService.getBallsByNames([...new Set(missing.map((value) => parseStoredBall(value).name))]);
+        // The API returns every weight; keep only the one each value names, so the cache never
+        // holds a weight nobody threw.
+        const meant = missing
+          .map((value) => {
+            const parsed = parseStoredBall(value);
+            return this.#named(fetched, parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+          })
+          .filter((ball): ball is Ball => ball !== undefined);
         await this.rememberBalls(meant);
-        for (const name of missing) {
-          const ball = this.findKnownBall(name, preferredWeight);
-          if (ball) result.set(name.toLowerCase(), ball);
+        for (const value of missing) {
+          const ball = this.findKnownBall(value);
+          if (ball) result.set(value.toLowerCase(), ball);
         }
       } catch (error) {
         console.error('Error resolving ball names:', error);
@@ -182,13 +171,9 @@ export class BallsStore {
     await this.rememberBalls([...fresh, ...cached.filter((b) => !freshKeys.has(ballKey(b)))]);
   }
 
-  /** The fetched ball a stored value means: its own weight when it has one, else `pickVariant`. */
-  #meantVariant(value: string, fetched: Ball[], preferredWeight?: number | string): Ball | undefined {
-    const named = (name: string) => fetched.filter((b) => b.ball_name.toLowerCase() === name.trim().toLowerCase());
-    const exact = named(value);
-    if (exact.length > 0) return this.pickVariant(exact, preferredWeight);
-    const parsed = parseStoredBall(value);
-    return parsed.weight ? named(parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!)) : undefined;
+  #named(balls: Ball[], name: string): Ball[] {
+    const wanted = name.trim().toLowerCase();
+    return balls.filter((b) => b.ball_name.toLowerCase() === wanted);
   }
 
   // --------------------------------------------------------------- arsenal

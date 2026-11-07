@@ -72,8 +72,7 @@ canvas {
 }
 
 ion-input {
-  --highlight-color-focused: color-contrast(var(--ion-input-background) vs var(--ion-color-primary),
-      var(--ion-color-primary-contrast)) !important;
+  --highlight-color-focused: color-contrast(var(--ion-input-background) vs var(--ion-color-primary), var(--ion-color-primary-contrast)) !important;
 }
 
 .no-game-text {
@@ -103,14 +102,14 @@ ion-header {
     display: flex;
     align-items: center;
   }
-  ion-buttons{
+  ion-buttons {
     padding: 4px;
 
-    [slot="start"]{
+    [slot="start"] {
       margin-left: 8px;
     }
 
-    [slot="end"]{
+    [slot="end"] {
       margin-right: 8px;
     }
   }
@@ -159,7 +158,6 @@ ion-app {
 .invalid-input {
   border: 1px solid red !important;
 }
-
 
 .range-group {
   display: flex;
@@ -376,4 +374,10 @@ ion-content::part(scroll) {
 ion-segment {
   --background: var(--ion-color-dark);
   --background: #252525;
+}
+
+// The ball weight question can open at startup, before a page presents its own sheet (the add
+// page's pin input); Ionic stacks overlays by creation order, so it needs a layer of its own.
+ion-modal.ball-weight-modal {
+  z-index: 30000 !important;
 }

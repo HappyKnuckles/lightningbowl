@@ -1,6 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { makeBall } from 'src/testing/fixtures';
-import { formatStoredBall, parseStoredBall, toStoredBall } from './stored-ball.utils';
+import { ballKey, formatStoredBall, parseStoredBall, toStoredBall } from './stored-ball.utils';
 
 describe('toStoredBall', () => {
   it('turns legacy string specs into numbers or null', () => {
@@ -40,5 +40,25 @@ describe('parseStoredBall / formatStoredBall', () => {
   it('formats as "Name 15lbs", or the plain name without a weight', () => {
     expect(formatStoredBall({ name: 'Phaze II', weight: '15' })).toBe('Phaze II 15lbs');
     expect(formatStoredBall({ name: 'Phaze II' })).toBe('Phaze II');
+  });
+});
+
+describe('ballKey', () => {
+  it("uses the API's key, and builds the same for balls saved without one", () => {
+    expect(ballKey({ key: 'abc-15', ball_id: 'x', core_weight: '12' })).toBe('abc-15');
+    expect(ballKey({ ball_id: '1234', core_weight: '15' })).toBe('1234-15');
+  });
+
+  it('gives balls saved before the key existed their key when they are loaded', () => {
+    const saved: Partial<Ball> = makeBall({ ball_id: '1234', core_weight: '14', core_rg: 2.5, core_diff: 0.05, core_int_diff: 0 });
+    delete saved.key;
+
+    expect(toStoredBall(saved as Ball).key).toBe('1234-14');
+  });
+
+  it('leaves a ball that already has a key as it is', () => {
+    const ball = makeBall({ key: '1234-15' });
+
+    expect(toStoredBall(ball)).toBe(ball);
   });
 });

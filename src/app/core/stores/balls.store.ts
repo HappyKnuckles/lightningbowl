@@ -8,9 +8,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { formatStoredBall, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
-
-const ballKey = (ball: Pick<Ball, 'ball_id' | 'core_weight'>): string => `${ball.ball_id}-${ball.core_weight}`;
+import { ballKey, formatStoredBall, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {

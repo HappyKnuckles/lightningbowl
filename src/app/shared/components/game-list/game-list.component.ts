@@ -74,6 +74,7 @@ import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahea
 import { GameCardTemplateDirective } from './game-card-template.directive';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface MonthRow {
   kind: 'month';
@@ -635,8 +636,8 @@ export class GameListComponent implements OnInit {
     return this.utilsService.parseIntValue(value) as number;
   }
 
-  getBallIds(names: string[] | undefined): string[] {
-    return this.#gameBalls(names).map((ball) => ball.ball_id);
+  getBallKeys(names: string[] | undefined): string[] {
+    return this.#gameBalls(names).map(ballKey);
   }
 
   /**

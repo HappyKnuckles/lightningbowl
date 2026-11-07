@@ -69,6 +69,7 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -424,8 +425,8 @@ export class GameComponent implements OnInit {
     return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
 
-  getBallIds(names: string[] | undefined): string[] {
-    return this.#gameBalls(names).map((ball) => ball.ball_id);
+  getBallKeys(names: string[] | undefined): string[] {
+    return this.#gameBalls(names).map(ballKey);
   }
 
   /**

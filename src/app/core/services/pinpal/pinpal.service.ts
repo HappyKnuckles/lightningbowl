@@ -12,6 +12,7 @@ import { Frame, Game, Throw } from '../../models/game.model';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface GameRow {
   pk: number;
@@ -87,8 +88,7 @@ export class PinpalService {
         const matchedBallObject = matchedBall ? availableBallsByName.get(matchedBall.toLowerCase()) : undefined;
 
         if (matchedBallObject) {
-          const ballKey = `${matchedBallObject.ball_id}_${matchedBallObject.core_weight}`;
-          ballsToAddToArsenal.set(ballKey, matchedBallObject);
+          ballsToAddToArsenal.set(ballKey(matchedBallObject), matchedBallObject);
         }
 
         games.push({
@@ -291,8 +291,8 @@ export class PinpalService {
     };
     await Promise.all(Array.from({ length: Math.min(PinpalService.SEARCH_CONCURRENCY, unknown.length) }, worker));
 
-    const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
-    return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
+    const seen = new Set(known.map(ballKey));
+    return [...known, ...found.filter((b) => !seen.has(ballKey(b)))];
   }
 
   /** One ball per name: the weight `BallsStore.pickVariant` picks, not whichever weight came last. */

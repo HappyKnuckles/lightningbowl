@@ -133,7 +133,7 @@ describe('GameComponent', () => {
       mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
 
       expect(component.ballPickerItems(['Retired15', 'Owned15'])).toEqual([owned, retired]);
-      expect(component.getBallIds(['Retired15'])).toEqual(['r']);
+      expect(component.getBallKeys(['Retired15'])).toEqual(['r-15']);
       expect(component.ballPickerItems(undefined)).toEqual([owned]);
     });
   });

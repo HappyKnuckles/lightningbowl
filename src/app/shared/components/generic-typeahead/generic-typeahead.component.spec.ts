@@ -6,6 +6,9 @@ import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { GenericTypeaheadComponent } from './generic-typeahead.component';
 import { vi } from 'vitest';
 import { createSpyObj } from '../../../../testing/spy-obj';
+import { Ball } from 'src/app/core/models/ball.model';
+import { createBallTypeaheadConfig } from 'src/app/core/configs/typeahead/ball.config';
+import { makeBall } from 'src/testing/fixtures';
 
 interface TestItem {
   id: string;
@@ -202,5 +205,35 @@ describe('GenericTypeaheadComponent', () => {
 
       expect(component.displayedItems().map((item) => item.id)).toEqual(['new-0']);
     });
+  });
+});
+
+describe('GenericTypeaheadComponent with the ball config', () => {
+  it('treats each weight of a ball as its own item', async () => {
+    await TestBed.configureTestingModule({
+      imports: [GenericTypeaheadComponent],
+      providers: [
+        { provide: ModalController, useValue: createSpyObj(['dismiss']) },
+        { provide: LoadingService, useValue: createSpyObj(['setLoading']) },
+      ],
+    }).compileComponents();
+    const fourteen = makeBall({ ball_id: 'p', core_weight: '14' });
+    const fifteen = makeBall({ ball_id: 'p', core_weight: '15' });
+    const fixture = TestBed.createComponent(GenericTypeaheadComponent<Ball>);
+    fixture.componentRef.setInput('items', [fourteen, fifteen]);
+    fixture.componentRef.setInput(
+      'config',
+      createBallTypeaheadConfig(
+        async () => [],
+        async () => ({ items: [], hasMore: false }),
+      ),
+    );
+    fixture.componentRef.setInput('prevSelectedItems', ['p-15']);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    expect(component.selectedItems).toEqual([fifteen]);
+    expect(component.isItemSelected(fourteen)).toBe(false);
+    expect(component.isItemSelected(fifteen)).toBe(true);
   });
 });

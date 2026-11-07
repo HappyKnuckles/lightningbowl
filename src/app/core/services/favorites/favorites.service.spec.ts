@@ -5,6 +5,7 @@ import { FavoritesService } from './favorites.service';
 
 function makeBall(ballId: string, coreWeight: string): Ball {
   return {
+    key: `${ballId}-${coreWeight}`,
     ball_id: ballId,
     core_weight: coreWeight,
     ball_name: ballId,

@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, filter, map, Observable, throwError } from 'rxjs';
 
@@ -41,11 +41,15 @@ export class ShotAnalysisService {
     body.append('calibration', JSON.stringify(calibration));
     body.append('options', JSON.stringify(options));
 
-    return this.#http.post<ShotAnalysisResult>(`${environment.trackerEndpoint}v1/track`, body, { reportProgress: true, observe: 'events' }).pipe(
-      map((event) => toAnalysisEvent(event)),
-      filter((event): event is ShotAnalysisEvent => event !== null),
-      catchError((error: unknown) => throwError(() => new Error(shotAnalysisErrorMessage(error)))),
-    );
+    const headers = environment.trackerApiKey ? new HttpHeaders({ 'X-API-Key': environment.trackerApiKey }) : undefined;
+
+    return this.#http
+      .post<ShotAnalysisResult>(`${environment.trackerEndpoint}v1/track`, body, { headers, reportProgress: true, observe: 'events' })
+      .pipe(
+        map((event) => toAnalysisEvent(event)),
+        filter((event): event is ShotAnalysisEvent => event !== null),
+        catchError((error: unknown) => throwError(() => new Error(shotAnalysisErrorMessage(error)))),
+      );
   }
 }
 

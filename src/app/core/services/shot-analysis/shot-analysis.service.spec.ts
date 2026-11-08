@@ -57,6 +57,20 @@ describe('ShotAnalysisService', () => {
     req.flush(RESULT);
   });
 
+  it("sends the tracker's API key", () => {
+    const original = environment.trackerApiKey;
+    environment.trackerApiKey = 'secret';
+    try {
+      service.analyze(new Blob(['video']), 'shot.mp4', CALIBRATION, { handedness: 'right' }).subscribe();
+
+      const req = httpMock.expectOne(URL);
+      expect(req.request.headers.get('X-API-Key')).toBe('secret');
+      req.flush(RESULT);
+    } finally {
+      environment.trackerApiKey = original;
+    }
+  });
+
   it('reports upload progress, then processing, then the result', () => {
     const events: ShotAnalysisEvent[] = [];
     service.analyze(new Blob(), 'shot.mov', CALIBRATION, { handedness: 'right' }).subscribe((event) => events.push(event));

@@ -39,8 +39,7 @@
   } @else {
     <ion-segment-view>
       <ion-segment-content id="compare">
-        <!-- Bar chart height grows per ball: 3 metric groups + axis + legend (about two names per row on a phone). -->
-        <div class="stat-container" style="margin: 12px 16px 0" [style.height.px]="96 + selectedBalls().length * 60">
+        <div class="stat-container" style="margin: 12px 16px 0" [style.height.px]="compareChartHeight()">
           <canvas #chartCanvas></canvas>
         </div>
 

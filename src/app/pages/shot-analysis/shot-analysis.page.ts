@@ -45,8 +45,11 @@ import {
 } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
 import {
   clampTrimWindow,
+  cropCalibration,
+  cropVideo,
   defaultTrimWindow,
   isTrimmed,
+  laneCropRect,
   MAX_SHOT_WINDOW_S,
   trimVideo,
   TrimWindow,
@@ -422,25 +425,35 @@ export class ShotAnalysisPage implements OnDestroy {
   }
 
   /**
-   * What gets uploaded: the selected part cut out of the video, so less has to be sent, or the whole
-   * file when the cut fails or isn't smaller. The cut starts slightly before the selection (at a key
-   * frame), so the calibration frame time is shifted to the cut file's time.
+   * What gets uploaded, smallest first: the selected part re-encoded and cropped to the lane, then the
+   * selected part cut out without re-encoding, then the whole file (when the others fail or aren't
+   * smaller). The calibration is moved along: into the crop, and to the cut file's time (a cut without
+   * re-encoding starts slightly before the selection, at a key frame).
    */
   async #prepareUpload(file: File, calibration: ShotCalibration): Promise<{ calibration: ShotCalibration; fileName: string; video: Blob }> {
     const window = this.trimWindow();
-    if (!isTrimmed(window, this.duration())) {
+    const frame = this.frameSize();
+    const crop = frame ? laneCropRect(calibration, frame) : null;
+    const trimmed = isTrimmed(window, this.duration());
+    if (!crop && !trimmed) {
       return { video: file, fileName: file.name, calibration };
     }
 
+    const shotName = file.name.replace(/\.[^.]+$/, '') + '-shot.mp4';
+    const shifted = (cal: ShotCalibration, offsetS: number) => ({ ...cal, frameTimeS: Math.max(0, cal.frameTimeS - offsetS) });
     this.preparing.set(true);
     try {
-      const cut = await trimVideo(file, window);
-      if (cut && cut.blob.size < file.size) {
-        return {
-          video: cut.blob,
-          fileName: file.name.replace(/\.[^.]+$/, '') + '-shot.mp4',
-          calibration: { ...calibration, frameTimeS: Math.max(0, calibration.frameTimeS - cut.offsetS) },
-        };
+      if (crop && frame) {
+        const cropped = await cropVideo(file, window, crop);
+        if (cropped && cropped.blob.size < file.size) {
+          return { video: cropped.blob, fileName: shotName, calibration: shifted(cropCalibration(calibration, crop, frame), cropped.offsetS) };
+        }
+      }
+      if (trimmed) {
+        const cut = await trimVideo(file, window);
+        if (cut && cut.blob.size < file.size) {
+          return { video: cut.blob, fileName: shotName, calibration: shifted(calibration, cut.offsetS) };
+        }
       }
     } finally {
       this.preparing.set(false);

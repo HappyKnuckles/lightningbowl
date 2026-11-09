@@ -3,7 +3,10 @@ import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
+import { getBallDistributionBounds, getBallMarkerSize } from 'src/app/core/utils/chart-utils/ball-distribution.utils';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
+import { BallMarkerPoint, ballMarkersPlugin } from '../plugins/ball-markers.plugin';
 import { customAxisTitlesPlugin } from '../plugins/custom-axis-titles.plugin';
 
 /**
@@ -28,43 +31,54 @@ export function generateBallDistributionChart(
       existingChartInstance.destroy();
     }
 
-    const jitter = () => (Math.random() - 0.5) * 0.004;
-
-    const dataPoints: (ScatterDataPoint & { name: string; imageUrl: string; cover: string })[] = [];
-    const pointImages: HTMLImageElement[] = [];
+    const dataPoints: (ScatterDataPoint &
+      BallMarkerPoint & { image: HTMLImageElement; imageUrl: string; cover: string; lengthLabel: string; flareLabel: string })[] = [];
     for (const ball of balls) {
-      const xRaw = parseFloat(ball.core_diff);
-      const yRaw = parseFloat(ball.core_rg);
-      if (isNaN(xRaw) || isNaN(yRaw)) {
+      const x = parseFloat(ball.core_diff);
+      const y = parseFloat(ball.core_rg);
+      if (isNaN(x) || isNaN(y)) {
         console.warn(`Skipping invalid RG/Diff for ${ball.ball_name}`);
         continue;
       }
-      const x = xRaw + jitter();
-      const y = yRaw + jitter();
-      dataPoints.push({ x, y, name: ball.ball_name, imageUrl: baseUrl + ball.thumbnail_image, cover: ball.coverstock_type });
 
-      const img = new Image(70, 70);
-      img.src = baseUrl + ball.thumbnail_image;
-      img.onerror = () => console.warn(`Failed to load image for ${ball.ball_name}`);
-      pointImages.push(img);
+      const image = new Image();
+      image.src = baseUrl + ball.thumbnail_image;
+      image.onerror = () => console.warn(`Failed to load image for ${ball.ball_name}`);
+      const { lengthLabel, flareLabel } = getBallMetrics(ball);
+      dataPoints.push({
+        x,
+        y,
+        name: ball.ball_name,
+        imageUrl: baseUrl + ball.thumbnail_image,
+        cover: ball.coverstock_type,
+        image,
+        lengthLabel,
+        flareLabel,
+      });
     }
 
+    // Zoom the axes to the plotted balls so they spread over the chart instead of clumping in one corner.
+    const bounds = getBallDistributionBounds(dataPoints);
+
+    // Images, names and overlap handling are drawn by ballMarkersPlugin; the points only carry the hit area.
     const dataset = {
       label: 'Bowling Balls',
       data: dataPoints,
-      pointStyle: pointImages,
-      pointHitRadius: 35,
-      usePointStyle: true,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      pointHitRadius: (context: { chart: Chart }) => getBallMarkerSize(context.chart.width) / 2,
       backgroundColor: 'rgba(0,0,0,0)',
     };
 
     const config: ChartConfiguration<'scatter'> = {
       type: 'scatter',
       data: { datasets: [dataset] },
-      plugins: [zoomPlugin, ballDistributionZonePlugin, customAxisTitlesPlugin],
+      plugins: [zoomPlugin, ballDistributionZonePlugin, ballMarkersPlugin, customAxisTitlesPlugin],
 
       options: {
         responsive: true,
+        // The markers plugin moves points onto their nudged spots; animating them would fight that.
+        animation: false,
         maintainAspectRatio: false,
         layout: {
           padding: {
@@ -84,8 +98,8 @@ export function generateBallDistributionChart(
               font: { size: 8 },
             },
             grid: { color: 'rgba(255,255,255,0.2)', drawOnChartArea: false },
-            min: 0.015,
-            max: 0.073,
+            min: bounds.x.min,
+            max: bounds.x.max,
           },
           y: {
             ticks: {
@@ -94,8 +108,8 @@ export function generateBallDistributionChart(
               font: { size: 8 },
             },
             grid: { color: 'rgba(255,255,255,0.2)', drawOnChartArea: false },
-            min: 2.35,
-            max: 2.75,
+            min: bounds.y.min,
+            max: bounds.y.max,
           },
         },
         plugins: {
@@ -111,29 +125,9 @@ export function generateBallDistributionChart(
             callbacks: {
               title: (items) => (items[0]?.raw as { name: string }).name || '',
               label: (context) => {
-                const dp = context.raw as ScatterDataPoint & { cover: string };
-                const x = dp.x ?? 0;
-                const y = dp.y ?? 0;
-
-                let rollCat: string;
-                if (y < 2.52) {
-                  rollCat = 'Early Roll';
-                } else if (y < 2.58) {
-                  rollCat = 'Medium Roll';
-                } else {
-                  rollCat = 'Later Roll';
-                }
-
-                let flareCat: string;
-                if (x < 0.035) {
-                  flareCat = 'Low Flare';
-                } else if (x < 0.05) {
-                  flareCat = 'Medium Flare';
-                } else {
-                  flareCat = 'High Flare';
-                }
-
-                return [`RG: ${y.toFixed(3)}`, `Diff: ${x.toFixed(3)}`, `Cover: ${dp.cover}`, rollCat, flareCat];
+                const dp = context.raw as ScatterDataPoint & { cover: string; lengthLabel: string; flareLabel: string };
+                // Roll and flare come from the same scoring as the Compare tab, so cover and finish count too.
+                return [`RG: ${(dp.y ?? 0).toFixed(3)}`, `Diff: ${(dp.x ?? 0).toFixed(3)}`, `Cover: ${dp.cover}`, dp.lengthLabel, dp.flareLabel];
               },
             },
           },
@@ -159,6 +153,7 @@ export function generateBallDistributionChart(
       },
     };
 
+    let chart: Chart;
     if (existingChartInstance && !isReload) {
       existingChartInstance.data.datasets[0] = dataset;
       if (existingChartInstance.options.scales) {
@@ -166,10 +161,16 @@ export function generateBallDistributionChart(
         existingChartInstance.options.scales['y'] = config.options?.scales?.['y'];
       }
       existingChartInstance.update();
-      return existingChartInstance;
+      chart = existingChartInstance;
     } else {
-      return new Chart(ctx, config);
+      chart = new Chart(ctx, config);
     }
+
+    // Images load after the first draw; repaint once each arrives.
+    for (const { image } of dataPoints) {
+      if (!image.complete) image.addEventListener('load', () => chart.canvas && chart.draw(), { once: true });
+    }
+    return chart;
   } catch (err) {
     console.error('Error generating chart:', err);
     if (existingChartInstance) return existingChartInstance;

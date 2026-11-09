@@ -33,8 +33,14 @@ describe('generateBallComparisonChart', () => {
   it('gives every ball its own series named after it', () => {
     const chart = track(generateBallComparisonChart(host, balls, null));
 
-    expect(chartType(chart)).toBe('radar');
+    expect(chartType(chart)).toBe('bar');
     expect(chart?.data.datasets.map((d) => d.label)).toEqual(['Phaze II', 'Zen Master']);
+  });
+
+  it('lays the bars out horizontally so the metric names fit on a phone', () => {
+    const chart = track(generateBallComparisonChart(host, balls, null));
+
+    expect((chart?.options as { indexAxis?: string }).indexAxis).toBe('y');
   });
 
   it('compares the balls on hook, length and flare', () => {

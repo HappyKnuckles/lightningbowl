@@ -3,6 +3,7 @@ import ChartJs from 'chart.js/auto';
 import { Ball } from 'src/app/core/models/ball.model';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { ElementRef } from '@angular/core';
+import { barValueLabelsPlugin } from '../plugins/bar-value-labels.plugin';
 
 const CHART_COLORS = [
   { border: 'rgba(99, 179, 237, 0.9)', bg: 'rgba(99, 179, 237, 0.15)' }, // Blue
@@ -31,38 +32,38 @@ export function generateBallComparisonChart(ballCompareChartCanvas: ElementRef, 
     return {
       label: ball.ball_name,
       data: [metrics.hookScore, metrics.lengthScore, metrics.flareScore],
-      backgroundColor: color.bg,
-      borderColor: color.border,
-      borderWidth: 2,
-      pointBackgroundColor: color.border,
-      pointRadius: 4,
+      backgroundColor: color.border,
+      borderRadius: 4,
+      barPercentage: 0.9,
+      categoryPercentage: 0.8,
     };
   });
 
+  // Grouped horizontal bars instead of a radar: balls with similar scores no longer hide behind each other,
+  // and the printed values make small differences readable on a phone.
   return new ChartJs(ctx, {
-    type: 'radar',
+    type: 'bar',
     data: {
       labels: ['Hook Potential', 'Length', 'Flare'],
       datasets,
     },
+    plugins: [barValueLabelsPlugin],
     options: {
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      // Room for the value printed past the longest bar.
+      layout: { padding: { right: 24 } },
       scales: {
-        r: {
-          beginAtZero: true,
+        x: {
+          min: 0,
           max: 100,
-          grid: { color: 'rgba(255,255,255,0.12)' },
-          angleLines: { color: 'rgba(255,255,255,0.12)' },
-          pointLabels: {
-            color: 'rgba(255,255,255,0.75)',
-            font: { size: 13 },
-          },
-          ticks: {
-            backdropColor: 'transparent',
-            color: 'rgba(255,255,255,0.4)',
-            stepSize: 25,
-          },
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          ticks: { color: 'rgba(255,255,255,0.4)', stepSize: 25 },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: 'rgba(255,255,255,0.75)', font: { size: 12 } },
         },
       },
       plugins: {

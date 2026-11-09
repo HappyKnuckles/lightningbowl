@@ -111,6 +111,11 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     maxSelections: this.maxBalls,
   };
   readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
+  /** Grouped bar chart grows with the number of balls: 3 metric groups, the x axis, and a legend that wraps about two names per row on a phone. */
+  readonly compareChartHeight = computed(() => {
+    const count = this.selectedBalls().length;
+    return 48 + Math.ceil(count / 2) * 24 + 3 * (16 + count * 16);
+  });
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
   readonly displayBalls = computed(() =>

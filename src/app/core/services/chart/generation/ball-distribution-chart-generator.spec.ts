@@ -5,9 +5,6 @@ import { makeBall } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 import { generateBallDistributionChart } from './ball-distribution-chart-generator';
 
-/** Each point is nudged by ±0.002 so identical balls stay distinguishable; 0.5 cancels it out. */
-const withoutJitter = () => vi.spyOn(Math, 'random').mockReturnValue(0.5);
-
 interface BallPoint {
   x: number;
   y: number;
@@ -44,7 +41,6 @@ describe('generateBallDistributionChart', () => {
   const pointsOf = (chart: Chart) => chart.data.datasets[0].data as unknown as BallPoint[];
 
   it('plots each ball at its differential against its RG', () => {
-    withoutJitter();
     const ball = makeBall({ ball_name: 'Phaze II', core_diff: '0.051', core_rg: '2.48' });
 
     const chart = track(generateBallDistributionChart(host, [ball], undefined));
@@ -55,7 +51,6 @@ describe('generateBallDistributionChart', () => {
   });
 
   it('points each marker at the ball thumbnail on the bowwwl host', () => {
-    withoutJitter();
     const ball = makeBall({ thumbnail_image: '/img/phaze.png' });
 
     const chart = track(generateBallDistributionChart(host, [ball], undefined));
@@ -63,16 +58,38 @@ describe('generateBallDistributionChart', () => {
     expect(pointsOf(chart)[0].imageUrl).toBe(`${BOWWWL_URL}/img/phaze.png`);
   });
 
-  it('separates overlapping balls with a small jitter', () => {
+  it('plots identical balls at their exact spot and leaves the spreading to the markers', () => {
     const twins = [makeBall({ ball_id: 'a', ball_name: 'A' }), makeBall({ ball_id: 'b', ball_name: 'B' })];
 
     const chart = track(generateBallDistributionChart(host, twins, undefined));
     const [first, second] = pointsOf(chart);
 
-    // Same core numbers, so only the jitter keeps the two markers apart.
-    expect(first.x).not.toBe(second.x);
-    expect(Math.abs(first.x - 0.045)).toBeLessThanOrEqual(0.002);
-    expect(Math.abs(second.x - 0.045)).toBeLessThanOrEqual(0.002);
+    // No random jitter any more: the tooltip shows the real numbers and balls don't jump between renders.
+    expect(first.x).toBe(0.045);
+    expect(second.x).toBe(0.045);
+  });
+
+  it('zooms the axes to the plotted balls instead of the whole catalog', () => {
+    const balls = [
+      makeBall({ ball_id: 'a', core_diff: '0.026', core_rg: '2.482' }),
+      makeBall({ ball_id: 'b', core_diff: '0.049', core_rg: '2.497' }),
+      makeBall({ ball_id: 'c', core_diff: '0.052', core_rg: '2.461' }),
+    ];
+
+    const chart = track(generateBallDistributionChart(host, balls, undefined));
+
+    expect(chart.options.scales?.['x']).toMatchObject({ min: 0.02, max: 0.06 });
+    expect(chart.options.scales?.['y']).toMatchObject({ min: 2.42, max: 2.53 });
+  });
+
+  it('refits the axes when the existing chart gets new balls', () => {
+    const first = track(generateBallDistributionChart(host, [makeBall({ core_diff: '0.02', core_rg: '2.48' })], undefined));
+
+    generateBallDistributionChart(host, [makeBall({ core_diff: '0.055', core_rg: '2.6' })], first);
+
+    const x = first.options.scales?.['x'] as { min: number; max: number };
+    expect(x.min).toBeLessThan(0.055);
+    expect(x.max).toBeGreaterThan(0.055);
   });
 
   it('skips balls whose core numbers cannot be parsed', () => {
@@ -94,7 +111,6 @@ describe('generateBallDistributionChart', () => {
   });
 
   it('swaps the dataset into the existing chart rather than rebuilding', () => {
-    withoutJitter();
     const first = track(generateBallDistributionChart(host, [makeBall({ ball_name: 'First' })], undefined));
 
     const second = generateBallDistributionChart(host, [makeBall({ ball_name: 'Second' })], first);
@@ -104,7 +120,6 @@ describe('generateBallDistributionChart', () => {
   });
 
   it('destroys the previous chart when reloading', () => {
-    withoutJitter();
     const first = track(generateBallDistributionChart(host, [makeBall()], undefined));
     const destroy = vi.spyOn(first, 'destroy');
 

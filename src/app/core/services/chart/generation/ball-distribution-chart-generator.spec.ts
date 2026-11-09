@@ -1,6 +1,7 @@
 import { ElementRef } from '@angular/core';
 import Chart from 'chart.js/auto';
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { makeBall } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 import { generateBallDistributionChart } from './ball-distribution-chart-generator';
@@ -90,6 +91,18 @@ describe('generateBallDistributionChart', () => {
     const x = first.options.scales?.['x'] as { min: number; max: number };
     expect(x.min).toBeLessThan(0.055);
     expect(x.max).toBeGreaterThan(0.055);
+  });
+
+  it('labels roll and flare with the same scoring as the Compare tab', () => {
+    // Low-RG core, but a polished pearl cover: the core alone would say "early", the whole ball reads late.
+    const pearl = makeBall({ coverstock_type: 'Pearl Reactive', factory_finish: 'Power Edge', core_rg: '2.47', core_diff: '0.055' });
+
+    const chart = track(generateBallDistributionChart(host, [pearl], undefined));
+    const point = pointsOf(chart)[0] as BallPoint & { lengthLabel: string; flareLabel: string };
+
+    expect(point.lengthLabel).toBe(getBallMetrics(pearl).lengthLabel);
+    expect(point.lengthLabel).toBe('Late Roll');
+    expect(point.flareLabel).toBe(getBallMetrics(pearl).flareLabel);
   });
 
   it('skips balls whose core numbers cannot be parsed', () => {

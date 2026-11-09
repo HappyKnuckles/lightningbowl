@@ -3,6 +3,7 @@ import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
 import { getBallDistributionBounds, getBallMarkerSize } from 'src/app/core/utils/chart-utils/ball-distribution.utils';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
 import { BallMarkerPoint, ballMarkersPlugin } from '../plugins/ball-markers.plugin';
@@ -30,7 +31,8 @@ export function generateBallDistributionChart(
       existingChartInstance.destroy();
     }
 
-    const dataPoints: (ScatterDataPoint & BallMarkerPoint & { image: HTMLImageElement; imageUrl: string; cover: string })[] = [];
+    const dataPoints: (ScatterDataPoint &
+      BallMarkerPoint & { image: HTMLImageElement; imageUrl: string; cover: string; lengthLabel: string; flareLabel: string })[] = [];
     for (const ball of balls) {
       const x = parseFloat(ball.core_diff);
       const y = parseFloat(ball.core_rg);
@@ -42,7 +44,17 @@ export function generateBallDistributionChart(
       const image = new Image();
       image.src = baseUrl + ball.thumbnail_image;
       image.onerror = () => console.warn(`Failed to load image for ${ball.ball_name}`);
-      dataPoints.push({ x, y, name: ball.ball_name, imageUrl: baseUrl + ball.thumbnail_image, cover: ball.coverstock_type, image });
+      const { lengthLabel, flareLabel } = getBallMetrics(ball);
+      dataPoints.push({
+        x,
+        y,
+        name: ball.ball_name,
+        imageUrl: baseUrl + ball.thumbnail_image,
+        cover: ball.coverstock_type,
+        image,
+        lengthLabel,
+        flareLabel,
+      });
     }
 
     // Zoom the axes to the plotted balls so they spread over the chart instead of clumping in one corner.
@@ -113,29 +125,9 @@ export function generateBallDistributionChart(
             callbacks: {
               title: (items) => (items[0]?.raw as { name: string }).name || '',
               label: (context) => {
-                const dp = context.raw as ScatterDataPoint & { cover: string };
-                const x = dp.x ?? 0;
-                const y = dp.y ?? 0;
-
-                let rollCat: string;
-                if (y < 2.52) {
-                  rollCat = 'Early Roll';
-                } else if (y < 2.58) {
-                  rollCat = 'Medium Roll';
-                } else {
-                  rollCat = 'Later Roll';
-                }
-
-                let flareCat: string;
-                if (x < 0.035) {
-                  flareCat = 'Low Flare';
-                } else if (x < 0.05) {
-                  flareCat = 'Medium Flare';
-                } else {
-                  flareCat = 'High Flare';
-                }
-
-                return [`RG: ${y.toFixed(3)}`, `Diff: ${x.toFixed(3)}`, `Cover: ${dp.cover}`, rollCat, flareCat];
+                const dp = context.raw as ScatterDataPoint & { cover: string; lengthLabel: string; flareLabel: string };
+                // Roll and flare come from the same scoring as the Compare tab, so cover and finish count too.
+                return [`RG: ${(dp.y ?? 0).toFixed(3)}`, `Diff: ${(dp.x ?? 0).toFixed(3)}`, `Cover: ${dp.cover}`, dp.lengthLabel, dp.flareLabel];
               },
             },
           },

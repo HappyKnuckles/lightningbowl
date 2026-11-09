@@ -1,5 +1,10 @@
 import { Ball, BallMetrics, BallTraits } from 'src/app/core/models/ball.model';
 
+/** Polish/compound wording across brands, incl. Storm's "Power Edge" and Motiv's "LSP" (Laser Scan Polish). */
+const POLISHED_FINISH = /polish|shine|gloss|compound|power\s*edge|\blsp\b/;
+/** Length bonus for a polished cover: enough that a polished pearl reads as late roll even on a low-RG core. */
+const POLISH_LENGTH_BONUS = 14;
+
 function getBallTraits(ball: Ball): BallTraits {
   const rg = parseFloat(ball.core_rg);
   const diff = parseFloat(ball.core_diff);
@@ -12,9 +17,10 @@ function getBallTraits(ball: Ball): BallTraits {
   const isHybrid = coverstockType.includes('hybrid');
   const isPearl = coverstockType.includes('pearl');
 
-  const gritMatch = factoryFinish.match(/(\d{3,4})(?:\s*[-\s]?grit)?/i);
-  const finishGrit = gritMatch ? parseInt(gritMatch[1], 10) : null;
-  const isPolished = ['polish', 'shine', 'gloss'].some((traits) => factoryFinish.includes(traits));
+  // Multi-step finishes ("500, 1000, 1500 Siaair") end on the finest grit, which is what the ball rolls on.
+  const grits = [...factoryFinish.matchAll(/\d{3,4}/g)].map((match) => parseInt(match[0], 10));
+  const finishGrit = grits.length > 0 ? Math.max(...grits) : null;
+  const isPolished = POLISHED_FINISH.test(factoryFinish);
 
   return { isPlastic, isUrethane, isSolid, isHybrid, isPearl, finishGrit, isPolished, rg, diff };
 }
@@ -71,7 +77,7 @@ export function getLengthScore(ball: Ball): number {
       else if (traits.finishGrit <= 1000) base = Math.max(0, base - 4);
       else if (traits.finishGrit >= 4000) base = Math.min(100, base + 5);
     }
-    if (traits.isPolished) base = Math.min(100, base + 10);
+    if (traits.isPolished) base = Math.min(100, base + POLISH_LENGTH_BONUS);
   }
 
   return Math.max(0, Math.min(100, Math.round(base)));

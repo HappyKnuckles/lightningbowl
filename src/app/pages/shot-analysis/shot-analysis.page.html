@@ -31,7 +31,7 @@
             <ion-icon name="videocam-outline" slot="start"></ion-icon>
             Record Shot
           </ion-button>
-          <ion-button fill="outline" (click)="pickInput.click()">
+          <ion-button fill="outline" (click)="chooseVideo(pickInput)">
             <ion-icon name="folder-open-outline" slot="start"></ion-icon>
             Choose Video
           </ion-button>
@@ -44,7 +44,7 @@
             <li>Keep the foul line and the pins in the picture.</li>
             <li>Stand to the side of the bowler so they don't block the lane after the release.</li>
             <li>Start recording before the release; 60 fps works best.</li>
-            <li>Select just the shot in the next step: shorter clips upload and analyze much faster.</li>
+            <li>Select just the shot in the next step: shorter clips analyze much faster.</li>
           </ul>
         </ion-card-content>
       </ion-card>
@@ -101,7 +101,7 @@
               [value]="trimValue()"
               (ionInput)="onTrim($event)"></ion-range>
           </ion-item>
-          <ion-note class="hint">{{ trimLabel() }} · only this part is uploaded, max {{ maxWindowS }} s</ion-note>
+          <ion-note class="hint">{{ trimLabel() }} · only this part is analyzed, max {{ maxWindowS }} s</ion-note>
           <ion-item class="scrub" lines="none">
             <ion-label>Frame</ion-label>
             <ion-range
@@ -141,21 +141,10 @@
       <div class="empty-state">
         <ion-icon class="empty-icon" name="sparkles-outline"></ion-icon>
         <ion-text>
-          @if (preparing()) {
-            <h2>Preparing video…</h2>
-            <p>Cutting out the shot and the lane.</p>
-          } @else if (processing()) {
-            <h2>Analyzing shot…</h2>
-            <p>Tracking the ball frame by frame. This can take a minute or two for long videos.</p>
-          } @else {
-            <h2>Uploading video…</h2>
-            <p>{{ uploadPercent() }}%</p>
-          }
+          <h2>Analyzing shot…</h2>
+          <p>Tracking the ball frame by frame on this device: {{ progressPercent() }}%</p>
         </ion-text>
-        <ion-progress-bar
-          class="progress"
-          [type]="processing() || preparing() ? 'indeterminate' : 'determinate'"
-          [value]="uploadProgress()"></ion-progress-bar>
+        <ion-progress-bar class="progress" [value]="progress()"></ion-progress-bar>
         <ion-button fill="clear" (click)="cancelAnalysis()">Cancel</ion-button>
       </div>
     }
@@ -209,20 +198,6 @@
             Analyze Another Shot
           </ion-button>
         </div>
-
-        @if (showBenchmark) {
-          <div class="benchmark">
-            <ion-button fill="clear" size="small" [disabled]="benchmarkFrame() !== null" (click)="runBenchmark()"
-              >Benchmark on this device</ion-button
-            >
-            @if (benchmarkFrame() !== null) {
-              <p>Frame {{ benchmarkFrame() }}…</p>
-            }
-            @if (benchmarkSummary(); as summary) {
-              <p>{{ summary }}</p>
-            }
-          </div>
-        }
       }
     }
   }

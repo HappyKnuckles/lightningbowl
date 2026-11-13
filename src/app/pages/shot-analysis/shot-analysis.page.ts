@@ -1,4 +1,6 @@
 import { Component, computed, ElementRef, inject, OnDestroy, signal, viewChild } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { ModalController, RangeCustomEvent } from '@ionic/angular';
 import {
   IonButton,
@@ -23,18 +25,16 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, folderOpenOutline, refreshOutline, sparklesOutline, videocamOutline } from 'ionicons/icons';
-import { Subscription } from 'rxjs';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Pattern } from 'src/app/core/models/pattern.model';
-import { Handedness, NormalizedPoint, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
+import { Handedness, NormalizedPoint, ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
+import { ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { benchmarkOnDevice, DeviceBenchmark } from 'src/app/core/utils/shot-analysis-utils/on-device-benchmark.utils';
 import { patternRatioColor, withPatternRows } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
 import {
   buildCalibration,
@@ -44,20 +44,9 @@ import {
   shotMetricRows,
   validateCalibration,
 } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
-import {
-  clampTrimWindow,
-  cropCalibration,
-  cropVideo,
-  defaultTrimWindow,
-  isTrimmed,
-  laneCropRect,
-  MAX_SHOT_WINDOW_S,
-  trimVideo,
-  TrimWindow,
-} from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
+import { clampTrimWindow, defaultTrimWindow, MAX_SHOT_WINDOW_S, TrimWindow } from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
-import { environment } from 'src/environments/environment';
 
 type Step = 'pick' | 'calibrate' | 'analyzing' | 'result';
 
@@ -72,7 +61,7 @@ const LOUPE_CSS_PX = 112;
 
 /**
  * Video shot analysis: record or pick a video, mark the lane corners on one frame,
- * send it to the ball tracker, and show the path and metrics LaneTrax-style.
+ * track the ball on this device, and show the path and metrics LaneTrax-style.
  */
 @Component({
   selector: 'app-shot-analysis',
@@ -156,8 +145,9 @@ export class ShotAnalysisPage implements OnDestroy {
     ];
     return segments.filter(([a, b]) => p[a] && p[b]).map(([a, b]) => ({ key: `${a}-${b}`, x1: p[a].x, y1: p[a].y, x2: p[b].x, y2: p[b].y }));
   });
-  readonly uploadProgress = signal(0);
-  readonly uploadPercent = computed(() => Math.round(this.uploadProgress() * 100));
+  /** Share of the shot tracked so far (0–1). */
+  readonly progress = signal(0);
+  readonly progressPercent = computed(() => Math.round(this.progress() * 100));
   readonly result = signal<ShotAnalysisResult | null>(null);
 
   readonly trackedRange = computed(() => {
@@ -174,7 +164,7 @@ export class ShotAnalysisPage implements OnDestroy {
     const pattern = this.pattern();
     return pattern ? withPatternRows(rows, result, pattern) : rows;
   });
-  /** Part of the video that is sent and analysed; the corners are marked on a frame inside it. */
+  /** Part of the video that is analysed; the corners are marked on a frame inside it. */
   readonly trimWindow = signal<TrimWindow>({ startS: 0, endS: 0 });
 
   readonly trimValue = computed(() => ({ lower: this.trimWindow().startS, upper: this.trimWindow().endS }));
@@ -191,25 +181,13 @@ export class ShotAnalysisPage implements OnDestroy {
     const url = this.videoUrl();
     return url ? `${url}#t=0.001` : null;
   });
-  readonly benchmark = signal<DeviceBenchmark | null>(null);
-  readonly benchmarkSummary = computed(() => {
-    const b = this.benchmark();
-    return b
-      ? `${b.frames} frames of ${b.width}×${b.height} in ${b.totalS} s: decode ${b.decodeS} s, stabilize ${b.stabilizeS} s, detect ${b.detectS} s`
-      : null;
-  });
   readonly step = signal<Step>('pick');
   readonly duration = signal(0);
   readonly frameTime = signal(0);
-  /** Cutting the selected part out of the video before the upload. */
-  readonly preparing = signal(false);
   readonly handedness = signal<Handedness>(loadHandedness());
-  readonly processing = signal(false);
   readonly loupeVisible = signal(false);
   /** The magnifier sits in the corner away from the finger. */
   readonly loupeOnRight = signal(false);
-  /** Frames done while the on-device benchmark runs; null when it isn't running. */
-  readonly benchmarkFrame = signal<number | null>(null);
   readonly patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = {
     ...inject(TypeaheadConfigService).partialPattern,
     title: 'Select Pattern',
@@ -218,15 +196,10 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly maxWindowS = MAX_SHOT_WINDOW_S;
   readonly totalSteps = CALIBRATION_STEPS.length;
   readonly loupeCssPx = LOUPE_CSS_PX;
-  /** Prototype for running the tracker on the phone (dev builds only): timings of its heavy steps here. */
-  readonly showBenchmark = !environment.production;
 
   #file: File | null = null;
-  /** Bumped by every analysis start and cancel, so a cut finishing late is dropped. */
-  #run = 0;
-  /** The video and calibration last sent, for the on-device benchmark. */
-  #lastUpload: { calibration: ShotCalibration; video: Blob } | null = null;
-  #subscription: Subscription | null = null;
+  /** Stops the running analysis. */
+  #abort: AbortController | null = null;
   #dragIndex: number | null = null;
 
   constructor() {
@@ -238,7 +211,7 @@ export class ShotAnalysisPage implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.#subscription?.unsubscribe();
+    this.#abort?.abort();
     this.#setVideo(null);
   }
 
@@ -249,9 +222,36 @@ export class ShotAnalysisPage implements OnDestroy {
     if (!file) {
       return;
     }
-    // no size check here: a long video may well fit once trimmed to the shot (checked before the upload)
     this.#setVideo(file);
     this.step.set('calibrate');
+  }
+
+  /**
+   * In the app, videos are picked with the native picker: it hands over the original file. The file input
+   * gets a re-encoded copy on iOS, at 30 fps however the shot was filmed (too few frames for the rev rate).
+   */
+  async chooseVideo(input: HTMLInputElement): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      input.click();
+      return;
+    }
+    try {
+      // skipTranscoding (the default) asks iOS for the file as it is stored
+      const { files } = await FilePicker.pickVideos({ limit: 1, skipTranscoding: true });
+      const picked = files[0];
+      const url = picked?.webPath ?? (picked?.path ? Capacitor.convertFileSrc(picked.path) : null);
+      if (!picked || !url) {
+        return;
+      }
+      const blob = await (await fetch(url)).blob();
+      this.#setVideo(new File([blob], picked.name, { type: picked.mimeType || blob.type }));
+      this.step.set('calibrate');
+    } catch (error) {
+      if (!(error instanceof Error && error.message.includes('canceled'))) {
+        console.error('Picking a video failed:', error);
+        this.#toastService.showToast(TOAST_MESSAGES.shotAnalysisVideoError, 'bug', true);
+      }
+    }
   }
 
   onMetadataLoaded(): void {
@@ -373,22 +373,6 @@ export class ShotAnalysisPage implements OnDestroy {
     this.points.set([]);
   }
 
-  /** Runs the tracker's heavy steps on this device, on the video that was uploaded (dev builds only). */
-  async runBenchmark(): Promise<void> {
-    const upload = this.#lastUpload;
-    if (!upload || this.benchmarkFrame() !== null) {
-      return;
-    }
-    this.benchmarkFrame.set(0);
-    try {
-      this.benchmark.set(await benchmarkOnDevice(upload.video, upload.calibration, (frame) => this.benchmarkFrame.set(frame)));
-    } catch (error) {
-      console.error('Benchmark failed:', error);
-    } finally {
-      this.benchmarkFrame.set(null);
-    }
-  }
-
   async analyze(): Promise<void> {
     const calibration = buildCalibration(this.points(), this.frameTime());
     const file = this.#file;
@@ -396,51 +380,41 @@ export class ShotAnalysisPage implements OnDestroy {
       return;
     }
     this.video()?.nativeElement.pause();
-    this.uploadProgress.set(0);
-    this.processing.set(false);
+    this.progress.set(0);
     this.step.set('analyzing');
-    this.#subscription?.unsubscribe();
-    this.#subscription = null;
+    this.#abort?.abort();
+    const abort = new AbortController();
+    this.#abort = abort;
 
-    const run = ++this.#run;
-    const upload = await this.#prepareUpload(file, calibration);
-    this.#lastUpload = upload;
-    this.benchmark.set(null);
-    // cancelled, or another video picked, while cutting
-    if (run !== this.#run || this.step() !== 'analyzing') {
-      return;
-    }
-    if (upload.video.size > MAX_SHOT_VIDEO_BYTES) {
-      this.#toastService.showToast(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
-      this.step.set('calibrate');
-      return;
-    }
-
-    this.#subscription = this.#analysisService
-      .analyze(upload.video, upload.fileName, upload.calibration, { handedness: this.handedness() })
-      .subscribe({
-        next: (event) => {
-          if (event.type === 'uploading') {
-            this.uploadProgress.set(event.progress);
-          } else if (event.type === 'processing') {
-            this.processing.set(true);
-          } else {
-            this.result.set(event.result);
-            this.step.set('result');
-          }
-        },
-        error: (error: Error) => {
-          this.#toastService.showToast(error.message, 'bug', true);
-          this.step.set('calibrate');
-        },
+    const window = this.trimWindow();
+    try {
+      const result = await this.#analysisService.analyzeOnDevice(file, calibration, {
+        handedness: this.handedness(),
+        window: window.endS > window.startS ? window : undefined,
+        signal: abort.signal,
+        onProgress: (done) => this.progress.set(done),
       });
+      if (!abort.signal.aborted) {
+        this.result.set(result);
+        this.step.set('result');
+      }
+    } catch (error) {
+      // cancelled, or another video picked
+      if (abort.signal.aborted) {
+        return;
+      }
+      this.#toastService.showToast(error instanceof Error ? error.message : TOAST_MESSAGES.shotAnalysisError, 'bug', true);
+      this.step.set('calibrate');
+    } finally {
+      if (this.#abort === abort) {
+        this.#abort = null;
+      }
+    }
   }
 
   cancelAnalysis(): void {
-    this.#run++;
-    this.preparing.set(false);
-    this.#subscription?.unsubscribe();
-    this.#subscription = null;
+    this.#abort?.abort();
+    this.#abort = null;
     this.step.set('calibrate');
   }
 
@@ -451,48 +425,11 @@ export class ShotAnalysisPage implements OnDestroy {
   }
 
   startOver(): void {
-    this.#subscription?.unsubscribe();
-    this.#subscription = null;
+    this.#abort?.abort();
+    this.#abort = null;
     this.#setVideo(null);
     this.result.set(null);
     this.step.set('pick');
-  }
-
-  /**
-   * What gets uploaded, smallest first: the selected part re-encoded and cropped to the lane, then the
-   * selected part cut out without re-encoding, then the whole file (when the others fail or aren't
-   * smaller). The calibration is moved along: into the crop, and to the cut file's time (a cut without
-   * re-encoding starts slightly before the selection, at a key frame).
-   */
-  async #prepareUpload(file: File, calibration: ShotCalibration): Promise<{ calibration: ShotCalibration; fileName: string; video: Blob }> {
-    const window = this.trimWindow();
-    const frame = this.frameSize();
-    const crop = frame ? laneCropRect(calibration, frame) : null;
-    const trimmed = isTrimmed(window, this.duration());
-    if (!crop && !trimmed) {
-      return { video: file, fileName: file.name, calibration };
-    }
-
-    const shotName = file.name.replace(/\.[^.]+$/, '') + '-shot.mp4';
-    const shifted = (cal: ShotCalibration, offsetS: number) => ({ ...cal, frameTimeS: Math.max(0, cal.frameTimeS - offsetS) });
-    this.preparing.set(true);
-    try {
-      if (crop && frame) {
-        const cropped = await cropVideo(file, window, crop);
-        if (cropped && cropped.blob.size < file.size) {
-          return { video: cropped.blob, fileName: shotName, calibration: shifted(cropCalibration(calibration, crop, frame), cropped.offsetS) };
-        }
-      }
-      if (trimmed) {
-        const cut = await trimVideo(file, window);
-        if (cut && cut.blob.size < file.size) {
-          return { video: cut.blob, fileName: shotName, calibration: shifted(calibration, cut.offsetS) };
-        }
-      }
-    } finally {
-      this.preparing.set(false);
-    }
-    return { video: file, fileName: file.name, calibration };
   }
 
   #setVideo(file: File | null): void {

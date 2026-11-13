@@ -1,10 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { NormalizedPoint, ShotAnalysisEvent, ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
+import { NormalizedPoint, ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
+import { ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-analysis.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { makePattern } from 'src/testing/fixtures';
 import { ShotAnalysisPage } from './shot-analysis.page';
@@ -33,8 +32,9 @@ const RESULT: ShotAnalysisResult = {
 describe('ShotAnalysisPage', () => {
   let fixture: ComponentFixture<ShotAnalysisPage>;
   let page: ShotAnalysisPage;
-  let events: Subject<ShotAnalysisEvent>;
-  const analysisService = { analyze: vi.fn() };
+  /** Settles the running on-device analysis. */
+  let finish: { resolve: (result: ShotAnalysisResult) => void; reject: (error: unknown) => void };
+  const analysisService = { analyzeOnDevice: vi.fn() };
   const toastService = { showToast: vi.fn() };
   const patternService = { searchPattern: vi.fn(), getPatternData: vi.fn() };
 
@@ -49,8 +49,12 @@ describe('ShotAnalysisPage', () => {
   };
 
   beforeEach(() => {
-    events = new Subject<ShotAnalysisEvent>();
-    analysisService.analyze.mockReset().mockReturnValue(events);
+    analysisService.analyzeOnDevice.mockReset().mockImplementation(
+      () =>
+        new Promise<ShotAnalysisResult>((resolve, reject) => {
+          finish = { resolve, reject };
+        }),
+    );
     toastService.showToast.mockReset();
     patternService.searchPattern.mockReset().mockResolvedValue({ patterns: [] });
     patternService.getPatternData.mockReset();
@@ -79,22 +83,16 @@ describe('ShotAnalysisPage', () => {
     expect(buttons).toEqual(expect.arrayContaining(['Record Shot', 'Choose Video']));
   });
 
-  it('accepts a long video but refuses to upload more than the limit', async () => {
-    const big = new File(['x'], 'big.mov');
-    Object.defineProperty(big, 'size', { value: MAX_SHOT_VIDEO_BYTES + 1 });
+  it('picks videos with the file input on the web', async () => {
+    const input = document.createElement('input');
+    const click = vi.spyOn(input, 'click');
 
-    selectVideo(big);
-    expect(page.step()).toBe('calibrate');
+    await page.chooseVideo(input);
 
-    page.points.set(CORNERS);
-    await page.analyze();
-
-    expect(analysisService.analyze).not.toHaveBeenCalled();
-    expect(page.step()).toBe('calibrate');
-    expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.shotAnalysisVideoTooLarge, 'bug', true);
+    expect(click).toHaveBeenCalled();
   });
 
-  it('sends the whole file when it cannot be cut', async () => {
+  it('analyzes only the selected part of the video', () => {
     const file = new File(['not a real video'], 'shot.mov');
     selectVideo(file);
     page.duration.set(30);
@@ -102,14 +100,12 @@ describe('ShotAnalysisPage', () => {
     page.frameTime.set(12.5);
     page.points.set(CORNERS);
 
-    await page.analyze();
+    void page.analyze();
 
-    const [video, name, calibration, options] = analysisService.analyze.mock.calls[0];
+    const [video, calibration, options] = analysisService.analyzeOnDevice.mock.calls[0];
     expect(video).toBe(file);
-    expect(name).toBe('shot.mov');
     expect(calibration.frameTimeS).toBe(12.5);
-    expect(options).toEqual({ handedness: 'right' });
-    expect(page.preparing()).toBe(false);
+    expect(options.window).toEqual({ startS: 12, endS: 16 });
   });
 
   it('asks for the corners in order and only allows analyzing a plausible lane', () => {
@@ -183,31 +179,27 @@ describe('ShotAnalysisPage', () => {
     expect(page.points()).toEqual([]);
   });
 
-  it('sends the shot with the marked corners and handedness, then shows the result', async () => {
+  it('analyzes the shot on the device with the marked corners and handedness, then shows the result', async () => {
     const file = new File(['x'], 'shot.mov');
     selectVideo(file);
     page.points.set(CORNERS);
     page.setHandedness('left');
 
-    await page.analyze();
+    const running = page.analyze();
     fixture.detectChanges();
 
     expect(page.step()).toBe('analyzing');
-    const [video, name, calibration, options] = analysisService.analyze.mock.calls[0];
+    const [video, calibration, options] = analysisService.analyzeOnDevice.mock.calls[0];
     expect(video).toBe(file);
-    expect(name).toBe('shot.mov');
     expect(calibration).toMatchObject({ foulLeft: CORNERS[0], farRight: CORNERS[3], farDistanceFt: 60 });
-    expect(options).toEqual({ handedness: 'left' });
+    expect(options.handedness).toBe('left');
 
-    events.next({ type: 'uploading', progress: 0.4 });
+    options.onProgress(0.4);
     fixture.detectChanges();
     expect(el().textContent).toContain('40%');
 
-    events.next({ type: 'processing' });
-    fixture.detectChanges();
-    expect(el().textContent).toContain('Analyzing shot');
-
-    events.next({ type: 'done', result: RESULT });
+    finish.resolve(RESULT);
+    await running;
     fixture.detectChanges();
     expect(page.step()).toBe('result');
     expect(el().querySelector('app-shot-lane')).not.toBeNull();
@@ -219,9 +211,10 @@ describe('ShotAnalysisPage', () => {
   it('shows the error and returns to marking when the analysis fails', async () => {
     selectVideo(new File(['x'], 'shot.mov'));
     page.points.set(CORNERS);
-    await page.analyze();
+    const running = page.analyze();
 
-    events.error(new Error(TOAST_MESSAGES.shotAnalysisNoPath));
+    finish.reject(new Error(TOAST_MESSAGES.shotAnalysisNoPath));
+    await running;
 
     expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.shotAnalysisNoPath, 'bug', true);
     expect(page.step()).toBe('calibrate');
@@ -231,27 +224,16 @@ describe('ShotAnalysisPage', () => {
   it('cancels a running analysis', async () => {
     selectVideo(new File(['x'], 'shot.mov'));
     page.points.set(CORNERS);
-    await page.analyze();
-
-    page.cancelAnalysis();
-
-    expect(events.observed).toBe(false);
-    expect(page.step()).toBe('calibrate');
-  });
-
-  it('drops a cut that finishes after the analysis was cancelled', async () => {
-    selectVideo(new File(['not a real video'], 'shot.mov'));
-    page.duration.set(30);
-    page.trimWindow.set({ startS: 12, endS: 16 });
-    page.frameTime.set(12.5);
-    page.points.set(CORNERS);
-
     const running = page.analyze();
+    const { signal } = analysisService.analyzeOnDevice.mock.calls[0][2];
+
     page.cancelAnalysis();
+    finish.reject(signal.reason);
     await running;
 
-    expect(analysisService.analyze).not.toHaveBeenCalled();
+    expect(signal.aborted).toBe(true);
     expect(page.step()).toBe('calibrate');
+    expect(toastService.showToast).not.toHaveBeenCalled();
   });
 
   it('starts over with a new video', () => {

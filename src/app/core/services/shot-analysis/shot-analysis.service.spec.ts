@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ShotAnalysisEvent, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
@@ -95,6 +96,25 @@ describe('ShotAnalysisService', () => {
     httpMock.expectOne(URL).flush({ detail: 'no ball path found' }, { status: 422, statusText: 'Unprocessable Entity' });
 
     expect(message).toBe(TOAST_MESSAGES.shotAnalysisNoPath);
+  });
+
+  describe('analyzeOnDevice', () => {
+    it('stops with the reason when cancelled', async () => {
+      const abort = new AbortController();
+      abort.abort();
+
+      await expect(service.analyzeOnDevice(new Blob(['x']), CALIBRATION, { handedness: 'right', signal: abort.signal })).rejects.toBe(
+        abort.signal.reason,
+      );
+    });
+
+    it('fails with a toast message when the video cannot be read', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await expect(service.analyzeOnDevice(new Blob(['not a video']), CALIBRATION, { handedness: 'right' })).rejects.toThrow(
+        TOAST_MESSAGES.shotAnalysisError,
+      );
+    }, 60_000);
   });
 
   describe('shotAnalysisErrorMessage', () => {

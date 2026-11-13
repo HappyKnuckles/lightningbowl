@@ -277,7 +277,7 @@ function nextEvent(target: HTMLVideoElement, name: string, timeoutMs = 10_000): 
  * The frame at `timeS` the way the browser shows the video (rotation applied), cut to `crop`, as
  * {@link MATCH_PX}² grey values; null when the browser can't show it.
  */
-async function shownFrame(source: Blob, timeS: number, crop?: CropRect): Promise<Float32Array | null> {
+export async function shownFrame(source: Blob, timeS: number, crop?: CropRect): Promise<Float32Array | null> {
   const url = URL.createObjectURL(source);
   const video = document.createElement('video');
   video.muted = true;
@@ -315,7 +315,7 @@ async function shownFrame(source: Blob, timeS: number, crop?: CropRect): Promise
 }
 
 /** Correlation of two thumbnails, -1 to 1; 0 when either is flat (nothing to compare). */
-function frameSimilarity(a: Float32Array, b: Float32Array): number {
+export function frameSimilarity(a: Float32Array, b: Float32Array): number {
   const mean = (v: Float32Array) => v.reduce((sum, x) => sum + x, 0) / v.length;
   const ma = mean(a);
   const mb = mean(b);

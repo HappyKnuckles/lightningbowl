@@ -1,26 +1,18 @@
-export interface Ball {
-  availability: string;
-  ball_id: string;
-  ball_image: string;
-  ball_name: string;
-  brand_id: string;
-  brand_name: string;
-  core_diff: string;
-  core_id: string;
-  core_image: string;
-  core_int_diff: string;
-  core_name: string;
-  core_rg: string;
-  core_type: string;
-  core_weight: string;
-  coverstock_id: string;
-  coverstock_name: string;
-  coverstock_type: string;
-  factory_finish: string;
-  last_update: string;
-  release_date: string;
-  thumbnail_image: string;
-  us_int: string;
+import type { components, operations } from './generated/ball-api';
+
+// Ball API types are generated from its OpenAPI spec (`npm run generate:ball-api`).
+type ApiSchemas = components['schemas'];
+
+/** A ball (in one weight) exactly as the ball API returns it. */
+export type ApiBall = ApiSchemas['Ball'];
+
+/**
+ * A ball (in one weight) as the ball API returns it, plus the arsenal's own
+ * order (`position`) and drilling. Balls saved before the ball API go through
+ * `toStoredBall` when loaded; they have no `first_seen_at` until they're
+ * refreshed from the API.
+ */
+export interface Ball extends ApiBall {
   position?: number;
   drilling?: BallDrilling;
 }
@@ -60,25 +52,11 @@ export interface BallDrilling {
   fingerInserts?: string;
 }
 
-export interface Core {
-  core_name: string;
-  brand: string;
-  id: string;
-  api_filter_url: string;
-}
+export type Core = ApiSchemas['Core'];
 
-export interface Coverstock {
-  coverstock_name: string;
-  brand: string;
-  id: string;
-  api_filter_url: string;
-}
+export type Coverstock = ApiSchemas['Coverstock'];
 
-export interface Brand {
-  brand_name: string;
-  id: string;
-  logo: string;
-}
+export type Brand = ApiSchemas['Brand'];
 
 export interface BallMetrics {
   hookScore: number;
@@ -102,3 +80,12 @@ export interface BallTraits {
   rg: number;
   diff: number;
 }
+
+/** One page of balls from the ball API. */
+export type BallPage = ApiSchemas['BallPage'];
+
+/** Query parameters of `GET balls`; arrays become repeated parameters. */
+export type BallQueryParams = NonNullable<operations['searchBalls']['parameters']['query']>;
+
+/** Query parameters of `GET balls/{id}/similar`. */
+export type SimilarBallsQueryParams = NonNullable<operations['getSimilarBalls']['parameters']['query']>;

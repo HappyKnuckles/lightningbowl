@@ -21,7 +21,7 @@ module.exports = tseslint.config(
   {
     // The Playwright screenshot system is plain Node/TS, not Angular — keep the
     // Angular lint rules (and its app-prefix selector rules) away from it.
-    ignores: ["playwright/**", "playwright.config.ts"],
+    ignores: ["playwright/**", "playwright.config.ts", "src/app/core/models/generated/**"],
   },
   {
     files: ["**/*.ts"],

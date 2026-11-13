@@ -45,7 +45,7 @@ describe('generateBallDistributionChart', () => {
 
   it('plots each ball at its differential against its RG', () => {
     withoutJitter();
-    const ball = makeBall({ ball_name: 'Phaze II', core_diff: '0.051', core_rg: '2.48' });
+    const ball = makeBall({ ball_name: 'Phaze II', core_diff: 0.051, core_rg: 2.48 });
 
     const chart = track(generateBallDistributionChart(host, [ball], undefined));
 
@@ -77,7 +77,7 @@ describe('generateBallDistributionChart', () => {
 
   it('skips balls whose core numbers cannot be parsed', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const balls = [makeBall({ ball_id: 'ok', ball_name: 'Good' }), makeBall({ ball_id: 'bad', ball_name: 'Mystery', core_rg: 'n/a' })];
+    const balls = [makeBall({ ball_id: 'ok', ball_name: 'Good' }), makeBall({ ball_id: 'bad', ball_name: 'Mystery', core_rg: null })];
 
     const chart = track(generateBallDistributionChart(host, balls, undefined));
 
@@ -88,7 +88,7 @@ describe('generateBallDistributionChart', () => {
   it('yields an empty plot when no ball has usable numbers', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    const chart = track(generateBallDistributionChart(host, [makeBall({ core_diff: '', core_rg: '' })], undefined));
+    const chart = track(generateBallDistributionChart(host, [makeBall({ core_diff: null, core_rg: null })], undefined));
 
     expect(pointsOf(chart)).toEqual([]);
   });

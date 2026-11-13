@@ -1,3 +1,4 @@
+import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
@@ -81,6 +82,7 @@ import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 @Component({
   selector: 'app-arsenal',
@@ -88,6 +90,7 @@ import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/t
   styleUrls: ['./arsenal.page.scss'],
   providers: [ModalController],
   imports: [
+    BallImagePipe,
     BallStatsComponent,
     IonRippleEffect,
     IonListHeader,
@@ -138,9 +141,7 @@ export class ArsenalPage implements OnInit {
 
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
-    this.ballsStore
-      .allBalls()
-      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+    this.ballsStore.myBalls().filter((ball) => !this.ballsStore.arsenal().some((b) => b.key === ball.key)),
   );
   selectedSegment = model('arsenal');
 
@@ -168,7 +169,7 @@ export class ArsenalPage implements OnInit {
           name: ball.ball_name,
           displayName: `${ball.ball_name} ${ball.core_weight}lbs`,
           weight: ball.core_weight,
-          image: ball.ball_image || ball.thumbnail_image || '',
+          image: ballImageUrl(ball, 'ball'),
           tier: 'basic',
           gameCount: 0,
           detailedGameCount: 0,
@@ -317,7 +318,7 @@ export class ArsenalPage implements OnInit {
 
   openBallDetail(ball: Ball, segment: 'ball' | 'drilling' = 'ball'): void {
     this.detailSegment.set(segment);
-    this.openBallKey.set(ball.ball_id + ball.core_weight);
+    this.openBallKey.set(ball.key);
   }
 
   // The segment's initial value doesn't move the segment view, so jump it to the selected tab once the modal is shown.
@@ -351,9 +352,9 @@ export class ArsenalPage implements OnInit {
     await alert.present();
   }
 
-  onBallSelectionChange(ballIds: string[]): void {
-    const selectedBalls = this.ballsWithoutArsenal().filter((ball) => ballIds.includes(ball.ball_id));
-    this.saveBallToArsenal(selectedBalls);
+  onBallSelectionChange(selected: Ball[]): void {
+    const inArsenal = (ball: Ball) => this.ballsStore.arsenal().some((b) => b.key === ball.key);
+    this.saveBallToArsenal(selected.filter((ball) => !inArsenal(ball)));
   }
 
   async getSameCoreBalls(ball: Ball): Promise<void> {
@@ -400,12 +401,11 @@ export class ArsenalPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    const key = ball.ball_id + ball.core_weight;
+    const key = ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {
-      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
-      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+      const replacementBall = await this.ballService.getBallVariant(ball.ball_id, selectedWeight);
 
       if (!replacementBall) {
         selectEl.value = ball.core_weight;

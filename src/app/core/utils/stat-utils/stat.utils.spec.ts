@@ -70,10 +70,10 @@ describe('stat.utils', () => {
       expect(buildHighlights(src).map((h) => h.sortMode)).toEqual(['gameCount', 'avg', 'gameCount', 'avg']);
     });
 
-    it('renders balls round and without an image base, patterns square off the images url', () => {
+    it('renders balls round with absolute image URLs (empty base), patterns square off the images url', () => {
       const highlights = buildHighlights(src);
 
-      expect(highlights.slice(0, 2).every((h) => h.roundImage && h.imageUrlBase === undefined)).toBe(true);
+      expect(highlights.slice(0, 2).every((h) => h.roundImage && h.imageUrlBase === '')).toBe(true);
       expect(highlights.slice(2).every((h) => !h.roundImage && h.imageUrlBase === environment.imagesUrl)).toBe(true);
     });
 

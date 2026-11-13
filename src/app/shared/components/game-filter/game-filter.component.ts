@@ -23,11 +23,13 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { GameFilter, TimeRange } from 'src/app/core/models/filter.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
+import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -66,6 +68,11 @@ export class GameFilterComponent implements OnInit {
   defaultFilters = this.gameFilterService.defaultFilters;
   highlightedDates: { date: string; textColor: string; backgroundColor: string }[] = [];
   leagues: string[] = [];
+  /** The ball filter's "Name{weight}" keys as balls, for the ball picker. */
+  selectedFilterBalls = computed<ThrowBall[]>(() =>
+    (this.gameFilterService.filters().balls ?? []).filter((value) => value && value !== 'all').map((value) => parseStoredBall(value)),
+  );
+
   patterns = computed<string[]>(() => {
     return this.gamesStore
       .games()
@@ -142,6 +149,10 @@ export class GameFilterComponent implements OnInit {
       localStorage.getItem('game-filter') ? JSON.parse(localStorage.getItem('game-filter')!) : this.gameFilterService.filters(),
     );
     return this.modalCtrl.dismiss(null, 'cancel');
+  }
+
+  onBallFilterSelect(balls: ThrowBall[]): void {
+    this.updateFilter('balls', balls.map(getThrowBallKey));
   }
 
   updateFilter<T extends keyof GameFilter>(key: T, value: GameFilter[T]): void {

@@ -1,5 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallTracking, Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
+import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 import { isFirstBallThrow } from './frame.utils';
 
 // Keys & formatting
@@ -31,16 +32,6 @@ export function normalizeBallKey(value: string): string {
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/lbs?|#/g, '');
-}
-
-/**
- * Whether a stored ball string refers to this ball, in any of the formats it may have been
- * written in: the plain name, the "Name{weight}" key, or the "Name {weight}lbs" display string.
- * A plain name matches every weight of that ball — the weight simply was never recorded.
- */
-export function ballValueMatches(value: string, ball: Pick<Ball, 'ball_name' | 'core_weight'>): boolean {
-  const stored = normalizeBallKey(value);
-  return stored === normalizeBallKey(ball.ball_name + ball.core_weight) || stored === normalizeBallKey(ball.ball_name);
 }
 
 /**
@@ -101,21 +92,26 @@ export function hasThrowLevelBalls(frames: Frame[]): boolean {
   return frames.some((frame) => (frame.throws ?? []).some((t) => t.ball?.name));
 }
 
-/** Unique ball keys taken strictly from the throws, in first-use order. */
-export function getThrowBallKeys(frames: Frame[]): string[] {
+/** Unique balls taken strictly from the throws, in first-use order. */
+export function getThrowBalls(frames: Frame[]): ThrowBall[] {
   const seen = new Set<string>();
-  const keys: string[] = [];
+  const balls: ThrowBall[] = [];
   for (const frame of frames) {
     for (const t of frame.throws ?? []) {
       if (!t.ball?.name) continue;
       const key = getThrowBallKey(t.ball);
       if (!seen.has(key)) {
         seen.add(key);
-        keys.push(key);
+        balls.push({ name: t.ball.name, weight: t.ball.weight });
       }
     }
   }
-  return keys;
+  return balls;
+}
+
+/** Unique ball keys taken strictly from the throws, in first-use order. */
+export function getThrowBallKeys(frames: Frame[]): string[] {
+  return getThrowBalls(frames).map(getThrowBallKey);
 }
 
 /**
@@ -132,37 +128,32 @@ export function countThrowBalls(frames: Frame[]): number {
  * switched to `game` tracking without clearing them, and those must not outvote the selection.
  */
 export function getGameBalls(game: Game): string[] {
-  return getBallTracking(game) === 'throw' ? getThrowBallKeys(game.frames ?? []) : (game.balls ?? []);
+  return getBallTracking(game) === 'throw' ? getThrowBallKeys(game.frames ?? []) : (game.balls ?? []).map(getThrowBallKey);
+}
+
+/** Every ball of a game, from the same source as `getGameBalls`. */
+function gameBallList(game: Game): ThrowBall[] {
+  const balls =
+    getBallTracking(game) === 'throw' ? (game.frames ?? []).flatMap((frame) => (frame.throws ?? []).map((t) => t.ball)) : (game.balls ?? []);
+  return balls.filter((ball): ball is ThrowBall => !!ball?.name);
+}
+
+/** Unique values of `format` over a game's balls, in first-use order. */
+function uniqueGameBalls(game: Game, format: (ball: ThrowBall) => string): string[] {
+  return [...new Set(gameBallList(game).map(format))];
 }
 
 /**
- * Get unique ball names used in a game for display purposes (weight is intentionally omitted),
- * read from the same source as `getGameBalls`.
- * If an arsenal is provided, game.balls entries (in any stored format) are resolved back to ball names.
+ * Unique ball names of a game without their weights (one "Phaze" for Phaze 14 and Phaze 15), for
+ * looking the balls up by name.
  */
-export function getGameBallNames(game: Game, arsenal?: Pick<Ball, 'ball_name' | 'core_weight'>[]): string[] {
-  if (getBallTracking(game) === 'throw') {
-    const seen = new Set<string>();
-    const names: string[] = [];
-    for (const frame of game.frames ?? []) {
-      for (const t of frame.throws ?? []) {
-        if (!t.ball?.name) continue;
-        const key = getThrowBallKey(t.ball);
-        if (!seen.has(key)) {
-          seen.add(key);
-          names.push(t.ball.name);
-        }
-      }
-    }
-    return names;
-  }
+export function getGameBallNames(game: Game): string[] {
+  return uniqueGameBalls(game, (ball) => ball.name);
+}
 
-  const balls = game.balls || [];
-  if (balls.length === 0 || !arsenal) {
-    return balls;
-  }
-
-  return balls.map((value) => findBallInArsenal({ name: value }, arsenal)?.ball_name ?? value);
+/** Unique balls of a game as shown to the user, with their weight: "Phaze 15lbs". */
+export function getGameBallLabels(game: Game): string[] {
+  return uniqueGameBalls(game, formatThrowBall);
 }
 
 // Carry-over logic
@@ -306,4 +297,80 @@ export function getThrowBallForPosition(
   if (pending !== undefined) return pending ?? undefined;
 
   return getCarryOverThrowBall(frames, frameIndex, throwIndex, previousGames);
+}
+
+// Weights
+
+/** Weight of a ball stored without one that the arsenal doesn't have either. */
+export const DEFAULT_BALL_WEIGHT = '15';
+
+/**
+ * The weight a ball stored without one gets: the arsenal's weight for that name (the heaviest
+ * when it holds several), else `DEFAULT_BALL_WEIGHT`.
+ */
+export function weightFromArsenal(name: string, arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): string {
+  const wanted = normalizeBallKey(name);
+  const weights = arsenal
+    .filter((ball) => normalizeBallKey(ball.ball_name) === wanted)
+    .map((ball) => Number(ball.core_weight))
+    .filter((weight) => Number.isFinite(weight));
+  return weights.length > 0 ? String(Math.max(...weights)) : DEFAULT_BALL_WEIGHT;
+}
+
+/**
+ * A ball as games store it, `{ name, weight }`, from any format it was written in: a plain name
+ * ("Phaze"), the "Name{weight}" key ("Phaze15"), the display string ("Phaze 15lbs") or a ball
+ * object that may lack its weight. A missing weight comes from `weightFromArsenal`.
+ */
+export function toGameBall(value: string | ThrowBall, arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): ThrowBall {
+  const raw = typeof value === 'string' ? { name: value.trim() } : { name: value.name.trim(), weight: value.weight };
+  if (raw.weight) return { name: raw.name, weight: String(raw.weight) };
+  // a name the arsenal knows as it is ("Black Widow 3.0") isn't split into name and weight
+  const parsed = arsenal.some((ball) => normalizeBallKey(ball.ball_name) === normalizeBallKey(raw.name)) ? raw : parseStoredBall(raw.name);
+  return { name: parsed.name, weight: parsed.weight ?? weightFromArsenal(parsed.name, arsenal) };
+}
+
+/** Whether a ball still needs `toGameBall`: a string, or an object without a weight. */
+function needsMigration(value: unknown): boolean {
+  return typeof value === 'string' || (typeof value === 'object' && value !== null && !(value as ThrowBall).weight);
+}
+
+/**
+ * Brings a game's balls to `{ name, weight }` (see `toGameBall`), dropping the duplicates that
+ * leaves ("Phaze 15lbs" and "Phaze" both become Phaze 15). Throw balls without a weight get one
+ * the same way. Returns the game itself when nothing changed.
+ */
+export function migrateGameBalls<T extends Pick<Game, 'balls' | 'frames'>>(game: T, arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): T {
+  const stored = (game.balls ?? []) as unknown[];
+  const ballsChanged = stored.some(needsMigration);
+  const framesChanged = (game.frames ?? []).some((frame) => frame.throws?.some((t) => t.ball && needsMigration(t.ball)));
+  if (!ballsChanged && !framesChanged) return game;
+
+  const migrated = { ...game };
+  if (ballsChanged) {
+    const unique = new Map<string, ThrowBall>();
+    for (const value of stored as (string | ThrowBall)[]) {
+      if (!value || (typeof value === 'string' ? !value.trim() : !value.name?.trim())) continue;
+      const ball = toGameBall(value, arsenal);
+      unique.set(normalizeBallKey(getThrowBallKey(ball)), ball);
+    }
+    migrated.balls = [...unique.values()];
+  }
+  if (framesChanged) {
+    migrated.frames = game.frames.map((frame) => ({
+      ...frame,
+      throws: (frame.throws ?? []).map((t) => (t.ball && needsMigration(t.ball) ? { ...t, ball: toGameBall(t.ball, arsenal) } : t)),
+    }));
+  }
+  return migrated;
+}
+
+/** A game's balls in a stable order (by "Name{weight}" key), as games are saved. */
+export function sortGameBalls(balls: ThrowBall[]): ThrowBall[] {
+  return [...balls].sort((a, b) => getThrowBallKey(a).localeCompare(getThrowBallKey(b)));
+}
+
+/** Whether two stored balls are the same ball in the same weight, however they were spelled. */
+export function sameGameBall(a: ThrowBall, b: ThrowBall): boolean {
+  return normalizeBallKey(getThrowBallKey(a)) === normalizeBallKey(getThrowBallKey(b));
 }

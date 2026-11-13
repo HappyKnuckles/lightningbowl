@@ -3,6 +3,7 @@ import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
+import { ballKey as keyOf, SavedBall, toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -78,7 +79,7 @@ export class FavoritesService {
   }
 
   toggleBallFavorite(ball: Ball): boolean {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
+    const ballKey = keyOf(ball);
     const currentFavorites = new Map(this._favoriteBalls());
     let isFavorited: boolean;
 
@@ -97,7 +98,7 @@ export class FavoritesService {
   }
 
   addBallFavorite(ball: Ball): void {
-    const ballKey = `${ball.ball_id}-${ball.core_weight}`;
+    const ballKey = keyOf(ball);
     const currentFavorites = new Map(this._favoriteBalls());
     currentFavorites.set(ballKey, ball);
     this._favoriteBalls.set(currentFavorites);
@@ -109,6 +110,17 @@ export class FavoritesService {
     const currentFavorites = new Map(this._favoriteBalls());
     currentFavorites.delete(ballKey);
     this._favoriteBalls.set(currentFavorites);
+    this.saveFavoritesToStorage();
+  }
+
+  /** Swaps favorite balls for fresher copies of the same ball and weight; balls that aren't favorites are ignored. */
+  updateFavoriteBalls(balls: Ball[]): void {
+    const current = this._favoriteBalls();
+    const updates = balls.filter((ball) => current.has(keyOf(ball)));
+    if (updates.length === 0) return;
+    const next = new Map(current);
+    for (const ball of updates) next.set(keyOf(ball), ball);
+    this._favoriteBalls.set(next);
     this.saveFavoritesToStorage();
   }
 
@@ -156,7 +168,7 @@ export class FavoritesService {
           // Old format — return keys for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Ball>((parsed as Ball[]).map((b) => [`${b.ball_id}-${b.core_weight}`, b]));
+          const map = new Map<string, Ball>((parsed as SavedBall[]).map(toStoredBall).map((b) => [keyOf(b), b]));
           this._favoriteBalls.set(map);
         }
       }
@@ -174,7 +186,7 @@ export class FavoritesService {
   }
 
   private async migrateOldBallFavorites(keys: string[]): Promise<void> {
-    // Old keys are "ballId-coreWeight". Group by weight to minimise API calls.
+    // Old keys are "ballId-coreWeight".
     const weightGroups = new Map<number, string[]>();
     for (const key of keys) {
       const lastDash = key.lastIndexOf('-');
@@ -187,18 +199,19 @@ export class FavoritesService {
     }
 
     const matched: Ball[] = [];
-    for (const [weight, ballIds] of weightGroups) {
-      try {
-        const balls = await this.ballService.getBallsByWeight(weight);
+    try {
+      const allIds = [...weightGroups.values()].flat();
+      const balls = await this.ballService.getBallsByIds(allIds);
+      for (const [weight, ballIds] of weightGroups) {
         const idSet = new Set(ballIds);
-        matched.push(...balls.filter((b) => idSet.has(b.ball_id)));
-      } catch {
-        // skip this weight group if the fetch fails
+        matched.push(...balls.filter((b) => idSet.has(b.ball_id) && Number(b.core_weight) === weight));
       }
+    } catch {
+      // keep the old favorites keys if the lookup fails; it's retried on the next start
     }
 
     if (matched.length > 0) {
-      this._favoriteBalls.set(new Map(matched.map((b) => [`${b.ball_id}-${b.core_weight}`, b])));
+      this._favoriteBalls.set(new Map(matched.map((b) => [keyOf(b), b])));
       this.saveFavoritesToStorage();
     }
   }

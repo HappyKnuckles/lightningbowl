@@ -1,8 +1,10 @@
+import { vi } from 'vitest';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
+import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { makeBall } from 'src/testing/fixtures';
@@ -13,25 +15,25 @@ describe('BallsStore', () => {
   let store: BallsStore;
   let storageRepository: SpyObj<StorageRepository>;
   let ballService: SpyObj<BallService>;
-  let cacheService: SpyObj<CacheService>;
+  let favoriteBalls: ReturnType<typeof signal<Map<string, Ball>>>;
+  let updateFavoriteBalls: ReturnType<typeof vi.fn>;
   let analyticsService: SpyObj<AnalyticsService>;
   let isOnline: boolean;
 
   beforeEach(() => {
     isOnline = true;
-    storageRepository = createSpyObj<StorageRepository>(['loadByPrefix', 'set', 'remove']);
+    storageRepository = createSpyObj<StorageRepository>(['loadByPrefix', 'get', 'set', 'remove']);
     storageRepository.loadByPrefix.mockResolvedValue([]);
+    storageRepository.get.mockResolvedValue(null);
     storageRepository.set.mockResolvedValue(undefined);
     storageRepository.remove.mockResolvedValue(undefined);
 
-    ballService = createSpyObj<BallService>(['loadAllBalls']);
-    ballService.loadAllBalls.mockResolvedValue([]);
+    ballService = createSpyObj<BallService>(['getBallsByNames', 'getBallsByIds']);
+    ballService.getBallsByNames.mockResolvedValue([]);
+    ballService.getBallsByIds.mockResolvedValue([]);
 
-    cacheService = createSpyObj<CacheService>(['get', 'set', 'isValid', 'isStale']);
-    cacheService.get.mockResolvedValue(null);
-    cacheService.set.mockResolvedValue(undefined);
-    cacheService.isValid.mockResolvedValue(false);
-    cacheService.isStale.mockResolvedValue(false);
+    favoriteBalls = signal(new Map<string, Ball>());
+    updateFavoriteBalls = vi.fn();
 
     analyticsService = createSpyObj<AnalyticsService>(['trackBallAdded']);
 
@@ -48,7 +50,7 @@ describe('BallsStore', () => {
       providers: [
         { provide: StorageRepository, useValue: storageRepository },
         { provide: BallService, useValue: ballService },
-        { provide: CacheService, useValue: cacheService },
+        { provide: FavoritesService, useValue: { favoriteBalls, updateFavoriteBalls } },
         { provide: NetworkService, useValue: networkService },
         { provide: AnalyticsService, useValue: analyticsService },
       ],
@@ -83,104 +85,184 @@ describe('BallsStore', () => {
     });
   });
 
-  describe('loadAllBalls', () => {
-    const cached = [makeBall({ ball_id: 'cached' })];
-    const fetched = [makeBall({ ball_id: 'fetched' })];
+  describe('knownBalls', () => {
+    it('combines arsenal, favorites and cached balls, one entry per ball and weight', async () => {
+      const arsenalBall = makeBall({ ball_id: 'a', core_weight: '15' });
+      const favorite = makeBall({ ball_id: 'f', core_weight: '15' });
+      const cached = makeBall({ ball_id: 'c', core_weight: '14' });
+      await store.saveBallToArsenal(arsenalBall);
+      favoriteBalls.set(
+        new Map([
+          ['f-15', favorite],
+          ['a-15', arsenalBall],
+        ]),
+      );
+      storageRepository.get.mockResolvedValue([cached, arsenalBall]);
 
-    it('fetches and caches when there is no cache', async () => {
-      ballService.loadAllBalls.mockResolvedValue(fetched);
+      await store.loadBallCache();
 
-      await store.loadAllBalls(undefined, 15);
-
-      expect(ballService.loadAllBalls).toHaveBeenCalledWith(undefined, 15);
-      expect(store.allBalls()).toEqual(fetched);
-      expect(store.isUsingCache()).toBe(false);
-      expect(cacheService.set).toHaveBeenCalledWith('all_balls_15', fetched);
+      expect(store.knownBalls().map((b) => `${b.ball_id}-${b.core_weight}`)).toEqual(['a-15', 'f-15', 'c-14']);
     });
 
-    it('serves a valid cache without hitting the network', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
+    it('remembers balls persistently, newest copy first', async () => {
+      const old = makeBall({ ball_id: 'b1', core_weight: '15', ball_name: 'Old' });
+      const updated = makeBall({ ball_id: 'b1', core_weight: '15', ball_name: 'Updated' });
 
-      await store.loadAllBalls();
+      await store.rememberBalls([old]);
+      await store.rememberBalls([updated]);
 
-      expect(store.allBalls()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
-      expect(ballService.loadAllBalls).not.toHaveBeenCalled();
+      expect(store.knownBalls()).toEqual([updated]);
+      expect(storageRepository.set).toHaveBeenLastCalledWith('ball_cache', [updated]);
     });
 
-    it('refreshes a stale cache in the background', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
-      cacheService.isStale.mockResolvedValue(true);
-      ballService.loadAllBalls.mockResolvedValue(fetched);
+    it('never resolves a name without a weight, whatever weights are known', async () => {
+      await store.saveBallToArsenal(makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '14' }));
+      await store.rememberBalls([makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' })]);
 
-      await store.loadAllBalls();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(store.allBalls()).toEqual(fetched);
-      expect(store.isUsingCache()).toBe(false);
+      expect(store.findKnownBall('Zen')).toBeUndefined();
+      expect(store.findKnownBall('zen14')?.core_weight).toBe('14');
     });
 
-    it('keeps serving the cache when a background refresh fails', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
-      cacheService.isStale.mockResolvedValue(true);
-      ballService.loadAllBalls.mockRejectedValue(new Error('offline mid-refresh'));
+    it('does not stand in another weight for a stored weight', async () => {
+      await store.rememberBalls([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '16' })]);
 
-      await store.loadAllBalls();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(store.allBalls()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
+      expect(store.findKnownBall('Phaze II15')).toBeUndefined();
     });
 
-    it('serves an expired cache while offline', async () => {
+    it('finds balls stored with their weight appended, in that weight', async () => {
+      await store.rememberBalls([
+        makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' }),
+        makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' }),
+      ]);
+
+      expect(store.findKnownBall('Phaze II14')?.core_weight).toBe('14');
+      expect(store.findKnownBall('phaze ii 15lbs')?.core_weight).toBe('15');
+    });
+
+    it('keeps a ball removed from the arsenal resolvable', async () => {
+      const ball = makeBall({ ball_id: 'b1', ball_name: 'Zen', core_weight: '15' });
+      await store.saveBallToArsenal(ball);
+
+      await store.removeFromArsenal(ball);
+
+      expect(store.findKnownBall('Zen15')).toEqual(ball);
+    });
+  });
+
+  describe('resolveBallNames', () => {
+    it('uses known balls and fetches only the unknown ones, remembering just the weight named', async () => {
+      const zen = makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' });
+      await store.rememberBalls([zen]);
+      const phaze14 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' });
+      const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
+      ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
+
+      await store.resolveBallNames(['Zen15', 'Phaze II14', 'Phaze II14', '']);
+
+      expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II']);
+      expect(store.findKnownBall('Zen15')).toEqual(zen);
+      expect(store.findKnownBall('Phaze II14')).toEqual(phaze14);
+      expect(store.knownBalls().filter((ball) => ball.ball_id === 'p')).toEqual([phaze14]);
+    });
+
+    it('leaves names without a weight alone', async () => {
+      await store.resolveBallNames(['Phaze II']);
+
+      expect(ballService.getBallsByNames).not.toHaveBeenCalled();
+      expect(store.knownBalls()).toEqual([]);
+    });
+
+    it('does not call the API offline', async () => {
       isOnline = false;
-      cacheService.get.mockResolvedValue(cached);
 
-      await store.loadAllBalls();
+      await store.resolveBallNames(['Unknown15']);
 
-      expect(store.allBalls()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
+      expect(ballService.getBallsByNames).not.toHaveBeenCalled();
+      expect(store.knownBalls()).toEqual([]);
     });
 
-    it('does nothing when offline without a cache', async () => {
+    it('keeps what it knows when the API fails', async () => {
+      await store.rememberBalls([makeBall({ ball_name: 'Zen', core_weight: '15' })]);
+      ballService.getBallsByNames.mockRejectedValue(new Error('offline'));
+
+      await expect(store.resolveBallNames(['Zen15', 'Unknown15'])).resolves.toBeUndefined();
+
+      expect(store.knownBalls().map((ball) => ball.ball_name)).toEqual(['Zen']);
+    });
+  });
+
+  describe('refreshKnownBalls', () => {
+    it('re-fetches cached balls and keeps ones the API no longer returns', async () => {
+      const stale = makeBall({ ball_id: 'a', core_weight: '15', availability: 'Available' });
+      const gone = makeBall({ ball_id: 'gone', core_weight: '15' });
+      await store.rememberBalls([stale, gone]);
+      const fresh = makeBall({ ball_id: 'a', core_weight: '15', availability: 'Discontinued' });
+      ballService.getBallsByIds.mockResolvedValue([fresh]);
+
+      await store.refreshKnownBalls();
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['a', 'gone']);
+      expect(store.knownBalls()).toEqual([fresh, gone]);
+    });
+
+    it('refreshes only the weights that were cached, once per ball', async () => {
+      await store.rememberBalls([makeBall({ ball_id: 'a', core_weight: '15' }), makeBall({ ball_id: 'a', core_weight: '14' })]);
+      ballService.getBallsByIds.mockResolvedValue(['12', '14', '15', '16'].map((weight) => makeBall({ ball_id: 'a', core_weight: weight })));
+
+      await store.refreshKnownBalls();
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['a']);
+      expect(
+        store
+          .knownBalls()
+          .map((ball) => ball.core_weight)
+          .sort(),
+      ).toEqual(['14', '15']);
+    });
+  });
+
+  describe('refreshSavedBalls', () => {
+    const oldImage = 'images/balls/phaze.png';
+    const newImage = 'https://images.lightningbowl.de/balls/phaze.png';
+
+    it('swaps arsenal balls for fresh copies, keeping position and drilling, and saves them', async () => {
+      const drilling: BallDrilling = { thumbSize: 1 };
+      store.arsenal.set([makeBall({ ball_id: 'a', core_weight: '15', ball_image: oldImage, position: 2, drilling })]);
+      const fresh = makeBall({ ball_id: 'a', core_weight: '15', ball_image: newImage });
+      ballService.getBallsByIds.mockResolvedValue([fresh, makeBall({ ball_id: 'a', core_weight: '14' })]);
+
+      await store.refreshSavedBalls();
+
+      expect(store.arsenal()).toEqual([{ ...fresh, position: 2, drilling }]);
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_a_15', { ...fresh, position: 2, drilling });
+      expect(updateFavoriteBalls).toHaveBeenCalledWith([fresh]);
+    });
+
+    it('fetches favorites too, once per ball', async () => {
+      const favorite = makeBall({ ball_id: 'f', core_weight: '14' });
+      favoriteBalls.set(new Map([[favorite.key, favorite]]));
+      store.arsenal.set([makeBall({ ball_id: 'f', core_weight: '15' })]);
+
+      await store.refreshSavedBalls();
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['f']);
+    });
+
+    it('can limit itself to balls saved before the ball API', async () => {
+      store.arsenal.set([makeBall({ ball_id: 'old', first_seen_at: '' }), makeBall({ ball_id: 'new' })]);
+
+      await store.refreshSavedBalls(true);
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['old']);
+    });
+
+    it('does nothing offline or without balls saved before the ball API', async () => {
+      store.arsenal.set([makeBall({ ball_id: 'new' })]);
+      await store.refreshSavedBalls(true);
       isOnline = false;
+      await store.refreshSavedBalls();
 
-      await store.loadAllBalls();
-
-      expect(store.allBalls()).toEqual([]);
-      expect(ballService.loadAllBalls).not.toHaveBeenCalled();
-    });
-
-    it('bypasses the cache on a forced refresh', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
-      ballService.loadAllBalls.mockResolvedValue(fetched);
-
-      await store.loadAllBalls(undefined, undefined, true);
-
-      expect(store.allBalls()).toEqual(fetched);
-      expect(cacheService.set).toHaveBeenCalledWith('all_balls_default', fetched);
-    });
-
-    it('falls back to the cache when the fetch fails', async () => {
-      ballService.loadAllBalls.mockRejectedValue(new Error('api down'));
-      cacheService.get.mockResolvedValueOnce(null).mockResolvedValueOnce(cached);
-
-      await store.loadAllBalls();
-
-      expect(store.allBalls()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
-    });
-
-    it('rethrows when the fetch fails and there is no cache', async () => {
-      ballService.loadAllBalls.mockRejectedValue(new Error('api down'));
-
-      await expect(store.loadAllBalls()).rejects.toThrow('api down');
+      expect(ballService.getBallsByIds).not.toHaveBeenCalled();
     });
   });
 
@@ -234,9 +316,11 @@ describe('BallsStore', () => {
       await store.updateArsenalBall(oldBall, newBall);
 
       expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
-      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b2_14', newBall);
-      expect(newBall.position).toBe(3);
-      expect(store.arsenal()).toEqual([newBall]);
+      const updated = { ...newBall, position: 3 };
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b2_14', updated);
+      expect(store.arsenal()).toEqual([updated]);
+      // the ball passed in stays as it was
+      expect(newBall.position).toBeUndefined();
     });
 
     it('rethrows storage failures', async () => {
@@ -288,6 +372,22 @@ describe('BallsStore', () => {
     });
   });
 
+  describe('myBalls', () => {
+    it('lists the arsenal first, then favorites, without duplicates', async () => {
+      const owned = makeBall({ ball_id: 'b1', core_weight: '15' });
+      const favorite = makeBall({ ball_id: 'b2', core_weight: '15' });
+      await store.saveBallToArsenal(owned);
+      favoriteBalls.set(
+        new Map([
+          ['b2-15', favorite],
+          ['b1-15', owned],
+        ]),
+      );
+
+      expect(store.myBalls()).toEqual([owned, favorite]);
+    });
+  });
+
   describe('removeFromArsenal', () => {
     it('removes the ball from storage and memory', async () => {
       const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
@@ -297,6 +397,17 @@ describe('BallsStore', () => {
 
       expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
       expect(store.arsenal()).toEqual([]);
+    });
+
+    it('drops the ball from myBalls but keeps it resolvable in knownBalls', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
+      await store.saveBallToArsenal(ball);
+      expect(store.myBalls()).toEqual([ball]);
+
+      await store.removeFromArsenal(ball);
+
+      expect(store.myBalls()).toEqual([]);
+      expect(store.knownBalls().map((b) => b.ball_id)).toContain('b1');
     });
 
     it('keeps the same ball in another weight', async () => {

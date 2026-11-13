@@ -47,7 +47,7 @@
                 <ion-item button (click)="openBallDetail(ball)">
                   <ion-reorder slot="start">
                     <ion-thumbnail>
-                      <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                      <ion-img [src]="ball | ballImage"></ion-img>
                     </ion-thumbnail>
                   </ion-reorder>
                   <ion-label>
@@ -59,7 +59,7 @@
                           #weightSelect
                           [value]="ball.core_weight"
                           style="min-height: 0"
-                          [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
+                          [disabled]="loadingWeightBallIds().has(ball.key)"
                           (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
                           interface="popover">
                           @for (weight of availableWeights; track weight) {
@@ -111,10 +111,10 @@
           </ion-item-option>
         </ion-item-options>
 
-        <ion-item button [id]="ball.ball_id + ball.core_weight">
+        <ion-item button [id]="ball.key">
           <ion-reorder slot="start">
             <ion-thumbnail>
-              <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+              <ion-img [src]="ball | ballImage"></ion-img>
             </ion-thumbnail>
           </ion-reorder>
 
@@ -135,12 +135,8 @@
 </ion-content>
 
 <!-- tracked by key so saving drilling (which replaces the ball object) keeps the open modal alive -->
-@for (ball of ballsStore.arsenal(); track ball.ball_id + ball.core_weight) {
-  <ion-modal
-    [isOpen]="openBallKey() === ball.ball_id + ball.core_weight"
-    (didDismiss)="closeBallDetail()"
-    (didPresent)="syncDetailSegmentView($event)"
-    #modal>
+@for (ball of ballsStore.arsenal(); track ball.key) {
+  <ion-modal [isOpen]="openBallKey() === ball.key" (didDismiss)="closeBallDetail()" (didPresent)="syncDetailSegmentView($event)" #modal>
     <ng-template>
       <ion-header [translucent]="true">
         <ion-toolbar>
@@ -174,7 +170,7 @@
               <ion-card-content>
                 <div class="coverstock-container">
                   <div class="coverstock-image">
-                    <ion-img [src]="ballsStore.url + ball.thumbnail_image"></ion-img>
+                    <ion-img [src]="ball | ballImage"></ion-img>
                   </div>
                   <div class="info-container">
                     <ion-text
@@ -202,9 +198,11 @@
               aria-label="View core balls">
               <ion-card-content>
                 <div class="core-container">
-                  <div class="core-image">
-                    <ion-img [src]="ballsStore.url + ball.core_image"></ion-img>
-                  </div>
+                  @if (ball.core_image) {
+                    <div class="core-image">
+                      <ion-img [src]="ball | ballImage: 'core'"></ion-img>
+                    </div>
+                  }
                   <div class="info-container">
                     <ion-text
                       >Type:&nbsp;
@@ -404,7 +402,7 @@
     <app-generic-typeahead
       [items]="ballsWithoutArsenal()"
       [config]="ballTypeaheadConfig"
-      (selectedItemsChange)="onBallSelectionChange($event)"
+      (selectedObjectsChange)="onBallSelectionChange($event)"
       [prevSelectedItems]="[]">
     </app-generic-typeahead>
   </ng-template>

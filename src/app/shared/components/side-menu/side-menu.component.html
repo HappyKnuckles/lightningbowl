@@ -25,11 +25,8 @@
         <ion-label>Scan Scoreboard</ion-label>
       </ion-item>
 
-      <ion-item button [disabled]="ballsStore.allBalls().length === 0" (click)="openFileInput()">
+      <ion-item button (click)="openFileInput()">
         <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
-        @if (ballsStore.allBalls().length === 0) {
-          <ion-spinner class="upload-spinner" name="crescent" slot="start"></ion-spinner>
-        }
         <ion-label>Import File</ion-label>
       </ion-item>
 

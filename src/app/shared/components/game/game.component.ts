@@ -49,11 +49,10 @@ import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import {
-  ballValueMatches,
   countThrowBalls,
   findBallInArsenal,
   formatThrowBall,
-  getGameBallNames,
+  getGameBallLabels,
   getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
@@ -68,6 +67,8 @@ import { LeagueSelectorComponent } from '../league-selector/league-selector.comp
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
+import { ballPickerFor } from 'src/app/core/utils/ball-utils/ball-picker.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -152,7 +153,7 @@ export class GameComponent implements OnInit {
   isPracticeChanged = output<boolean>();
   patternChanged = output<string[]>();
   noteChanged = output<string>();
-  ballsChanged = output<string[]>();
+  ballsChanged = output<ThrowBall[]>();
   throwBallChanged = output<{ frameIndex: number; throwIndex: number; ball: ThrowBall | undefined }>();
   toolbarStateChanged = output<{ show: boolean; offset: number }>();
   inputFocused = output<{ frameIndex: number; throwIndex: number }>();
@@ -193,7 +194,7 @@ export class GameComponent implements OnInit {
       const key = getThrowBallKey(ball);
       if (!thumbCache.has(key)) {
         const arsenalBall = findBallInArsenal(ball, arsenal);
-        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined);
       }
       return thumbCache.get(key);
     };
@@ -238,7 +239,7 @@ export class GameComponent implements OnInit {
   });
 
   detailsAccordionValue = computed(() => (this.detailsOpen() ? GameComponent.DETAILS_ACCORDION : undefined));
-  ballsText = computed(() => getGameBallNames(this.currentGame(), this.ballsStore.arsenal()).join(', '));
+  ballsText = computed(() => getGameBallLabels(this.currentGame()).join(', '));
 
   /**
    * Which ball UI this game gets. A game that already carries ball data keeps its own mode;
@@ -296,6 +297,8 @@ export class GameComponent implements OnInit {
     };
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
+  /** The ball typeahead's list and selection for this game. */
+  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
@@ -423,21 +426,12 @@ export class GameComponent implements OnInit {
     return frameIndex < 9 ? frameIndex * 2 + throwIndex : 18 + throwIndex;
   }
 
-  getBallIds(names: string[] | undefined): string[] {
-    if (!names) return [];
-
-    return this.ballsStore
-      .allBalls()
-      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
-      .map((ball) => ball.ball_id);
-  }
-
   // --- Passthrough Event Emitters ---
-  async onBallAdd(ballIds: string[]) {
+  async onBallAdd(selected: Ball[]) {
     if (!(await this.confirmReplaceThrowBalls())) return;
-    const allBalls = this.ballsStore.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
-    this.ballsChanged.emit(selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })));
+    // picked balls may come from an API search, so keep them resolvable offline
+    void this.ballsStore.rememberBalls(selected);
+    this.ballsChanged.emit(selected.map((b) => ({ name: b.ball_name, weight: b.core_weight })));
     this.saveBallToArsenal(selected);
   }
 
@@ -447,7 +441,7 @@ export class GameComponent implements OnInit {
   onPatternChanged(patterns: string[]) {
     this.patternChanged.emit(patterns.length > 2 ? patterns.slice(-2) : patterns);
   }
-  async onBallSelect(selectedBalls: string[], modal: IonModal) {
+  async onBallSelect(selectedBalls: ThrowBall[], modal: IonModal) {
     modal.dismiss();
     if (!(await this.confirmReplaceThrowBalls())) return;
     this.ballsChanged.emit(selectedBalls);

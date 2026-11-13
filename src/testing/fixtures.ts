@@ -86,31 +86,34 @@ export function makePattern(overrides: Partial<Pattern> = {}): Pattern {
 
 /** Minimal valid `Ball`. Override any field via `overrides`. */
 export function makeBall(overrides: Partial<Ball> = {}): Ball {
-  return {
+  const ball = {
     availability: 'Available',
     ball_id: 'ball-1',
     ball_image: '',
     ball_name: 'Test Ball',
     brand_id: 'brand-1',
     brand_name: 'Test Brand',
-    core_diff: '0.045',
+    core_diff: 0.045,
     core_id: 'core-1',
     core_image: '',
-    core_int_diff: '0',
+    core_int_diff: 0,
     core_name: 'Test Core',
-    core_rg: '2.5',
+    core_rg: 2.5,
     core_type: 'Symmetric',
     core_weight: '15',
     coverstock_id: 'cover-1',
     coverstock_name: 'Test Coverstock',
     coverstock_type: 'Reactive',
     factory_finish: '500 Siaair',
+    first_seen_at: '2025-01-01T00:00:00Z',
     last_update: '',
-    release_date: '2025',
+    release_date: '2025-01-01',
     thumbnail_image: '',
     us_int: 'US',
     ...overrides,
   };
+  // the API's key follows ball_id and core_weight unless a test sets its own
+  return { key: overrides.key ?? `${ball.ball_id}-${ball.core_weight}`, ...ball };
 }
 
 /**

@@ -19,7 +19,7 @@
       (click)="openDetail(row)"
       (keydown.enter)="openDetail(row)">
       @if (row.ball.image) {
-        <ion-img class="round" [src]="ballsStore.url + row.ball.image" [alt]="row.ball.displayName"></ion-img>
+        <ion-img class="round" [src]="row.ball.image" [alt]="row.ball.displayName"></ion-img>
       }
 
       <div class="item-meta">

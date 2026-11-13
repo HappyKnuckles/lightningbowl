@@ -1,3 +1,4 @@
+import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, computed, inject, input, output, signal, OnInit } from '@angular/core';
 import {
   IonButtons,
@@ -15,12 +16,27 @@ import {
 } from '@ionic/angular/standalone';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { ballValueMatches } from 'src/app/core/utils/game-utils/ball.utils';
+import { ThrowBall } from 'src/app/core/models/game.model';
+import { sameGameBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
 @Component({
   selector: 'app-ball-select',
-  imports: [IonItem, IonAvatar, IonList, IonLabel, IonTitle, IonHeader, IonContent, IonCheckbox, IonButton, IonToolbar, IonFooter, IonButtons],
+  imports: [
+    BallImagePipe,
+    IonItem,
+    IonAvatar,
+    IonList,
+    IonLabel,
+    IonTitle,
+    IonHeader,
+    IonContent,
+    IonCheckbox,
+    IonButton,
+    IonToolbar,
+    IonFooter,
+    IonButtons,
+  ],
   templateUrl: './ball-select.component.html',
   styleUrls: ['./ball-select.component.scss'],
 })
@@ -28,10 +44,10 @@ export class BallSelectComponent implements OnInit {
   ballsStore = inject(BallsStore);
   #gamesStore = inject(GamesStore);
 
-  selectedBalls = input.required<string[] | undefined>();
+  selectedBalls = input.required<ThrowBall[] | undefined>();
   singleSelect = input<boolean>(false);
 
-  ballSelect = output<string[]>();
+  ballSelect = output<ThrowBall[]>();
 
   /** Arsenal sorted by how often each ball was thrown, most used first. */
   rankedArsenal = computed(() => {
@@ -39,7 +55,7 @@ export class BallSelectComponent implements OnInit {
     return rankByUsage(this.ballsStore.arsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
   });
 
-  #tempSelectedBalls = signal<string[]>([]);
+  #tempSelectedBalls = signal<ThrowBall[]>([]);
 
   get tempSelectedBalls() {
     return this.#tempSelectedBalls();
@@ -49,30 +65,25 @@ export class BallSelectComponent implements OnInit {
     this.#tempSelectedBalls.set([...this.selectedBalls()!]);
   }
 
-  /**
-   * Selections are stored as "Name{weight}" keys, but games saved before weights were tracked
-   * hold plain names, so a stored value is matched against the ball rather than compared as a
-   * string — otherwise reopening the picker on an older game shows nothing ticked.
-   */
   toggleBallSelection(ballName: string, ballWeight: string): void {
-    const ball = { ball_name: ballName, core_weight: ballWeight };
+    const ball: ThrowBall = { name: ballName, weight: ballWeight };
     const currentSelection = this.#tempSelectedBalls();
-    const isSelected = currentSelection.some((value) => ballValueMatches(value, ball));
+    const isSelected = currentSelection.some((selected) => sameGameBall(selected, ball));
 
     if (this.singleSelect()) {
-      this.#tempSelectedBalls.set(isSelected ? [] : [ballName + ballWeight]);
+      this.#tempSelectedBalls.set(isSelected ? [] : [ball]);
       return;
     }
 
     if (isSelected) {
-      this.#tempSelectedBalls.set(currentSelection.filter((value) => !ballValueMatches(value, ball)));
+      this.#tempSelectedBalls.set(currentSelection.filter((selected) => !sameGameBall(selected, ball)));
     } else {
-      this.#tempSelectedBalls.set([...currentSelection, ballName + ballWeight]);
+      this.#tempSelectedBalls.set([...currentSelection, ball]);
     }
   }
 
   isBallSelected(ballName: string, ballWeight: string): boolean {
-    return this.#tempSelectedBalls().some((value) => ballValueMatches(value, { ball_name: ballName, core_weight: ballWeight }));
+    return this.#tempSelectedBalls().some((selected) => sameGameBall(selected, { name: ballName, weight: ballWeight }));
   }
 
   confirmBallSelection(): void {

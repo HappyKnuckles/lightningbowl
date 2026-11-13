@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { makeGame } from 'src/testing/fixtures';
+import { makeBall, makeGame } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { AppFacade } from './app.facade';
 import { BallsStore } from './balls.store';
@@ -35,7 +34,6 @@ describe('AppFacade', () => {
         { provide: SettingsStore, useValue: settingsStore },
         { provide: BallService, useValue: ballService },
         { provide: AnalyticsService, useValue: analyticsService },
-        { provide: BallFilterService, useValue: { filters: () => ({ weight: '15' }) } },
       ],
     });
     facade = TestBed.inject(AppFacade);
@@ -46,13 +44,24 @@ describe('AppFacade', () => {
     storageRepository.create.mockResolvedValue(undefined);
     storageRepository.clear.mockResolvedValue(undefined);
 
-    gamesStore = createSpyObj<GamesStore>(['loadGameHistory', 'games', 'saveGamesToLocalStorage', 'updateGamesInMemory', 'clearGames']);
+    gamesStore = createSpyObj<GamesStore>([
+      'loadGameHistory',
+      'games',
+      'saveGamesToLocalStorage',
+      'updateGamesInMemory',
+      'clearGames',
+      'migrateBallWeights',
+    ]);
     gamesStore.loadGameHistory.mockResolvedValue([]);
+    gamesStore.migrateBallWeights.mockResolvedValue(undefined);
     gamesStore.games.mockReturnValue([]);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
 
-    ballsStore = createSpyObj<BallsStore>(['loadAllBalls', 'loadArsenal', 'clearArsenal']);
-    ballsStore.loadAllBalls.mockResolvedValue(undefined);
+    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'refreshSavedBalls', 'loadArsenal', 'clearArsenal', 'arsenal']);
+    ballsStore.arsenal.mockReturnValue([]);
+    ballsStore.loadBallCache.mockResolvedValue(undefined);
+    ballsStore.resolveBallNames.mockResolvedValue(undefined);
+    ballsStore.refreshSavedBalls.mockResolvedValue(undefined);
     ballsStore.loadArsenal.mockResolvedValue(undefined);
 
     patternsStore = createSpyObj<PatternsStore>(['loadAllPatterns', 'loadPatternImageMap']);
@@ -84,7 +93,7 @@ describe('AppFacade', () => {
   });
 
   describe('init', () => {
-    it('creates storage and loads every store with the filtered ball weight', async () => {
+    it('creates storage and loads every store', async () => {
       await facade.init();
 
       expect(storageRepository.create).toHaveBeenCalled();
@@ -93,7 +102,8 @@ describe('AppFacade', () => {
       expect(settingsStore.loadHandedness).toHaveBeenCalled();
       expect(settingsStore.loadFit).toHaveBeenCalled();
       expect(settingsStore.loadLayoutPresets).toHaveBeenCalled();
-      expect(ballsStore.loadAllBalls).toHaveBeenCalledWith(undefined, 15);
+      expect(ballsStore.loadBallCache).toHaveBeenCalled();
+      expect(ballsStore.resolveBallNames).toHaveBeenCalledWith([]);
       expect(gamesStore.loadGameHistory).toHaveBeenCalled();
       expect(leaguesStore.loadLeagues).toHaveBeenCalled();
       expect(patternsStore.loadAllPatterns).toHaveBeenCalled();
@@ -125,6 +135,16 @@ describe('AppFacade', () => {
       gamesStore.loadGameHistory.mockRejectedValue(new Error('storage down'));
 
       await expect(facade.init()).resolves.toBeUndefined();
+      expect(gamesStore.migrateBallWeights).not.toHaveBeenCalled();
+    });
+
+    it("gives the games' balls their weights from the loaded arsenal", async () => {
+      const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' })];
+      ballsStore.arsenal.mockReturnValue(arsenal);
+
+      await facade.init();
+
+      expect(gamesStore.migrateBallWeights).toHaveBeenCalledWith(arsenal);
     });
   });
 
@@ -132,7 +152,7 @@ describe('AppFacade', () => {
     it('rethrows when a store fails to load', async () => {
       patternsStore.loadAllPatterns.mockRejectedValue(new Error('api down'));
 
-      await expect(facade.loadInitialData(15)).rejects.toThrow('api down');
+      await expect(facade.loadInitialData()).rejects.toThrow('api down');
     });
   });
 

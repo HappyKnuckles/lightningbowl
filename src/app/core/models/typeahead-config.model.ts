@@ -27,4 +27,9 @@ export interface TypeaheadConfig<T> {
   customDisplayFormatter?: (item: T, fieldKey: string) => string;
   searchMode: 'local' | 'api';
   apiSearchFn?: (searchTerm: string) => Promise<{ items: T[] }>;
+  /**
+   * Loads one page from the API (empty term = browse). When set, `api` mode lists `items` first and then
+   * pages from the API, with infinite scroll fetching the next page; searches are paged the same way.
+   */
+  apiPageFn?: (searchTerm: string, page: number) => Promise<{ items: T[]; hasMore: boolean }>;
 }

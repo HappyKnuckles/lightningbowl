@@ -8,6 +8,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 interface ReadonlyThrowVm {
   display: string;
@@ -77,7 +78,7 @@ export class GameReadonlyComponent {
       const key = getThrowBallKey(ball);
       if (!thumbCache.has(key)) {
         const arsenalBall = findBallInArsenal(ball, arsenal);
-        thumbCache.set(key, arsenalBall?.thumbnail_image ? this.ballsStore.url + arsenalBall.thumbnail_image : undefined);
+        thumbCache.set(key, arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined);
       }
       return thumbCache.get(key);
     };

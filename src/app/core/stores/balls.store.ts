@@ -1,32 +1,168 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+
+import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
-import { CacheService } from 'src/app/core/services/cache/cache.service';
+import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { ballKey, parseStoredBall, SavedBall, savedBeforeBallApi, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
+/** Unique by ball and weight; earlier entries win. */
+function uniqueBalls(balls: Ball[]): Ball[] {
+  const byKey = new Map<string, Ball>();
+  for (const ball of balls) {
+    if (!byKey.has(ballKey(ball))) byKey.set(ballKey(ball), ball);
+  }
+  return [...byKey.values()];
+}
+
+const sameWeight = (a: number | string, b: number | string) => Number(a) === Number(b);
+
+/**
+ * Balls the app works with offline. There is no full catalog on the device:
+ * the balls page searches the ball API, and everything else uses
+ * `knownBalls`: the arsenal, favorites, and balls resolved on demand (balls
+ * named in games, balls picked in pickers), which are persisted.
+ */
 @Injectable({ providedIn: 'root' })
 export class BallsStore {
+  readonly #storageRepository = inject(StorageRepository);
+
+  readonly #ballService = inject(BallService);
+
+  readonly #favoritesService = inject(FavoritesService);
+  readonly #networkService = inject(NetworkService);
+  readonly #analyticsService = inject(AnalyticsService);
+  readonly arsenal = signal<Ball[]>([]);
+  readonly #cachedBalls = signal<Ball[]>([]);
+
+  /**
+   * The bowler's own balls for pickers: arsenal first, then favorites. Unlike `knownBalls` this leaves out
+   * the cache, so a ball removed from the arsenal (which stays cached for old games) disappears here.
+   */
+  readonly myBalls = computed(() => uniqueBalls([...this.arsenal(), ...this.#favoritesService.favoriteBalls().values()]));
+
+  /** Arsenal, favorites and cached balls, one entry per ball and weight. */
+  readonly knownBalls = computed(() => uniqueBalls([...this.arsenal(), ...this.#favoritesService.favoriteBalls().values(), ...this.#cachedBalls()]));
+
   readonly url = BOWWWL_URL;
 
-  readonly arsenal = signal<Ball[]>([]);
-  readonly allBalls = signal<Ball[]>([]);
-  readonly isUsingCache = signal<boolean>(false);
+  // ----------------------------------------------------------- known balls
 
-  constructor(
-    private storageRepository: StorageRepository,
-    private ballService: BallService,
-    private cacheService: CacheService,
-    private networkService: NetworkService,
-    private analyticsService: AnalyticsService,
-  ) {}
+  async loadBallCache(): Promise<void> {
+    try {
+      const cached = await this.#storageRepository.get<SavedBall[]>(StorageKeys.ballCache);
+      this.#cachedBalls.set((cached ?? []).map(toStoredBall));
+    } catch (error) {
+      console.error('Error loading ball cache:', error);
+    }
+  }
+
+  /** Adds balls to the persisted cache (replacing older copies of the same ball and weight). */
+  async rememberBalls(balls: Ball[]): Promise<void> {
+    if (balls.length === 0) return;
+    const merged = uniqueBalls([...balls, ...this.#cachedBalls()]);
+    this.#cachedBalls.set(merged);
+    try {
+      await this.#storageRepository.set(StorageKeys.ballCache, merged);
+    } catch (error) {
+      console.error('Error saving ball cache:', error);
+    }
+  }
+
+  /**
+   * The known ball a stored value means. Only values with a weight ("Phaze II15", "Phaze II 15lbs")
+   * resolve: a name alone doesn't say which weight was thrown, and no weight stands in for it.
+   */
+  findKnownBall(value: string): Ball | undefined {
+    const parsed = parseStoredBall(value);
+    if (!parsed.weight) return undefined;
+    return this.#named(this.knownBalls(), parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+  }
+
+  /**
+   * Resolves ball values as games store them ("Phaze II15") to balls: known balls first, the rest
+   * from the ball API by exact name when online. Resolved balls are remembered, so `findKnownBall`
+   * finds them, also offline afterwards. Values without a weight are left alone.
+   */
+  async resolveBallNames(values: string[]): Promise<void> {
+    const missing = [...new Set(values.filter((value) => value && parseStoredBall(value).weight))].filter((value) => !this.findKnownBall(value));
+
+    if (missing.length > 0 && this.#networkService.isOnline) {
+      try {
+        const fetched = await this.#ballService.getBallsByNames([...new Set(missing.map((value) => parseStoredBall(value).name))]);
+        // The API returns every weight; keep only the one each value names, so the cache never
+        // holds a weight nobody threw.
+        const meant = missing
+          .map((value) => {
+            const parsed = parseStoredBall(value);
+            return this.#named(fetched, parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+          })
+          .filter((ball): ball is Ball => ball !== undefined);
+        await this.rememberBalls(meant);
+      } catch (error) {
+        console.error('Error resolving ball names:', error);
+      }
+    }
+  }
+
+  /** Re-fetches cached balls so their data stays current (pull-to-refresh). */
+  async refreshKnownBalls(): Promise<void> {
+    const cached = this.#cachedBalls();
+    if (cached.length === 0 || this.#networkService.isOffline) return;
+    const cachedKeys = new Set(cached.map(ballKey));
+    // The API returns every weight of a ball; refresh only the weights that were cached.
+    const fresh = (await this.#ballService.getBallsByIds([...new Set(cached.map((b) => b.ball_id))])).filter((b) => cachedKeys.has(ballKey(b)));
+    const freshKeys = new Set(fresh.map(ballKey));
+    // Keep cached variants the API no longer returns (e.g. removed upstream).
+    await this.rememberBalls([...fresh, ...cached.filter((b) => !freshKeys.has(ballKey(b)))]);
+  }
+
+  /**
+   * Re-fetches the arsenal and favorite balls from the ball API and saves the fresh copies, keeping the
+   * arsenal's order and drilling. With `onlySavedBeforeBallApi`, only balls saved before the ball API are
+   * fetched: their images still point at bowwwl.com and their `first_seen_at` is unknown.
+   */
+  async refreshSavedBalls(onlySavedBeforeBallApi = false): Promise<void> {
+    if (this.#networkService.isOffline) return;
+    const saved = this.myBalls().filter((ball) => !onlySavedBeforeBallApi || savedBeforeBallApi(ball));
+    if (saved.length === 0) return;
+
+    const wanted = new Set(saved.map(ballKey));
+    // The API returns every weight of a ball; keep only the saved weights.
+    const fresh = (await this.#ballService.getBallsByIds([...new Set(saved.map((b) => b.ball_id))])).filter((b) => wanted.has(ballKey(b)));
+    if (fresh.length === 0) return;
+    const freshByKey = new Map(fresh.map((ball) => [ballKey(ball), ball]));
+
+    // position and drilling come from the arsenal as it is now, so edits made meanwhile stay
+    const refreshed: Ball[] = [];
+    this.arsenal.update((balls) =>
+      balls.map((ball) => {
+        const update = freshByKey.get(ballKey(ball));
+        if (!update) return ball;
+        const merged: Ball = { ...update, position: ball.position, drilling: ball.drilling };
+        refreshed.push(merged);
+        return merged;
+      }),
+    );
+    await Promise.all(refreshed.map((ball) => this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), ball)));
+
+    this.#favoritesService.updateFavoriteBalls(fresh);
+  }
+
+  #named(balls: Ball[], name: string): Ball[] {
+    const wanted = name.trim().toLowerCase();
+    return balls.filter((b) => b.ball_name.toLowerCase() === wanted);
+  }
+
+  // --------------------------------------------------------------- arsenal
 
   async loadArsenal(): Promise<void> {
     try {
-      const arsenal = await this.storageRepository.loadByPrefix<Ball>(STORAGE_PREFIX.arsenal);
+      const arsenal = (await this.#storageRepository.loadByPrefix<SavedBall>(STORAGE_PREFIX.arsenal)).map(toStoredBall);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.arsenal.set(sortedArsenal);
     } catch (error) {
@@ -35,54 +171,15 @@ export class BallsStore {
     }
   }
 
-  async loadAllBalls(updated?: string, weight?: number, forceRefresh = false): Promise<void> {
-    const cacheKey = `all_balls_${weight || 'default'}`;
-
-    try {
-      if (!forceRefresh) {
-        const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
-
-        if (cachedBalls && (isCacheValid || this.networkService.isOffline)) {
-          this.allBalls.set(cachedBalls);
-          this.isUsingCache.set(true);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
-            this.refreshBallsInBackground(updated, weight, cacheKey);
-          }
-          return;
-        }
-      }
-
-      if (this.networkService.isOffline) {
-        console.warn('Cannot fetch balls: offline and no valid cache available');
-        return;
-      }
-
-      const response = await this.ballService.loadAllBalls(updated, weight);
-      this.allBalls.set(response);
-      this.isUsingCache.set(false);
-      await this.cacheService.set(cacheKey, response);
-    } catch (error) {
-      console.error('Failed to load all balls:', error);
-
-      const cachedBalls = await this.cacheService.get<Ball[]>(cacheKey);
-      if (cachedBalls) {
-        this.allBalls.set(cachedBalls);
-        this.isUsingCache.set(true);
-      } else {
-        throw error;
-      }
-    }
-  }
   async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
     try {
-      newBall.position = oldBall.position;
-      newBall.drilling = oldBall.drilling;
+      // a copy, so the ball passed in (e.g. from a list) doesn't change
+      const updated: Ball = { ...newBall, position: oldBall.position, drilling: oldBall.drilling };
       const oldKey = StorageKeys.arsenal(oldBall.ball_id, oldBall.core_weight);
-      const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
-      await this.storageRepository.remove(oldKey);
-      await this.storageRepository.set(newKey, newBall);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+      const newKey = StorageKeys.arsenal(updated.ball_id, updated.core_weight);
+      await this.#storageRepository.remove(oldKey);
+      await this.#storageRepository.set(newKey, updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.key === oldBall.key ? updated : b)));
     } catch (error) {
       console.error('Error updating ball in arsenal:', error);
       throw error;
@@ -92,8 +189,8 @@ export class BallsStore {
   async updateBallDrilling(ball: Ball, drilling: BallDrilling | undefined): Promise<void> {
     try {
       const updated: Ball = { ...ball, drilling };
-      await this.storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), updated);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? updated : b)));
+      await this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.key === ball.key ? updated : b)));
     } catch (error) {
       console.error('Error saving drilling:', error);
       throw error;
@@ -112,7 +209,7 @@ export class BallsStore {
       balls.map(async (ball) => {
         try {
           const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
-          await this.storageRepository.set(key, ball);
+          await this.#storageRepository.set(key, ball);
           saved.push(ball);
         } catch (error) {
           console.error(`Error saving ball ${ball.ball_name} to arsenal:`, error);
@@ -125,12 +222,12 @@ export class BallsStore {
       this.arsenal.update((existing) => {
         const merged = [...existing];
         for (const ball of saved) {
-          const isUnique = !merged.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+          const isUnique = !merged.some((b) => b.key === ball.key);
           if (isUnique) merged.push(ball);
         }
         return merged;
       });
-      saved.forEach((ball) => this.analyticsService.trackBallAdded({ brand: ball.brand_name, name: ball.ball_name }));
+      saved.forEach((ball) => this.#analyticsService.trackBallAdded({ brand: ball.brand_name ?? undefined, name: ball.ball_name }));
     }
 
     return failed;
@@ -139,9 +236,11 @@ export class BallsStore {
   async removeFromArsenal(ball: Ball): Promise<void> {
     try {
       const key = StorageKeys.arsenal(ball.ball_id, ball.core_weight);
-      await this.storageRepository.remove(`${STORAGE_PREFIX.arsenal}_${ball.ball_id}`);
-      await this.storageRepository.remove(key);
-      this.arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
+      await this.#storageRepository.remove(`${STORAGE_PREFIX.arsenal}_${ball.ball_id}`);
+      await this.#storageRepository.remove(key);
+      // Keep it resolvable (e.g. for games that used it) after leaving the arsenal.
+      await this.rememberBalls([ball]);
+      this.arsenal.update((balls) => balls.filter((b) => b.key !== ball.key));
     } catch (error) {
       console.error('Error removing ball from arsenal:', error);
       throw error;
@@ -150,18 +249,5 @@ export class BallsStore {
 
   clearArsenal(): void {
     this.arsenal.set([]);
-  }
-
-  private async refreshBallsInBackground(updated?: string, weight?: number, cacheKey?: string): Promise<void> {
-    try {
-      const response = await this.ballService.loadAllBalls(updated, weight);
-      this.allBalls.set(response);
-      this.isUsingCache.set(false);
-      if (cacheKey) {
-        await this.cacheService.set(cacheKey, response);
-      }
-    } catch (error) {
-      console.error('Background refresh failed for balls:', error);
-    }
   }
 }

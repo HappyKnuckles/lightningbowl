@@ -26,6 +26,7 @@ import {
 import { addIcons } from 'ionicons';
 import {
   bowlingBallOutline,
+  chevronExpandOutline,
   cloudDownloadOutline,
   cloudUploadOutline,
   createOutline,
@@ -40,14 +41,7 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import {
-  ballValueMatches,
-  findBallInArsenal,
-  formatThrowBall,
-  getBallTracking,
-  getGameBallNames,
-  getThrowBallKey,
-} from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getBallTracking, getGameBallLabels, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -72,6 +66,8 @@ import { GameComponent } from '../game/game.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
 import { GameCardTemplateDirective } from './game-card-template.directive';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
+import { ballPickerFor } from 'src/app/core/utils/ball-utils/ball-picker.utils';
 
 interface MonthRow {
   kind: 'month';
@@ -185,6 +181,12 @@ export class GameListComponent implements OnInit {
   });
 
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
+  /** The ball typeahead's list and selection per game id. */
+  ballPickers = computed(() => {
+    const arsenal = this.ballsStore.arsenal();
+    const known = this.ballsStore.knownBalls();
+    return Object.fromEntries(this.games().map((game) => [game.gameId, ballPickerFor(game.balls, arsenal, known)]));
+  });
 
   showingGames = computed(() => {
     const games = this.sortedGames();
@@ -208,14 +210,15 @@ export class GameListComponent implements OnInit {
 
     const vms: Record<string, GameBallVm> = {};
     for (const game of this.showingGames()) {
-      const names = getGameBallNames(game, arsenal);
+      const names = getGameBallNames(game);
+      const labels = getGameBallLabels(game);
       const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
       const throwTracked = getBallTracking(game) === 'throw';
 
       vms[game.gameId] = {
         names,
-        text: names.length > 0 ? names.join(', ') : 'None',
-        thumbnail: singleBall?.thumbnail_image ? this.ballsStore.url + singleBall.thumbnail_image : null,
+        text: labels.length > 0 ? labels.join(', ') : 'None',
+        thumbnail: singleBall?.thumbnail_image ? ballImageUrl(singleBall) : null,
         throwTracked,
         throwSummary: throwTracked ? throwBallSummary(game) : '',
       };
@@ -339,6 +342,7 @@ export class GameListComponent implements OnInit {
       cloudDownloadOutline,
       filterOutline,
       layersOutline,
+      chevronExpandOutline,
     });
   }
 
@@ -545,18 +549,18 @@ export class GameListComponent implements OnInit {
   }
 
   // BALLS / SERIES
-  async onBallAdd(ballIds: string[], game: Game, modal: IonModal) {
-    const allBalls = this.ballsStore.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+  async onBallAdd(selected: Ball[], game: Game, modal: IonModal) {
+    // picked balls may come from an API search, so keep them resolvable offline
+    void this.ballsStore.rememberBalls(selected);
     const applied = await this.onBallSelect(
-      selected.map((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight })),
+      selected.map((b) => ({ name: b.ball_name, weight: b.core_weight })),
       game,
       modal,
     );
     if (applied) this.saveBallToArsenal(selected);
   }
 
-  async onBallSelect(selectedBalls: string[], game: Game, modal: IonModal): Promise<boolean> {
+  async onBallSelect(selectedBalls: ThrowBall[], game: Game, modal: IonModal): Promise<boolean> {
     modal.dismiss();
     if (!(await this.confirmReplaceThrowBalls(game))) return false;
 
@@ -630,15 +634,6 @@ export class GameListComponent implements OnInit {
 
   parseIntValue(value: string): number {
     return this.utilsService.parseIntValue(value) as number;
-  }
-
-  getBallIds(names: string[] | undefined): string[] {
-    if (!names) return [];
-
-    return this.ballsStore
-      .allBalls()
-      .filter((ball) => names.some((name) => ballValueMatches(name, ball)))
-      .map((ball) => ball.ball_id);
   }
 
   private async saveBallToArsenal(balls: Ball[]): Promise<void> {

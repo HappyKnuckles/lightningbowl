@@ -5,7 +5,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { GameComponent } from './game.component';
-import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
+import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 
 const mockSettingsStore = {
@@ -20,6 +20,7 @@ const mockPatternsStore = {
 const mockBallsStore = {
   allBalls: vi.fn().mockReturnValue([]),
   arsenal: vi.fn().mockReturnValue([]),
+  knownBalls: vi.fn().mockReturnValue([]),
 };
 
 describe('GameComponent', () => {
@@ -65,10 +66,10 @@ describe('GameComponent', () => {
       const emitted = vi.fn();
       component.ballsChanged.subscribe(emitted);
 
-      await component.onBallSelect(['Hammer15'], modal);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
 
       expect(create).not.toHaveBeenCalled();
-      expect(emitted).toHaveBeenCalledWith(['Hammer15']);
+      expect(emitted).toHaveBeenCalledWith([{ name: 'Hammer', weight: '15' }]);
     });
 
     it('emits only once replacing the per-throw balls is confirmed', async () => {
@@ -77,12 +78,12 @@ describe('GameComponent', () => {
       component.ballsChanged.subscribe(emitted);
 
       answerPrompt('cancel');
-      await component.onBallSelect(['Hammer15'], modal);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
       expect(emitted).not.toHaveBeenCalled();
 
       answerPrompt('confirm');
-      await component.onBallSelect(['Hammer15'], modal);
-      expect(emitted).toHaveBeenCalledWith(['Hammer15']);
+      await component.onBallSelect([{ name: 'Hammer', weight: '15' }], modal);
+      expect(emitted).toHaveBeenCalledWith([{ name: 'Hammer', weight: '15' }]);
     });
   });
 
@@ -115,6 +116,32 @@ describe('GameComponent', () => {
       component.onDetailsToggle(toggleEvent(undefined, true));
 
       expect(component.detailsOpen()).toBe(true);
+    });
+  });
+
+  describe('ball typeahead items', () => {
+    afterEach(() => {
+      mockBallsStore.arsenal.mockReturnValue([]);
+      mockBallsStore.knownBalls.mockReturnValue([]);
+    });
+
+    it("lists the game's own balls next to the arsenal, so they start out selected", () => {
+      const owned = makeBall({ ball_id: 'a', ball_name: 'Owned', core_weight: '15' });
+      const retired = makeBall({ ball_id: 'r', ball_name: 'Retired', core_weight: '15' });
+      const other = makeBall({ ball_id: 'o', ball_name: 'Other', core_weight: '15' });
+      mockBallsStore.arsenal.mockReturnValue([owned]);
+      mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
+      fixture.componentRef.setInput(
+        'game',
+        makeGame({
+          balls: [
+            { name: 'Retired', weight: '15' },
+            { name: 'Owned', weight: '15' },
+          ],
+        }),
+      );
+
+      expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a-15', 'r-15'] });
     });
   });
 });

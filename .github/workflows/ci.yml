@@ -53,6 +53,30 @@ jobs:
       - name: Build
         run: npm run build
 
+  ball-api-types:
+    # Own job, so a ball API change that the app hasn't picked up yet shows as its own check
+    # instead of failing verify.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Use npm 11
+        # see verify
+        run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ball API types match the ball API's spec
+        run: npm run generate:ball-api -- --check
+
   coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -34,7 +34,7 @@ describe('BallDetailStatsCalculatorService', () => {
   it('skips games that are not tracked per throw', () => {
     const game = makeGame({
       ballTracking: 'game',
-      balls: ['IQ Tour15'],
+      balls: [{ name: 'IQ Tour', weight: '15' }],
       frames: [makeFrame(0, [makeThrow(0, [], { ball: IQ })]), ...makeFrames().slice(1)],
     });
 

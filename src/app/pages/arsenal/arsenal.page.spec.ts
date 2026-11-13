@@ -48,8 +48,8 @@ describe('ArsenalPage', () => {
       arsenal.set([hammer]);
       cachedBalls.set([hammer, iq]);
       games.set([
-        makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] }),
-        makeGame({ gameId: 'g2', totalScore: 180, balls: ['IQ Tour15'] }),
+        makeGame({ gameId: 'g1', totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }] }),
+        makeGame({ gameId: 'g2', totalScore: 180, balls: [{ name: 'IQ Tour', weight: '15' }] }),
       ]);
 
       expect(component.ballStats().map((stats) => stats.name)).toEqual(['Hammer']);
@@ -58,7 +58,7 @@ describe('ArsenalPage', () => {
     it('includes an owned ball that has never been thrown', () => {
       arsenal.set([hammer, iq]);
       cachedBalls.set([hammer, iq]);
-      games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] })]);
+      games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }] })]);
 
       const never = component.ballStats().find((stats) => stats.name === 'IQ Tour');
 
@@ -69,7 +69,7 @@ describe('ArsenalPage', () => {
     it('does not list an owned ball twice once it has been thrown', () => {
       arsenal.set([hammer]);
       cachedBalls.set([hammer]);
-      games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'] })]);
+      games.set([makeGame({ gameId: 'g1', totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }] })]);
 
       const stats = component.ballStats();
 
@@ -81,8 +81,8 @@ describe('ArsenalPage', () => {
       arsenal.set([hammer]);
       cachedBalls.set([hammer]);
       games.set([
-        makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer15'], isPractice: true }),
-        makeGame({ gameId: 'g2', totalScore: 100, balls: ['Hammer15'], league: 'Monday' }),
+        makeGame({ gameId: 'g1', totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }], isPractice: true }),
+        makeGame({ gameId: 'g2', totalScore: 100, balls: [{ name: 'Hammer', weight: '15' }], league: 'Monday' }),
       ]);
 
       expect(component.ballStats()[0].gameCount).toBe(2);

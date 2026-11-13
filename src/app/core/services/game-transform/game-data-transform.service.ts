@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
-import { getBallTracking, getThrowBallKeys } from '../../utils/game-utils/ball.utils';
+import { getBallTracking, getThrowBalls, sortGameBalls } from '../../utils/game-utils/ball.utils';
 import { calculateIsClean } from '../../utils/game-utils/frame.utils';
 
 /**
@@ -40,7 +40,7 @@ export class GameDataTransformerService {
       // In per-throw tracking the throws are the truth, so `balls` is kept as a derived
       // index. It keeps filtering, export and the game-level stats working unchanged.
       const ballTracking = getBallTracking({ ballTracking: game.ballTracking, frames: normalizedFrames });
-      const balls = ballTracking === 'throw' ? getThrowBallKeys(normalizedFrames) : game.balls ? [...game.balls].sort() : undefined;
+      const balls = ballTracking === 'throw' ? getThrowBalls(normalizedFrames) : game.balls ? sortGameBalls(game.balls) : undefined;
 
       return {
         gameId,

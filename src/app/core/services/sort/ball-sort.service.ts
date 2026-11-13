@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Ball } from '../../models/ball.model';
 import { BallSortOption, BallSortField, SortDirection } from '../../models/sort.model';
 import { FavoritesService } from '../favorites/favorites.service';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -34,8 +35,8 @@ export class BallSortService {
     const sorted = this.applySortToBalls([...balls], sortOption);
     if (!favoritesFirst) return sorted;
 
-    const favoriteKeys = new Set(this.favoritesService.getFavoriteBalls().map((b) => `${b.ball_id}-${b.core_weight}`));
-    const isFavorite = (b: Ball) => favoriteKeys.has(`${b.ball_id}-${b.core_weight}`);
+    const favoriteKeys = new Set(this.favoritesService.getFavoriteBalls().map(ballKey));
+    const isFavorite = (b: Ball) => favoriteKeys.has(ballKey(b));
     return [...sorted.filter(isFavorite), ...sorted.filter((b) => !isFavorite(b))];
   }
 

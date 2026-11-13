@@ -1,18 +1,21 @@
-import type { components } from './generated/ball-api';
+import type { components, operations } from './generated/ball-api';
 
 // Ball API types are generated from its OpenAPI spec (`npm run generate:ball-api`).
 type ApiSchemas = components['schemas'];
 
+/** A ball (in one weight) exactly as the ball API returns it. */
+export type ApiBall = ApiSchemas['Ball'];
+
 /**
- * A ball (in one weight) as the ball API returns it. `first_seen_at` is
- * optional because balls saved before the ball API (e.g. in the arsenal) don't
- * have it; `position` is the app's own arsenal order.
+ * A ball (in one weight) as the ball API returns it, plus the arsenal's own
+ * order (`position`) and drilling. Balls saved before the ball API go through
+ * `toStoredBall` when loaded; they have no `first_seen_at` until they're
+ * refreshed from the API.
  */
-export type Ball = Omit<ApiSchemas['Ball'], 'first_seen_at'> & {
-  first_seen_at?: string;
+export interface Ball extends ApiBall {
   position?: number;
   drilling?: BallDrilling;
-};
+}
 
 /**
  * Layout systems as written on drill sheets:
@@ -78,8 +81,11 @@ export interface BallTraits {
   diff: number;
 }
 
-/** One page of balls from the ball API (Spring `PagedModel` shape). */
-export type BallPage = Omit<ApiSchemas['BallPage'], 'content'> & { content: Ball[] };
+/** One page of balls from the ball API. */
+export type BallPage = ApiSchemas['BallPage'];
 
-/** Query-string values for `GET balls`; arrays become repeated parameters. */
-export type BallQueryParams = Record<string, string | string[]>;
+/** Query parameters of `GET balls`; arrays become repeated parameters. */
+export type BallQueryParams = NonNullable<operations['searchBalls']['parameters']['query']>;
+
+/** Query parameters of `GET balls/{id}/similar`. */
+export type SimilarBallsQueryParams = NonNullable<operations['getSimilarBalls']['parameters']['query']>;

@@ -27,18 +27,16 @@ export interface BallQueryInput {
  */
 export function buildBallQueryParams(input: BallQueryInput): BallQueryParams {
   const { filters, defaultFilters } = input;
-  const params: BallQueryParams = {
-    page: String(input.page),
-    size: String(input.size),
-  };
+  const params: BallQueryParams = { page: input.page, size: input.size };
 
-  const set = (key: string, value: string | string[] | undefined) => {
+  // Unset values and empty lists are left out of the query.
+  const set = <K extends keyof BallQueryParams>(key: K, value: BallQueryParams[K] | undefined) => {
     if (value === undefined) return;
     if (Array.isArray(value) && value.length === 0) return;
     params[key] = value;
   };
 
-  set('weight', filters.weight || undefined);
+  set('weight', filters.weight ? Number(filters.weight) : undefined);
   set('brand', filters.brands);
   set('core', filters.cores);
   set('coverstock', filters.coverstocks);
@@ -48,10 +46,10 @@ export function buildBallQueryParams(input: BallQueryInput): BallQueryParams {
   set('available', filters.availability ? 'true' : undefined);
   set('releaseDate', filters.releaseDate && filters.releaseDate !== 'all' ? filters.releaseDate : undefined);
 
-  if (filters.minRg !== defaultFilters.minRg) set('minRg', String(filters.minRg));
-  if (filters.maxRg !== defaultFilters.maxRg) set('maxRg', String(filters.maxRg));
-  if (filters.minDiff !== defaultFilters.minDiff) set('minDiff', String(filters.minDiff));
-  if (filters.maxDiff !== defaultFilters.maxDiff) set('maxDiff', String(filters.maxDiff));
+  if (filters.minRg !== defaultFilters.minRg) set('minRg', filters.minRg);
+  if (filters.maxRg !== defaultFilters.maxRg) set('maxRg', filters.maxRg);
+  if (filters.minDiff !== defaultFilters.minDiff) set('minDiff', filters.minDiff);
+  if (filters.maxDiff !== defaultFilters.maxDiff) set('maxDiff', filters.maxDiff);
 
   if (filters.inArsenal) {
     // An empty arsenal must match nothing, not everything.
@@ -63,7 +61,7 @@ export function buildBallQueryParams(input: BallQueryInput): BallQueryParams {
 
   const search = input.search.trim();
   if (search) set('search', search);
-  if (input.sort.field !== BallSortField.RELEVANCE) set('sort', `${input.sort.field},${input.sort.direction}`);
+  if (input.sort.field !== BallSortField.RELEVANCE) set('sort', [`${input.sort.field},${input.sort.direction}`]);
 
   return params;
 }

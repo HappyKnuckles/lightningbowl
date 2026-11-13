@@ -1,8 +1,10 @@
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
+import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 import { countBallUsage, countPatternUsage, rankByUsage, UsageStats } from './usage.utils';
 
 describe('usage.utils', () => {
-  const game = (date: number, balls?: string[], patterns?: string[]): Game => ({ date, balls, patterns }) as Game;
+  const game = (date: number, balls?: string[], patterns?: string[]): Game =>
+    ({ date, balls: balls?.map((key): ThrowBall => parseStoredBall(key)), patterns }) as Game;
 
   describe('countBallUsage', () => {
     it('counts how often each ball key appears across games', () => {

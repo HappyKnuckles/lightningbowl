@@ -141,9 +141,7 @@ export class ArsenalPage implements OnInit {
 
   ballTypeaheadConfig: TypeaheadConfig<Ball> = this.typeaheadConfigService.ball;
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
-    this.ballsStore
-      .myBalls()
-      .filter((ball) => !this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)),
+    this.ballsStore.myBalls().filter((ball) => !this.ballsStore.arsenal().some((b) => b.key === ball.key)),
   );
   selectedSegment = model('arsenal');
 
@@ -320,7 +318,7 @@ export class ArsenalPage implements OnInit {
 
   openBallDetail(ball: Ball, segment: 'ball' | 'drilling' = 'ball'): void {
     this.detailSegment.set(segment);
-    this.openBallKey.set(ball.ball_id + ball.core_weight);
+    this.openBallKey.set(ball.key);
   }
 
   // The segment's initial value doesn't move the segment view, so jump it to the selected tab once the modal is shown.
@@ -355,7 +353,7 @@ export class ArsenalPage implements OnInit {
   }
 
   onBallSelectionChange(selected: Ball[]): void {
-    const inArsenal = (ball: Ball) => this.ballsStore.arsenal().some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+    const inArsenal = (ball: Ball) => this.ballsStore.arsenal().some((b) => b.key === ball.key);
     this.saveBallToArsenal(selected.filter((ball) => !inArsenal(ball)));
   }
 
@@ -403,7 +401,7 @@ export class ArsenalPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    const key = ball.ball_id + ball.core_weight;
+    const key = ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {

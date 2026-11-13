@@ -1,4 +1,5 @@
 import { Game } from 'src/app/core/models/game.model';
+import { getThrowBallKey } from './ball.utils';
 
 export interface UsageStats {
   count: number;
@@ -11,8 +12,8 @@ export interface UsageStats {
 export function countBallUsage(games: readonly Game[]): Map<string, UsageStats> {
   const usage = new Map<string, UsageStats>();
   for (const game of games) {
-    for (const key of game.balls ?? []) {
-      bump(usage, key, game.date);
+    for (const ball of game.balls ?? []) {
+      bump(usage, getThrowBallKey(ball), game.date);
     }
   }
   return usage;

@@ -43,6 +43,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface SavedEntry {
   id: string;
@@ -91,8 +92,8 @@ export class BallComparisonPage implements OnDestroy, OnInit {
   protected readonly ballsStore = inject(BallsStore);
   /** Picker list: the current selection (which may come from a search), then your arsenal and favorites. */
   protected readonly pickerBalls = computed(() => {
-    const selectedKeys = new Set(this.selectedBalls().map((b) => `${b.ball_id}-${b.core_weight}`));
-    return [...this.selectedBalls(), ...this.ballsStore.myBalls().filter((b) => !selectedKeys.has(`${b.ball_id}-${b.core_weight}`))];
+    const selectedKeys = new Set(this.selectedBalls().map(ballKey));
+    return [...this.selectedBalls(), ...this.ballsStore.myBalls().filter((b) => !selectedKeys.has(ballKey(b)))];
   });
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
@@ -115,7 +116,7 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     title: 'Select Balls to Compare',
     maxSelections: this.maxBalls,
   };
-  readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
+  readonly selectedBallKeys = computed(() => this.selectedBalls().map(ballKey));
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
   readonly displayBalls = computed(() =>
@@ -171,7 +172,7 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    const key = ball.ball_id + ball.core_weight;
+    const key = ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {

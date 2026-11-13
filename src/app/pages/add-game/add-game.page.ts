@@ -532,7 +532,7 @@ export class AddGamePage implements OnInit {
   onNoteChange(note: string, index = 0) {
     this.updateSingleGameProperty('note', note, index);
   }
-  onBallsChange(balls: string[], index = 0) {
+  onBallsChange(balls: ThrowBall[], index = 0) {
     this.games.update((games) =>
       games.map((g, i) => {
         if (i !== index) return g;

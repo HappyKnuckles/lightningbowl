@@ -1,10 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 
-import { BallsStore } from 'src/app/core/stores/balls.store';
-
 import { Game } from '../../models/game.model';
-import { getGameBallNames } from '../../utils/game-utils/ball.utils';
+import { getGameBallLabels } from '../../utils/game-utils/ball.utils';
 
 export interface GameDetails {
   league?: string;
@@ -32,8 +30,6 @@ export interface HighScoreRecord {
   providedIn: 'root',
 })
 export class HighScoreAlertService {
-  #ballsStore = inject(BallsStore);
-
   constructor(private alertController: AlertController) {}
 
   /**
@@ -138,7 +134,7 @@ export class HighScoreAlertService {
    * Get formatted game details for display
    */
   private getGameDetails(game: Game): GameDetails {
-    const balls = getGameBallNames(game, this.#ballsStore.arsenal());
+    const balls = getGameBallLabels(game);
     return {
       league: game.league || undefined,
       patterns: game.patterns && game.patterns.length > 0 ? game.patterns : undefined,

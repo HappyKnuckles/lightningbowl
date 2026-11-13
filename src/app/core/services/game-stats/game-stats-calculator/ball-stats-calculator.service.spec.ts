@@ -33,7 +33,15 @@ describe('BallStatsCalculatorService', () => {
     arsenal.set([]);
     TestBed.configureTestingModule({
       // the calculator resolves stored ball names against the store's known balls
-      providers: [{ provide: BallsStore, useValue: { knownBalls: computed(() => [...allBalls(), ...arsenal()]), url: '' } }],
+      providers: [
+        {
+          provide: BallsStore,
+          useValue: {
+            knownBalls: computed(() => [...allBalls(), ...arsenal()]),
+            url: '',
+          },
+        },
+      ],
     });
     calculator = TestBed.inject(BallStatsCalculatorService);
   });
@@ -41,20 +49,35 @@ describe('BallStatsCalculatorService', () => {
   describe('calculateAllBallStats', () => {
     it('aggregates count, average and high/low per ball', () => {
       const games = [
-        makeGame({ gameId: 'g1', totalScore: 200, balls: ['Hammer'] }),
-        makeGame({ gameId: 'g2', totalScore: 150, balls: ['Hammer', 'Spare'] }),
-        makeGame({ gameId: 'g3', totalScore: 100, balls: ['Spare'] }),
+        makeGame({ gameId: 'g1', totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }] }),
+        makeGame({
+          gameId: 'g2',
+          totalScore: 150,
+          balls: [
+            { name: 'Hammer', weight: '15' },
+            { name: 'Spare', weight: '15' },
+          ],
+        }),
+        makeGame({ gameId: 'g3', totalScore: 100, balls: [{ name: 'Spare', weight: '15' }] }),
       ];
 
       const stats = calculator.calculateAllBallStats(games);
 
       expect(stats).toHaveLength(2);
-      expect(stats.find((s) => s.name === 'Hammer')).toMatchObject({ gameCount: 2, avg: 175, highestGame: 200, lowestGame: 150 });
-      expect(stats.find((s) => s.name === 'Spare')).toMatchObject({ gameCount: 2, avg: 125, highestGame: 150, lowestGame: 100 });
+      expect(stats.find((s) => s.name === 'Hammer 15lbs')).toMatchObject({ gameCount: 2, avg: 175, highestGame: 200, lowestGame: 150 });
+      expect(stats.find((s) => s.name === 'Spare 15lbs')).toMatchObject({ gameCount: 2, avg: 125, highestGame: 150, lowestGame: 100 });
     });
 
     it('counts a ball once per game even when listed twice', () => {
-      const games = [makeGame({ totalScore: 200, balls: ['Hammer', 'Hammer'] })];
+      const games = [
+        makeGame({
+          totalScore: 200,
+          balls: [
+            { name: 'Hammer', weight: '15' },
+            { name: 'Hammer', weight: '15' },
+          ],
+        }),
+      ];
 
       expect(calculator.calculateAllBallStats(games)[0].gameCount).toBe(1);
     });
@@ -67,21 +90,21 @@ describe('BallStatsCalculatorService', () => {
 
     it('counts clean games per ball', () => {
       const games = [
-        makeGame({ gameId: 'g1', totalScore: 200, isClean: true, balls: ['Hammer'] }),
-        makeGame({ gameId: 'g2', totalScore: 150, isClean: false, balls: ['Hammer'] }),
+        makeGame({ gameId: 'g1', totalScore: 200, isClean: true, balls: [{ name: 'Hammer', weight: '15' }] }),
+        makeGame({ gameId: 'g2', totalScore: 150, isClean: false, balls: [{ name: 'Hammer', weight: '15' }] }),
       ];
 
       expect(calculator.calculateAllBallStats(games)[0].cleanGameCount).toBe(1);
     });
 
     it('rates strikes against the twelve possible per game', () => {
-      const games = [makeGame({ totalScore: 300, frames: framesWithStrikes(9, [10, 10, 10]), balls: ['Hammer'] })];
+      const games = [makeGame({ totalScore: 300, frames: framesWithStrikes(9, [10, 10, 10]), balls: [{ name: 'Hammer', weight: '15' }] })];
 
       expect(calculator.calculateAllBallStats(games)[0].strikeRate).toBe(100);
     });
 
     it('counts each strike in the 10th separately', () => {
-      const games = [makeGame({ totalScore: 200, frames: framesWithStrikes(0, [10, 10, 4]), balls: ['Hammer'] })];
+      const games = [makeGame({ totalScore: 200, frames: framesWithStrikes(0, [10, 10, 4]), balls: [{ name: 'Hammer', weight: '15' }] })];
 
       expect(calculator.calculateAllBallStats(games)[0].strikeRate).toBe(17);
     });
@@ -91,18 +114,18 @@ describe('BallStatsCalculatorService', () => {
         ...frame,
         throws: frame.throws.map((t) => ({ ...t, ball: { name: 'Phaze II' } })),
       }));
-      const games = [makeGame({ totalScore: 300, frames, balls: ['Hammer'], ballTracking: 'game' })];
+      const games = [makeGame({ totalScore: 300, frames, balls: [{ name: 'Hammer', weight: '15' }], ballTracking: 'game' })];
 
       const stats = calculator.calculateAllBallStats(games);
 
-      expect(stats.map((s) => s.name)).toEqual(['Hammer']);
+      expect(stats.map((s) => s.name)).toEqual(['Hammer 15lbs']);
       expect(stats[0].strikeRate).toBe(100);
     });
 
     it('attaches the ball image from the store as an absolute URL', () => {
       allBalls.set([makeBall({ ball_name: 'Hammer', ball_image: '/hammer.png' })]);
 
-      const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: ['Hammer'] })]);
+      const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }] })]);
 
       expect(stats[0].image).toBe('https://bowwwl.com/hammer.png');
     });
@@ -111,8 +134,8 @@ describe('BallStatsCalculatorService', () => {
       allBalls.set([makeBall({ ball_name: 'Phaze II', ball_image: '/phaze.png' })]);
 
       const stats = calculator.calculateAllBallStats([
-        makeGame({ totalScore: 200, balls: ['Phaze II15'] }),
-        makeGame({ totalScore: 220, balls: ['Phaze II 15lbs'] }),
+        makeGame({ totalScore: 200, balls: [{ name: 'Phaze II', weight: '15' }] }),
+        makeGame({ totalScore: 220, balls: [{ name: 'Phaze II', weight: '15' }] }),
       ]);
 
       expect(stats).toHaveLength(1);
@@ -122,7 +145,7 @@ describe('BallStatsCalculatorService', () => {
     });
 
     it('falls back to the placeholder image for an unknown ball', () => {
-      const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: ['Unknown'] })]);
+      const stats = calculator.calculateAllBallStats([makeGame({ totalScore: 200, balls: [{ name: 'Unknown', weight: '15' }] })]);
 
       expect(stats[0].image).toBe(BALL_PLACEHOLDER_IMAGE);
     });
@@ -130,13 +153,13 @@ describe('BallStatsCalculatorService', () => {
 
   describe('calculateBestBallStats', () => {
     const games: Game[] = [
-      makeGame({ gameId: 'g1', totalScore: 220, balls: ['Hammer'] }),
-      makeGame({ gameId: 'g2', totalScore: 140, balls: ['Spare'] }),
-      makeGame({ gameId: 'g3', totalScore: 140, balls: ['Spare'] }),
+      makeGame({ gameId: 'g1', totalScore: 220, balls: [{ name: 'Hammer', weight: '15' }] }),
+      makeGame({ gameId: 'g2', totalScore: 140, balls: [{ name: 'Spare', weight: '15' }] }),
+      makeGame({ gameId: 'g3', totalScore: 140, balls: [{ name: 'Spare', weight: '15' }] }),
     ];
 
     it('picks the ball with the highest average', () => {
-      expect(calculator.calculateBestBallStats(games).name).toBe('Hammer');
+      expect(calculator.calculateBestBallStats(games).name).toBe('Hammer 15lbs');
     });
 
     it('returns an empty highlight without games', () => {
@@ -146,13 +169,13 @@ describe('BallStatsCalculatorService', () => {
 
   describe('calculateMostPlayedBallStats', () => {
     const games: Game[] = [
-      makeGame({ gameId: 'g1', totalScore: 220, balls: ['Hammer'] }),
-      makeGame({ gameId: 'g2', totalScore: 140, balls: ['Spare'] }),
-      makeGame({ gameId: 'g3', totalScore: 140, balls: ['Spare'] }),
+      makeGame({ gameId: 'g1', totalScore: 220, balls: [{ name: 'Hammer', weight: '15' }] }),
+      makeGame({ gameId: 'g2', totalScore: 140, balls: [{ name: 'Spare', weight: '15' }] }),
+      makeGame({ gameId: 'g3', totalScore: 140, balls: [{ name: 'Spare', weight: '15' }] }),
     ];
 
     it('picks the ball thrown in the most games', () => {
-      expect(calculator.calculateMostPlayedBallStats(games).name).toBe('Spare');
+      expect(calculator.calculateMostPlayedBallStats(games).name).toBe('Spare 15lbs');
     });
 
     it('returns an empty highlight without games', () => {
@@ -171,7 +194,7 @@ describe('BallStatsCalculatorService', () => {
     }
 
     it('marks a game-tracked ball as basic and leaves it without detail', () => {
-      const stats = calculator.calculateBallStats([makeGame({ totalScore: 200, balls: ['Hammer'], ballTracking: 'game' })]);
+      const stats = calculator.calculateBallStats([makeGame({ totalScore: 200, balls: [{ name: 'Hammer', weight: '15' }], ballTracking: 'game' })]);
 
       expect(stats).toHaveLength(1);
       expect(stats[0].tier).toBe('basic');
@@ -212,11 +235,21 @@ describe('BallStatsCalculatorService', () => {
 
     it('records when each ball was last used', () => {
       const games = [
-        makeGame({ gameId: 'g1', date: 100, totalScore: 150, balls: ['Hammer'] }),
-        makeGame({ gameId: 'g2', date: 500, totalScore: 150, balls: ['Hammer'] }),
+        makeGame({ gameId: 'g1', date: 100, totalScore: 150, balls: [{ name: 'Hammer', weight: '15' }] }),
+        makeGame({ gameId: 'g2', date: 500, totalScore: 150, balls: [{ name: 'Hammer', weight: '15' }] }),
       ];
 
       expect(calculator.calculateBallStats(games)[0].lastUsed).toBe(500);
     });
+  });
+
+  it('takes the specs of the weight the game stores, not of another weight of the ball', () => {
+    allBalls.set([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '12' })]);
+    arsenal.set([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' })]);
+
+    const [stats] = calculator.calculateBallStats([makeGame({ balls: [{ name: 'Phaze II', weight: '15' }], totalScore: 200 })]);
+
+    expect(stats.name).toBe('Phaze II');
+    expect(stats.weight).toBe('15');
   });
 });

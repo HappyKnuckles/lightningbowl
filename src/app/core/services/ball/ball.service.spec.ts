@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
-import { BallPage } from 'src/app/core/models/ball.model';
+import { Ball, BallPage } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { makeBall } from 'src/testing/fixtures';
 import { BallService } from './ball.service';
@@ -21,7 +21,7 @@ describe('BallService', () => {
   afterEach(() => http.verify());
 
   it('searches balls with the given query parameters', async () => {
-    const result = service.searchBalls({ page: '1', brand: ['Storm', 'Hammer'] });
+    const result = service.searchBalls({ page: 1, brand: ['Storm', 'Hammer'] });
 
     const req = http.expectOne((r) => r.url === `${api}balls`);
     expect(req.request.params.get('page')).toBe('1');

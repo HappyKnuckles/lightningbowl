@@ -46,7 +46,7 @@ describe('BallFilterService', () => {
       const count = await service.countMatches({ ...service.defaultFilters, brands: ['Storm'] });
 
       expect(count).toBe(1234);
-      expect(searchBalls).toHaveBeenCalledWith(expect.objectContaining({ brand: ['Storm'], size: '1', page: '0' }));
+      expect(searchBalls).toHaveBeenCalledWith(expect.objectContaining({ brand: ['Storm'], size: 1, page: 0 }));
       expect(searchBalls.mock.calls[0][0]['sort']).toBeUndefined();
     });
 

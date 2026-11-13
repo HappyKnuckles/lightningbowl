@@ -8,9 +8,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { formatStoredBall, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
-
-const ballKey = (ball: Pick<Ball, 'ball_id' | 'core_weight'>): string => `${ball.ball_id}-${ball.core_weight}`;
+import { ballKey, parseStoredBall, SavedBall, savedBeforeBallApi, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {
@@ -21,14 +19,7 @@ function uniqueBalls(balls: Ball[]): Ball[] {
   return [...byKey.values()];
 }
 
-/** Picks the variant in the preferred weight, else the heaviest. */
-function pickVariant(variants: Ball[], preferredWeight?: number | string): Ball | undefined {
-  if (preferredWeight !== undefined) {
-    const match = variants.find((b) => Number(b.core_weight) === Number(preferredWeight));
-    if (match) return match;
-  }
-  return [...variants].sort((a, b) => Number(b.core_weight) - Number(a.core_weight))[0];
-}
+const sameWeight = (a: number | string, b: number | string) => Number(a) === Number(b);
 
 /**
  * Balls the app works with offline. There is no full catalog on the device:
@@ -63,7 +54,7 @@ export class BallsStore {
 
   async loadBallCache(): Promise<void> {
     try {
-      const cached = await this.#storageRepository.get<Ball[]>(StorageKeys.ballCache);
+      const cached = await this.#storageRepository.get<SavedBall[]>(StorageKeys.ballCache);
       this.#cachedBalls.set((cached ?? []).map(toStoredBall));
     } catch (error) {
       console.error('Error loading ball cache:', error);
@@ -83,76 +74,95 @@ export class BallsStore {
   }
 
   /**
-   * A known ball by name (case-insensitive), preferring the given weight. Also
-   * accepts names with the weight appended ("Phaze II15", "Phaze II 15lbs"),
-   * as games store them; that weight then wins over `preferredWeight`.
+   * The known ball a stored value means. Only values with a weight ("Phaze II15", "Phaze II 15lbs")
+   * resolve: a name alone doesn't say which weight was thrown, and no weight stands in for it.
    */
-  findKnownBall(name: string, preferredWeight?: number | string): Ball | undefined {
-    const byName = (ballName: string) => this.knownBalls().filter((b) => b.ball_name.toLowerCase() === ballName.toLowerCase());
-    const exact = byName(name.trim());
-    if (exact.length > 0) return pickVariant(exact, preferredWeight);
-
-    const parsed = parseStoredBall(name);
-    return parsed.weight ? pickVariant(byName(parsed.name), parsed.weight) : undefined;
+  findKnownBall(value: string): Ball | undefined {
+    const parsed = parseStoredBall(value);
+    if (!parsed.weight) return undefined;
+    return this.#named(this.knownBalls(), parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
   }
 
   /**
-   * How to show a ball stored in a game: "Name 15lbs" when a weight was
-   * stored with it, else the plain name, plus the matching known ball (for
-   * its image), if any.
+   * Resolves ball values as games store them ("Phaze II15") to balls: known balls first, the rest
+   * from the ball API by exact name when online. Resolved balls are remembered, so `findKnownBall`
+   * finds them, also offline afterwards. Values without a weight are left alone.
    */
-  describeStoredBall(value: string): { label: string; ball: Ball | undefined } {
-    const ball = this.findKnownBall(value);
-    const isPlainName = ball?.ball_name.toLowerCase() === value.trim().toLowerCase();
-    return { label: isPlainName ? value.trim() : formatStoredBall(parseStoredBall(value)), ball };
-  }
-
-  /**
-   * Resolves ball names (as stored in games) to balls: known balls first, the
-   * rest from the ball API by exact name when online. Resolved balls are
-   * remembered, so this works offline afterwards. Keys are lower-cased names.
-   */
-  async resolveBallNames(names: string[], preferredWeight?: number | string): Promise<Map<string, Ball>> {
-    const result = new Map<string, Ball>();
-    const missing: string[] = [];
-    for (const name of new Set(names.filter(Boolean))) {
-      const known = this.findKnownBall(name, preferredWeight);
-      if (known) result.set(name.toLowerCase(), known);
-      else missing.push(name);
-    }
+  async resolveBallNames(values: string[]): Promise<void> {
+    const missing = [...new Set(values.filter((value) => value && parseStoredBall(value).weight))].filter((value) => !this.findKnownBall(value));
 
     if (missing.length > 0 && this.#networkService.isOnline) {
       try {
-        // Values may carry a weight ("Phaze II15"); look up both the value and the bare name.
-        const lookups = [...new Set(missing.flatMap((value) => [value, parseStoredBall(value).name]))];
-        const fetched = await this.#ballService.getBallsByNames(lookups);
-        await this.rememberBalls(fetched);
-        for (const name of missing) {
-          const ball = this.findKnownBall(name, preferredWeight);
-          if (ball) result.set(name.toLowerCase(), ball);
-        }
+        const fetched = await this.#ballService.getBallsByNames([...new Set(missing.map((value) => parseStoredBall(value).name))]);
+        // The API returns every weight; keep only the one each value names, so the cache never
+        // holds a weight nobody threw.
+        const meant = missing
+          .map((value) => {
+            const parsed = parseStoredBall(value);
+            return this.#named(fetched, parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+          })
+          .filter((ball): ball is Ball => ball !== undefined);
+        await this.rememberBalls(meant);
       } catch (error) {
         console.error('Error resolving ball names:', error);
       }
     }
-    return result;
   }
 
   /** Re-fetches cached balls so their data stays current (pull-to-refresh). */
   async refreshKnownBalls(): Promise<void> {
     const cached = this.#cachedBalls();
     if (cached.length === 0 || this.#networkService.isOffline) return;
-    const fresh = await this.#ballService.getBallsByIds(cached.map((b) => b.ball_id));
+    const cachedKeys = new Set(cached.map(ballKey));
+    // The API returns every weight of a ball; refresh only the weights that were cached.
+    const fresh = (await this.#ballService.getBallsByIds([...new Set(cached.map((b) => b.ball_id))])).filter((b) => cachedKeys.has(ballKey(b)));
     const freshKeys = new Set(fresh.map(ballKey));
     // Keep cached variants the API no longer returns (e.g. removed upstream).
     await this.rememberBalls([...fresh, ...cached.filter((b) => !freshKeys.has(ballKey(b)))]);
+  }
+
+  /**
+   * Re-fetches the arsenal and favorite balls from the ball API and saves the fresh copies, keeping the
+   * arsenal's order and drilling. With `onlySavedBeforeBallApi`, only balls saved before the ball API are
+   * fetched: their images still point at bowwwl.com and their `first_seen_at` is unknown.
+   */
+  async refreshSavedBalls(onlySavedBeforeBallApi = false): Promise<void> {
+    if (this.#networkService.isOffline) return;
+    const saved = this.myBalls().filter((ball) => !onlySavedBeforeBallApi || savedBeforeBallApi(ball));
+    if (saved.length === 0) return;
+
+    const wanted = new Set(saved.map(ballKey));
+    // The API returns every weight of a ball; keep only the saved weights.
+    const fresh = (await this.#ballService.getBallsByIds([...new Set(saved.map((b) => b.ball_id))])).filter((b) => wanted.has(ballKey(b)));
+    if (fresh.length === 0) return;
+    const freshByKey = new Map(fresh.map((ball) => [ballKey(ball), ball]));
+
+    // position and drilling come from the arsenal as it is now, so edits made meanwhile stay
+    const refreshed: Ball[] = [];
+    this.arsenal.update((balls) =>
+      balls.map((ball) => {
+        const update = freshByKey.get(ballKey(ball));
+        if (!update) return ball;
+        const merged: Ball = { ...update, position: ball.position, drilling: ball.drilling };
+        refreshed.push(merged);
+        return merged;
+      }),
+    );
+    await Promise.all(refreshed.map((ball) => this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), ball)));
+
+    this.#favoritesService.updateFavoriteBalls(fresh);
+  }
+
+  #named(balls: Ball[], name: string): Ball[] {
+    const wanted = name.trim().toLowerCase();
+    return balls.filter((b) => b.ball_name.toLowerCase() === wanted);
   }
 
   // --------------------------------------------------------------- arsenal
 
   async loadArsenal(): Promise<void> {
     try {
-      const arsenal = (await this.#storageRepository.loadByPrefix<Ball>(STORAGE_PREFIX.arsenal)).map(toStoredBall);
+      const arsenal = (await this.#storageRepository.loadByPrefix<SavedBall>(STORAGE_PREFIX.arsenal)).map(toStoredBall);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.arsenal.set(sortedArsenal);
     } catch (error) {
@@ -163,13 +173,13 @@ export class BallsStore {
 
   async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
     try {
-      newBall.position = oldBall.position;
-      newBall.drilling = oldBall.drilling;
+      // a copy, so the ball passed in (e.g. from a list) doesn't change
+      const updated: Ball = { ...newBall, position: oldBall.position, drilling: oldBall.drilling };
       const oldKey = StorageKeys.arsenal(oldBall.ball_id, oldBall.core_weight);
-      const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
+      const newKey = StorageKeys.arsenal(updated.ball_id, updated.core_weight);
       await this.#storageRepository.remove(oldKey);
-      await this.#storageRepository.set(newKey, newBall);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+      await this.#storageRepository.set(newKey, updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.key === oldBall.key ? updated : b)));
     } catch (error) {
       console.error('Error updating ball in arsenal:', error);
       throw error;
@@ -180,7 +190,7 @@ export class BallsStore {
     try {
       const updated: Ball = { ...ball, drilling };
       await this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), updated);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? updated : b)));
+      this.arsenal.update((balls) => balls.map((b) => (b.key === ball.key ? updated : b)));
     } catch (error) {
       console.error('Error saving drilling:', error);
       throw error;
@@ -212,7 +222,7 @@ export class BallsStore {
       this.arsenal.update((existing) => {
         const merged = [...existing];
         for (const ball of saved) {
-          const isUnique = !merged.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+          const isUnique = !merged.some((b) => b.key === ball.key);
           if (isUnique) merged.push(ball);
         }
         return merged;
@@ -230,7 +240,7 @@ export class BallsStore {
       await this.#storageRepository.remove(key);
       // Keep it resolvable (e.g. for games that used it) after leaving the arsenal.
       await this.rememberBalls([ball]);
-      this.arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
+      this.arsenal.update((balls) => balls.filter((b) => b.key !== ball.key));
     } catch (error) {
       console.error('Error removing ball from arsenal:', error);
       throw error;

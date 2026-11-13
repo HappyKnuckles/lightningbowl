@@ -81,19 +81,19 @@ describe('GameListComponent', () => {
       const create = answerPrompt('cancel');
       const game = makeGame({ gameId: 'g1' });
 
-      expect(await component.onBallSelect(['Hammer15'], game, modal)).toBe(true);
+      expect(await component.onBallSelect([{ name: 'Hammer', weight: '15' }], game, modal)).toBe(true);
 
       expect(create).not.toHaveBeenCalled();
-      expect(game).toMatchObject({ balls: ['Hammer15'], ballTracking: 'game' });
+      expect(game).toMatchObject({ balls: [{ name: 'Hammer', weight: '15' }], ballTracking: 'game' });
     });
 
     it('replaces the per-throw balls once confirmed', async () => {
       answerPrompt('confirm');
       const game = throwTrackedGame();
 
-      expect(await component.onBallSelect(['Hammer15'], game, modal)).toBe(true);
+      expect(await component.onBallSelect([{ name: 'Hammer', weight: '15' }], game, modal)).toBe(true);
 
-      expect(game).toMatchObject({ balls: ['Hammer15'], ballTracking: 'game' });
+      expect(game).toMatchObject({ balls: [{ name: 'Hammer', weight: '15' }], ballTracking: 'game' });
       expect(game.frames[0].throws[0].ball).toBeUndefined();
     });
 
@@ -101,7 +101,7 @@ describe('GameListComponent', () => {
       answerPrompt('cancel');
       const game = throwTrackedGame();
 
-      expect(await component.onBallSelect(['Hammer15'], game, modal)).toBe(false);
+      expect(await component.onBallSelect([{ name: 'Hammer', weight: '15' }], game, modal)).toBe(false);
 
       expect(game.ballTracking).toBe('throw');
       expect(game.balls).toBeUndefined();

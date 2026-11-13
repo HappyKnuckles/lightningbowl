@@ -306,7 +306,7 @@ describe('frame.utils', () => {
   });
 
   describe('cloneGame', () => {
-    const game: Game = makeGame({ frames: [frame(1, [4, 3])], patterns: ['Shark'], balls: ['Hammer'] });
+    const game: Game = makeGame({ frames: [frame(1, [4, 3])], patterns: ['Shark'], balls: [{ name: 'Hammer', weight: '15' }] });
 
     it('deep-copies frames, scores, patterns and balls', () => {
       const copy = cloneGame(game);
@@ -314,12 +314,12 @@ describe('frame.utils', () => {
       copy.frames[0].throws[0].value = 9;
       copy.frameScores[0] = 99;
       copy.patterns.push('Cheetah');
-      copy.balls!.push('Spare');
+      copy.balls!.push({ name: 'Spare', weight: '15' });
 
       expect(game.frames[0].throws[0].value).toBe(4);
       expect(game.frameScores[0]).toBe(0);
       expect(game.patterns).toEqual(['Shark']);
-      expect(game.balls).toEqual(['Hammer']);
+      expect(game.balls).toEqual([{ name: 'Hammer', weight: '15' }]);
     });
 
     it('keeps balls undefined when the game has none', () => {

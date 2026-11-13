@@ -5,6 +5,7 @@ import { FavoritesService } from './favorites.service';
 
 function makeBall(ballId: string, coreWeight: string): Ball {
   return {
+    key: `${ballId}-${coreWeight}`,
     ball_id: ballId,
     core_weight: coreWeight,
     ball_name: ballId,
@@ -23,6 +24,7 @@ function makeBall(ballId: string, coreWeight: string): Ball {
     coverstock_name: '',
     coverstock_type: '',
     factory_finish: '',
+    first_seen_at: '',
     availability: '',
     release_date: '',
     last_update: '',
@@ -140,6 +142,17 @@ describe('FavoritesService', () => {
 
       const newService = TestBed.runInInjectionContext(() => new FavoritesService());
       expect(newService.getFavoriteBallKeys()).toEqual([]);
+    });
+
+    it('swaps favorites for fresher copies and ignores balls that are not favorites', () => {
+      service.addBallFavorite(makeBall('ball-1', '15'));
+      const fresh = { ...makeBall('ball-1', '15'), ball_image: 'https://images.lightningbowl.de/balls/x.png' };
+
+      service.updateFavoriteBalls([fresh, makeBall('ball-2', '15')]);
+
+      expect(service.getFavoriteBalls()).toEqual([fresh]);
+      const reloaded = TestBed.runInInjectionContext(() => new FavoritesService());
+      expect(reloaded.getFavoriteBalls()).toEqual([fresh]);
     });
 
     it('should use correct ball key format', () => {

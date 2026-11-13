@@ -2,15 +2,18 @@ import { Injectable } from '@angular/core';
 import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
+import { NetworkService } from 'src/app/core/services/network/network.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
+import { sameGameBall, toGameBall } from '../../utils/game-utils/ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface GameRow {
   pk: number;
@@ -31,11 +34,14 @@ interface RawFrameRow {
 })
 export class PinpalService {
   private static readonly SQLITE_HEADER = 'SQLite format 3';
+  /** Ball searches running at once during an import. */
+  private static readonly SEARCH_CONCURRENCY = 4;
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
     private ballsStore: BallsStore,
     private ballService: BallService,
+    private networkService: NetworkService,
     private patternsStore: PatternsStore,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
@@ -58,10 +64,8 @@ export class PinpalService {
       // Ball candidates for name matching: known balls plus API search results
       // for every distinct ball name in the import.
       const availableBalls = await this.findBallCandidates(gameRows.map((row) => row.ballName));
-      const availableBallNames = availableBalls.map((b) => b.ball_name);
-      const availableBallsByName = new Map(availableBalls.map((ball) => [ball.ball_name.toLowerCase(), ball]));
+      const availableBallNames = [...new Set(availableBalls.map((b) => b.ball_name))];
       const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
-      const ballsToAddToArsenal = new Map<string, Ball>();
 
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
@@ -80,13 +84,6 @@ export class PinpalService {
 
         const matchedBall = this.findBestMatch(row.ballName, availableBallNames);
         const matchedPattern = this.findBestMatch(row.patternName, availablePatternNames);
-        const matchedBallObject = matchedBall ? availableBallsByName.get(matchedBall.toLowerCase()) : undefined;
-
-        if (matchedBallObject) {
-          const ballKey = `${matchedBallObject.ball_id}_${matchedBallObject.core_weight}`;
-          ballsToAddToArsenal.set(ballKey, matchedBallObject);
-        }
-
         games.push({
           gameId: `${timestamp}_${i}_${Math.random().toString(36).slice(2, 9)}`,
           date: this.parseDate(row.weekDate),
@@ -99,14 +96,19 @@ export class PinpalService {
           isPinMode: isPinMode,
           league: row.leagueName ?? '',
           patterns: matchedPattern ? [matchedPattern] : [],
-          balls: matchedBall ? [matchedBall] : [],
+          // PinPal stores no weights: the arsenal's weight for the ball, else the default
+          balls: matchedBall ? [toGameBall(matchedBall, this.ballsStore.arsenal())] : [],
           note: row.notes ?? '',
         });
       }
 
       const sortedGames = sortGameHistoryByDate(games);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
-      const arsenalSaveResults = await Promise.allSettled([...ballsToAddToArsenal.values()].map((ball) => this.ballsStore.saveBallToArsenal(ball)));
+      const asGameBall = (ball: Ball) => ({ name: ball.ball_name, weight: ball.core_weight });
+      const used = games.flatMap((game) => game.balls ?? []);
+      const owned = (ball: Ball) => this.ballsStore.arsenal().some((b) => sameGameBall(asGameBall(b), asGameBall(ball)));
+      const toAdd = availableBalls.filter((ball) => used.some((stored) => sameGameBall(stored, asGameBall(ball))) && !owned(ball));
+      const arsenalSaveResults = await Promise.allSettled(toAdd.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {
         this.toastService.showToast("Import finished, but some balls couldn't be added to the arsenal.", 'bug-outline');
@@ -263,16 +265,32 @@ export class PinpalService {
   }
 
   /**
-   * Fuzzy Matching Logik
+   * Known balls plus the top API matches for each name the known balls don't have exactly. Offline
+   * only the known balls; online at most a few searches at a time, however many names there are.
    */
-  /** Known balls plus the top API matches for each distinct name (skipped offline). */
   private async findBallCandidates(names: (string | null)[]): Promise<Ball[]> {
     const known = this.ballsStore.knownBalls();
+    const knownNames = new Set(known.map((ball) => ball.ball_name.toLowerCase()));
     const unique = [...new Set(names.map((name) => name?.trim()).filter((name): name is string => !!name))];
-    const searches = await Promise.allSettled(unique.map((name) => this.ballService.findBallsByText(name, undefined, 10)));
-    const found = searches.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
-    const seen = new Set(known.map((b) => `${b.ball_id}-${b.core_weight}`));
-    return [...known, ...found.filter((b) => !seen.has(`${b.ball_id}-${b.core_weight}`))];
+    const unknown = unique.filter((name) => !knownNames.has(name.toLowerCase()));
+    if (unknown.length === 0 || this.networkService.isOffline) return known;
+
+    const found: Ball[] = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < unknown.length) {
+        const name = unknown[next++];
+        try {
+          found.push(...(await this.ballService.findBallsByText(name, undefined, 10)));
+        } catch (error) {
+          console.warn(`PinPal import: ball search for "${name}" failed`, error);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PinpalService.SEARCH_CONCURRENCY, unknown.length) }, worker));
+
+    const seen = new Set(known.map(ballKey));
+    return [...known, ...found.filter((b) => !seen.has(ballKey(b)))];
   }
 
   private findBestMatch(input: string | null, available: string[]): string | null {

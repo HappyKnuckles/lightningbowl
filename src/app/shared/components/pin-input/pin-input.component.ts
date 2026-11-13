@@ -10,7 +10,7 @@ import { ThrowBall } from 'src/app/core/models/game.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall } from 'src/app/core/utils/game-utils/ball.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -68,10 +68,10 @@ export class PinInputComponent {
   enterAnimation = alertEnterAnimation;
   leaveAnimation = alertLeaveAnimation;
 
-  /** Current ThrowBall as a key string array used by BallSelectComponent */
-  readonly selectedBallKeys = computed<string[]>(() => {
+  /** Current ThrowBall as the selection list BallSelectComponent takes */
+  readonly selectedBalls = computed<ThrowBall[]>(() => {
     const ball = this.selectedBall();
-    return ball ? [getThrowBallKey(ball)] : [];
+    return ball ? [ball] : [];
   });
 
   /** Arsenal thumbnail of the currently selected ball, if available */
@@ -156,20 +156,8 @@ export class PinInputComponent {
     this.isBallModalOpen.set(true);
   }
 
-  onBallSelection(selectedKeys: string[]): void {
-    const key = selectedKeys.length > 0 ? selectedKeys[0] : undefined;
-    if (!key) {
-      this.ballSelected.emit(undefined);
-    } else {
-      // Look up the ball in the arsenal to get proper name + weight
-      const arsenalBall = this.ballsStore.arsenal().find((b) => b.ball_name + b.core_weight === key);
-      if (arsenalBall) {
-        this.ballSelected.emit({ name: arsenalBall.ball_name, weight: arsenalBall.core_weight });
-      } else {
-        // Fallback: store the key as the name with no weight (edge case)
-        this.ballSelected.emit({ name: key });
-      }
-    }
+  onBallSelection(selected: ThrowBall[]): void {
+    this.ballSelected.emit(selected[0]);
     this.isBallModalOpen.set(false);
   }
 

@@ -235,14 +235,17 @@ export async function cropVideo(file: Blob, window: TrimWindow, crop: CropRect, 
     if (!expected) {
       return null;
     }
+    const tried: string[] = [];
     for (const rotate of rotations) {
       const blob = await convert(rotate);
       const first = blob ? await shownFrame(blob, 0) : null;
-      if (blob && first && frameSimilarity(expected, first) >= MIN_FRAME_MATCH) {
+      const match = blob && first ? frameSimilarity(expected, first) : null;
+      if (blob && match !== null && match >= MIN_FRAME_MATCH) {
         return { blob, offsetS: window.startS };
       }
+      tried.push(`rotate ${rotate}°: ${!blob ? 'no video' : match === null ? 'not shown' : `match ${match.toFixed(2)}`}`);
     }
-    console.warn('Cropped video did not show the lane where it was marked, sending it uncropped.');
+    console.warn(`Cropped video did not show the lane where it was marked (${tried.join(', ')}; needs ${MIN_FRAME_MATCH}), sending it uncropped.`);
     return null;
   } catch (error) {
     console.warn('Could not crop video, sending it uncropped:', error);

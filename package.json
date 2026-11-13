@@ -25,7 +25,7 @@
     "e2e:ui": "playwright test --config=playwright.e2e.config.ts --ui",
     "e2e:headed": "playwright test --config=playwright.e2e.config.ts --headed",
     "e2e:report": "playwright show-report playwright/.e2e-report",
-    "generate:ball-api": "openapi-typescript https://balls.lightningbowl.de/api/openapi.json -o src/app/core/models/generated/ball-api.d.ts && prettier --write src/app/core/models/generated/ball-api.d.ts"
+    "generate:ball-api": "node scripts/generate-ball-api.mjs"
   },
   "private": true,
   "dependencies": {

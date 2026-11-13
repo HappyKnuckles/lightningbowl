@@ -71,34 +71,17 @@ function laneRoi(points: Point[], frameW: number, frameH: number, ballPxFar: num
 }
 
 /**
- * How to draw `area` of a decoded frame upright. Mediabunny turns frames by the file's rotation; Safari's
- * decoder has been seen to hand them over already turned, and they'd be turned twice. Which one shows the
- * frame the way the browser does is checked once, on the reference frame.
+ * How to draw a decoded frame upright, whole, at `width` x `height`. Mediabunny turns frames by the file's
+ * rotation; Safari's decoder has been seen to hand them over already turned, and they'd be turned twice.
+ * Which one shows the frame the way the browser does is checked once, on the reference frame.
  *
- * `area` is in the video's display pixels (`frame`); a decoder may hand frames over at another size, so it
- * is scaled to the frame's own.
+ * Frames are only ever drawn whole and parts read from that canvas: drawing just a part of a decoded
+ * frame (a source rectangle) gave Safari frames that didn't match what it shows.
  */
-type Painter = (
-  sample: VideoSample,
-  ctx: OffscreenCanvasRenderingContext2D,
-  area: CropRect,
-  frame: { height: number; width: number },
-  width: number,
-  height: number,
-) => void;
+type Painter = (sample: VideoSample, ctx: OffscreenCanvasRenderingContext2D, width: number, height: number) => void;
 
-const turnedByMediabunny: Painter = (sample, ctx, a, frame, w, h) => {
-  const kx = sample.displayWidth / frame.width;
-  const ky = sample.displayHeight / frame.height;
-  sample.draw(ctx, a.left * kx, a.top * ky, a.width * kx, a.height * ky, 0, 0, w, h);
-};
-const asDecoded: Painter = (sample, ctx, a, frame, w, h) => {
-  const image = sample.toCanvasImageSource();
-  const [imageW, imageH] = image instanceof VideoFrame ? [image.displayWidth, image.displayHeight] : [image.width, image.height];
-  const kx = imageW / frame.width;
-  const ky = imageH / frame.height;
-  ctx.drawImage(image, a.left * kx, a.top * ky, a.width * kx, a.height * ky, 0, 0, w, h);
-};
+const turnedByMediabunny: Painter = (sample, ctx, w, h) => sample.draw(ctx, 0, 0, w, h);
+const asDecoded: Painter = (sample, ctx, w, h) => ctx.drawImage(sample.toCanvasImageSource(), 0, 0, w, h);
 
 /** A 32 x 32 grey thumbnail as a PNG data URL (4x), for the console. */
 async function thumbnailUrl(grey: Float32Array): Promise<string> {
@@ -187,15 +170,6 @@ class BallPatches {
   }
 }
 
-/** Reads a canvas into an RGB Mat. */
-function readRgb(cv: Cv, ctx: OffscreenCanvasRenderingContext2D, width: number, height: number): Cv {
-  const rgba = cv.matFromImageData(ctx.getImageData(0, 0, width, height));
-  const rgb = new cv.Mat();
-  cv.cvtColor(rgba, rgb, cv.COLOR_RGBA2RGB);
-  rgba.delete();
-  return rgb;
-}
-
 /**
  * Tracks the ball in `video` on this device and returns the same result the BallTracker service does.
  * `calibration` is in the video's display frame (as the user saw it), normalized.
@@ -255,10 +229,20 @@ export async function trackOnDevice(
     const featureScale = Math.min(1, FEATURE_PX / Math.max(frameW, frameH));
     const smallW = Math.round(frameW * featureScale);
     const smallH = Math.round(frameH * featureScale);
-    const whole: CropRect = { left: 0, top: 0, width: frameW, height: frameH };
-    const frame = { width: frameW, height: frameH };
     const smallCtx = new OffscreenCanvas(smallW, smallH).getContext('2d', { willReadFrequently: true })!;
-    const regionCtx = new OffscreenCanvas(region.width, region.height).getContext('2d', { willReadFrequently: true })!;
+    // each frame is drawn here whole, at full resolution; the region and the small frame are read from it
+    const frameCtx = new OffscreenCanvas(frameW, frameH).getContext('2d', { willReadFrequently: true })!;
+    const drawFrame = (painter: Painter, sample: VideoSample, withSmall: boolean) => {
+      painter(sample, frameCtx, frameW, frameH);
+      if (withSmall) smallCtx.drawImage(frameCtx.canvas, 0, 0, smallW, smallH);
+    };
+    const readRegion = () => {
+      const rgba = cv.matFromImageData(frameCtx.getImageData(region.left, region.top, region.width, region.height));
+      const rgb = new cv.Mat();
+      cv.cvtColor(rgba, rgb, cv.COLOR_RGBA2RGB);
+      rgba.delete();
+      return rgb;
+    };
     const readGray = () => {
       const rgba = cv.matFromImageData(smallCtx.getImageData(0, 0, smallW, smallH));
       const gray = new cv.Mat();
@@ -274,9 +258,8 @@ export async function trackOnDevice(
     const shown = await shownFrame(video, calibration.frameTimeS, region);
     if (shown) {
       const thumbOf = (painter: Painter) => {
-        const probe = new OffscreenCanvas(region.width, region.height).getContext('2d', { willReadFrequently: true })!;
-        painter(reference, probe, region, frame, region.width, region.height);
-        return thumbnail(probe, region.width, region.height);
+        drawFrame(painter, reference, false);
+        return thumbnail(frameCtx, region);
       };
       const viaMediabunnyThumb = thumbOf(turnedByMediabunny);
       const viaMediabunny = frameSimilarity(shown, viaMediabunnyThumb);
@@ -308,7 +291,7 @@ export async function trackOnDevice(
         }
       }
     }
-    paint(reference, smallCtx, whole, frame, smallW, smallH);
+    drawFrame(paint, reference, true);
     const referenceGray = readGray();
     owned.push(referenceGray);
     reference.close();
@@ -334,10 +317,9 @@ export async function trackOnDevice(
           sample.close();
           break;
         }
-        paint(sample, regionCtx, region, frame, region.width, region.height);
-        if (stabilizer) paint(sample, smallCtx, whole, frame, smallW, smallH);
+        drawFrame(paint, sample, stabilizer !== null);
         sample.close();
-        const regionRgb = readRgb(cv, regionCtx, region.width, region.height);
+        const regionRgb = readRegion();
         const gray = stabilizer ? readGray() : null;
         spent.decode += performance.now() - t0;
 
@@ -413,10 +395,10 @@ export async function trackOnDevice(
   }
 }
 
-/** The frame on a canvas as 32 x 32 grey values, the same thumbnails `shownFrame` makes. */
-function thumbnail(ctx: OffscreenCanvasRenderingContext2D, width: number, height: number): Float32Array {
+/** `area` of a canvas as 32 x 32 grey values, the same thumbnails `shownFrame` makes. */
+function thumbnail(ctx: OffscreenCanvasRenderingContext2D, area: CropRect): Float32Array {
   const small = new OffscreenCanvas(32, 32).getContext('2d', { willReadFrequently: true })!;
-  small.drawImage(ctx.canvas, 0, 0, width, height, 0, 0, 32, 32);
+  small.drawImage(ctx.canvas, area.left, area.top, area.width, area.height, 0, 0, 32, 32);
   const { data } = small.getImageData(0, 0, 32, 32);
   const grey = new Float32Array(32 * 32);
   for (let i = 0; i < grey.length; i++) grey[i] = 0.299 * data[4 * i] + 0.587 * data[4 * i + 1] + 0.114 * data[4 * i + 2];

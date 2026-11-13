@@ -8,7 +8,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { ballKey, parseStoredBall, SavedBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ballKey, parseStoredBall, SavedBall, savedBeforeBallApi, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {
@@ -119,6 +119,38 @@ export class BallsStore {
     const freshKeys = new Set(fresh.map(ballKey));
     // Keep cached variants the API no longer returns (e.g. removed upstream).
     await this.rememberBalls([...fresh, ...cached.filter((b) => !freshKeys.has(ballKey(b)))]);
+  }
+
+  /**
+   * Re-fetches the arsenal and favorite balls from the ball API and saves the fresh copies, keeping the
+   * arsenal's order and drilling. With `onlySavedBeforeBallApi`, only balls saved before the ball API are
+   * fetched: their images still point at bowwwl.com and their `first_seen_at` is unknown.
+   */
+  async refreshSavedBalls(onlySavedBeforeBallApi = false): Promise<void> {
+    if (this.#networkService.isOffline) return;
+    const saved = this.myBalls().filter((ball) => !onlySavedBeforeBallApi || savedBeforeBallApi(ball));
+    if (saved.length === 0) return;
+
+    const wanted = new Set(saved.map(ballKey));
+    // The API returns every weight of a ball; keep only the saved weights.
+    const fresh = (await this.#ballService.getBallsByIds([...new Set(saved.map((b) => b.ball_id))])).filter((b) => wanted.has(ballKey(b)));
+    if (fresh.length === 0) return;
+    const freshByKey = new Map(fresh.map((ball) => [ballKey(ball), ball]));
+
+    // position and drilling come from the arsenal as it is now, so edits made meanwhile stay
+    const refreshed: Ball[] = [];
+    this.arsenal.update((balls) =>
+      balls.map((ball) => {
+        const update = freshByKey.get(ballKey(ball));
+        if (!update) return ball;
+        const merged: Ball = { ...update, position: ball.position, drilling: ball.drilling };
+        refreshed.push(merged);
+        return merged;
+      }),
+    );
+    await Promise.all(refreshed.map((ball) => this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), ball)));
+
+    this.#favoritesService.updateFavoriteBalls(fresh);
   }
 
   #named(balls: Ball[], name: string): Ball[] {

@@ -57,10 +57,11 @@ describe('AppFacade', () => {
     gamesStore.games.mockReturnValue([]);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
 
-    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'loadArsenal', 'clearArsenal', 'arsenal']);
+    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'refreshSavedBalls', 'loadArsenal', 'clearArsenal', 'arsenal']);
     ballsStore.arsenal.mockReturnValue([]);
     ballsStore.loadBallCache.mockResolvedValue(undefined);
     ballsStore.resolveBallNames.mockResolvedValue(undefined);
+    ballsStore.refreshSavedBalls.mockResolvedValue(undefined);
     ballsStore.loadArsenal.mockResolvedValue(undefined);
 
     patternsStore = createSpyObj<PatternsStore>(['loadAllPatterns', 'loadPatternImageMap']);

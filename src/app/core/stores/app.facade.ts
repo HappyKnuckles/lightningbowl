@@ -77,6 +77,8 @@ export class AppFacade {
       ]);
       // Make the balls named in games available offline (fetches only unknown names).
       void this.ballsStore.resolveBallNames(this.gamesStore.games().flatMap((game) => (game.balls ?? []).map(getThrowBallKey)));
+      // Arsenal and favorite balls saved before the ball API get its data (images on its own host) once.
+      void this.ballsStore.refreshSavedBalls(true).catch((error) => console.error('Error refreshing saved balls:', error));
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;

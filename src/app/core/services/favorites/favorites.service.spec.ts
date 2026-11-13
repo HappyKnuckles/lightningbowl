@@ -144,6 +144,17 @@ describe('FavoritesService', () => {
       expect(newService.getFavoriteBallKeys()).toEqual([]);
     });
 
+    it('swaps favorites for fresher copies and ignores balls that are not favorites', () => {
+      service.addBallFavorite(makeBall('ball-1', '15'));
+      const fresh = { ...makeBall('ball-1', '15'), ball_image: 'https://images.lightningbowl.de/balls/x.png' };
+
+      service.updateFavoriteBalls([fresh, makeBall('ball-2', '15')]);
+
+      expect(service.getFavoriteBalls()).toEqual([fresh]);
+      const reloaded = TestBed.runInInjectionContext(() => new FavoritesService());
+      expect(reloaded.getFavoriteBalls()).toEqual([fresh]);
+    });
+
     it('should use correct ball key format', () => {
       service.addBallFavorite(makeBall('test-ball-123', '15lb'));
 

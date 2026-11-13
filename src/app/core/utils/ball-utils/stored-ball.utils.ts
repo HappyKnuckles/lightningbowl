@@ -35,13 +35,18 @@ function isCurrentBall(ball: SavedBall): ball is Ball {
   return !!ball.key && ball.first_seen_at !== undefined && SPEC_FIELDS.every((field) => typeof ball[field] === 'number' || ball[field] === null);
 }
 
+/** Whether a saved ball dates from before the ball API (its images still point at bowwwl.com). */
+export function savedBeforeBallApi(ball: Ball): boolean {
+  return ball.first_seen_at === '';
+}
+
 /** Brings a ball saved on the device to the current shape. */
 export function toStoredBall(ball: SavedBall): Ball {
   if (isCurrentBall(ball)) return ball;
   return {
     ...ball,
     key: ballKey(ball),
-    // unknown for balls saved before the ball API, until they're refreshed from it
+    // unknown for balls saved before the ball API, until they're refreshed from it (see `savedBeforeBallApi`)
     first_seen_at: ball.first_seen_at ?? '',
     core_rg: toSpec(ball.core_rg),
     core_diff: toSpec(ball.core_diff),

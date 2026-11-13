@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
@@ -15,6 +16,7 @@ describe('BallsStore', () => {
   let storageRepository: SpyObj<StorageRepository>;
   let ballService: SpyObj<BallService>;
   let favoriteBalls: ReturnType<typeof signal<Map<string, Ball>>>;
+  let updateFavoriteBalls: ReturnType<typeof vi.fn>;
   let analyticsService: SpyObj<AnalyticsService>;
   let isOnline: boolean;
 
@@ -31,6 +33,7 @@ describe('BallsStore', () => {
     ballService.getBallsByIds.mockResolvedValue([]);
 
     favoriteBalls = signal(new Map<string, Ball>());
+    updateFavoriteBalls = vi.fn();
 
     analyticsService = createSpyObj<AnalyticsService>(['trackBallAdded']);
 
@@ -47,7 +50,7 @@ describe('BallsStore', () => {
       providers: [
         { provide: StorageRepository, useValue: storageRepository },
         { provide: BallService, useValue: ballService },
-        { provide: FavoritesService, useValue: { favoriteBalls } },
+        { provide: FavoritesService, useValue: { favoriteBalls, updateFavoriteBalls } },
         { provide: NetworkService, useValue: networkService },
         { provide: AnalyticsService, useValue: analyticsService },
       ],
@@ -215,6 +218,51 @@ describe('BallsStore', () => {
           .map((ball) => ball.core_weight)
           .sort(),
       ).toEqual(['14', '15']);
+    });
+  });
+
+  describe('refreshSavedBalls', () => {
+    const oldImage = 'images/balls/phaze.png';
+    const newImage = 'https://images.lightningbowl.de/balls/phaze.png';
+
+    it('swaps arsenal balls for fresh copies, keeping position and drilling, and saves them', async () => {
+      const drilling: BallDrilling = { thumbSize: 1 };
+      store.arsenal.set([makeBall({ ball_id: 'a', core_weight: '15', ball_image: oldImage, position: 2, drilling })]);
+      const fresh = makeBall({ ball_id: 'a', core_weight: '15', ball_image: newImage });
+      ballService.getBallsByIds.mockResolvedValue([fresh, makeBall({ ball_id: 'a', core_weight: '14' })]);
+
+      await store.refreshSavedBalls();
+
+      expect(store.arsenal()).toEqual([{ ...fresh, position: 2, drilling }]);
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_a_15', { ...fresh, position: 2, drilling });
+      expect(updateFavoriteBalls).toHaveBeenCalledWith([fresh]);
+    });
+
+    it('fetches favorites too, once per ball', async () => {
+      const favorite = makeBall({ ball_id: 'f', core_weight: '14' });
+      favoriteBalls.set(new Map([[favorite.key, favorite]]));
+      store.arsenal.set([makeBall({ ball_id: 'f', core_weight: '15' })]);
+
+      await store.refreshSavedBalls();
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['f']);
+    });
+
+    it('can limit itself to balls saved before the ball API', async () => {
+      store.arsenal.set([makeBall({ ball_id: 'old', first_seen_at: '' }), makeBall({ ball_id: 'new' })]);
+
+      await store.refreshSavedBalls(true);
+
+      expect(ballService.getBallsByIds).toHaveBeenCalledWith(['old']);
+    });
+
+    it('does nothing offline or without balls saved before the ball API', async () => {
+      store.arsenal.set([makeBall({ ball_id: 'new' })]);
+      await store.refreshSavedBalls(true);
+      isOnline = false;
+      await store.refreshSavedBalls();
+
+      expect(ballService.getBallsByIds).not.toHaveBeenCalled();
     });
   });
 

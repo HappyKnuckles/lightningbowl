@@ -47,6 +47,7 @@ describe('BallsPage', () => {
       saveBallToArsenal: vi.fn().mockResolvedValue([]),
       removeFromArsenal: vi.fn().mockResolvedValue(undefined),
       refreshKnownBalls: vi.fn().mockResolvedValue(undefined),
+      refreshSavedBalls: vi.fn().mockResolvedValue(undefined),
       loadArsenal: vi.fn().mockResolvedValue(undefined),
     };
     const mockBallFilterService = {

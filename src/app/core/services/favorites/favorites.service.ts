@@ -113,6 +113,17 @@ export class FavoritesService {
     this.saveFavoritesToStorage();
   }
 
+  /** Swaps favorite balls for fresher copies of the same ball and weight; balls that aren't favorites are ignored. */
+  updateFavoriteBalls(balls: Ball[]): void {
+    const current = this._favoriteBalls();
+    const updates = balls.filter((ball) => current.has(keyOf(ball)));
+    if (updates.length === 0) return;
+    const next = new Map(current);
+    for (const ball of updates) next.set(keyOf(ball), ball);
+    this._favoriteBalls.set(next);
+    this.saveFavoritesToStorage();
+  }
+
   getFavoriteBallKeys(): string[] {
     return Array.from(this._favoriteBalls().keys());
   }

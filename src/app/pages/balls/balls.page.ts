@@ -274,9 +274,13 @@ export class BallsPage implements OnInit {
       this.hapticService.vibrate(ImpactStyle.Medium);
       this.isPageLoading.set(true);
       this.offlineDisplayCount.set(100);
-      // a failed refresh of the cached balls must not keep the list from reloading
+      // a failed refresh of the cached or saved balls must not keep the list from reloading
       const refreshCache = this.ballsStore.refreshKnownBalls().catch((error) => console.error('Error refreshing known balls:', error));
-      await Promise.all([refreshCache, this.ballsStore.loadArsenal()]);
+      const refreshSaved = this.ballsStore
+        .refreshSavedBalls()
+        .catch((error) => console.error('Error refreshing saved balls:', error))
+        .then(() => this.ballsStore.loadArsenal());
+      await Promise.all([refreshCache, refreshSaved]);
       if (this.isOnline()) {
         await this.loadFirstPage();
       }

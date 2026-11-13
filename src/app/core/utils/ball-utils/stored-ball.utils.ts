@@ -18,11 +18,6 @@ export function ballKey(ball: Pick<Ball, 'ball_id' | 'core_weight'> & { key?: st
   return ball.key || `${ball.ball_id}-${ball.core_weight}`;
 }
 
-/** Gives every ball its `key`, also balls from an API deployment from before it sent one. */
-export function withBallKeys(balls: Ball[]): Ball[] {
-  return balls.map((ball) => (ball.key ? ball : { ...ball, key: ballKey(ball) }));
-}
-
 /**
  * Brings a ball saved on the device (arsenal, favorites, ball cache) to the
  * current shape. Balls saved before the ball API have their specs as strings

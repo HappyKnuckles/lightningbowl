@@ -16,6 +16,7 @@ import { Handedness, LANE_LENGTH_IN, LANE_WIDTH_IN, LaneCalibration, Point } fro
 import { applyHomography, IDENTITY, invert3, Mat3, mul3 } from './math.utils';
 import { Cv, loadOpenCv, release } from './opencv.utils';
 import { BallCrop, estimateRevRate, normalizeCrop } from './revs.utils';
+import { matThumbnail, readStoredRegion, Rotation } from './stored-frame.utils';
 import { BallTracker, Detection } from './tracker.utils';
 import { BallDetector, FrameStabilizer } from './vision.utils';
 
@@ -76,7 +77,8 @@ function laneRoi(points: Point[], frameW: number, frameH: number, ballPxFar: num
  * Which one shows the frame the way the browser does is checked once, on the reference frame.
  *
  * Frames are only ever drawn whole and parts read from that canvas: drawing just a part of a decoded
- * frame (a source rectangle) gave Safari frames that didn't match what it shows.
+ * frame (a source rectangle) gave Safari frames that didn't match what it shows. The lane region is
+ * read from the decoder's pixels when possible (see `readStoredRegion`).
  */
 type Painter = (sample: VideoSample, ctx: OffscreenCanvasRenderingContext2D, width: number, height: number) => void;
 
@@ -230,13 +232,14 @@ export async function trackOnDevice(
     const smallW = Math.round(frameW * featureScale);
     const smallH = Math.round(frameH * featureScale);
     const smallCtx = new OffscreenCanvas(smallW, smallH).getContext('2d', { willReadFrequently: true })!;
-    // each frame is drawn here whole, at full resolution; the region and the small frame are read from it
-    const frameCtx = new OffscreenCanvas(frameW, frameH).getContext('2d', { willReadFrequently: true })!;
-    const drawFrame = (painter: Painter, sample: VideoSample, withSmall: boolean) => {
-      painter(sample, frameCtx, frameW, frameH);
-      if (withSmall) smallCtx.drawImage(frameCtx.canvas, 0, 0, smallW, smallH);
+    // frames drawn whole at full resolution, when the region can't be read from the decoder's pixels
+    let fullCtx: OffscreenCanvasRenderingContext2D | null = null;
+    const drawFull = (painter: Painter, sample: VideoSample) => {
+      fullCtx ??= new OffscreenCanvas(frameW, frameH).getContext('2d', { willReadFrequently: true })!;
+      painter(sample, fullCtx, frameW, frameH);
+      return fullCtx;
     };
-    const readRegion = () => {
+    const readRegion = (frameCtx: OffscreenCanvasRenderingContext2D) => {
       const rgba = cv.matFromImageData(frameCtx.getImageData(region.left, region.top, region.width, region.height));
       const rgb = new cv.Mat();
       cv.cvtColor(rgba, rgb, cv.COLOR_RGBA2RGB);
@@ -257,10 +260,7 @@ export async function trackOnDevice(
     let paint: Painter = turnedByMediabunny;
     const shown = await shownFrame(video, calibration.frameTimeS, region);
     if (shown) {
-      const thumbOf = (painter: Painter) => {
-        drawFrame(painter, reference, false);
-        return thumbnail(frameCtx, region);
-      };
+      const thumbOf = (painter: Painter) => thumbnail(drawFull(painter, reference), region);
       const viaMediabunnyThumb = thumbOf(turnedByMediabunny);
       const viaMediabunny = frameSimilarity(shown, viaMediabunnyThumb);
       if (viaMediabunny < MIN_ORIENTATION_MATCH) {
@@ -291,7 +291,21 @@ export async function trackOnDevice(
         }
       }
     }
-    drawFrame(paint, reference, true);
+    // the region from the decoder's pixels, if they line up with the frame as drawn (checked once)
+    const rotation = (paint === asDecoded ? 0 : reference.rotation) as Rotation;
+    let fromDecoder = false;
+    try {
+      const stored = await readStoredRegion(cv, reference, region, rotation);
+      if (stored) {
+        const match = frameSimilarity(thumbnail(drawFull(paint, reference), region), matThumbnail(cv, stored));
+        stored.delete();
+        fromDecoder = match >= MIN_ORIENTATION_MATCH;
+        if (!fromDecoder) console.warn(`Decoder pixels don't line up with the frame (match ${match.toFixed(2)}), reading frames from the canvas.`);
+      }
+    } catch (error) {
+      console.warn('Could not read the decoder pixels, reading frames from the canvas:', error);
+    }
+    paint(reference, smallCtx, smallW, smallH);
     const referenceGray = readGray();
     owned.push(referenceGray);
     reference.close();
@@ -317,9 +331,9 @@ export async function trackOnDevice(
           sample.close();
           break;
         }
-        drawFrame(paint, sample, stabilizer !== null);
+        if (stabilizer) paint(sample, smallCtx, smallW, smallH);
+        const regionRgb = (fromDecoder ? await readStoredRegion(cv, sample, region, rotation) : null) ?? readRegion(drawFull(paint, sample));
         sample.close();
-        const regionRgb = readRegion();
         const gray = stabilizer ? readGray() : null;
         spent.decode += performance.now() - t0;
 

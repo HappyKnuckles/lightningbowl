@@ -482,7 +482,7 @@ export class BallsPage implements OnInit {
   }
 
   isInArsenal(ball: Ball): boolean {
-    return this.ballsStore.arsenal().some((b: Ball) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+    return this.ballsStore.arsenal().some((b: Ball) => b.key === ball.key);
   }
 
   isFilterActive(): boolean {
@@ -555,7 +555,7 @@ export class BallsPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || weight === ball.core_weight) return;
 
-    const key = ball.ball_id + ball.core_weight;
+    const key = ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
     try {
       const replacementBall = await this.ballService.getBallVariant(ball.ball_id, selectedWeight);
@@ -564,7 +564,7 @@ export class BallsPage implements OnInit {
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
         return;
       }
-      this.balls.update((list) => list.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? replacementBall : b)));
+      this.balls.update((list) => list.map((b) => (b.key === ball.key ? replacementBall : b)));
     } catch {
       selectEl.value = ball.core_weight;
       this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'alert-circle-outline', true);

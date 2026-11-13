@@ -268,9 +268,11 @@ describe('BallsStore', () => {
       await store.updateArsenalBall(oldBall, newBall);
 
       expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
-      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b2_14', newBall);
-      expect(newBall.position).toBe(3);
-      expect(store.arsenal()).toEqual([newBall]);
+      const updated = { ...newBall, position: 3 };
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b2_14', updated);
+      expect(store.arsenal()).toEqual([updated]);
+      // the ball passed in stays as it was
+      expect(newBall.position).toBeUndefined();
     });
 
     it('rethrows storage failures', async () => {

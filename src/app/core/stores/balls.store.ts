@@ -141,13 +141,13 @@ export class BallsStore {
 
   async updateArsenalBall(oldBall: Ball, newBall: Ball): Promise<void> {
     try {
-      newBall.position = oldBall.position;
-      newBall.drilling = oldBall.drilling;
+      // a copy, so the ball passed in (e.g. from a list) doesn't change
+      const updated: Ball = { ...newBall, position: oldBall.position, drilling: oldBall.drilling };
       const oldKey = StorageKeys.arsenal(oldBall.ball_id, oldBall.core_weight);
-      const newKey = StorageKeys.arsenal(newBall.ball_id, newBall.core_weight);
+      const newKey = StorageKeys.arsenal(updated.ball_id, updated.core_weight);
       await this.#storageRepository.remove(oldKey);
-      await this.#storageRepository.set(newKey, newBall);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === oldBall.ball_id && b.core_weight === oldBall.core_weight ? newBall : b)));
+      await this.#storageRepository.set(newKey, updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.key === oldBall.key ? updated : b)));
     } catch (error) {
       console.error('Error updating ball in arsenal:', error);
       throw error;
@@ -158,7 +158,7 @@ export class BallsStore {
     try {
       const updated: Ball = { ...ball, drilling };
       await this.#storageRepository.set(StorageKeys.arsenal(ball.ball_id, ball.core_weight), updated);
-      this.arsenal.update((balls) => balls.map((b) => (b.ball_id === ball.ball_id && b.core_weight === ball.core_weight ? updated : b)));
+      this.arsenal.update((balls) => balls.map((b) => (b.key === ball.key ? updated : b)));
     } catch (error) {
       console.error('Error saving drilling:', error);
       throw error;
@@ -190,7 +190,7 @@ export class BallsStore {
       this.arsenal.update((existing) => {
         const merged = [...existing];
         for (const ball of saved) {
-          const isUnique = !merged.some((b) => b.ball_id === ball.ball_id && b.core_weight === ball.core_weight);
+          const isUnique = !merged.some((b) => b.key === ball.key);
           if (isUnique) merged.push(ball);
         }
         return merged;
@@ -208,7 +208,7 @@ export class BallsStore {
       await this.#storageRepository.remove(key);
       // Keep it resolvable (e.g. for games that used it) after leaving the arsenal.
       await this.rememberBalls([ball]);
-      this.arsenal.update((balls) => balls.filter((b) => !(b.ball_id === ball.ball_id && b.core_weight === ball.core_weight)));
+      this.arsenal.update((balls) => balls.filter((b) => b.key !== ball.key));
     } catch (error) {
       console.error('Error removing ball from arsenal:', error);
       throw error;

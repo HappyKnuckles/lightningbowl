@@ -77,7 +77,7 @@
               interface="popover"
               [value]="ball.core_weight"
               (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
-              [disabled]="loadingWeightBallIds().has(ball.ball_id + ball.core_weight)"
+              [disabled]="loadingWeightBallIds().has(ball.key)"
               aria-label="Weight">
               @for (weight of availableWeights; track weight) {
                 <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>

@@ -1,10 +1,18 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { makeBall } from 'src/testing/fixtures';
-import { ballKey, parseStoredBall, toStoredBall } from './stored-ball.utils';
+import { ballKey, LegacyBall, parseStoredBall, toStoredBall } from './stored-ball.utils';
+
+/** A ball as bowwwl.com's data was saved before the ball API: no key or first_seen_at. */
+function makeLegacyBall(overrides: Partial<LegacyBall> = {}): LegacyBall {
+  const legacy: Partial<Ball> = makeBall();
+  delete legacy.key;
+  delete legacy.first_seen_at;
+  return { ...(legacy as LegacyBall), ...overrides };
+}
 
 describe('toStoredBall', () => {
   it('turns legacy string specs into numbers or null', () => {
-    const legacy = { ...makeBall(), core_rg: '2.50', core_diff: '0,052', core_int_diff: 'n/a' } as unknown as Ball;
+    const legacy = makeLegacyBall({ core_rg: '2.50', core_diff: '0,052', core_int_diff: 'n/a' });
     const ball = toStoredBall(legacy);
     expect(ball.core_rg).toBe(2.5);
     expect(ball.core_diff).toBe(0.052);
@@ -12,10 +20,14 @@ describe('toStoredBall', () => {
   });
 
   it('treats empty and missing specs as unknown', () => {
-    const legacy = { ...makeBall(), core_rg: '', core_diff: undefined } as unknown as Ball;
+    const legacy = { ...makeLegacyBall({ core_rg: '' }), core_diff: undefined } as unknown as LegacyBall;
     const ball = toStoredBall(legacy);
     expect(ball.core_rg).toBeNull();
     expect(ball.core_diff).toBeNull();
+  });
+
+  it('marks first_seen_at as unknown for balls saved before the ball API', () => {
+    expect(toStoredBall(makeLegacyBall()).first_seen_at).toBe('');
   });
 
   it('returns current balls unchanged', () => {
@@ -45,10 +57,9 @@ describe('ballKey', () => {
   });
 
   it('gives balls saved before the key existed their key when they are loaded', () => {
-    const saved: Partial<Ball> = makeBall({ ball_id: '1234', core_weight: '14', core_rg: 2.5, core_diff: 0.05, core_int_diff: 0 });
-    delete saved.key;
+    const saved = makeLegacyBall({ ball_id: '1234', core_weight: '14', core_rg: 2.5, core_diff: 0.05, core_int_diff: 0 });
 
-    expect(toStoredBall(saved as Ball).key).toBe('1234-14');
+    expect(toStoredBall(saved).key).toBe('1234-14');
   });
 
   it('leaves a ball that already has a key as it is', () => {

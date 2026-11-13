@@ -138,7 +138,7 @@ describe('BallsPage', () => {
 
     await component.loadFirstPage();
 
-    expect(ballService.searchBalls).toHaveBeenCalledWith(expect.objectContaining({ page: '0', size: '50' }));
+    expect(ballService.searchBalls).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 50 }));
     expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['A', 'B']);
     expect(component.hasMoreData()).toBe(true);
   });
@@ -150,7 +150,7 @@ describe('BallsPage', () => {
 
     await component.loadMore(event);
 
-    expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ page: '1' }));
+    expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 }));
     expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['A', 'B']);
     expect(component.hasMoreData()).toBe(false);
     expect((event as { target: { complete: () => void } }).target.complete).toHaveBeenCalled();
@@ -178,7 +178,7 @@ describe('BallsPage', () => {
 
     await component.loadMore(infiniteEvent());
 
-    expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ page: '1' }));
+    expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 }));
     expect(ballService.searchBalls.mock.lastCall![0]['search']).toBeUndefined();
     expect(component.displayedBalls().map((b) => b.ball_id)).toEqual(['A', 'B']);
   });
@@ -318,7 +318,7 @@ describe('BallsPage', () => {
       component.onSortChanged(rgHighFirst);
 
       await component.loadFirstPage();
-      expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'phaze', sort: 'core_rg,desc' }));
+      expect(ballService.searchBalls).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'phaze', sort: ['core_rg,desc'] }));
 
       component.searchSubject.next('');
       expect(component.currentSortOption()).toEqual(rgHighFirst);

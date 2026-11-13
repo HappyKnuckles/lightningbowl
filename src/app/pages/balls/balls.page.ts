@@ -401,7 +401,7 @@ export class BallsPage implements OnInit {
     const version = this.queryVersion;
     const pageNumber = this.nextPage;
     try {
-      const page = await this.ballService.searchBalls({ ...this.listParams, page: String(pageNumber) });
+      const page = await this.ballService.searchBalls({ ...this.listParams, page: pageNumber });
       if (version !== this.queryVersion) return;
       this.balls.update((balls) => [...balls, ...page.content]);
       this.nextPage = pageNumber + 1;

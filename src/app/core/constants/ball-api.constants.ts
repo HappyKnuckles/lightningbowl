@@ -3,9 +3,9 @@ export const BALL_API = {
   /** Searchable, filterable, sortable, paged list. */
   balls: 'balls',
   /** One ball in all its weights (or one weight with `weight`). */
-  ball: (ballId: string) => ({ path: `balls/${encodeURIComponent(ballId)}`, params: {} as Record<string, string> }),
+  ball: (ballId: string) => `balls/${encodeURIComponent(ballId)}`,
   /** Balls with a similar expected reaction to the given ball. */
-  similar: (ballId: string) => ({ path: `balls/${encodeURIComponent(ballId)}/similar`, params: {} as Record<string, string> }),
+  similar: (ballId: string) => `balls/${encodeURIComponent(ballId)}/similar`,
   brands: 'brands',
   cores: 'cores',
   coverstocks: 'coverstocks',

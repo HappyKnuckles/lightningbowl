@@ -37,7 +37,7 @@ const build = (overrides: Partial<BallQueryInput> = {}, filters: Partial<BallFil
 
 describe('buildBallQueryParams', () => {
   it('sends only paging, weight and sort for default filters', () => {
-    expect(build()).toEqual({ page: '0', size: '50', weight: '15', sort: 'release_date,desc' });
+    expect(build()).toEqual({ page: 0, size: 50, weight: 15, sort: ['release_date,desc'] });
   });
 
   it('maps every filter to its API parameter', () => {
@@ -57,9 +57,9 @@ describe('buildBallQueryParams', () => {
     );
 
     expect(params).toEqual({
-      page: '2',
-      size: '50',
-      weight: '14',
+      page: 2,
+      size: 50,
+      weight: 14,
       brand: ['Storm', 'Hammer'],
       core: ['Velocity'],
       coverstock: ['TX-16'],
@@ -68,15 +68,15 @@ describe('buildBallQueryParams', () => {
       coreType: 'Asymmetric',
       available: 'true',
       releaseDate: '2024-01-01',
-      sort: 'release_date,desc',
+      sort: ['release_date,desc'],
     });
   });
 
   it('sends spec ranges only when they differ from the defaults', () => {
     const params = build({}, { minRg: 2.45, maxDiff: 0.05 });
 
-    expect(params['minRg']).toBe('2.45');
-    expect(params['maxDiff']).toBe('0.05');
+    expect(params.minRg).toBe(2.45);
+    expect(params.maxDiff).toBe(0.05);
     expect(params['maxRg']).toBeUndefined();
     expect(params['minDiff']).toBeUndefined();
   });
@@ -106,6 +106,6 @@ describe('buildBallQueryParams', () => {
     const params = build({ search: 'phaze', sort: { field: BallSortField.CORE_RG, direction: SortDirection.DESC, label: 'RG' } });
 
     expect(params['search']).toBe('phaze');
-    expect(params['sort']).toBe('core_rg,desc');
+    expect(params.sort).toEqual(['core_rg,desc']);
   });
 });

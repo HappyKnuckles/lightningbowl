@@ -3,7 +3,7 @@ import { Ball } from '../../models/ball.model';
 import { Pattern } from '../../models/pattern.model';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
-import { ballKey as keyOf, toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
+import { ballKey as keyOf, SavedBall, toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -157,7 +157,7 @@ export class FavoritesService {
           // Old format — return keys for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Ball>((parsed as Ball[]).map(toStoredBall).map((b) => [keyOf(b), b]));
+          const map = new Map<string, Ball>((parsed as SavedBall[]).map(toStoredBall).map((b) => [keyOf(b), b]));
           this._favoriteBalls.set(map);
         }
       }

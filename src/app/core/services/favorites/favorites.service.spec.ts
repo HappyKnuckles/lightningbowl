@@ -24,6 +24,7 @@ function makeBall(ballId: string, coreWeight: string): Ball {
     coverstock_name: '',
     coverstock_type: '',
     factory_finish: '',
+    first_seen_at: '',
     availability: '',
     release_date: '',
     last_update: '',

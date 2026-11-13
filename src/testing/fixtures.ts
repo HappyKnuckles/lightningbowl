@@ -105,6 +105,7 @@ export function makeBall(overrides: Partial<Ball> = {}): Ball {
     coverstock_name: 'Test Coverstock',
     coverstock_type: 'Reactive',
     factory_finish: '500 Siaair',
+    first_seen_at: '2025-01-01T00:00:00Z',
     last_update: '',
     release_date: '2025-01-01',
     thumbnail_image: '',

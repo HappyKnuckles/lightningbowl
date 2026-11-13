@@ -8,7 +8,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { ballKey, parseStoredBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ballKey, parseStoredBall, SavedBall, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {
@@ -54,7 +54,7 @@ export class BallsStore {
 
   async loadBallCache(): Promise<void> {
     try {
-      const cached = await this.#storageRepository.get<Ball[]>(StorageKeys.ballCache);
+      const cached = await this.#storageRepository.get<SavedBall[]>(StorageKeys.ballCache);
       this.#cachedBalls.set((cached ?? []).map(toStoredBall));
     } catch (error) {
       console.error('Error loading ball cache:', error);
@@ -130,7 +130,7 @@ export class BallsStore {
 
   async loadArsenal(): Promise<void> {
     try {
-      const arsenal = (await this.#storageRepository.loadByPrefix<Ball>(STORAGE_PREFIX.arsenal)).map(toStoredBall);
+      const arsenal = (await this.#storageRepository.loadByPrefix<SavedBall>(STORAGE_PREFIX.arsenal)).map(toStoredBall);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.arsenal.set(sortedArsenal);
     } catch (error) {

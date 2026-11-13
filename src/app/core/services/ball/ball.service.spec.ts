@@ -21,7 +21,7 @@ describe('BallService', () => {
   afterEach(() => http.verify());
 
   it('searches balls with the given query parameters', async () => {
-    const result = service.searchBalls({ page: '1', brand: ['Storm', 'Hammer'] });
+    const result = service.searchBalls({ page: 1, brand: ['Storm', 'Hammer'] });
 
     const req = http.expectOne((r) => r.url === `${api}balls`);
     expect(req.request.params.get('page')).toBe('1');

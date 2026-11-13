@@ -18,18 +18,35 @@ export function ballKey(ball: Pick<Ball, 'ball_id' | 'core_weight'> & { key?: st
   return ball.key || `${ball.ball_id}-${ball.core_weight}`;
 }
 
+type SpecField = (typeof SPEC_FIELDS)[number];
+
 /**
- * Brings a ball saved on the device (arsenal, favorites, ball cache) to the
- * current shape. Balls saved before the ball API have their specs as strings
- * ("2.50", "n/a"); the API returns numbers or null.
+ * A ball saved on the device before the ball API: bowwwl.com's data, with the
+ * specs as strings ("2.50", "n/a") and no `key` or `first_seen_at`.
  */
-export function toStoredBall(ball: Ball): Ball {
-  const hasKey = typeof ball.key === 'string' && ball.key !== '';
-  if (hasKey && SPEC_FIELDS.every((field) => typeof ball[field] === 'number' || ball[field] === null)) return ball;
-  // balls saved before the API sent `key` get it here, so everything downstream can rely on it
-  const normalized = hasKey ? { ...ball } : { ...ball, key: ballKey(ball) };
-  for (const field of SPEC_FIELDS) normalized[field] = toSpec(ball[field]);
-  return normalized;
+export type LegacyBall = Omit<Ball, 'key' | 'first_seen_at' | SpecField> &
+  Partial<Pick<Ball, 'key' | 'first_seen_at'>> &
+  Record<SpecField, string | number | null>;
+
+/** A ball as read from device storage (arsenal, favorites, ball cache). */
+export type SavedBall = Ball | LegacyBall;
+
+function isCurrentBall(ball: SavedBall): ball is Ball {
+  return !!ball.key && ball.first_seen_at !== undefined && SPEC_FIELDS.every((field) => typeof ball[field] === 'number' || ball[field] === null);
+}
+
+/** Brings a ball saved on the device to the current shape. */
+export function toStoredBall(ball: SavedBall): Ball {
+  if (isCurrentBall(ball)) return ball;
+  return {
+    ...ball,
+    key: ballKey(ball),
+    // unknown for balls saved before the ball API, until they're refreshed from it
+    first_seen_at: ball.first_seen_at ?? '',
+    core_rg: toSpec(ball.core_rg),
+    core_diff: toSpec(ball.core_diff),
+    core_int_diff: toSpec(ball.core_int_diff),
+  };
 }
 
 /** A ball as a game stores it: the name, plus the weight when one was recorded. */

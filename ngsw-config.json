@@ -22,9 +22,20 @@
       "resources": {
         "files": [
           "/assets/**",
+          "!/assets/opencv/**",
           "/*.svg",
           "/*.jpg",
           "/*.png"
+        ]
+      }
+    },
+    {
+      "name": "opencv",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": [
+          "/assets/opencv/**"
         ]
       }
     }

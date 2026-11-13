@@ -42,6 +42,11 @@
                 "input": "node_modules/sql.js/dist",
                 "output": "assets"
               },
+              {
+                "glob": "opencv.js",
+                "input": "node_modules/@techstark/opencv-js/dist",
+                "output": "assets/opencv"
+              },
               "src/robots.txt",
               "src/sitemap.xml",
               "src/manifest.webmanifest"

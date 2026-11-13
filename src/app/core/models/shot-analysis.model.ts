@@ -1,5 +1,5 @@
 /**
- * Types of the ball tracker service (BallTracker repo, `POST /v1/track`).
+ * Types of the shot analysis (the ball tracker, run on the device).
  * Boards count 1–39 from the bowler's gutter side; distances are feet from the foul line.
  */
 
@@ -16,12 +16,8 @@ export interface ShotCalibration {
   farRight: NormalizedPoint;
   foulLeft: NormalizedPoint;
   foulRight: NormalizedPoint;
-  /** Video time of the frame the points were tapped on; the service aligns every frame to it. */
+  /** Video time of the frame the points were tapped on; the tracker aligns every frame to it. */
   frameTimeS: number;
-}
-
-export interface ShotAnalysisOptions {
-  handedness: Handedness;
 }
 
 export interface ShotTrackPoint {
@@ -35,7 +31,7 @@ export interface ShotCurvePoint {
   distanceFt: number;
 }
 
-/** Metrics the service could not measure are left out of the response. */
+/** Metrics the tracker could not measure are left out. */
 export interface ShotMetrics {
   /** Board at 15 ft. */
   arrowsBoard?: number;
@@ -74,6 +70,3 @@ export interface ShotAnalysisResult {
   trackedFromFt: number;
   trackedToFt: number;
 }
-
-/** Progress of one analysis request. */
-export type ShotAnalysisEvent = { progress: number; type: 'uploading' } | { type: 'processing' } | { result: ShotAnalysisResult; type: 'done' };

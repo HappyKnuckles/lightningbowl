@@ -1,17 +1,8 @@
-import { ALL_FORMATS, BlobSource, BufferTarget, CanvasSource, EncodedPacketSink, Input, Mp4OutputFormat, Output } from 'mediabunny';
+import { BufferTarget, CanvasSource, Mp4OutputFormat, Output } from 'mediabunny';
 
 import { ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 
-import {
-  clampTrimWindow,
-  cropCalibration,
-  cropVideo,
-  defaultTrimWindow,
-  isTrimmed,
-  laneCropRect,
-  MAX_SHOT_WINDOW_S,
-  trimVideo,
-} from './video-trim.utils';
+import { clampTrimWindow, defaultTrimWindow, frameSimilarity, laneCropRect, MAX_SHOT_WINDOW_S, shownFrame } from './video-trim.utils';
 
 const FPS = 30;
 
@@ -41,25 +32,6 @@ async function makeVideo(): Promise<Blob> {
   return new Blob([target.buffer!], { type: 'video/mp4' });
 }
 
-async function inspect(blob: Blob) {
-  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
-  const track = (await input.getPrimaryVideoTrack())!;
-  const sink = new EncodedPacketSink(track);
-  const timestamps: number[] = [];
-  for await (const packet of sink.packets()) {
-    timestamps.push(packet.timestamp);
-  }
-  const first = await sink.getFirstPacket();
-  const info = {
-    rotation: track.rotation,
-    size: [track.displayWidth, track.displayHeight],
-    timestamps,
-    firstIsKey: first?.type === 'key',
-  };
-  input.dispose();
-  return info;
-}
-
 describe('video-trim.utils', () => {
   describe('trim window', () => {
     it('defaults to the start of the video, capped at the tracker limit', () => {
@@ -75,40 +47,6 @@ describe('video-trim.utils', () => {
 
     it('keeps the window inside the video', () => {
       expect(clampTrimWindow({ startS: -1, endS: 12 }, { startS: 0, endS: 5 }, 10)).toEqual({ startS: 0, endS: 10 });
-    });
-
-    it('only counts a window as trimmed when it leaves part of the video out', () => {
-      expect(isTrimmed({ startS: 0, endS: 9.98 }, 10)).toBe(false);
-      expect(isTrimmed({ startS: 2, endS: 10 }, 10)).toBe(true);
-      expect(isTrimmed({ startS: 0, endS: 6 }, 10)).toBe(true);
-    });
-  });
-
-  describe('trimVideo', () => {
-    let video: Blob;
-
-    beforeAll(async () => {
-      video = await makeVideo();
-    });
-
-    it('cuts from the key frame before the start to the end of the last group, without re-encoding', async () => {
-      const cut = await trimVideo(video, { startS: 1.5, endS: 2.2 });
-
-      expect(cut).not.toBeNull();
-      expect(cut!.offsetS).toBeCloseTo(1, 3);
-      expect(cut!.blob.size).toBeLessThan(video.size);
-
-      const info = await inspect(cut!.blob);
-      expect(info.firstIsKey).toBe(true);
-      expect(info.rotation).toBe(90);
-      // 1.0 s up to the next key frame at 3.0 s, shifted to start at 0
-      expect(info.timestamps.length).toBe(2 * FPS);
-      expect(info.timestamps[0]).toBeCloseTo(0, 3);
-      expect(Math.max(...info.timestamps)).toBeCloseTo(2 - 1 / FPS, 2);
-    });
-
-    it('returns null for something that is not a video', async () => {
-      expect(await trimVideo(new Blob(['not a video']), { startS: 0, endS: 1 })).toBeNull();
     });
   });
 
@@ -133,55 +71,29 @@ describe('video-trim.utils', () => {
       const wide = { ...calibration, foulLeft: px(100, 3500), foulRight: px(2000, 3500), farLeft: px(900, 600), farRight: px(1200, 600) };
       expect(laneCropRect(wide, frame)).toBeNull();
     });
-
-    it('moves the corners into the crop', () => {
-      const crop = laneCropRect(calibration, frame)!;
-      const moved = cropCalibration(calibration, crop, frame);
-
-      expect(moved.foulLeft[0] * crop.width + crop.left).toBeCloseTo(937, 6);
-      expect(moved.farRight[1] * crop.height + crop.top).toBeCloseTo(1762, 6);
-      expect(moved.frameTimeS).toBe(0.2);
-      expect(moved.farDistanceFt).toBe(60);
-    });
   });
 
-  describe('cropVideo', () => {
+  describe('shownFrame', () => {
     let video: Blob;
 
     beforeAll(async () => {
       video = await makeVideo();
     });
 
-    it('re-encodes the selected part cropped, with the rotation applied, starting exactly at the selection', async () => {
+    it('shows the frame the way the browser does, as a small grey thumbnail', async () => {
       // the test video is stored 64 x 48 and rotated 90°, so it shows 48 x 64
-      const cut = await cropVideo(video, { startS: 1.5, endS: 3 }, { left: 8, top: 10, width: 32, height: 40 });
+      const crop = { left: 8, top: 10, width: 32, height: 40 };
+      const frame = await shownFrame(video, 1.5, crop);
+      const again = await shownFrame(video, 1.5, crop);
+      const elsewhere = await shownFrame(video, 1.5, { left: 0, top: 24, width: 48, height: 40 });
 
-      expect(cut).not.toBeNull();
-      expect(cut!.offsetS).toBe(1.5);
-
-      const info = await inspect(cut!.blob);
-      expect(info.size).toEqual([32, 40]);
-      expect(info.rotation).toBe(0);
-      expect(info.firstIsKey).toBe(true);
-      expect(info.timestamps[0]).toBeCloseTo(0, 2);
-      expect(info.timestamps.length).toBeGreaterThanOrEqual(1.5 * FPS - 1);
-      expect(info.timestamps.length).toBeLessThanOrEqual(1.5 * FPS + 1);
+      expect(frame?.length).toBe(32 * 32);
+      expect(frameSimilarity(frame!, again!)).toBeCloseTo(1, 3);
+      expect(frameSimilarity(frame!, elsewhere!)).toBeLessThan(0.7);
     });
 
     it('returns null for something that is not a video', async () => {
-      expect(await cropVideo(new Blob(['not a video']), { startS: 0, endS: 1 }, { left: 0, top: 0, width: 2, height: 2 })).toBeNull();
-    });
-
-    it('gives up on a crop that does not show what the original shows there', async () => {
-      // as if the browser had rotated the frames once more on its own
-      expect(await cropVideo(video, { startS: 1.5, endS: 3 }, { left: 8, top: 10, width: 32, height: 40 }, [180])).toBeNull();
-    });
-
-    it('keeps the first rotation whose crop matches the original', async () => {
-      const cut = await cropVideo(video, { startS: 1.5, endS: 3 }, { left: 8, top: 10, width: 32, height: 40 }, [180, 0]);
-
-      expect(cut).not.toBeNull();
-      expect((await inspect(cut!.blob)).size).toEqual([32, 40]);
+      expect(await shownFrame(new Blob(['not a video']), 0)).toBeNull();
     });
   });
 });

@@ -8,9 +8,6 @@ export const environment = {
   patternEndpoint: 'https://pattern.lightningbowl.de/api/',
   analyticsEndpoint: 'https://analytics.nicolas-hoffmann.dev/api/',
   imagesUrl: 'https://images.lightningbowl.de/',
-  trackerEndpoint: 'https://shots.lightningbowl.de/',
-  // `API_KEY` of the ball tracker; it ships in the bundle, so it only keeps out casual misuse
-  trackerApiKey: 'acadde0e5134c8bff5658d9eb6338e52599279ff498ebae98d6cc54a4a3d5887',
   branch: 'development',
   authBackendUrl: 'http://localhost:3000',
 };

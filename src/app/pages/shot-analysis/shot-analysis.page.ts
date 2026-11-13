@@ -34,6 +34,7 @@ import { MAX_SHOT_VIDEO_BYTES, ShotAnalysisService } from 'src/app/core/services
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
+import { benchmarkOnDevice, DeviceBenchmark } from 'src/app/core/utils/shot-analysis-utils/on-device-benchmark.utils';
 import { patternRatioColor, withPatternRows } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
 import {
   buildCalibration,
@@ -56,6 +57,7 @@ import {
 } from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
+import { environment } from 'src/environments/environment';
 
 type Step = 'pick' | 'calibrate' | 'analyzing' | 'result';
 
@@ -157,6 +159,7 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly uploadProgress = signal(0);
   readonly uploadPercent = computed(() => Math.round(this.uploadProgress() * 100));
   readonly result = signal<ShotAnalysisResult | null>(null);
+
   readonly trackedRange = computed(() => {
     const result = this.result();
     return result ? `Tracked from ${Math.round(result.trackedFromFt)} to ${Math.round(result.trackedToFt)} ft` : '';
@@ -188,6 +191,13 @@ export class ShotAnalysisPage implements OnDestroy {
     const url = this.videoUrl();
     return url ? `${url}#t=0.001` : null;
   });
+  readonly benchmark = signal<DeviceBenchmark | null>(null);
+  readonly benchmarkSummary = computed(() => {
+    const b = this.benchmark();
+    return b
+      ? `${b.frames} frames of ${b.width}×${b.height} in ${b.totalS} s: decode ${b.decodeS} s, stabilize ${b.stabilizeS} s, detect ${b.detectS} s`
+      : null;
+  });
   readonly step = signal<Step>('pick');
   readonly duration = signal(0);
   readonly frameTime = signal(0);
@@ -198,6 +208,8 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly loupeVisible = signal(false);
   /** The magnifier sits in the corner away from the finger. */
   readonly loupeOnRight = signal(false);
+  /** Frames done while the on-device benchmark runs; null when it isn't running. */
+  readonly benchmarkFrame = signal<number | null>(null);
   readonly patternTypeaheadConfig: TypeaheadConfig<Partial<Pattern>> = {
     ...inject(TypeaheadConfigService).partialPattern,
     title: 'Select Pattern',
@@ -206,10 +218,14 @@ export class ShotAnalysisPage implements OnDestroy {
   readonly maxWindowS = MAX_SHOT_WINDOW_S;
   readonly totalSteps = CALIBRATION_STEPS.length;
   readonly loupeCssPx = LOUPE_CSS_PX;
+  /** Prototype for running the tracker on the phone (dev builds only): timings of its heavy steps here. */
+  readonly showBenchmark = !environment.production;
 
   #file: File | null = null;
   /** Bumped by every analysis start and cancel, so a cut finishing late is dropped. */
   #run = 0;
+  /** The video and calibration last sent, for the on-device benchmark. */
+  #lastUpload: { calibration: ShotCalibration; video: Blob } | null = null;
   #subscription: Subscription | null = null;
   #dragIndex: number | null = null;
 
@@ -357,6 +373,22 @@ export class ShotAnalysisPage implements OnDestroy {
     this.points.set([]);
   }
 
+  /** Runs the tracker's heavy steps on this device, on the video that was uploaded (dev builds only). */
+  async runBenchmark(): Promise<void> {
+    const upload = this.#lastUpload;
+    if (!upload || this.benchmarkFrame() !== null) {
+      return;
+    }
+    this.benchmarkFrame.set(0);
+    try {
+      this.benchmark.set(await benchmarkOnDevice(upload.video, upload.calibration, (frame) => this.benchmarkFrame.set(frame)));
+    } catch (error) {
+      console.error('Benchmark failed:', error);
+    } finally {
+      this.benchmarkFrame.set(null);
+    }
+  }
+
   async analyze(): Promise<void> {
     const calibration = buildCalibration(this.points(), this.frameTime());
     const file = this.#file;
@@ -372,6 +404,8 @@ export class ShotAnalysisPage implements OnDestroy {
 
     const run = ++this.#run;
     const upload = await this.#prepareUpload(file, calibration);
+    this.#lastUpload = upload;
+    this.benchmark.set(null);
     // cancelled, or another video picked, while cutting
     if (run !== this.#run || this.step() !== 'analyzing') {
       return;

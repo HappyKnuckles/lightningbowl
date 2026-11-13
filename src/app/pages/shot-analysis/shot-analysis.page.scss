@@ -223,6 +223,17 @@
   padding: 8px 16px 24px;
 }
 
+.benchmark {
+  padding: 0 16px 24px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+
+  p {
+    margin: 4px 0 0;
+  }
+}
+
 // On wide screens the lane sets the row height from its width (the shot lane's drawing at its
 // shortest, MIN_LANE_RATIO: 216 × 812 units), so it isn't squashed into the height of the tiles.
 @media (min-width: 672px) {

@@ -209,6 +209,20 @@
             Analyze Another Shot
           </ion-button>
         </div>
+
+        @if (showBenchmark) {
+          <div class="benchmark">
+            <ion-button fill="clear" size="small" [disabled]="benchmarkFrame() !== null" (click)="runBenchmark()"
+              >Benchmark on this device</ion-button
+            >
+            @if (benchmarkFrame() !== null) {
+              <p>Frame {{ benchmarkFrame() }}…</p>
+            }
+            @if (benchmarkSummary(); as summary) {
+              <p>{{ summary }}</p>
+            }
+          </div>
+        }
       }
     }
   }

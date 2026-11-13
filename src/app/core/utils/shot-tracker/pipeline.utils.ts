@@ -71,14 +71,53 @@ function laneRoi(points: Point[], frameW: number, frameH: number, ballPxFar: num
 }
 
 /**
- * How to draw a decoded frame upright. Mediabunny turns frames by the file's rotation; Safari's decoder has
- * been seen to hand them over already turned, and they'd be turned twice. Which one shows the frame the
- * way the browser does is checked once, on the reference frame.
+ * How to draw `area` of a decoded frame upright. Mediabunny turns frames by the file's rotation; Safari's
+ * decoder has been seen to hand them over already turned, and they'd be turned twice. Which one shows the
+ * frame the way the browser does is checked once, on the reference frame.
+ *
+ * `area` is in the video's display pixels (`frame`); a decoder may hand frames over at another size, so it
+ * is scaled to the frame's own.
  */
-type Painter = (sample: VideoSample, ctx: OffscreenCanvasRenderingContext2D, area: CropRect, width: number, height: number) => void;
+type Painter = (
+  sample: VideoSample,
+  ctx: OffscreenCanvasRenderingContext2D,
+  area: CropRect,
+  frame: { height: number; width: number },
+  width: number,
+  height: number,
+) => void;
 
-const turnedByMediabunny: Painter = (sample, ctx, a, w, h) => sample.draw(ctx, a.left, a.top, a.width, a.height, 0, 0, w, h);
-const asDecoded: Painter = (sample, ctx, a, w, h) => ctx.drawImage(sample.toCanvasImageSource(), a.left, a.top, a.width, a.height, 0, 0, w, h);
+const turnedByMediabunny: Painter = (sample, ctx, a, frame, w, h) => {
+  const kx = sample.displayWidth / frame.width;
+  const ky = sample.displayHeight / frame.height;
+  sample.draw(ctx, a.left * kx, a.top * ky, a.width * kx, a.height * ky, 0, 0, w, h);
+};
+const asDecoded: Painter = (sample, ctx, a, frame, w, h) => {
+  const image = sample.toCanvasImageSource();
+  const [imageW, imageH] = image instanceof VideoFrame ? [image.displayWidth, image.displayHeight] : [image.width, image.height];
+  const kx = imageW / frame.width;
+  const ky = imageH / frame.height;
+  ctx.drawImage(image, a.left * kx, a.top * ky, a.width * kx, a.height * ky, 0, 0, w, h);
+};
+
+/** A 32 x 32 grey thumbnail as a PNG data URL (4x), for the console. */
+async function thumbnailUrl(grey: Float32Array): Promise<string> {
+  const small = new OffscreenCanvas(32, 32);
+  const pixels = new ImageData(32, 32);
+  grey.forEach((v, i) => pixels.data.set([v, v, v, 255], 4 * i));
+  small.getContext('2d')!.putImageData(pixels, 0, 0);
+  const big = new OffscreenCanvas(128, 128);
+  const ctx = big.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, 128, 128);
+  const blob = await big.convertToBlob({ type: 'image/png' });
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(blob);
+  });
+}
 
 /** Keeps the source pixels around ball candidates in the rev window, so the rev rate needs no second decode. */
 class BallPatches {
@@ -217,6 +256,7 @@ export async function trackOnDevice(
     const smallW = Math.round(frameW * featureScale);
     const smallH = Math.round(frameH * featureScale);
     const whole: CropRect = { left: 0, top: 0, width: frameW, height: frameH };
+    const frame = { width: frameW, height: frameH };
     const smallCtx = new OffscreenCanvas(smallW, smallH).getContext('2d', { willReadFrequently: true })!;
     const regionCtx = new OffscreenCanvas(region.width, region.height).getContext('2d', { willReadFrequently: true })!;
     const readGray = () => {
@@ -233,21 +273,42 @@ export async function trackOnDevice(
     let paint: Painter = turnedByMediabunny;
     const shown = await shownFrame(video, calibration.frameTimeS, region);
     if (shown) {
-      const matches = (painter: Painter) => {
+      const thumbOf = (painter: Painter) => {
         const probe = new OffscreenCanvas(region.width, region.height).getContext('2d', { willReadFrequently: true })!;
-        painter(reference, probe, region, region.width, region.height);
-        return frameSimilarity(shown, thumbnail(probe, region.width, region.height));
+        painter(reference, probe, region, frame, region.width, region.height);
+        return thumbnail(probe, region.width, region.height);
       };
-      const viaMediabunny = matches(turnedByMediabunny);
+      const viaMediabunnyThumb = thumbOf(turnedByMediabunny);
+      const viaMediabunny = frameSimilarity(shown, viaMediabunnyThumb);
       if (viaMediabunny < MIN_ORIENTATION_MATCH) {
-        const decoded = matches(asDecoded);
+        const decodedThumb = thumbOf(asDecoded);
+        const decoded = frameSimilarity(shown, decodedThumb);
         if (decoded > viaMediabunny) paint = asDecoded;
         if (Math.max(viaMediabunny, decoded) < MIN_ORIENTATION_MATCH) {
-          console.warn(`Decoded frames don't look like the video as shown (match ${viaMediabunny.toFixed(2)} / ${decoded.toFixed(2)}).`);
+          // what the decoder hands over, to find out why (open the image URLs to see the three thumbnails)
+          const frameInfo = reference.toVideoFrame();
+          console.warn(`Decoded frames don't look like the video as shown (match ${viaMediabunny.toFixed(2)} / ${decoded.toFixed(2)}).`, {
+            track: { rotation: track.rotation, display: [frameW, frameH], coded: [track.codedWidth, track.codedHeight], fps },
+            sample: {
+              rotation: reference.rotation,
+              display: [reference.displayWidth, reference.displayHeight],
+              coded: [reference.codedWidth, reference.codedHeight],
+              visibleRect: reference.visibleRect,
+              format: reference.format,
+              colorSpace: { primaries: reference.colorSpace.primaries, transfer: reference.colorSpace.transfer },
+            },
+            videoFrame: { display: [frameInfo.displayWidth, frameInfo.displayHeight], coded: [frameInfo.codedWidth, frameInfo.codedHeight] },
+            region,
+            referenceTimeS: [calibration.frameTimeS, reference.timestamp - firstTs],
+            shown: await thumbnailUrl(shown),
+            viaMediabunny: await thumbnailUrl(viaMediabunnyThumb),
+            asDecoded: await thumbnailUrl(decodedThumb),
+          });
+          frameInfo.close();
         }
       }
     }
-    paint(reference, smallCtx, whole, smallW, smallH);
+    paint(reference, smallCtx, whole, frame, smallW, smallH);
     const referenceGray = readGray();
     owned.push(referenceGray);
     reference.close();
@@ -273,8 +334,8 @@ export async function trackOnDevice(
           sample.close();
           break;
         }
-        paint(sample, regionCtx, region, region.width, region.height);
-        if (stabilizer) paint(sample, smallCtx, whole, smallW, smallH);
+        paint(sample, regionCtx, region, frame, region.width, region.height);
+        if (stabilizer) paint(sample, smallCtx, whole, frame, smallW, smallH);
         sample.close();
         const regionRgb = readRgb(cv, regionCtx, region.width, region.height);
         const gray = stabilizer ? readGray() : null;

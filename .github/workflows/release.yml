@@ -1,0 +1,60 @@
+name: Release
+
+# The version lives in package.json. Bump it in the test -> master release PR
+# (`npm version minor --no-git-tag-version`); once that PR lands on master this
+# tags the merge commit as v<version> and publishes a GitHub Release with notes
+# generated from the merged PRs.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    # release PRs must carry a version that hasn't been released yet
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Version must be new
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error file=package.json::v$VERSION is already released. Bump the version (npm version minor --no-git-tag-version) before merging into master."
+            exit 1
+          fi
+          echo "Will release v$VERSION"
+
+  release:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Tag and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "$TAG already exists, nothing to release."
+            exit 0
+          fi
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
+          echo "Released $TAG" >> "$GITHUB_STEP_SUMMARY"

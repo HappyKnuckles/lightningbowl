@@ -94,12 +94,15 @@ export class GamesStore {
   }
 
   /**
-   * Gives every ball the loaded games store without a weight one (see `migrateGameBalls`) and
-   * saves the games that changed. Needs the arsenal, so it runs once both are loaded.
+   * Brings every ball the loaded games store to canonical `{ name, weight }` (see `migrateGameBalls`)
+   * and saves the games that changed. Needs the arsenal and known balls, so it runs once they are loaded.
    */
-  async migrateBallWeights(arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[]): Promise<void> {
+  async migrateBallWeights(
+    arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[],
+    known: Pick<Ball, 'ball_name' | 'core_weight'>[] = arsenal,
+  ): Promise<void> {
     const migrated = this.games()
-      .map((game) => [game, migrateGameBalls(game, arsenal)] as const)
+      .map((game) => [game, migrateGameBalls(game, arsenal, known)] as const)
       .filter(([before, after]) => before !== after)
       .map(([, after]) => after);
     if (migrated.length === 0) return;

@@ -28,7 +28,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { getThrowBallKey, parseStoredBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { getThrowBallKey, toGameBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -69,7 +69,9 @@ export class GameFilterComponent implements OnInit {
   leagues: string[] = [];
   /** The ball filter's "Name{weight}" keys as balls, for the ball picker. */
   selectedFilterBalls = computed<ThrowBall[]>(() =>
-    (this.gameFilterService.filters().balls ?? []).filter((value) => value && value !== 'all').map((value) => parseStoredBall(value)),
+    (this.gameFilterService.filters().balls ?? [])
+      .filter((value) => value && value !== 'all')
+      .map((value) => toGameBall(value, this.ballsStore.arsenal(), this.ballsStore.knownBalls())),
   );
 
   patterns = computed<string[]>(() => {

@@ -119,24 +119,24 @@ describe('BallsStore', () => {
       await store.saveBallToArsenal(makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '14' }));
       await store.rememberBalls([makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15' })]);
 
-      expect(store.findKnownBall('Zen')).toBeUndefined();
-      expect(store.findKnownBall('zen14')?.core_weight).toBe('14');
+      expect(store.findKnownBall({ name: 'Zen' })).toBeUndefined();
+      expect(store.findKnownBall({ name: 'Zen', weight: '14' })?.core_weight).toBe('14');
     });
 
     it('does not stand in another weight for a stored weight', async () => {
       await store.rememberBalls([makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '16' })]);
 
-      expect(store.findKnownBall('Phaze II15')).toBeUndefined();
+      expect(store.findKnownBall({ name: 'Phaze II', weight: '15' })).toBeUndefined();
     });
 
-    it('finds balls stored with their weight appended, in that weight', async () => {
+    it('finds a ball in the weight it names', async () => {
       await store.rememberBalls([
         makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' }),
         makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '14' }),
       ]);
 
-      expect(store.findKnownBall('Phaze II14')?.core_weight).toBe('14');
-      expect(store.findKnownBall('phaze ii 15lbs')?.core_weight).toBe('15');
+      expect(store.findKnownBall({ name: 'Phaze II', weight: '14' })?.core_weight).toBe('14');
+      expect(store.findKnownBall({ name: 'Phaze II', weight: '15' })?.core_weight).toBe('15');
     });
 
     it('keeps a ball removed from the arsenal resolvable', async () => {
@@ -145,7 +145,7 @@ describe('BallsStore', () => {
 
       await store.removeFromArsenal(ball);
 
-      expect(store.findKnownBall('Zen15')).toEqual(ball);
+      expect(store.findKnownBall({ name: 'Zen', weight: '15' })).toEqual(ball);
     });
   });
 
@@ -157,16 +157,21 @@ describe('BallsStore', () => {
       const phaze15 = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15' });
       ballService.getBallsByNames.mockResolvedValue([phaze14, phaze15]);
 
-      await store.resolveBallNames(['Zen15', 'Phaze II14', 'Phaze II14', '']);
+      await store.resolveBallNames([
+        { name: 'Zen', weight: '15' },
+        { name: 'Phaze II', weight: '14' },
+        { name: 'Phaze II', weight: '14' },
+        { name: '' },
+      ]);
 
       expect(ballService.getBallsByNames).toHaveBeenCalledWith(['Phaze II']);
-      expect(store.findKnownBall('Zen15')).toEqual(zen);
-      expect(store.findKnownBall('Phaze II14')).toEqual(phaze14);
+      expect(store.findKnownBall({ name: 'Zen', weight: '15' })).toEqual(zen);
+      expect(store.findKnownBall({ name: 'Phaze II', weight: '14' })).toEqual(phaze14);
       expect(store.knownBalls().filter((ball) => ball.ball_id === 'p')).toEqual([phaze14]);
     });
 
     it('leaves names without a weight alone', async () => {
-      await store.resolveBallNames(['Phaze II']);
+      await store.resolveBallNames([{ name: 'Phaze II' }]);
 
       expect(ballService.getBallsByNames).not.toHaveBeenCalled();
       expect(store.knownBalls()).toEqual([]);
@@ -175,7 +180,7 @@ describe('BallsStore', () => {
     it('does not call the API offline', async () => {
       isOnline = false;
 
-      await store.resolveBallNames(['Unknown15']);
+      await store.resolveBallNames([{ name: 'Unknown', weight: '15' }]);
 
       expect(ballService.getBallsByNames).not.toHaveBeenCalled();
       expect(store.knownBalls()).toEqual([]);
@@ -185,7 +190,12 @@ describe('BallsStore', () => {
       await store.rememberBalls([makeBall({ ball_name: 'Zen', core_weight: '15' })]);
       ballService.getBallsByNames.mockRejectedValue(new Error('offline'));
 
-      await expect(store.resolveBallNames(['Zen15', 'Unknown15'])).resolves.toBeUndefined();
+      await expect(
+        store.resolveBallNames([
+          { name: 'Zen', weight: '15' },
+          { name: 'Unknown', weight: '15' },
+        ]),
+      ).resolves.toBeUndefined();
 
       expect(store.knownBalls().map((ball) => ball.ball_name)).toEqual(['Zen']);
     });

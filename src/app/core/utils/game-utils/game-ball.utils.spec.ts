@@ -4,7 +4,8 @@ import {
   migrateGameBalls,
   toGameBall,
   weightFromArsenal,
-  canonicalBallKey,
+  findBall,
+  sameGameBall,
   clearThrowBalls,
   countThrowBalls,
   getBallTracking,
@@ -111,19 +112,18 @@ describe('game-ball.utils', () => {
     });
   });
 
-  describe('canonicalBallKey', () => {
-    const arsenal = [{ ball_name: 'Rocket A.I.', core_weight: '15' }];
+  describe('findBall / sameGameBall', () => {
+    const arsenal = [makeBall({ ball_name: 'Rocket A.I.', core_weight: '14' }), makeBall({ ball_name: 'Rocket A.I.', core_weight: '15' })];
 
-    it('reduces the stored formats of one ball to a single key', () => {
-      const key = canonicalBallKey('Rocket A.I.15', arsenal);
-
-      expect(canonicalBallKey('Rocket A.I.', arsenal)).toBe(key);
-      expect(canonicalBallKey('Rocket A.I. 15lbs', arsenal)).toBe(key);
+    it('finds the ball in the same weight', () => {
+      expect(findBall({ name: 'Rocket A.I.', weight: '15' }, arsenal)).toBe(arsenal[1]);
+      expect(findBall({ name: 'Rocket A.I.', weight: '16' }, arsenal)).toBeUndefined();
+      expect(findBall(undefined, arsenal)).toBeUndefined();
     });
 
-    it('still compares a ball outside the arsenal against itself', () => {
-      expect(canonicalBallKey('Zen U', [])).toBe(canonicalBallKey('zen u', []));
-      expect(canonicalBallKey('Zen U', [])).not.toBe(canonicalBallKey('Zen Master', []));
+    it('compares exactly, since migrated games hold canonical balls', () => {
+      expect(sameGameBall({ name: 'Zen U', weight: '15' }, { name: 'Zen U', weight: '15' })).toBe(true);
+      expect(sameGameBall({ name: 'Zen U', weight: '15' }, { name: 'Zen U', weight: '14' })).toBe(false);
     });
   });
 
@@ -463,6 +463,21 @@ describe('toGameBall', () => {
   it('does not split a number off a name the arsenal knows', () => {
     expect(toGameBall('Black Widow 3.0', arsenal)).toEqual({ name: 'Black Widow 3.0', weight: '12' });
   });
+
+  it('takes the spelling of the known ball and the catalog form of the weight', () => {
+    expect(toGameBall('phaze 15lbs', arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+    expect(toGameBall({ name: 'PHAZE', weight: '15.0' }, arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+  });
+
+  it('spells a ball only the known balls hold their way, weighing it from the arsenal', () => {
+    const known = [...arsenal, makeBall({ ball_name: 'Zen U', core_weight: '13' })];
+
+    expect(toGameBall('zen u', arsenal, known)).toEqual({ name: 'Zen U', weight: '15' });
+  });
+
+  it('keeps the spelling of an unknown ball', () => {
+    expect(toGameBall({ name: 'hammer', weight: '15' }, arsenal)).toEqual({ name: 'hammer', weight: '15' });
+  });
 });
 
 describe('migrateGameBalls', () => {
@@ -485,7 +500,22 @@ describe('migrateGameBalls', () => {
     expect(migrated.frames[0].throws[1]).toBe(game.frames[0].throws[1]);
   });
 
-  it('returns the same game when every ball has a weight', () => {
+  it('brings names to the known spelling and merges what that makes duplicates', () => {
+    const game = makeGame({
+      balls: [
+        { name: 'phaze', weight: '15' },
+        { name: 'Phaze', weight: '15' },
+      ],
+      frames: [makeFrame(0, [makeThrow(1, [7], { ball: { name: 'PHAZE', weight: '14' } })])],
+    });
+
+    const migrated = migrateGameBalls(game, arsenal);
+
+    expect(migrated.balls).toEqual([{ name: 'Phaze', weight: '15' }]);
+    expect(migrated.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '14' });
+  });
+
+  it('returns the same game when every ball is canonical', () => {
     const game = makeGame({ balls: [{ name: 'Phaze', weight: '15' }] });
 
     expect(migrateGameBalls(game, arsenal)).toBe(game);

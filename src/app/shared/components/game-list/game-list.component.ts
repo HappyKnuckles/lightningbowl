@@ -41,13 +41,7 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import {
-  findBallInArsenal,
-  formatThrowBall,
-  getBallTracking,
-  getGameBallLabels,
-  getGameBallNames,
-} from 'src/app/core/utils/game-utils/game-ball.utils';
+import { formatThrowBall, getBallTracking, getGameBallLabels, getGameBallNames } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
@@ -218,7 +212,7 @@ export class GameListComponent implements OnInit {
     for (const game of this.showingGames()) {
       const names = getGameBallNames(game);
       const labels = getGameBallLabels(game);
-      const singleBall = names.length === 1 ? findBallInArsenal({ name: names[0] }, arsenal) : undefined;
+      const singleBall = names.length === 1 ? arsenal.find((ball) => ball.ball_name === names[0]) : undefined;
       const throwTracked = getBallTracking(game) === 'throw';
 
       vms[game.gameId] = {

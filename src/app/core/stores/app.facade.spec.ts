@@ -57,8 +57,17 @@ describe('AppFacade', () => {
     gamesStore.games.mockReturnValue([]);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
 
-    ballsStore = createSpyObj<BallsStore>(['loadBallCache', 'resolveBallNames', 'refreshSavedBalls', 'loadArsenal', 'clearArsenal', 'arsenal']);
+    ballsStore = createSpyObj<BallsStore>([
+      'loadBallCache',
+      'resolveBallNames',
+      'refreshSavedBalls',
+      'loadArsenal',
+      'clearArsenal',
+      'arsenal',
+      'knownBalls',
+    ]);
     ballsStore.arsenal.mockReturnValue([]);
+    ballsStore.knownBalls.mockReturnValue([]);
     ballsStore.loadBallCache.mockResolvedValue(undefined);
     ballsStore.resolveBallNames.mockResolvedValue(undefined);
     ballsStore.refreshSavedBalls.mockResolvedValue(undefined);
@@ -138,13 +147,15 @@ describe('AppFacade', () => {
       expect(gamesStore.migrateBallWeights).not.toHaveBeenCalled();
     });
 
-    it("gives the games' balls their weights from the loaded arsenal", async () => {
+    it("migrates the games' balls against the loaded arsenal and known balls", async () => {
       const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' })];
+      const known = [...arsenal, makeBall({ ball_name: 'Zen', core_weight: '15' })];
       ballsStore.arsenal.mockReturnValue(arsenal);
+      ballsStore.knownBalls.mockReturnValue(known);
 
       await facade.init();
 
-      expect(gamesStore.migrateBallWeights).toHaveBeenCalledWith(arsenal);
+      expect(gamesStore.migrateBallWeights).toHaveBeenCalledWith(arsenal, known);
     });
   });
 

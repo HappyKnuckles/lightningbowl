@@ -4,21 +4,13 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { isPlatform } from '@ionic/angular';
 import type { Workbook, Worksheet } from 'exceljs';
-import { Ball } from 'src/app/core/models/ball.model';
 import { Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import {
-  findBallInArsenal,
-  formatThrowBall,
-  getGameBalls,
-  migrateGameBalls,
-  parseStoredBall,
-  toGameBall,
-} from '../../utils/game-utils/game-ball.utils';
+import { findBall, formatThrowBall, getGameBallLabels, getThrowBallKey, migrateGameBalls, toGameBall } from '../../utils/game-utils/game-ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -155,7 +147,7 @@ export class ExcelService {
 
             const throwBall = throwBalls[k]?.trim();
             if (throwBall) {
-              throwObj.ball = this.parseThrowBall(throwBall);
+              throwObj.ball = toGameBall(throwBall, this.ballsStore.arsenal(), this.ballsStore.knownBalls());
             }
 
             if (isPinMode) {
@@ -223,9 +215,8 @@ export class ExcelService {
           balls: (row['Balls'] as string)?.trim()
             ? (row['Balls'] as string)
                 .split(', ')
-                .map((ball) => this.formatBallDisplayName(ball))
-                .filter((ball) => !!ball)
-                .map((ball) => toGameBall(ball, this.ballsStore.arsenal()))
+                .filter((ball) => !!ball.trim())
+                .map((ball) => toGameBall(ball, this.ballsStore.arsenal(), this.ballsStore.knownBalls()))
             : [],
           note: row['Notes'] as string,
         };
@@ -241,23 +232,15 @@ export class ExcelService {
         await this.leaguesStore.addLeague(league);
       }
 
-      const weighed = gameData.map((game) => migrateGameBalls(game, this.ballsStore.arsenal()));
-
-      const ballValues = new Set(
-        weighed
-          .flatMap((game) => [
-            ...(game.balls ?? []).map((ball) => formatThrowBall(ball)),
-            ...game.frames.flatMap((frame) => frame.throws.map((t) => formatThrowBall(t.ball))),
-          ])
-          .filter(Boolean),
-      );
-      await this.ballsStore.resolveBallNames([...ballValues]);
-      for (const value of ballValues) {
-        const ballToAdd = this.resolveBallReference(value);
-        const owned = this.ballsStore
-          .arsenal()
-          .some((b) => b.ball_id === ballToAdd?.ball_id && Number(b.core_weight) === Number(ballToAdd?.core_weight));
-        if (ballToAdd !== undefined && !owned) {
+      const ballsOf = (games: Game[]) =>
+        games.flatMap((game) => [...(game.balls ?? []), ...game.frames.flatMap((frame) => frame.throws.flatMap((t) => (t.ball ? [t.ball] : [])))]);
+      await this.ballsStore.resolveBallNames(ballsOf(gameData));
+      // after resolving, so the games take the catalog spelling of the balls just fetched
+      const weighed = gameData.map((game) => migrateGameBalls(game, this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
+      const uniqueBalls = new Map(ballsOf(weighed).map((ball) => [getThrowBallKey(ball), ball]));
+      for (const ball of uniqueBalls.values()) {
+        const ballToAdd = this.ballsStore.findKnownBall(ball);
+        if (ballToAdd && !findBall(ball, this.ballsStore.arsenal())) {
           await this.ballsStore.saveBallToArsenal(ballToAdd);
         }
       }
@@ -476,9 +459,7 @@ export class ExcelService {
         game.isSeries ? 'true' : 'false',
         game.seriesId || '',
         game.patterns?.join(', ') || '',
-        getGameBalls(game)
-          .map((ball) => this.formatBallDisplayName(ball))
-          .join(', ') || '',
+        getGameBallLabels(game).join(', ') || '',
         game.note || '',
         game.isPinMode ? 'true' : 'false',
         ...pinData,
@@ -789,41 +770,6 @@ export class ExcelService {
       };
       reader.readAsArrayBuffer(file);
     });
-  }
-
-  /**
-   * The ball an Excel cell names, when the cell has a weight ("Phaze II 15lbs", "PhazeII15"). A
-   * name alone resolves to nothing here; `migrateGameBalls` gives it a weight.
-   */
-  private resolveBallReference(rawBallValue: string | undefined): Ball | undefined {
-    const raw = rawBallValue?.trim();
-    if (!raw || !parseStoredBall(raw).weight) return undefined;
-    return this.ballsStore.findKnownBall(raw) ?? findBallInArsenal({ name: raw }, this.ballsStore.knownBalls());
-  }
-
-  /**
-   * Rebuild a ThrowBall from an exported cell, keeping name and weight apart. Folding the weight
-   * into the name would key the imported throw as its own ball ("Rocket A.I. 15lbs" against the
-   * in-app "Rocket A.I.15"), splitting one ball's per-throw stats across two entries.
-   */
-  private parseThrowBall(rawBallValue: string): ThrowBall {
-    const raw = rawBallValue.trim();
-
-    const resolved = this.resolveBallReference(raw);
-    if (resolved) return { name: resolved.ball_name, weight: resolved.core_weight };
-
-    const withWeight = raw.match(/^(.*?)\s*(\d+(?:\.\d+)?)\s*lbs?$/i);
-    return withWeight ? { name: withWeight[1].trim(), weight: withWeight[2] } : { name: raw };
-  }
-
-  private formatBallDisplayName(rawBallValue: string | undefined): string {
-    const raw = rawBallValue?.trim();
-    if (!raw) return '';
-
-    const resolvedBall = this.resolveBallReference(raw);
-    if (!resolvedBall) return raw;
-
-    return `${resolvedBall.ball_name} ${resolvedBall.core_weight}lbs`;
   }
 
   private createSampleGame(): Game {

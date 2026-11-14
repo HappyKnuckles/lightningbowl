@@ -4,7 +4,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 
-import { canonicalBallKey, getGameBalls } from '../../utils/game-utils/game-ball.utils';
+import { getGameBalls, getThrowBallKey, toGameBall } from '../../utils/game-utils/game-ball.utils';
 import { UtilsService } from '../../utils/utils.service';
 const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
 
@@ -80,12 +80,12 @@ export class GameFilterService {
       return noneMatch || specificMatch;
     };
 
-    // A ball is stored as a plain name on older games and as a "Name{weight}" key on newer ones,
-    // so both sides are resolved through the arsenal before comparing: a straight string match
-    // would silently return nothing for every game saved before weights were recorded.
+    // Games hold canonical balls. A saved filter can predate that ("Phaze", "Phaze 15lbs"), so its
+    // values are brought to the same key the games use.
     const arsenal = this.ballsStore.arsenal();
-    const canonical = (value: string) => (value === '' || value === 'all' ? value : canonicalBallKey(value, arsenal));
-    const selectedBalls = filters.balls.map(canonical);
+    const known = this.ballsStore.knownBalls();
+    const toKey = (value: string) => (value === '' || value === 'all' ? value : getThrowBallKey(toGameBall(value, arsenal, known)));
+    const selectedBalls = filters.balls.map(toKey);
 
     return games.filter((game) => {
       const gameDate = formatDate(new Date(game.date).toISOString());
@@ -100,7 +100,7 @@ export class GameFilterService {
         (!filters.isClean || game.isClean) &&
         (filters.leagues.includes('all') || filters.leagues.length === 0 || filters.leagues.includes(game.league || '')) &&
         matchesMultiSelect(filters.patterns, game.patterns ?? []) &&
-        matchesMultiSelect(selectedBalls, getGameBalls(game).map(canonical))
+        matchesMultiSelect(selectedBalls, getGameBalls(game))
       );
     });
   }

@@ -9,7 +9,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
-import { sameGameBall, toGameBall } from '../../utils/game-utils/game-ball.utils';
+import { sameGameBall, toGameBall, toThrowBall } from '../../utils/game-utils/game-ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
@@ -96,17 +96,16 @@ export class PinpalService {
           league: row.leagueName ?? '',
           patterns: matchedPattern ? [matchedPattern] : [],
           // PinPal stores no weights: the arsenal's weight for the ball, else the default
-          balls: matchedBall ? [toGameBall(matchedBall, this.ballsStore.arsenal())] : [],
+          balls: matchedBall ? [toGameBall(matchedBall, this.ballsStore.arsenal(), this.ballsStore.knownBalls())] : [],
           note: row.notes ?? '',
         });
       }
 
       const sortedGames = sortGameHistoryByDate(games);
       await this.gamesStore.saveGamesToLocalStorage(sortedGames);
-      const asGameBall = (ball: Ball) => ({ name: ball.ball_name, weight: ball.core_weight });
       const used = games.flatMap((game) => game.balls ?? []);
-      const owned = (ball: Ball) => this.ballsStore.arsenal().some((b) => sameGameBall(asGameBall(b), asGameBall(ball)));
-      const toAdd = availableBalls.filter((ball) => used.some((stored) => sameGameBall(stored, asGameBall(ball))) && !owned(ball));
+      const owned = (ball: Ball) => this.ballsStore.arsenal().some((b) => sameGameBall(toThrowBall(b), toThrowBall(ball)));
+      const toAdd = availableBalls.filter((ball) => used.some((stored) => sameGameBall(stored, toThrowBall(ball))) && !owned(ball));
       const arsenalSaveResults = await Promise.allSettled(toAdd.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {

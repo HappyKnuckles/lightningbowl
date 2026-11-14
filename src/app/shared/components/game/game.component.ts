@@ -50,7 +50,7 @@ import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import {
   countThrowBalls,
-  findBallInArsenal,
+  findBall,
   formatThrowBall,
   getGameBallLabels,
   getThrowBallForPosition,
@@ -188,12 +188,12 @@ export class GameComponent implements OnInit {
     // the thumbnail is the confirmation that the pick landed on the throw, so it has to appear
     // from the first throw on, even for a game bowled with one ball. The saved view thins them
     // out again (see GameReadonlyComponent).
-    // Arsenal matching is fuzzy (name formats vary), so resolve each distinct ball once.
+    // Resolve each distinct ball once.
     const thumbCache = new Map<string, string | undefined>();
     const resolveThumb = (ball: ThrowBall): string | undefined => {
       const key = getThrowBallKey(ball);
       if (!thumbCache.has(key)) {
-        const arsenalBall = findBallInArsenal(ball, arsenal);
+        const arsenalBall = findBall(ball, arsenal);
         thumbCache.set(key, arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined);
       }
       return thumbCache.get(key);

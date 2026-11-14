@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Ball } from 'src/app/core/models/ball.model';
-import { Game } from 'src/app/core/models/game.model';
+import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { makeBall } from 'src/testing/fixtures';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -285,7 +285,9 @@ describe('ExcelService', () => {
 
     async function importBareName(arsenal: Ball[] = []): Promise<Game> {
       mockBallsStore.knownBalls.mockReturnValue([light, heavy]);
-      mockBallsStore.findKnownBall.mockImplementation((value: string) => [light, heavy].find((ball) => value === `Phaze II${ball.core_weight}`));
+      mockBallsStore.findKnownBall.mockImplementation((ball: ThrowBall) =>
+        [light, heavy].find((known) => ball.name === known.ball_name && ball.weight === known.core_weight),
+      );
       mockBallsStore.arsenal.mockReturnValue(arsenal);
       mockBallsStore.resolveBallNames.mockResolvedValue(undefined);
       mockBallsStore.saveBallToArsenal.mockReturnValue(Promise.resolve([]));

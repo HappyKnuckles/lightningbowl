@@ -8,7 +8,8 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { parseStoredBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { ThrowBall } from 'src/app/core/models/game.model';
+import { findBall, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { ballKey, SavedBall, savedBeforeBallApi, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
@@ -75,33 +76,30 @@ export class BallsStore {
   }
 
   /**
-   * The known ball a stored value means. Only values with a weight ("Phaze II15", "Phaze II 15lbs")
-   * resolve: a name alone doesn't say which weight was thrown, and no weight stands in for it.
+   * The known ball a game's ball is. Only balls with a weight resolve: a name alone doesn't say
+   * which weight was thrown.
    */
-  findKnownBall(value: string): Ball | undefined {
-    const parsed = parseStoredBall(value);
-    if (!parsed.weight) return undefined;
-    return this.#named(this.knownBalls(), parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
+  findKnownBall(ball: ThrowBall): Ball | undefined {
+    return ball.weight ? findBall(ball, this.knownBalls()) : undefined;
   }
 
   /**
-   * Resolves ball values as games store them ("Phaze II15") to balls: known balls first, the rest
-   * from the ball API by exact name when online. Resolved balls are remembered, so `findKnownBall`
-   * finds them, also offline afterwards. Values without a weight are left alone.
+   * Resolves games' balls to catalog balls: known balls first, the rest from the ball API by name
+   * when online. Resolved balls are remembered, so `findKnownBall` finds them, also offline
+   * afterwards. Balls without a weight are left alone.
    */
-  async resolveBallNames(values: string[]): Promise<void> {
-    const missing = [...new Set(values.filter((value) => value && parseStoredBall(value).weight))].filter((value) => !this.findKnownBall(value));
+  async resolveBallNames(balls: ThrowBall[]): Promise<void> {
+    const unique = new Map(balls.filter((ball) => ball?.name && ball.weight).map((ball) => [getThrowBallKey(ball), ball]));
+    const missing = [...unique.values()].filter((ball) => !this.findKnownBall(ball));
 
     if (missing.length > 0 && this.#networkService.isOnline) {
       try {
-        const fetched = await this.#ballService.getBallsByNames([...new Set(missing.map((value) => parseStoredBall(value).name))]);
+        const fetched = await this.#ballService.getBallsByNames([...new Set(missing.map((ball) => ball.name))]);
         // The API returns every weight; keep only the one each value names, so the cache never
         // holds a weight nobody threw.
         const meant = missing
-          .map((value) => {
-            const parsed = parseStoredBall(value);
-            return this.#named(fetched, parsed.name).find((b) => sameWeight(b.core_weight, parsed.weight!));
-          })
+          // the API may spell the name differently ("Phaze Ii"); games take its spelling on the next migration
+          .map((ball) => this.#named(fetched, ball.name).find((b) => sameWeight(b.core_weight, ball.weight!)))
           .filter((ball): ball is Ball => ball !== undefined);
         await this.rememberBalls(meant);
       } catch (error) {

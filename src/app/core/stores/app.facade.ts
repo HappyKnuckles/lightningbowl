@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { BallsStore } from './balls.store';
 import { GamesStore } from './games.store';
 import { LeaguesStore } from './leagues.store';
@@ -61,7 +60,7 @@ export class AppFacade {
       this.settingsStore.loadBallTracking();
       this.settingsStore.loadHandedness();
       const ballData = Promise.all([this.ballsStore.loadBallCache(), this.gamesStore.loadGameHistory(), this.ballsStore.loadArsenal()]).then(() =>
-        this.gamesStore.migrateBallWeights(this.ballsStore.arsenal()),
+        this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()),
       );
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
@@ -75,7 +74,10 @@ export class AppFacade {
         this.ballService.getCoverstocks(),
       ]);
       // Make the balls named in games available offline (fetches only unknown names).
-      void this.ballsStore.resolveBallNames(this.gamesStore.games().flatMap((game) => (game.balls ?? []).map(getThrowBallKey)));
+      // Then migrate again, so games take the catalog spelling of balls resolved just now.
+      void this.ballsStore
+        .resolveBallNames(this.gamesStore.games().flatMap((game) => game.balls ?? []))
+        .then(() => this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
       // Arsenal and favorite balls saved before the ball API get its data (images on its own host) once.
       void this.ballsStore.refreshSavedBalls(true).catch((error) => console.error('Error refreshing saved balls:', error));
     } catch (error) {

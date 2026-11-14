@@ -10,7 +10,7 @@ import { ThrowBall } from 'src/app/core/models/game.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBallInArsenal, formatThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { findBall, formatThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -76,7 +76,7 @@ export class PinInputComponent {
 
   /** Arsenal thumbnail of the currently selected ball, if available */
   readonly selectedBallThumbnail = computed<string | undefined>(() => {
-    const arsenalBall = findBallInArsenal(this.selectedBall(), this.ballsStore.arsenal());
+    const arsenalBall = findBall(this.selectedBall(), this.ballsStore.arsenal());
     return arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined;
   });
 

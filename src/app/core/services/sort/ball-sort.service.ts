@@ -41,7 +41,6 @@ export class BallSortService {
   }
 
   private applySortToBalls(balls: Ball[], sortOption: BallSortOption): Ball[] {
-    // Relevance order comes from the search itself; keep it.
     if (sortOption.field === BallSortField.RELEVANCE) return balls;
     const field = sortOption.field;
     return balls.sort((a, b) => {

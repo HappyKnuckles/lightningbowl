@@ -1,4 +1,4 @@
-import { getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { TestBed } from '@angular/core/testing';
 import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { GameDataTransformerService } from './game-data-transform.service';

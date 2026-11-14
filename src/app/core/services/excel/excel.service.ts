@@ -11,8 +11,14 @@ import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
-import { parseStoredBall } from '../../utils/ball-utils/stored-ball.utils';
-import { findBallInArsenal, formatThrowBall, getGameBalls, migrateGameBalls, toGameBall } from '../../utils/game-utils/ball.utils';
+import {
+  findBallInArsenal,
+  formatThrowBall,
+  getGameBalls,
+  migrateGameBalls,
+  parseStoredBall,
+  toGameBall,
+} from '../../utils/game-utils/game-ball.utils';
 import { isSplit } from '../../utils/game-utils/pin.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { GameFilterService } from '../game-filter/game-filter.service';
@@ -235,7 +241,6 @@ export class ExcelService {
         await this.leaguesStore.addLeague(league);
       }
 
-      // A ball the file names without a weight gets the arsenal's weight for it, else the default.
       const weighed = gameData.map((game) => migrateGameBalls(game, this.ballsStore.arsenal()));
 
       const ballValues = new Set(
@@ -246,7 +251,6 @@ export class ExcelService {
           ])
           .filter(Boolean),
       );
-      // Fetches balls the device doesn't know yet from the ball API (exact name), so they resolve below.
       await this.ballsStore.resolveBallNames([...ballValues]);
       for (const value of ballValues) {
         const ballToAdd = this.resolveBallReference(value);

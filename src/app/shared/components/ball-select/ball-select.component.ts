@@ -17,7 +17,7 @@ import {
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { ThrowBall } from 'src/app/core/models/game.model';
-import { sameGameBall } from 'src/app/core/utils/game-utils/ball.utils';
+import { sameGameBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
 @Component({

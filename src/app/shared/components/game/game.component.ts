@@ -57,7 +57,7 @@ import {
   getThrowBallKey,
   hasThrowLevelBalls,
   resolveBallTracking,
-} from 'src/app/core/utils/game-utils/ball.utils';
+} from 'src/app/core/utils/game-utils/game-ball.utils';
 import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';

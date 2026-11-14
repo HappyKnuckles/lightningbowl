@@ -41,7 +41,13 @@ import {
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import { findBallInArsenal, formatThrowBall, getBallTracking, getGameBallLabels, getGameBallNames } from 'src/app/core/utils/game-utils/ball.utils';
+import {
+  findBallInArsenal,
+  formatThrowBall,
+  getBallTracking,
+  getGameBallLabels,
+  getGameBallNames,
+} from 'src/app/core/utils/game-utils/game-ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { GameShareService } from 'src/app/core/services/game-share/game-share.service';

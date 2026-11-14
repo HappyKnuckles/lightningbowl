@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Frame, Game, Throw } from 'src/app/core/models/game.model';
-import { getBallTracking, getThrowBalls, sortGameBalls } from '../../utils/game-utils/ball.utils';
+import { getBallTracking, getThrowBalls, sortGameBalls } from '../../utils/game-utils/game-ball.utils';
 import { calculateIsClean } from '../../utils/game-utils/frame.utils';
 
 /**

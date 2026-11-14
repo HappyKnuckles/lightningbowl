@@ -3,10 +3,8 @@ import { BallFilter, CoreType, Market } from 'src/app/core/models/filter.model';
 import { BallSortField, BallSortOption } from 'src/app/core/models/sort.model';
 
 export interface BallQueryInput {
-  /** Ball ids in the user's arsenal, used for the "only arsenal balls" filter. */
   arsenalIds: string[];
   defaultFilters: BallFilter;
-  /** `ballId-coreWeight` keys of favorites to list first; empty for the regular order. */
   favorites: string[];
   filters: BallFilter;
   page: number;
@@ -56,7 +54,6 @@ export function buildBallQueryParams(input: BallQueryInput): BallQueryParams {
     set('id', input.arsenalIds.length > 0 ? [...new Set(input.arsenalIds)] : ['__none__']);
   }
 
-  // Favorites first is ranked by the API, so it holds across pages.
   set('favorite', input.favorites);
 
   const search = input.search.trim();

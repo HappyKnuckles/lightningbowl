@@ -125,7 +125,7 @@ export class BallService {
 
   /**
    * Balls with a similar expected reaction (same weight, core and coverstock
-   * type, close RG/differential), newest first. The matching runs on the API.
+   * type, close RG/differential), newest first.
    */
   async getBallsByMovementPattern(ball: Ball): Promise<Ball[]> {
     try {

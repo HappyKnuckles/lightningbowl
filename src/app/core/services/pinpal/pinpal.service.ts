@@ -9,7 +9,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
-import { sameGameBall, toGameBall } from '../../utils/game-utils/ball.utils';
+import { sameGameBall, toGameBall } from '../../utils/game-utils/game-ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
@@ -34,7 +34,6 @@ interface RawFrameRow {
 })
 export class PinpalService {
   private static readonly SQLITE_HEADER = 'SQLite format 3';
-  /** Ball searches running at once during an import. */
   private static readonly SEARCH_CONCURRENCY = 4;
   private sqlInstance: SqlJsStatic | null = null;
 

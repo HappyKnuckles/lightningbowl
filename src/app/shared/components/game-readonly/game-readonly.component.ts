@@ -5,7 +5,7 @@ import { bowlingBallOutline } from 'ionicons/icons';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, formatThrowBall, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';

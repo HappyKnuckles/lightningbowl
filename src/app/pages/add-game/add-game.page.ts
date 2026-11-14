@@ -49,7 +49,7 @@ import {
   keepArsenalThrowBalls,
   resolveBallTracking,
   setThrowBall,
-} from 'src/app/core/utils/game-utils/ball.utils';
+} from 'src/app/core/utils/game-utils/game-ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,

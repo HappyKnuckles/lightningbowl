@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  BALL_BRAND_TYPEAHEAD_CONFIG,
-  BALL_CORE_TYPEAHEAD_CONFIG,
-  BALL_COVERSTOCK_TYPEAHEAD_CONFIG,
   createBallTypeaheadConfig,
+  createBrandTypeaheadConfig,
+  createCoreTypeaheadConfig,
+  createCoverstockTypeaheadConfig,
 } from '../../configs/typeahead/ball.config';
 import { createPartialPatternTypeaheadConfig, createPatternTypeaheadConfig } from '../../configs/typeahead/pattern.config';
 import { BallFilterService } from '../ball-filter/ball-filter.service';
@@ -18,10 +18,9 @@ export class TypeaheadConfigService {
   private ballService = inject(BallService);
   private ballFilterService = inject(BallFilterService);
 
-  readonly brand = BALL_BRAND_TYPEAHEAD_CONFIG;
-  readonly core = BALL_CORE_TYPEAHEAD_CONFIG;
-  readonly coverstock = BALL_COVERSTOCK_TYPEAHEAD_CONFIG;
-  // Searches the ball API in the weight set in the ball filter (default 15 lb).
+  readonly brand = createBrandTypeaheadConfig();
+  readonly core = createCoreTypeaheadConfig();
+  readonly coverstock = createCoverstockTypeaheadConfig();
   readonly ball = createBallTypeaheadConfig((term, page) => this.ballService.findBallsPage(term, page, this.ballFilterService.filters().weight));
   // readonly league = LEAGUE_TYPEAHEAD_CONFIG;
 

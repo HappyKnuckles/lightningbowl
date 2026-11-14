@@ -1,5 +1,5 @@
 import { Game } from 'src/app/core/models/game.model';
-import { getThrowBallKey } from './ball.utils';
+import { getThrowBallKey } from './game-ball.utils';
 
 export interface UsageStats {
   count: number;

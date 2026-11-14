@@ -6,7 +6,7 @@ import { toPng } from 'html-to-image';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Game } from 'src/app/core/models/game.model';
 
-import { getGameBallLabels } from '../../utils/game-utils/ball.utils';
+import { getGameBallLabels } from '../../utils/game-utils/game-ball.utils';
 import { LoadingService } from '../loader/loading.service';
 import { ToastService } from '../toast/toast.service';
 

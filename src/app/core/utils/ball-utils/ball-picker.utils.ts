@@ -1,7 +1,7 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { ThrowBall } from 'src/app/core/models/game.model';
 import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
-import { sameGameBall } from 'src/app/core/utils/game-utils/ball.utils';
+import { sameGameBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 
 /** What the ball typeahead of one game starts with. */
 export interface BallPicker {

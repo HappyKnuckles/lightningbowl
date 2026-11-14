@@ -67,7 +67,7 @@ import {
 } from 'src/app/core/utils/drill-utils/drill.utils';
 import { BowlerFitPipe, HoleSizesPipe, InchesPipe, LayoutPipe } from 'src/app/shared/pipes/drill-pipes/drill.pipes';
 import { BallStats } from 'src/app/core/models/stats.model';
-import { findBallInArsenal, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { findBallInArsenal, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';

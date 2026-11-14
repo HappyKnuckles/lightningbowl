@@ -63,7 +63,7 @@ import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { buildBallQueryParams } from 'src/app/core/utils/ball-query/ball-query.utils';
+import { buildBallQueryParams } from 'src/app/core/utils/ball-utils/ball-query.utils';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
@@ -122,7 +122,6 @@ export class BallsPage implements OnInit {
 
   readonly defaultFilters = this.ballFilterService.defaultFilters;
 
-  /** Balls loaded from the API so far (online mode). */
   balls = signal<Ball[]>([]);
   coreBalls = signal<Ball[]>([]);
   coverstockBalls = signal<Ball[]>([]);
@@ -175,11 +174,7 @@ export class BallsPage implements OnInit {
     filters: this.ballFilterService.filters(),
     search: this.searchTerm(),
     sort: this.currentSortOption(),
-    // Only matters for the "only arsenal balls" filter; otherwise adding a ball
-    // to the arsenal would reload the list.
     arsenal: this.ballFilterService.filters().inArsenal ? this.ballsStore.arsenal() : null,
-    // The favorites themselves are read when the request is made, so that
-    // (un)favoriting a ball doesn't reload the list.
     favoritesFirst: this.favoritesFirst(),
     online: this.isOnline(),
   }));
@@ -264,7 +259,6 @@ export class BallsPage implements OnInit {
   }
 
   ngOnInit(): void {
-    // The first page is requested by the query subscription in the constructor.
     this.isPageLoading.set(this.isOnline());
     this.loadFavoritesFirstSetting();
   }
@@ -274,7 +268,6 @@ export class BallsPage implements OnInit {
       this.hapticService.vibrate(ImpactStyle.Medium);
       this.isPageLoading.set(true);
       this.offlineDisplayCount.set(100);
-      // a failed refresh of the cached or saved balls must not keep the list from reloading
       const refreshCache = this.ballsStore.refreshKnownBalls().catch((error) => console.error('Error refreshing known balls:', error));
       const refreshSaved = this.ballsStore
         .refreshSavedBalls()
@@ -396,8 +389,6 @@ export class BallsPage implements OnInit {
       return;
     }
 
-    // Nothing to continue while a new query's first page loads; and continue the query that is on
-    // screen, not filters or a search changed since (their first page is on its way).
     if (this.firstPageLoading || !this.listParams) {
       event.target.complete();
       return;

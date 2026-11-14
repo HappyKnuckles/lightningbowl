@@ -2,61 +2,63 @@ import { Ball, Brand, Core, Coverstock } from 'src/app/core/models/ball.model';
 import { TypeaheadConfig } from '../../models/typeahead-config.model';
 import { ballImageUrl } from '../../utils/ball-utils/ball-image.utils';
 
-export const BALL_BRAND_TYPEAHEAD_CONFIG: TypeaheadConfig<Brand> = {
-  title: 'Select Brands',
-  searchPlaceholder: 'Search for brands',
-  loadingText: 'Loading more brands...',
-  noDataText: 'No brands found!',
-  displayFields: [{ key: 'brand_name', isPrimary: true }],
-  searchKeys: [{ name: 'brand_name', weight: 1 }],
-  identifierKey: 'id',
-  valueKey: 'brand_name',
-  searchMode: 'local',
-  showImages: true,
-  imageShape: 'rect',
-  imageUrlGenerator: (brand: Brand) => brand.logo ?? '',
-};
+export function createBrandTypeaheadConfig(): TypeaheadConfig<Brand> {
+  return {
+    title: 'Select Brands',
+    searchPlaceholder: 'Search for brands',
+    loadingText: 'Loading more brands...',
+    noDataText: 'No brands found!',
+    displayFields: [{ key: 'brand_name', isPrimary: true }],
+    searchKeys: [{ name: 'brand_name', weight: 1 }],
+    identifierKey: 'id',
+    valueKey: 'brand_name',
+    searchMode: 'local',
+    showImages: true,
+    imageShape: 'rect',
+    imageUrlGenerator: (brand: Brand) => brand.logo ?? '',
+  };
+}
 
-export const BALL_CORE_TYPEAHEAD_CONFIG: TypeaheadConfig<Core> = {
-  title: 'Select Cores',
-  searchPlaceholder: 'Search for cores',
-  loadingText: 'Loading more cores...',
-  noDataText: 'No cores found!',
-  displayFields: [
-    { key: 'brand', isSecondary: true },
-    { key: 'core_name', isPrimary: true },
-  ],
-  searchKeys: [
-    { name: 'core_name', weight: 1 },
-    { name: 'brand', weight: 0.7 },
-  ],
-  identifierKey: 'id',
-  valueKey: 'core_name',
-  searchMode: 'local',
-};
+export function createCoreTypeaheadConfig(): TypeaheadConfig<Core> {
+  return {
+    title: 'Select Cores',
+    searchPlaceholder: 'Search for cores',
+    loadingText: 'Loading more cores...',
+    noDataText: 'No cores found!',
+    displayFields: [
+      { key: 'brand', isSecondary: true },
+      { key: 'core_name', isPrimary: true },
+    ],
+    searchKeys: [
+      { name: 'core_name', weight: 1 },
+      { name: 'brand', weight: 0.7 },
+    ],
+    identifierKey: 'id',
+    valueKey: 'core_name',
+    searchMode: 'local',
+  };
+}
 
-export const BALL_COVERSTOCK_TYPEAHEAD_CONFIG: TypeaheadConfig<Coverstock> = {
-  title: 'Select Coverstocks',
-  searchPlaceholder: 'Search for coverstocks',
-  loadingText: 'Loading more coverstocks...',
-  noDataText: 'No coverstocks found!',
-  displayFields: [
-    { key: 'brand', isSecondary: true },
-    { key: 'coverstock_name', isPrimary: true },
-  ],
-  searchKeys: [
-    { name: 'coverstock_name', weight: 1 },
-    { name: 'brand', weight: 0.7 },
-  ],
-  identifierKey: 'id',
-  valueKey: 'coverstock_name',
-  searchMode: 'local',
-};
+export function createCoverstockTypeaheadConfig(): TypeaheadConfig<Coverstock> {
+  return {
+    title: 'Select Coverstocks',
+    searchPlaceholder: 'Search for coverstocks',
+    loadingText: 'Loading more coverstocks...',
+    noDataText: 'No coverstocks found!',
+    displayFields: [
+      { key: 'brand', isSecondary: true },
+      { key: 'coverstock_name', isPrimary: true },
+    ],
+    searchKeys: [
+      { name: 'coverstock_name', weight: 1 },
+      { name: 'brand', weight: 0.7 },
+    ],
+    identifierKey: 'id',
+    valueKey: 'coverstock_name',
+    searchMode: 'local',
+  };
+}
 
-/**
- * Ball picker. `items` (the balls you already have) are listed first, then the catalog
- * page by page (newest first); typing searches the whole catalog on the ball API, also paged.
- */
 export function createBallTypeaheadConfig(
   pageFn: (term: string, page: number) => Promise<{ items: Ball[]; hasMore: boolean }>,
 ): TypeaheadConfig<Ball> {
@@ -66,7 +68,7 @@ export function createBallTypeaheadConfig(
     loadingText: 'Loading more balls...',
     noDataText: 'No balls found!',
     displayFields: [
-      { key: 'brand_name_with_date', isSecondary: true }, // Special combined field
+      { key: 'brand_name_with_date', isSecondary: true },
       { key: 'ball_name', isPrimary: true },
     ],
     searchKeys: [
@@ -76,7 +78,6 @@ export function createBallTypeaheadConfig(
       { name: 'coverstock_name', weight: 0.7 },
       { name: 'factory_finish', weight: 0.5 },
     ],
-    // one entry per ball *and weight*: ball_id alone would make every weight of a ball the same item
     identifierKey: 'key',
     valueKey: 'key',
     searchMode: 'api',

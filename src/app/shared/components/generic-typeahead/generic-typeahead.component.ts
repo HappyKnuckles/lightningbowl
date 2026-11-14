@@ -114,7 +114,6 @@ export class GenericTypeaheadComponent<T> implements OnInit, OnDestroy {
   }
 
   async loadData(event: InfiniteScrollCustomEvent): Promise<void> {
-    // Everything loaded is shown: fetch the next API page instead of revealing the next local batch
     if (this.usesApiPaging() && this.loadedCount() >= this.filteredItems().length) {
       if (this.apiHasMore) {
         await this.loadApiPage(this.apiTerm, false);

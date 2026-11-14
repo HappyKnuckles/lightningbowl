@@ -1,3 +1,4 @@
+import { environment } from 'src/environments/environment';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Frame, Game } from 'src/app/core/models/game.model';
@@ -73,12 +74,12 @@ describe('PatternStatsCalculatorService', () => {
       expect(calculator.calculateAllPatternStats(games)[0].strikeRate).toBe(100);
     });
 
-    it('attaches the chart image from the store', () => {
+    it('attaches the full chart image URL from the store', () => {
       patternImageMap.set({ Shark: 'shark-chart.png' });
 
       const stats = calculator.calculateAllPatternStats([makeGame({ totalScore: 200, patterns: ['Shark'] })]);
 
-      expect(stats[0].image).toBe('shark-chart.png');
+      expect(stats[0].image).toBe(environment.imagesUrl + 'shark-chart.png');
     });
 
     it('falls back to an empty image for an unmapped pattern', () => {

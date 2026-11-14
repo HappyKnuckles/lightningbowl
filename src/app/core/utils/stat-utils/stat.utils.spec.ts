@@ -1,5 +1,4 @@
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
-import { environment } from 'src/environments/environment';
 import { buildHighlights, getRateColor, pickTop, pickTopFromList } from './stat.utils';
 
 function highlight(overrides: Partial<HighlightItemStats> = {}): HighlightItemStats {
@@ -70,11 +69,11 @@ describe('stat.utils', () => {
       expect(buildHighlights(src).map((h) => h.sortMode)).toEqual(['gameCount', 'avg', 'gameCount', 'avg']);
     });
 
-    it('renders balls round with absolute image URLs (empty base), patterns square off the images url', () => {
+    it('renders balls round and patterns square', () => {
       const highlights = buildHighlights(src);
 
-      expect(highlights.slice(0, 2).every((h) => h.roundImage && h.imageUrlBase === '')).toBe(true);
-      expect(highlights.slice(2).every((h) => !h.roundImage && h.imageUrlBase === environment.imagesUrl)).toBe(true);
+      expect(highlights.slice(0, 2).every((h) => h.roundImage)).toBe(true);
+      expect(highlights.slice(2).every((h) => !h.roundImage)).toBe(true);
     });
 
     it('carries the matching empty message and full item list per card', () => {

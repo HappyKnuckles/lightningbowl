@@ -113,7 +113,6 @@ export class FavoritesService {
     this.saveFavoritesToStorage();
   }
 
-  /** Swaps favorite balls for fresher copies of the same ball and weight; balls that aren't favorites are ignored. */
   updateFavoriteBalls(balls: Ball[]): void {
     const current = this._favoriteBalls();
     const updates = balls.filter((ball) => current.has(keyOf(ball)));
@@ -186,7 +185,6 @@ export class FavoritesService {
   }
 
   private async migrateOldBallFavorites(keys: string[]): Promise<void> {
-    // Old keys are "ballId-coreWeight".
     const weightGroups = new Map<number, string[]>();
     for (const key of keys) {
       const lastDash = key.lastIndexOf('-');

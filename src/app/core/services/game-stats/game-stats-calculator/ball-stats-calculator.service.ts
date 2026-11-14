@@ -4,7 +4,7 @@ import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 import { Game } from 'src/app/core/models/game.model';
 import { BallDetailStats, BallStats, HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { formatThrowBall, getBallTracking, getGameBalls, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { formatThrowBall, getBallTracking, getGameBalls, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { isFirstBallThrow } from 'src/app/core/utils/game-utils/frame.utils';
 import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
 import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
@@ -87,7 +87,6 @@ export class BallStatsCalculatorService {
     return pickTop(this._calculateAllBallStats(gameHistory), byGameCount);
   }
 
-  /** There is no full catalog on the device; games' balls are resolved into the known balls at startup. */
   private getBallCandidates(): Ball[] {
     return this.ballsStore.knownBalls();
   }
@@ -128,8 +127,6 @@ export class BallStatsCalculatorService {
     const candidates = this.getBallCandidates();
 
     const byName = candidates.filter((ball) => this.normalizeBallName(ball.ball_name) === normalizedRawName);
-    // a stored weight is what was thrown; a name alone (a game not migrated yet, see
-    // migrateGameBalls) resolves to no weight at all, so its stats show the name without specs
     if (!rawWeight) return undefined;
     const byNameAndWeight = byName.find((ball) => this.extractWeightToken(ball.core_weight) === rawWeight);
     if (byNameAndWeight) return byNameAndWeight;
@@ -138,7 +135,6 @@ export class BallStatsCalculatorService {
     return candidates.find((ball) => normalizedRaw === this.normalizeBallKey(`${ball.ball_name}${ball.core_weight}`));
   }
 
-  /** Some weight of the ball a name alone means, for what all weights share (the image), never for its specs. */
   private anyWeightOf(name: string): Ball | undefined {
     const wanted = this.normalizeBallName(name);
     return this.getBallCandidates().find((ball) => this.normalizeBallName(ball.ball_name) === wanted);
@@ -261,7 +257,6 @@ export class BallStatsCalculatorService {
     const finalStats: Record<string, HighlightItemStats> = {};
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
-      // every weight of a ball has the same image, so a name alone still gets one (but no weight)
       const ballImage = ballImageUrl(this.resolveBallReference(ballName) ?? this.anyWeightOf(ballName), 'ball');
       const strikeRate = stats.totalThrows > 0 ? Math.round((stats.totalStrikes / stats.totalThrows) * 100) : 0;
 

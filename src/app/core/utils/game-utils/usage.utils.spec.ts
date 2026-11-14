@@ -1,5 +1,5 @@
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
-import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { parseStoredBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { countBallUsage, countPatternUsage, rankByUsage, UsageStats } from './usage.utils';
 
 describe('usage.utils', () => {

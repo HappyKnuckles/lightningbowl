@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 
 import { Game } from '../../models/game.model';
-import { getGameBallLabels } from '../../utils/game-utils/ball.utils';
+import { getGameBallLabels } from '../../utils/game-utils/game-ball.utils';
 
 export interface GameDetails {
   league?: string;

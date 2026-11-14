@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
-import { getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { BallsStore } from './balls.store';
 import { GamesStore } from './games.store';
 import { LeaguesStore } from './leagues.store';
@@ -60,7 +60,6 @@ export class AppFacade {
       this.settingsStore.loadPinInputMode();
       this.settingsStore.loadBallTracking();
       this.settingsStore.loadHandedness();
-      // games store their balls with a weight; older ones get it from the arsenal, so both must be loaded first
       const ballData = Promise.all([this.ballsStore.loadBallCache(), this.gamesStore.loadGameHistory(), this.ballsStore.loadArsenal()]).then(() =>
         this.gamesStore.migrateBallWeights(this.ballsStore.arsenal()),
       );

@@ -17,14 +17,15 @@ import {
   getThrowBallForPosition,
   getThrowBallKeys,
   keepArsenalThrowBalls,
+  parseStoredBall,
   setThrowBall,
-} from './ball.utils';
+} from './game-ball.utils';
 
 function emptyFrames(): Frame[] {
   return Array.from({ length: 10 }, (_, i) => ({ frameIndex: i + 1, throws: [] }));
 }
 
-describe('ball.utils', () => {
+describe('game-ball.utils', () => {
   describe('setThrowBall', () => {
     it('stores the ball as pendingBall instead of fabricating a throw when none exists yet', () => {
       const frames = emptyFrames();
@@ -488,5 +489,19 @@ describe('migrateGameBalls', () => {
     const game = makeGame({ balls: [{ name: 'Phaze', weight: '15' }] });
 
     expect(migrateGameBalls(game, arsenal)).toBe(game);
+  });
+});
+
+describe('parseStoredBall', () => {
+  it('splits the weight off the name in every stored format', () => {
+    for (const value of ['Phaze II15', 'Phaze II 15', 'Phaze II 15lbs', 'Phaze II 15 lb', 'Phaze II 15#']) {
+      expect(parseStoredBall(value)).toEqual({ name: 'Phaze II', weight: '15' });
+    }
+  });
+
+  it('keeps plain names, including names ending in a number that is no ball weight', () => {
+    expect(parseStoredBall('Phaze II')).toEqual({ name: 'Phaze II' });
+    expect(parseStoredBall('Black Widow 3.0')).toEqual({ name: 'Black Widow 3.0' });
+    expect(parseStoredBall('Hy-Road 40')).toEqual({ name: 'Hy-Road 40' });
   });
 });

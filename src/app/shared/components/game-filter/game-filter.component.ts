@@ -28,8 +28,7 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { parseStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
-import { getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { getThrowBallKey, parseStoredBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';

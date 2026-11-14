@@ -54,8 +54,6 @@ jobs:
         run: npm run build
 
   ball-api-types:
-    # Own job, so a ball API change that the app hasn't picked up yet shows as its own check
-    # instead of failing verify.
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

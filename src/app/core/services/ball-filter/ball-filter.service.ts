@@ -3,7 +3,7 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { BallFilter, CoreType, CoverstockType, Market } from 'src/app/core/models/filter.model';
 import { BallSortField, SortDirection } from 'src/app/core/models/sort.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { buildBallQueryParams } from 'src/app/core/utils/ball-query/ball-query.utils';
+import { buildBallQueryParams } from 'src/app/core/utils/ball-utils/ball-query.utils';
 import { BallService } from '../ball/ball.service';
 import { NetworkService } from '../network/network.service';
 import { UtilsService } from '../../utils/utils.service';
@@ -76,7 +76,6 @@ export class BallFilterService {
           defaultFilters: this.defaultFilters,
           favorites: [],
           search: '',
-          // The order doesn't change the count; relevance sends no sort.
           sort: { field: BallSortField.RELEVANCE, direction: SortDirection.DESC, label: '' },
           arsenalIds: this.ballsStore.arsenal().map((ball) => ball.ball_id),
           page: 0,
@@ -111,7 +110,6 @@ export class BallFilterService {
         (filters.coreType === CoreType.ALL || filters.coreType === ball.core_type) &&
         (!filters.availability || ball.availability === 'Available') &&
         (filters.releaseDate === 'all' || filters.releaseDate === ball.release_date) &&
-        // Missing specs become NaN and fail the range checks, as before.
         filters.minRg <= (ball.core_rg ?? NaN) &&
         filters.maxRg >= (ball.core_rg ?? NaN) &&
         filters.minDiff <= (ball.core_diff ?? NaN) &&

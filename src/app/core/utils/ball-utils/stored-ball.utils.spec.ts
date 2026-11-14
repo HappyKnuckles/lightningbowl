@@ -1,6 +1,6 @@
 import { Ball } from 'src/app/core/models/ball.model';
 import { makeBall } from 'src/testing/fixtures';
-import { ballKey, LegacyBall, parseStoredBall, toStoredBall } from './stored-ball.utils';
+import { ballKey, LegacyBall, toStoredBall } from './stored-ball.utils';
 
 /** A ball as bowwwl.com's data was saved before the ball API: no key or first_seen_at. */
 function makeLegacyBall(overrides: Partial<LegacyBall> = {}): LegacyBall {
@@ -33,20 +33,6 @@ describe('toStoredBall', () => {
   it('returns current balls unchanged', () => {
     const ball = makeBall({ core_rg: 2.5, core_diff: null });
     expect(toStoredBall(ball)).toBe(ball);
-  });
-});
-
-describe('parseStoredBall', () => {
-  it('splits the weight off the name in every stored format', () => {
-    for (const value of ['Phaze II15', 'Phaze II 15', 'Phaze II 15lbs', 'Phaze II 15 lb', 'Phaze II 15#']) {
-      expect(parseStoredBall(value)).toEqual({ name: 'Phaze II', weight: '15' });
-    }
-  });
-
-  it('keeps plain names, including names ending in a number that is no ball weight', () => {
-    expect(parseStoredBall('Phaze II')).toEqual({ name: 'Phaze II' });
-    expect(parseStoredBall('Black Widow 3.0')).toEqual({ name: 'Black Widow 3.0' });
-    expect(parseStoredBall('Hy-Road 40')).toEqual({ name: 'Hy-Road 40' });
   });
 });
 

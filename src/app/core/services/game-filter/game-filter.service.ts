@@ -4,7 +4,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 
-import { canonicalBallKey, getGameBalls } from '../../utils/game-utils/ball.utils';
+import { canonicalBallKey, getGameBalls } from '../../utils/game-utils/game-ball.utils';
 import { UtilsService } from '../../utils/utils.service';
 const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
 

@@ -53,31 +53,3 @@ export function toStoredBall(ball: SavedBall): Ball {
     core_int_diff: toSpec(ball.core_int_diff),
   };
 }
-
-/** A ball as a game stores it: the name, plus the weight when one was recorded. */
-export interface StoredBallValue {
-  name: string;
-  weight?: string;
-}
-
-/** Trailing weight in "Name15", "Name 15", "Name 15lbs", "Name 15lb" or "Name 15#". */
-const WEIGHT_SUFFIX = /^(.*?\S)\s*(\d{1,2})\s*(?:lbs?|#)?$/i;
-const MIN_WEIGHT = 6;
-const MAX_WEIGHT = 16;
-
-/**
- * Splits a ball value stored in a game into name and weight. Games store the
- * plain name, or (ball per throw) the name with the weight appended, with or
- * without a space and "lbs". A trailing number only counts as a weight when
- * it's a ball weight (6–16), so names like "Black Widow 3.0" stay intact;
- * callers should still try the value as a plain name first.
- */
-export function parseStoredBall(value: string): StoredBallValue {
-  const trimmed = value.trim();
-  const match = WEIGHT_SUFFIX.exec(trimmed);
-  if (match) {
-    const weight = Number(match[2]);
-    if (weight >= MIN_WEIGHT && weight <= MAX_WEIGHT) return { name: match[1].trim(), weight: String(weight) };
-  }
-  return { name: trimmed };
-}

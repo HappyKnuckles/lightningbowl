@@ -4,8 +4,11 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { STORAGE_PREFIX, StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { Ball } from 'src/app/core/models/ball.model';
-import { getBallTracking, migrateGameBalls } from '../utils/game-utils/game-ball.utils';
+import { getBallTracking, migrateGameBalls, unlinkArsenalBall, withBallLayouts } from '../utils/game-utils/game-ball.utils';
+import { BallsStore } from './balls.store';
 import { sortGameHistoryByDate } from '../utils/sort-utils/sort.utils';
+
+type ArsenalRef = Pick<Ball, 'ball_name' | 'core_weight'> & Pick<Partial<Ball>, 'arsenalId'>;
 
 @Injectable({ providedIn: 'root' })
 export class GamesStore {
@@ -15,6 +18,7 @@ export class GamesStore {
   constructor(
     private storageRepository: StorageRepository,
     private loadingService: LoadingService,
+    private ballsStore: BallsStore,
   ) {}
 
   async loadGameHistory(): Promise<Game[]> {
@@ -77,7 +81,8 @@ export class GamesStore {
       });
 
       if (needsUpdate) {
-        await this.saveGamesToLocalStorage(gameHistory);
+        // straight to storage: the balls are migrated once the arsenal is loaded (see `migrateBallWeights`)
+        await Promise.all(gameHistory.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
       }
 
       sortGameHistoryByDate(gameHistory, false);
@@ -94,29 +99,25 @@ export class GamesStore {
   }
 
   /**
-   * Brings every ball the loaded games store to canonical `{ name, weight }` (see `migrateGameBalls`)
-   * and saves the games that changed. Needs the arsenal and known balls, so it runs once they are loaded.
+   * Brings every ball the loaded games store to canonical `{ name, weight }` and links it to its arsenal
+   * ball (see `migrateGameBalls`), and saves the games that changed. Needs the arsenal and known balls,
+   * so it runs once they are loaded, and again when the arsenal gets a ball.
    */
-  async migrateBallWeights(
-    arsenal: Pick<Ball, 'ball_name' | 'core_weight'>[],
-    known: Pick<Ball, 'ball_name' | 'core_weight'>[] = arsenal,
-  ): Promise<void> {
-    const migrated = this.games()
-      .map((game) => [game, migrateGameBalls(game, arsenal, known)] as const)
-      .filter(([before, after]) => before !== after)
-      .map(([, after]) => after);
-    if (migrated.length === 0) return;
-    try {
-      await Promise.all(migrated.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
-    } catch (error) {
-      console.error('Error saving migrated ball weights:', error);
-    }
-    const byId = new Map(migrated.map((game) => [game.gameId, game]));
-    this.games.update((games) => games.map((game) => byId.get(game.gameId) ?? game));
+  async migrateBallWeights(arsenal: ArsenalRef[], known: ArsenalRef[] = arsenal): Promise<void> {
+    await this.replaceGames((game) => migrateGameBalls(game, arsenal, known), 'Error saving migrated ball weights:');
   }
 
-  async saveGameToLocalStorage(gameData: Game): Promise<void> {
+  /**
+   * Takes the link to an arsenal ball off every game that used it (see `unlinkArsenalBall`), for a ball
+   * that left the arsenal.
+   */
+  async unlinkArsenalBall(arsenalId: string): Promise<void> {
+    await this.replaceGames((game) => unlinkArsenalBall(game, arsenalId), 'Error unlinking arsenal ball from games:');
+  }
+
+  async saveGameToLocalStorage(game: Game): Promise<void> {
     try {
+      const gameData = await this.prepareForSave(game, true);
       const key = StorageKeys.game(gameData.gameId);
       await this.storageRepository.set(key, gameData);
       const previousGame = this.games().find((game) => game.gameId === gameData.gameId);
@@ -138,8 +139,13 @@ export class GamesStore {
     }
   }
 
-  async saveGamesToLocalStorage(gameData: Game[]): Promise<void> {
+  /**
+   * Saves games. `recordLayouts: false` is for games that aren't being bowled or edited now (an import, a
+   * change across the whole history): the layout their balls have today says nothing about those games.
+   */
+  async saveGamesToLocalStorage(games: Game[], options: { recordLayouts?: boolean } = {}): Promise<void> {
     try {
+      const gameData = await Promise.all(games.map((game) => this.prepareForSave(game, options.recordLayouts ?? true)));
       // Save all games in parallel
       await Promise.all(gameData.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
 
@@ -266,5 +272,34 @@ export class GamesStore {
       }
     }
     return true;
+  }
+
+  /** Saves the games `change` returns a new object for, and puts them in place of the old ones. */
+  private async replaceGames(change: (game: Game) => Game, errorMessage: string): Promise<void> {
+    const changed = this.games()
+      .map((game) => [game, change(game)] as const)
+      .filter(([before, after]) => before !== after)
+      .map(([, after]) => after);
+    if (changed.length === 0) return;
+    try {
+      await Promise.all(changed.map((game) => this.storageRepository.set(StorageKeys.game(game.gameId), game)));
+    } catch (error) {
+      console.error(errorMessage, error);
+    }
+    const byId = new Map(changed.map((game) => [game.gameId, game]));
+    this.games.update((games) => games.map((game) => byId.get(game.gameId) ?? game));
+  }
+
+  /**
+   * A game as it goes to storage: its balls canonical and linked to the arsenal, and with `recordLayouts`
+   * the layout of each ball recorded on it (see `withBallLayouts`). The stored game is read back for that,
+   * as the game in memory may be the very object that was edited.
+   */
+  private async prepareForSave(game: Game, recordLayouts: boolean): Promise<Game> {
+    const arsenal = this.ballsStore.arsenal();
+    const linked = migrateGameBalls(game, arsenal, this.ballsStore.knownBalls());
+    if (!recordLayouts) return linked;
+    const saved = await this.storageRepository.get<Game>(StorageKeys.game(game.gameId));
+    return withBallLayouts(linked, saved, arsenal);
   }
 }

@@ -1,9 +1,12 @@
 import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
+  IonAccordion,
+  IonAccordionGroup,
   IonButton,
   IonButtons,
   IonCard,
@@ -32,14 +35,17 @@ import {
   IonSelect,
   IonSelectOption,
   IonText,
+  IonTextarea,
   IonThumbnail,
   IonTitle,
+  IonToggle,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {
   add,
+  archiveOutline,
   arrowUndoOutline,
   chevronBack,
   chevronDownOutline,
@@ -67,7 +73,9 @@ import {
 } from 'src/app/core/utils/drill-utils/drill.utils';
 import { BowlerFitPipe, HoleSizesPipe, InchesPipe, LayoutPipe } from 'src/app/shared/pipes/drill-pipes/drill.pipes';
 import { BallStats } from 'src/app/core/models/stats.model';
-import { findBall, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { getBallModelKey, getThrowBallKey, toThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { arsenalBallLabel, isInArsenal, twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -83,6 +91,8 @@ import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typ
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
+
+type DetailSegment = 'ball' | 'drilling' | 'notes';
 
 @Component({
   selector: 'app-arsenal',
@@ -126,6 +136,11 @@ import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
     IonSelect,
     IonSelectOption,
     IonInput,
+    IonTextarea,
+    IonToggle,
+    IonAccordion,
+    IonAccordionGroup,
+    DatePipe,
     InchesPipe,
     LayoutPipe,
     HoleSizesPipe,
@@ -143,6 +158,19 @@ export class ArsenalPage implements OnInit {
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore.myBalls().filter((ball) => !this.ballsStore.arsenal().some((b) => b.key === ball.key)),
   );
+  /**
+   * What the list shows next to a ball's specs, by `arsenalId`: its nickname, or its number ("#2") for a
+   * ball the arsenal has twice with nothing else to tell them apart (a twin's layout has its own chip).
+   */
+  readonly ballTags = computed<Record<string, string>>(() => {
+    const arsenal = this.ballsStore.arsenal();
+    const tags: Record<string, string> = {};
+    for (const ball of arsenal) {
+      const label = twinLabel(ball, arsenal);
+      if (ball.arsenalId && (ball.nickname || label.startsWith('#'))) tags[ball.arsenalId] = label;
+    }
+    return tags;
+  });
   selectedSegment = model('arsenal');
 
   /**
@@ -158,16 +186,18 @@ export class ArsenalPage implements OnInit {
     const arsenal = this.ballsStore.arsenal();
     const fromHistory = this.statsService.calculateBallStats(this.gamesStore.games());
 
-    const owned = fromHistory.filter((stats) => findBall({ name: stats.name, weight: stats.weight }, arsenal));
+    // an arsenal ball's own games, and games that name an owned ball without saying which one
+    const ownKeys = new Set(arsenal.flatMap((ball) => [getThrowBallKey(toThrowBall(ball)), getBallModelKey(toThrowBall(ball))]));
+    const owned = fromHistory.filter((stats) => ownKeys.has(stats.key));
     const covered = new Set(owned.map((stats) => stats.key));
 
     const neverThrown = arsenal
-      .filter((ball) => !covered.has(getThrowBallKey({ name: ball.ball_name, weight: ball.core_weight })))
+      .filter((ball) => !covered.has(getThrowBallKey(toThrowBall(ball))))
       .map(
         (ball): BallStats => ({
-          key: getThrowBallKey({ name: ball.ball_name, weight: ball.core_weight }),
+          key: getThrowBallKey(toThrowBall(ball)),
           name: ball.ball_name,
-          displayName: `${ball.ball_name} ${ball.core_weight}lbs`,
+          displayName: arsenalBallLabel(ball, arsenal),
           weight: ball.core_weight,
           image: ballImageUrl(ball, 'ball'),
           tier: 'basic',
@@ -195,9 +225,9 @@ export class ArsenalPage implements OnInit {
   // the open ball's layout per system, so switching systems back and forth doesn't lose the values
   private readonly layoutsBySystem = new Map<LayoutSystem, BallLayout>();
   readonly gripStyles = Object.entries(GRIP_STYLE_LABELS) as [GripStyle, string][];
-  readonly detailSegment = signal<'ball' | 'drilling'>('ball');
-  // key (ball_id + core_weight) of the ball whose detail modal is open
-  readonly openBallKey = signal<string | null>(null);
+  readonly detailSegment = signal<DetailSegment>('ball');
+  // `arsenalId` of the ball whose detail modal is open
+  readonly openBallId = signal<string | null>(null);
   readonly isFitModalOpen = signal(false);
   readonly fitForm = signal<FitForm>(emptyFitForm());
   readonly fit = computed(() => this.settingsStore.fit());
@@ -217,9 +247,11 @@ export class ArsenalPage implements OnInit {
     private gamesStore: GamesStore,
     private statsService: GameStatsService,
     private settingsStore: SettingsStore,
+    private appFacade: AppFacade,
   ) {
     addIcons({
       add,
+      archiveOutline,
       ellipsisVerticalOutline,
       trashOutline,
       chevronBack,
@@ -247,7 +279,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.ballsStore.arsenal(),
+        this.ballsStore.activeArsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -271,7 +303,7 @@ export class ArsenalPage implements OnInit {
             text: 'Delete',
             handler: async () => {
               try {
-                await this.ballsStore.removeFromArsenal(ball);
+                await this.appFacade.removeArsenalBall(ball);
                 this.toastService.showToast(`Ball removed from arsenal: ${ball.ball_name}`, 'checkmark-outline');
               } catch (error) {
                 console.error('Error removing ball from arsenal:', error);
@@ -292,44 +324,71 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.ballsStore.arsenal();
-    const [movedItem] = arsenal.splice(event.detail.from, 1);
-    arsenal.splice(event.detail.to, 0, movedItem);
-
-    arsenal.forEach((ball, idx) => (ball.position = idx + 1));
-
-    await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
+    // the list shows the balls in use; retired balls keep their place after them
+    const active = [...this.ballsStore.activeArsenal()];
+    const [movedItem] = active.splice(event.detail.from, 1);
+    active.splice(event.detail.to, 0, movedItem);
+    try {
+      await this.ballsStore.reorderArsenal(active);
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    }
   }
 
-  async saveBallToArsenal(balls: Ball[]): Promise<void> {
-    const failed = await this.ballsStore.saveBallsToArsenal(balls);
-    const saved = balls.filter((b) => !failed.includes(b));
+  /** Retires a ball, or brings a retired one back into use. */
+  async setRetired(ball: Ball, retired: boolean): Promise<void> {
+    if (retired === !!ball.retiredAt) return;
+    try {
+      this.hapticService.vibrate(ImpactStyle.Light);
+      await this.ballsStore.setBallRetired(ball, retired);
+      this.toastService.showToast(retired ? TOAST_MESSAGES.ballRetireSuccess : TOAST_MESSAGES.ballRestoreSuccess, 'checkmark-outline');
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballRetireError, 'bug', true);
+    }
+  }
 
-    if (saved.length) {
-      this.toastService.showToast(`Balls added to arsenal: ${saved.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+  async onNotesChange(ball: Ball, field: 'nickname' | 'note' | 'surface', raw: string | number | null | undefined): Promise<void> {
+    try {
+      await this.ballsStore.updateBallNotes(ball, { nickname: ball.nickname, note: ball.note, surface: ball.surface, [field]: raw?.toString() ?? '' });
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballNotesSaveError, 'bug', true);
+    }
+  }
+
+  onDetailSegmentChange(value: unknown): void {
+    this.detailSegment.set(value === 'drilling' || value === 'notes' ? value : 'ball');
+  }
+
+  /** Adds catalog balls to the arsenal; with `allowTwin` also ones the arsenal already has. */
+  async saveBallToArsenal(balls: Ball[], allowTwin = false): Promise<void> {
+    if (balls.length === 0) return;
+    const { added, failed } = await this.ballsStore.addBallsToArsenal(balls, { allowTwin });
+
+    if (added.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${added.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
     }
     if (failed.length) {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
-    if (saved.length) {
-      await this.promptForDrilling(saved);
+    if (added.length) {
+      await this.promptForDrilling(added);
     }
   }
 
-  openBallDetail(ball: Ball, segment: 'ball' | 'drilling' = 'ball'): void {
+  openBallDetail(ball: Ball, segment: DetailSegment = 'ball'): void {
     this.detailSegment.set(segment);
-    this.openBallKey.set(ball.key);
+    this.openBallId.set(ball.arsenalId ?? null);
   }
 
   // The segment's initial value doesn't move the segment view, so jump it to the selected tab once the modal is shown.
   async syncDetailSegmentView(event: Event): Promise<void> {
     const view = (event.target as HTMLElement).querySelector('ion-segment-view');
-    const contentId = this.detailSegment() === 'drilling' ? 'ball-drilling' : 'ball-detail';
+    const contentId = { ball: 'ball-detail', drilling: 'ball-drilling', notes: 'ball-notes' }[this.detailSegment()];
     await view?.setContent(contentId, false);
   }
 
   closeBallDetail(): void {
-    this.openBallKey.set(null);
+    this.openBallId.set(null);
     this.layoutBeforePreset.set(null);
     this.layoutsBySystem.clear();
   }
@@ -352,9 +411,13 @@ export class ArsenalPage implements OnInit {
     await alert.present();
   }
 
-  onBallSelectionChange(selected: Ball[]): void {
-    const inArsenal = (ball: Ball) => this.ballsStore.arsenal().some((b) => b.key === ball.key);
-    this.saveBallToArsenal(selected.filter((ball) => !inArsenal(ball)));
+  async onBallSelectionChange(selected: Ball[]): Promise<void> {
+    const arsenal = this.ballsStore.arsenal();
+    const owned = selected.filter((ball) => isInArsenal(ball, arsenal));
+    await this.saveBallToArsenal(selected.filter((ball) => !owned.includes(ball)));
+    if (owned.length) {
+      await this.confirmAddTwins(owned);
+    }
   }
 
   async getSameCoreBalls(ball: Ball): Promise<void> {
@@ -401,7 +464,7 @@ export class ArsenalPage implements OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    const key = ball.key;
+    const key = ball.arsenalId ?? ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {
@@ -410,15 +473,6 @@ export class ArsenalPage implements OnInit {
       if (!replacementBall) {
         selectEl.value = ball.core_weight;
         this.toastService.showToast('Selected weight is unavailable for this ball.', 'alert-circle-outline', true);
-        return;
-      }
-
-      const alreadyInArsenal = this.ballsStore
-        .arsenal()
-        .some((b) => b.ball_id === ball.ball_id && b.core_weight === replacementBall.core_weight && b.core_weight !== ball.core_weight);
-      if (alreadyInArsenal) {
-        selectEl.value = ball.core_weight;
-        this.toastService.showToast(`${ball.ball_name} at ${selectedWeight}lbs is already in your arsenal.`, 'information-circle-outline', true);
         return;
       }
 
@@ -611,6 +665,27 @@ export class ArsenalPage implements OnInit {
     } catch (error) {
       console.error('Error saving fit:', error);
       this.toastService.showToast(TOAST_MESSAGES.fitSaveError, 'bug', true);
+    }
+  }
+
+  // A ball picked again is most likely a second one of it (e.g. drilled differently), but it's asked, not assumed.
+  private async confirmAddTwins(owned: Ball[]): Promise<void> {
+    const names = owned.map((ball) => `${ball.ball_name} ${ball.core_weight}lbs`).join(', ');
+    const alert = await this.alertController.create({
+      header: owned.length === 1 ? 'Add another one?' : 'Add more of these?',
+      message:
+        owned.length === 1
+          ? `${names} is already in your arsenal. Add a second one, e.g. with a different layout?`
+          : `Already in your arsenal: ${names}. Add a second one of each, e.g. with a different layout?`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: owned.length === 1 ? 'Add Another' : 'Add', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role === 'confirm') {
+      await this.saveBallToArsenal(owned, true);
     }
   }
 }

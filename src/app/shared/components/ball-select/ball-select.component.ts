@@ -17,7 +17,9 @@ import {
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { ThrowBall } from 'src/app/core/models/game.model';
-import { sameGameBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { Ball } from 'src/app/core/models/ball.model';
+import { isRetired, twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { getThrowBallKey, sameGameBall, toThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
 @Component({
@@ -46,16 +48,31 @@ export class BallSelectComponent implements OnInit {
 
   selectedBalls = input.required<ThrowBall[] | undefined>();
   singleSelect = input<boolean>(false);
+  /** Also list retired balls, e.g. to filter the history by one. */
+  includeRetired = input<boolean>(false);
 
   ballSelect = output<ThrowBall[]>();
 
-  /** Arsenal sorted by how often each ball was thrown, most used first. */
-  rankedArsenal = computed(() => {
-    const usage = countBallUsage(this.#gamesStore.games());
-    return rankByUsage(this.ballsStore.arsenal(), usage, (ball) => ball.ball_name + ball.core_weight);
-  });
-
   #tempSelectedBalls = signal<ThrowBall[]>([]);
+
+  /**
+   * The arsenal balls in use, most thrown ball first, each with whether it is selected and its second
+   * line: the brand, plus the ball's nickname or what tells two of the same ball apart (on its own
+   * line, as a long name is cut off). A retired ball is listed only with `includeRetired`, or when
+   * it came in selected (e.g. on an older game), so it can still be taken off.
+   */
+  rows = computed(() => {
+    const arsenal = this.ballsStore.arsenal();
+    const usage = countBallUsage(this.#gamesStore.games());
+    const selected = new Set(this.#tempSelectedBalls().map(getThrowBallKey));
+    const cameSelected = new Set((this.selectedBalls() ?? []).map(getThrowBallKey));
+    const offered = arsenal.filter((ball) => !isRetired(ball) || this.includeRetired() || cameSelected.has(getThrowBallKey(toThrowBall(ball))));
+    return rankByUsage(offered, usage, (ball) => getThrowBallKey(toThrowBall(ball))).map((ball) => ({
+      ball,
+      detail: [ball.brand_name, twinLabel(ball, arsenal), isRetired(ball) ? 'retired' : ''].filter(Boolean).join(' · '),
+      selected: selected.has(getThrowBallKey(toThrowBall(ball))),
+    }));
+  });
 
   get tempSelectedBalls() {
     return this.#tempSelectedBalls();
@@ -65,8 +82,8 @@ export class BallSelectComponent implements OnInit {
     this.#tempSelectedBalls.set([...this.selectedBalls()!]);
   }
 
-  toggleBallSelection(ballName: string, ballWeight: string): void {
-    const ball: ThrowBall = { name: ballName, weight: ballWeight };
+  toggleBallSelection(arsenalBall: Ball): void {
+    const ball = toThrowBall(arsenalBall);
     const currentSelection = this.#tempSelectedBalls();
     const isSelected = currentSelection.some((selected) => sameGameBall(selected, ball));
 
@@ -80,10 +97,6 @@ export class BallSelectComponent implements OnInit {
     } else {
       this.#tempSelectedBalls.set([...currentSelection, ball]);
     }
-  }
-
-  isBallSelected(ballName: string, ballWeight: string): boolean {
-    return this.#tempSelectedBalls().some((selected) => sameGameBall(selected, { name: ballName, weight: ballWeight }));
   }
 
   confirmBallSelection(): void {

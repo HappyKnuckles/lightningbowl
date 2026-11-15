@@ -37,6 +37,7 @@ describe('BallStatsCalculatorService', () => {
         {
           provide: BallsStore,
           useValue: {
+            arsenal,
             knownBalls: computed(() => [...allBalls(), ...arsenal()]),
             url: '',
           },

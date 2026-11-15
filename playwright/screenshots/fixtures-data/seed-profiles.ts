@@ -153,10 +153,11 @@ function richBundle(): SeedBundle {
   // League registry entries (used by the settings league selector / visibility).
   for (const name of LEAGUE_NAMES) idb.push([StorageKeys.league(name), name]);
 
-  // Arsenal: a handful of real balls, ordered. Their thumbnails resolve to real
+  // Arsenal: a handful of real balls, ordered, stored the way they were before arsenal balls had their
+  // own id, so every run also takes the app through that migration. Their thumbnails resolve to real
   // product images on bowwwl.com.
   const arsenalBalls = REAL_BALLS.slice(0, 5).map((b, pos) => ({ ...b, position: pos + 1 }));
-  for (const b of arsenalBalls) idb.push([StorageKeys.arsenal(b.ball_id, b.core_weight), b]);
+  for (const b of arsenalBalls) idb.push([StorageKeys.legacyArsenal(b.ball_id, b.core_weight), b]);
 
   const local: Record<string, string> = {
     username: 'Nico',

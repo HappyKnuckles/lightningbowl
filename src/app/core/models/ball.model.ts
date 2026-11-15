@@ -4,8 +4,23 @@ type ApiSchemas = components['schemas'];
 
 export type ApiBall = ApiSchemas['Ball'];
 export interface Ball extends ApiBall {
+  /**
+   * Identity of one physical ball in the arsenal. Two arsenal balls can be the same catalog ball in the
+   * same weight (same `key`), e.g. drilled differently; this tells them apart. Catalog balls have none.
+   */
+  arsenalId?: string;
   position?: number;
   drilling?: BallDrilling;
+  /** The bowler's own name for this arsenal ball, e.g. "benchmark". Shown next to the ball's name. */
+  nickname?: string;
+  /** Free text about this arsenal ball: surface changes, what it's for, how it reacts. */
+  note?: string;
+  surface?: string;
+  /**
+   * When the ball was retired (ms since epoch); absent for a ball in use. A retired ball stays in the
+   * arsenal with its games and stats, but is no longer offered when picking balls.
+   */
+  retiredAt?: number;
 }
 
 /**

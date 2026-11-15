@@ -1,20 +1,26 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
 import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
+import { BallsStore } from './balls.store';
 import { GamesStore } from './games.store';
 
 describe('GamesStore', () => {
   let store: GamesStore;
   let storageRepository: SpyObj<StorageRepository>;
   let loadingService: SpyObj<LoadingService>;
+  const arsenal = signal<Ball[]>([]);
 
   beforeEach(() => {
-    storageRepository = createSpyObj<StorageRepository>(['loadByPrefix', 'set', 'remove']);
+    arsenal.set([]);
+    storageRepository = createSpyObj<StorageRepository>(['loadByPrefix', 'get', 'set', 'remove']);
     storageRepository.loadByPrefix.mockResolvedValue([]);
+    storageRepository.get.mockResolvedValue(null);
     storageRepository.set.mockResolvedValue(undefined);
     storageRepository.remove.mockResolvedValue(undefined);
     loadingService = createSpyObj<LoadingService>(['setLoading']);
@@ -23,6 +29,7 @@ describe('GamesStore', () => {
       providers: [
         { provide: StorageRepository, useValue: storageRepository },
         { provide: LoadingService, useValue: loadingService },
+        { provide: BallsStore, useValue: { arsenal, knownBalls: arsenal } },
       ],
     });
     store = TestBed.inject(GamesStore);
@@ -34,14 +41,14 @@ describe('GamesStore', () => {
   });
 
   describe('migrateBallWeights', () => {
-    const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' }), makeBall({ ball_name: 'Phaze', core_weight: '16' })];
+    const phazes = [makeBall({ ball_name: 'Phaze', core_weight: '14' }), makeBall({ ball_name: 'Phaze', core_weight: '16' })];
 
     it('gives balls stored without a weight the heaviest of the arsenal, and saves those games', async () => {
       const legacy = { ...makeGame({ gameId: 'old' }), balls: ['Phaze 15lbs', 'Phaze'] } as unknown as Game;
       const current = makeGame({ gameId: 'new', balls: [{ name: 'Phaze', weight: '14' }] });
       store.games.set([legacy, current]);
 
-      await store.migrateBallWeights(arsenal);
+      await store.migrateBallWeights(phazes);
 
       expect(store.games()[0].balls).toEqual([
         { name: 'Phaze', weight: '15' },
@@ -49,6 +56,113 @@ describe('GamesStore', () => {
       ]);
       expect(store.games()[1]).toBe(current);
       expect(storageRepository.set).toHaveBeenCalledExactlyOnceWith(StorageKeys.game('old'), store.games()[0]);
+    });
+  });
+
+  describe('arsenal links', () => {
+    const phaze = makeBall({ ball_name: 'Phaze', core_weight: '15', arsenalId: 'one' });
+
+    it('links games to the arsenal ball they name, and saves those games', async () => {
+      const game = makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15' }] });
+      const other = makeGame({ gameId: 'g2', balls: [{ name: 'Zen', weight: '15' }] });
+      store.games.set([game, other]);
+
+      await store.migrateBallWeights([phaze]);
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one' }]);
+      expect(store.games()[1]).toBe(other);
+      expect(storageRepository.set).toHaveBeenCalledExactlyOnceWith(StorageKeys.game('g1'), store.games()[0]);
+    });
+
+    it('takes the link off games when the ball leaves the arsenal, keeping the recorded layout', async () => {
+      const drilling = { thumbSize: 1 };
+      const used = makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15', arsenalId: 'one', drilling }] });
+      const other = makeGame({ gameId: 'g2', balls: [{ name: 'Phaze', weight: '15', arsenalId: 'two' }] });
+      store.games.set([used, other]);
+
+      await store.unlinkArsenalBall('one');
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15', drilling }]);
+      expect(store.games()[1]).toBe(other);
+      expect(storageRepository.set).toHaveBeenCalledExactlyOnceWith(StorageKeys.game('g1'), store.games()[0]);
+    });
+  });
+
+  describe('saving a game with balls', () => {
+    const drilling = { layout: { system: 'dual-angle' as const, drillingAngle: 45, pinToPap: 4.5, valAngle: 30 } };
+    const phaze = makeBall({ ball_name: 'Phaze', core_weight: '15', arsenalId: 'one', drilling });
+
+    beforeEach(() => arsenal.set([phaze]));
+
+    it('links the balls to the arsenal and records their layout as it is now', async () => {
+      await store.saveGameToLocalStorage(makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15' }] }));
+
+      const saved = store.games()[0];
+      expect(saved.balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one', drilling }]);
+      expect(storageRepository.set).toHaveBeenCalledWith('gameg1', saved);
+      // a copy: drilling the ball again later doesn't reach into the game
+      expect(saved.balls![0].drilling).not.toBe(drilling);
+    });
+
+    it('keeps the layout a game was saved with when the ball is drilled again', async () => {
+      const before = { thumbSize: 1 };
+      const stored = makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15', arsenalId: 'one', drilling: before }] });
+      storageRepository.get.mockResolvedValue(stored);
+
+      // edited through the ball picker, which hands over the ball without the layout
+      await store.saveGameToLocalStorage({ ...stored, totalScore: 200, balls: [{ name: 'Phaze', weight: '15', arsenalId: 'one' }] });
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one', drilling: before }]);
+    });
+
+    it('leaves the layout of games saved before layouts were recorded unknown', async () => {
+      const stored = makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15', arsenalId: 'one' }] });
+      storageRepository.get.mockResolvedValue(stored);
+
+      await store.saveGameToLocalStorage({ ...stored, note: 'edited' });
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one' }]);
+    });
+
+    it('records the layout of a ball added to a saved game', async () => {
+      const zen = makeBall({ ball_name: 'Zen', core_weight: '15', arsenalId: 'two', drilling: { thumbSize: 2 } });
+      arsenal.set([phaze, zen]);
+      const stored = makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15', arsenalId: 'one' }] });
+      storageRepository.get.mockResolvedValue(stored);
+
+      await store.saveGameToLocalStorage({ ...stored, balls: [...stored.balls!, { name: 'Zen', weight: '15', arsenalId: 'two' }] });
+
+      expect(store.games()[0].balls).toEqual([
+        { name: 'Phaze', weight: '15', arsenalId: 'one' },
+        { name: 'Zen', weight: '15', arsenalId: 'two', drilling: { thumbSize: 2 } },
+      ]);
+    });
+
+    it('lists the balls actually thrown in per-throw tracking', async () => {
+      const frames = makeFrames();
+      frames[0] = makeFrame(0, [makeThrow(0, [], { ball: { name: 'Phaze', weight: '15', arsenalId: 'one' } })]);
+
+      await store.saveGameToLocalStorage(makeGame({ gameId: 'g1', frames, ballTracking: 'throw', balls: [{ name: 'Zen', weight: '15' }] }));
+
+      const saved = store.games()[0];
+      expect(saved.balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one', drilling }]);
+      // the layout is recorded once per game, not on every throw
+      expect(saved.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '15', arsenalId: 'one' });
+    });
+
+    it('links imported games without recording a layout', async () => {
+      await store.saveGamesToLocalStorage([makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15' }] })], { recordLayouts: false });
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one' }]);
+      expect(storageRepository.get).not.toHaveBeenCalled();
+    });
+
+    it('does not guess which of two of the same ball was thrown', async () => {
+      arsenal.set([phaze, { ...phaze, arsenalId: 'two' }]);
+
+      await store.saveGameToLocalStorage(makeGame({ gameId: 'g1', balls: [{ name: 'Phaze', weight: '15' }] }));
+
+      expect(store.games()[0].balls).toEqual([{ name: 'Phaze', weight: '15' }]);
     });
   });
 

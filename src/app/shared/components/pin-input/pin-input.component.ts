@@ -10,7 +10,8 @@ import { ThrowBall } from 'src/app/core/models/game.model';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBall, formatThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { findBall, toThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { gameBallLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
 import { GenericTypeaheadComponent } from '../generic-typeahead/generic-typeahead.component';
@@ -80,7 +81,7 @@ export class PinInputComponent {
     return arsenalBall?.thumbnail_image ? ballImageUrl(arsenalBall) : undefined;
   });
 
-  readonly selectedBallDisplayName = computed(() => formatThrowBall(this.selectedBall()));
+  readonly selectedBallDisplayName = computed(() => gameBallLabel(this.selectedBall(), this.ballsStore.arsenal()));
 
   readonly hasSelection = computed(() => this.selectedPins().length > 0);
   readonly selectedPins = signal<number[]>([]);
@@ -111,7 +112,7 @@ export class PinInputComponent {
   }
 
   openBallSelector(): void {
-    if (this.ballsStore.arsenal().length === 0) {
+    if (this.ballsStore.activeArsenal().length === 0) {
       this.isAddBallModalOpen.set(true);
       return;
     }
@@ -149,7 +150,8 @@ export class PinInputComponent {
     if (saved.length === 0) return;
 
     if (saved.length === 1) {
-      this.ballSelected.emit({ name: saved[0].ball_name, weight: saved[0].core_weight });
+      // the arsenal ball it became, so the throw says which ball it was
+      this.ballSelected.emit(toThrowBall(findBall(toThrowBall(saved[0]), this.ballsStore.arsenal()) ?? saved[0]));
       return;
     }
 

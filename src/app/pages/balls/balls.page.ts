@@ -62,6 +62,7 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { buildBallQueryParams } from 'src/app/core/utils/ball-utils/ball-query.utils';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
@@ -238,6 +239,7 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
+    private appFacade: AppFacade,
   ) {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline, chevronForward });
     this.searchSubject.subscribe((query) => {
@@ -299,7 +301,7 @@ export class BallsPage implements OnInit {
   async removeFromArsenal(ball: Ball): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
-      await this.ballsStore.removeFromArsenal(ball);
+      await this.appFacade.removeArsenalBall(ball);
       this.toastService.showToast(`${ball.ball_name} removed from Arsenal.`, 'checkmark-outline');
     } catch (error) {
       console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);

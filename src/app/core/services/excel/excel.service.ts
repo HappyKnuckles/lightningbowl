@@ -245,7 +245,7 @@ export class ExcelService {
         }
       }
       const sortedGames = sortGameHistoryByDate(weighed);
-      await this.gamesStore.saveGamesToLocalStorage(sortedGames);
+      await this.gamesStore.saveGamesToLocalStorage(sortedGames, { recordLayouts: false });
       this.gameFilterService.setDefaultFilters();
     } catch (error) {
       console.error('Error transforming data:', error);

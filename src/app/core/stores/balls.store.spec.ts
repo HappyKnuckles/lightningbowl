@@ -83,6 +83,58 @@ describe('BallsStore', () => {
 
       await expect(store.loadArsenal()).rejects.toThrow('storage down');
     });
+
+    it('gives balls saved before arsenal ids an id and moves them to a key by that id', async () => {
+      const drilling: BallDrilling = { thumbSize: 1 };
+      storageRepository.loadByPrefix.mockResolvedValue([makeBall({ ball_id: 'b1', core_weight: '15', position: 1, drilling })] as Ball[]);
+
+      await store.loadArsenal();
+
+      const [ball] = store.arsenal();
+      expect(ball.arsenalId).toBeTruthy();
+      expect(ball).toMatchObject({ ball_id: 'b1', position: 1, drilling });
+      expect(storageRepository.set).toHaveBeenCalledWith(`arsenal_${ball.arsenalId}`, ball);
+      expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
+    });
+
+    it('leaves balls that have an id alone', async () => {
+      const ball = makeBall({ ball_id: 'b1', arsenalId: 'one' });
+      storageRepository.loadByPrefix.mockResolvedValue([ball]);
+
+      await store.loadArsenal();
+
+      expect(store.arsenal()).toEqual([ball]);
+      expect(storageRepository.set).not.toHaveBeenCalled();
+      expect(storageRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('does not add a ball twice when its old record is still there after an interrupted move', async () => {
+      const moved = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'one' });
+      storageRepository.loadByPrefix.mockResolvedValue([moved, makeBall({ ball_id: 'b1', core_weight: '15' })]);
+
+      await store.loadArsenal();
+
+      expect(store.arsenal()).toEqual([moved]);
+      expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
+    });
+
+    it('keeps two of the same ball, each with its id', async () => {
+      const first = makeBall({ ball_id: 'b1', arsenalId: 'one', position: 1 });
+      const second = makeBall({ ball_id: 'b1', arsenalId: 'two', position: 2 });
+      storageRepository.loadByPrefix.mockResolvedValue([second, first]);
+
+      await store.loadArsenal();
+
+      expect(store.arsenal()).toEqual([first, second]);
+    });
+
+    it('gives a ball one id when loaded twice at once', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([makeBall({ ball_id: 'b1' })]);
+
+      await Promise.all([store.loadArsenal(), store.loadArsenal()]);
+
+      expect(storageRepository.set).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('knownBalls', () => {
@@ -90,7 +142,10 @@ describe('BallsStore', () => {
       const arsenalBall = makeBall({ ball_id: 'a', core_weight: '15' });
       const favorite = makeBall({ ball_id: 'f', core_weight: '15' });
       const cached = makeBall({ ball_id: 'c', core_weight: '14' });
-      await store.saveBallToArsenal(arsenalBall);
+      store.arsenal.set([
+        { ...arsenalBall, arsenalId: 'one' },
+        { ...arsenalBall, arsenalId: 'two' },
+      ]);
       favoriteBalls.set(
         new Map([
           ['f-15', favorite],
@@ -113,6 +168,14 @@ describe('BallsStore', () => {
 
       expect(store.knownBalls()).toEqual([updated]);
       expect(storageRepository.set).toHaveBeenLastCalledWith('ball_cache', [updated]);
+    });
+
+    it('remembers an arsenal ball as the catalog ball it is, without what the bowler added', async () => {
+      const ball = makeBall({ ball_id: 'b1' });
+
+      await store.rememberBalls([{ ...ball, arsenalId: 'one', position: 2, drilling: { thumbSize: 1 } }]);
+
+      expect(storageRepository.set).toHaveBeenLastCalledWith('ball_cache', [ball]);
     });
 
     it('never resolves a name without a weight, whatever weights are known', async () => {
@@ -237,15 +300,29 @@ describe('BallsStore', () => {
 
     it('swaps arsenal balls for fresh copies, keeping position and drilling, and saves them', async () => {
       const drilling: BallDrilling = { thumbSize: 1 };
-      store.arsenal.set([makeBall({ ball_id: 'a', core_weight: '15', ball_image: oldImage, position: 2, drilling })]);
+      store.arsenal.set([makeBall({ ball_id: 'a', core_weight: '15', ball_image: oldImage, arsenalId: 'one', position: 2, drilling })]);
       const fresh = makeBall({ ball_id: 'a', core_weight: '15', ball_image: newImage });
       ballService.getBallsByIds.mockResolvedValue([fresh, makeBall({ ball_id: 'a', core_weight: '14' })]);
 
       await store.refreshSavedBalls();
 
-      expect(store.arsenal()).toEqual([{ ...fresh, position: 2, drilling }]);
-      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_a_15', { ...fresh, position: 2, drilling });
+      expect(store.arsenal()).toEqual([{ ...fresh, arsenalId: 'one', position: 2, drilling }]);
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_one', { ...fresh, arsenalId: 'one', position: 2, drilling });
       expect(updateFavoriteBalls).toHaveBeenCalledWith([fresh]);
+    });
+
+    it('refreshes both of two of the same ball, each keeping its own drilling', async () => {
+      const first = makeBall({ ball_id: 'a', ball_image: oldImage, arsenalId: 'one', drilling: { thumbSize: 1 } });
+      const second = makeBall({ ball_id: 'a', ball_image: oldImage, arsenalId: 'two', drilling: { thumbSize: 2 } });
+      store.arsenal.set([first, second]);
+      ballService.getBallsByIds.mockResolvedValue([makeBall({ ball_id: 'a', ball_image: newImage })]);
+
+      await store.refreshSavedBalls();
+
+      expect(store.arsenal().map((ball) => [ball.arsenalId, ball.ball_image, ball.drilling?.thumbSize])).toEqual([
+        ['one', newImage, 1],
+        ['two', newImage, 2],
+      ]);
     });
 
     it('fetches favorites too, once per ball', async () => {
@@ -277,22 +354,45 @@ describe('BallsStore', () => {
   });
 
   describe('saveBallsToArsenal', () => {
-    it('persists each ball under its arsenal key and tracks it', async () => {
+    it('makes a catalog ball an arsenal ball with its own id, stored under that id, and tracks it', async () => {
       const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
 
-      const failed = await store.saveBallsToArsenal([ball]);
+      const { added, failed } = await store.addBallsToArsenal([ball]);
 
       expect(failed).toEqual([]);
-      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b1_15', ball);
-      expect(store.arsenal()).toEqual([ball]);
+      expect(added).toEqual([{ ...ball, arsenalId: expect.any(String) }]);
+      expect(storageRepository.set).toHaveBeenCalledWith(`arsenal_${added[0].arsenalId}`, added[0]);
+      expect(store.arsenal()).toEqual(added);
       expect(analyticsService.trackBallAdded).toHaveBeenCalledWith({ brand: ball.brand_name, name: ball.ball_name });
+      // the ball passed in stays a catalog ball
+      expect(ball.arsenalId).toBeUndefined();
     });
 
-    it('does not add the same ball and weight twice', async () => {
+    it('does not add a ball the arsenal already has in that weight', async () => {
       const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
       await store.saveBallToArsenal(ball);
 
+      const { added } = await store.addBallsToArsenal([ball]);
+
+      expect(added).toEqual([]);
+      expect(store.arsenal()).toHaveLength(1);
+    });
+
+    it('adds a second one of the same ball when asked to', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
       await store.saveBallToArsenal(ball);
+
+      const { added } = await store.addBallsToArsenal([ball], { allowTwin: true });
+
+      expect(added).toHaveLength(1);
+      expect(store.arsenal()).toHaveLength(2);
+      expect(new Set(store.arsenal().map((b) => b.arsenalId)).size).toBe(2);
+    });
+
+    it('adds a ball picked twice in one go only once', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
+
+      await store.saveBallsToArsenal([ball, { ...ball }]);
 
       expect(store.arsenal()).toHaveLength(1);
     });
@@ -305,48 +405,64 @@ describe('BallsStore', () => {
       expect(store.arsenal()).toHaveLength(2);
     });
 
+    it('updates an arsenal ball in place', async () => {
+      await store.saveBallsToArsenal([makeBall({ ball_id: 'b1' }), makeBall({ ball_id: 'b2' })]);
+      const [first, second] = store.arsenal();
+
+      const { added } = await store.addBallsToArsenal([{ ...second, position: 1 }]);
+
+      expect(added).toEqual([]);
+      expect(store.arsenal()).toEqual([first, { ...second, position: 1 }]);
+      expect(storageRepository.set).toHaveBeenLastCalledWith(`arsenal_${second.arsenalId}`, { ...second, position: 1 });
+      expect(analyticsService.trackBallAdded).toHaveBeenCalledTimes(2);
+    });
+
     it('reports the balls that could not be saved', async () => {
       const ok = makeBall({ ball_id: 'ok', core_weight: '15' });
       const broken = makeBall({ ball_id: 'broken', core_weight: '15' });
-      storageRepository.set.mockImplementation((key: string) => (key.includes('broken') ? Promise.reject(new Error('quota')) : Promise.resolve()));
+      storageRepository.set.mockImplementation((_key: string, ball: unknown) =>
+        (ball as Ball).ball_id === 'broken' ? Promise.reject(new Error('quota')) : Promise.resolve(),
+      );
 
       const failed = await store.saveBallsToArsenal([ok, broken]);
 
       expect(failed).toEqual([broken]);
-      expect(store.arsenal()).toEqual([ok]);
+      expect(store.arsenal().map((ball) => ball.ball_id)).toEqual(['ok']);
     });
   });
 
   describe('updateArsenalBall', () => {
-    it('rewrites the storage key, keeps the position and swaps the ball in memory', async () => {
-      const oldBall = makeBall({ ball_id: 'b1', core_weight: '15', position: 3 });
-      await store.saveBallToArsenal(oldBall);
-      const newBall = makeBall({ ball_id: 'b2', core_weight: '14' });
+    it('swaps the catalog data and keeps the id, position and drilling', async () => {
+      const oldBall = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'one', position: 3, drilling: { thumbSize: 1 } });
+      store.arsenal.set([oldBall]);
+      const newBall = makeBall({ ball_id: 'b1', core_weight: '14' });
 
       await store.updateArsenalBall(oldBall, newBall);
 
-      expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
-      const updated = { ...newBall, position: 3 };
-      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_b2_14', updated);
+      const updated = { ...newBall, arsenalId: 'one', position: 3, drilling: { thumbSize: 1 } };
+      expect(storageRepository.set).toHaveBeenCalledWith('arsenal_one', updated);
       expect(store.arsenal()).toEqual([updated]);
       // the ball passed in stays as it was
       expect(newBall.position).toBeUndefined();
     });
 
-    it('rethrows storage failures', async () => {
-      storageRepository.remove.mockRejectedValue(new Error('storage down'));
+    it('changes only the one of two of the same ball', async () => {
+      const first = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'one' });
+      const second = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'two' });
+      store.arsenal.set([first, second]);
 
-      await expect(store.updateArsenalBall(makeBall(), makeBall())).rejects.toThrow('storage down');
+      await store.updateArsenalBall(second, makeBall({ ball_id: 'b1', core_weight: '14' }));
+
+      expect(store.arsenal().map((ball) => [ball.arsenalId, ball.core_weight])).toEqual([
+        ['one', '15'],
+        ['two', '14'],
+      ]);
     });
 
-    it('keeps the drilling when the weight changes', async () => {
-      const oldBall = makeBall({ ball_id: 'b1', core_weight: '15', drilling: { thumbSize: 1 } });
-      await store.saveBallToArsenal(oldBall);
-      const newBall = makeBall({ ball_id: 'b1', core_weight: '14' });
+    it('rethrows storage failures', async () => {
+      storageRepository.set.mockRejectedValue(new Error('storage down'));
 
-      await store.updateArsenalBall(oldBall, newBall);
-
-      expect(store.arsenal()[0].drilling).toEqual({ thumbSize: 1 });
+      await expect(store.updateArsenalBall(makeBall({ arsenalId: 'one' }), makeBall())).rejects.toThrow('storage down');
     });
   });
 
@@ -356,19 +472,29 @@ describe('BallsStore', () => {
       thumbSize: 63 / 64,
     };
 
-    it('stores the drilling under the ball key and replaces the ball in memory', async () => {
-      const ball = makeBall({ ball_id: 'b1', core_weight: '15', position: 2 });
-      await store.saveBallToArsenal(ball);
+    it('stores the drilling under the ball id and replaces the ball in memory', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'one', position: 2 });
+      store.arsenal.set([ball]);
 
       await store.updateBallDrilling(ball, drilling);
 
-      expect(storageRepository.set).toHaveBeenLastCalledWith('arsenal_b1_15', { ...ball, drilling });
+      expect(storageRepository.set).toHaveBeenLastCalledWith('arsenal_one', { ...ball, drilling });
       expect(store.arsenal()).toEqual([{ ...ball, drilling }]);
     });
 
+    it('drills only the one of two of the same ball', async () => {
+      const first = makeBall({ ball_id: 'b1', arsenalId: 'one' });
+      const second = makeBall({ ball_id: 'b1', arsenalId: 'two' });
+      store.arsenal.set([first, second]);
+
+      await store.updateBallDrilling(second, drilling);
+
+      expect(store.arsenal()).toEqual([first, { ...second, drilling }]);
+    });
+
     it('clears the drilling when set to undefined', async () => {
-      const ball = makeBall({ ball_id: 'b1', drilling });
-      await store.saveBallToArsenal(ball);
+      const ball = makeBall({ ball_id: 'b1', arsenalId: 'one', drilling });
+      store.arsenal.set([ball]);
 
       await store.updateBallDrilling(ball, undefined);
 
@@ -378,7 +504,7 @@ describe('BallsStore', () => {
     it('rethrows storage failures', async () => {
       storageRepository.set.mockRejectedValue(new Error('storage down'));
 
-      await expect(store.updateBallDrilling(makeBall(), drilling)).rejects.toThrow('storage down');
+      await expect(store.updateBallDrilling(makeBall({ arsenalId: 'one' }), drilling)).rejects.toThrow('storage down');
     });
   });
 
@@ -394,30 +520,51 @@ describe('BallsStore', () => {
         ]),
       );
 
-      expect(store.myBalls()).toEqual([owned, favorite]);
+      expect(store.myBalls()).toEqual([store.arsenal()[0], favorite]);
     });
   });
 
   describe('removeFromArsenal', () => {
-    it('removes the ball from storage and memory', async () => {
-      const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
-      await store.saveBallToArsenal(ball);
+    it('removes the ball from storage and memory and returns it', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15', arsenalId: 'one' });
+      store.arsenal.set([ball]);
 
-      await store.removeFromArsenal(ball);
+      const removed = await store.removeFromArsenal(ball);
 
-      expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_b1_15');
+      expect(removed).toEqual(ball);
+      expect(storageRepository.remove).toHaveBeenCalledWith('arsenal_one');
       expect(store.arsenal()).toEqual([]);
     });
 
-    it('drops the ball from myBalls but keeps it resolvable in knownBalls', async () => {
+    it('removes only the one of two of the same ball', async () => {
+      const first = makeBall({ ball_id: 'b1', arsenalId: 'one' });
+      const second = makeBall({ ball_id: 'b1', arsenalId: 'two' });
+      store.arsenal.set([first, second]);
+
+      await store.removeFromArsenal(first);
+
+      expect(store.arsenal()).toEqual([second]);
+    });
+
+    it('removes the arsenal ball a catalog ball is', async () => {
       const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
       await store.saveBallToArsenal(ball);
-      expect(store.myBalls()).toEqual([ball]);
+
+      const removed = await store.removeFromArsenal(ball);
+
+      expect(removed?.arsenalId).toBeTruthy();
+      expect(store.arsenal()).toEqual([]);
+    });
+
+    it('drops the ball from myBalls but keeps it resolvable in knownBalls, as a catalog ball', async () => {
+      const ball = makeBall({ ball_id: 'b1', core_weight: '15' });
+      await store.saveBallToArsenal(ball);
+      expect(store.myBalls()).toHaveLength(1);
 
       await store.removeFromArsenal(ball);
 
       expect(store.myBalls()).toEqual([]);
-      expect(store.knownBalls().map((b) => b.ball_id)).toContain('b1');
+      expect(store.knownBalls()).toEqual([ball]);
     });
 
     it('keeps the same ball in another weight', async () => {
@@ -427,13 +574,20 @@ describe('BallsStore', () => {
 
       await store.removeFromArsenal(fifteen);
 
-      expect(store.arsenal()).toEqual([fourteen]);
+      expect(store.arsenal().map((ball) => ball.core_weight)).toEqual(['14']);
+    });
+
+    it('does nothing for a ball that is not in the arsenal', async () => {
+      expect(await store.removeFromArsenal(makeBall())).toBeUndefined();
+      expect(storageRepository.remove).not.toHaveBeenCalled();
     });
 
     it('rethrows storage failures', async () => {
       storageRepository.remove.mockRejectedValue(new Error('storage down'));
+      const ball = makeBall({ arsenalId: 'one' });
+      store.arsenal.set([ball]);
 
-      await expect(store.removeFromArsenal(makeBall())).rejects.toThrow('storage down');
+      await expect(store.removeFromArsenal(ball)).rejects.toThrow('storage down');
     });
   });
 

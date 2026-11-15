@@ -1,3 +1,5 @@
+import { BallDrilling } from './ball.model';
+
 /**
  * How a game records which ball was used.
  * - `game`: one selection for the whole game (`Game.balls`), the quick way.
@@ -7,11 +9,19 @@
 export type BallTracking = 'game' | 'throw';
 
 /**
- * Minimized ball reference stored per throw
+ * Minimized ball reference stored per game (`Game.balls`) and per throw (`Throw.ball`).
+ * Name and weight always say which ball it was, also after the arsenal ball is gone.
  */
 export interface ThrowBall {
   name: string;
   weight?: string;
+  /** The arsenal ball that was thrown (`Ball.arsenalId`), when it is known which one. */
+  arsenalId?: string;
+  /**
+   * How the ball was drilled when the game was saved. Only on `Game.balls`, once per ball, not on
+   * throws. Absent on games saved before layouts were recorded: their layout is unknown.
+   */
+  drilling?: BallDrilling;
 }
 
 /**

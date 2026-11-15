@@ -140,7 +140,7 @@
       detailIcon="chevron-expand-outline"
       [disabled]="ballsStore.arsenal().length === 0">
       <ion-label>Balls</ion-label>
-      <span class="ion-text-right">{{ getSelectedBallsText() }}</span>
+      <span class="ion-text-right">{{ selectedBallsText() }}</span>
     </ion-item>
     <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal trigger="ball-filter" class="ball-modal">
       <ng-template>

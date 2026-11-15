@@ -4,6 +4,11 @@ type ApiSchemas = components['schemas'];
 
 export type ApiBall = ApiSchemas['Ball'];
 export interface Ball extends ApiBall {
+  /**
+   * Identity of one physical ball in the arsenal. Two arsenal balls can be the same catalog ball in the
+   * same weight (same `key`), e.g. drilled differently; this tells them apart. Catalog balls have none.
+   */
+  arsenalId?: string;
   position?: number;
   drilling?: BallDrilling;
 }

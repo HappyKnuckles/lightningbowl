@@ -37,7 +37,7 @@
       @if (ballsStore.arsenal().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            @for (ball of ballsStore.arsenal(); track ball) {
+            @for (ball of ballsStore.arsenal(); track ball.arsenalId) {
               <ion-item-sliding #slidingItem class="sliding">
                 <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
                   <ion-item-option color="danger" expandable (click)="removeFromArsenal(ball); slidingItem.closeOpened()">
@@ -59,7 +59,7 @@
                           #weightSelect
                           [value]="ball.core_weight"
                           style="min-height: 0"
-                          [disabled]="loadingWeightBallIds().has(ball.key)"
+                          [disabled]="loadingWeightBallIds().has(ball.arsenalId ?? ball.key)"
                           (ionChange)="onWeightSelect(ball, $event.detail.value, weightSelect)"
                           interface="popover">
                           @for (weight of availableWeights; track weight) {
@@ -67,6 +67,9 @@
                           }
                         </ion-select>
                       </ion-chip>
+                      @if (twinNumbers()[ball.arsenalId ?? ""]; as twinNumber) {
+                        <ion-chip>{{ twinNumber }}</ion-chip>
+                      }
                       <ion-chip>{{ ball.core_type }}</ion-chip>
                       <ion-chip>{{ ball.coverstock_type }}</ion-chip>
                       @if (ball.drilling?.layout | layout; as layoutText) {
@@ -134,9 +137,9 @@
 </ng-template> -->
 </ion-content>
 
-<!-- tracked by key so saving drilling (which replaces the ball object) keeps the open modal alive -->
-@for (ball of ballsStore.arsenal(); track ball.key) {
-  <ion-modal [isOpen]="openBallKey() === ball.key" (didDismiss)="closeBallDetail()" (didPresent)="syncDetailSegmentView($event)" #modal>
+<!-- tracked by id so saving drilling (which replaces the ball object) keeps the open modal alive -->
+@for (ball of ballsStore.arsenal(); track ball.arsenalId) {
+  <ion-modal [isOpen]="openBallId() === ball.arsenalId" (didDismiss)="closeBallDetail()" (didPresent)="syncDetailSegmentView($event)" #modal>
     <ng-template>
       <ion-header [translucent]="true">
         <ion-toolbar>

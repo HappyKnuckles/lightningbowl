@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Ball } from 'src/app/core/models/ball.model';
 import { vi } from 'vitest';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -51,6 +53,7 @@ describe('AppFacade', () => {
       'updateGamesInMemory',
       'clearGames',
       'migrateBallWeights',
+      'unlinkArsenalBall',
     ]);
     gamesStore.loadGameHistory.mockResolvedValue([]);
     gamesStore.migrateBallWeights.mockResolvedValue(undefined);
@@ -63,6 +66,7 @@ describe('AppFacade', () => {
       'refreshSavedBalls',
       'loadArsenal',
       'clearArsenal',
+      'removeFromArsenal',
       'arsenal',
       'knownBalls',
     ]);
@@ -190,6 +194,65 @@ describe('AppFacade', () => {
 
       await expect(facade.editLeague('Tuesday', 'Monday')).rejects.toThrow('quota');
       expect(gamesStore.saveGamesToLocalStorage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removeArsenalBall', () => {
+    const phaze = makeBall({ ball_id: 'p', core_weight: '15', arsenalId: 'one' });
+
+    it("takes the link off the games when the arsenal's only ball of that kind leaves", async () => {
+      ballsStore.removeFromArsenal.mockResolvedValue(phaze);
+      ballsStore.arsenal.mockReturnValue([makeBall({ ball_id: 'p', core_weight: '14', arsenalId: 'lighter' })]);
+
+      await facade.removeArsenalBall(phaze);
+
+      expect(ballsStore.removeFromArsenal).toHaveBeenCalledWith(phaze);
+      expect(gamesStore.unlinkArsenalBall).toHaveBeenCalledWith('one');
+    });
+
+    it('leaves the games pointing at the ball that left when the same ball is still there', async () => {
+      ballsStore.removeFromArsenal.mockResolvedValue(phaze);
+      ballsStore.arsenal.mockReturnValue([{ ...phaze, arsenalId: 'two' }]);
+
+      await facade.removeArsenalBall(phaze);
+
+      expect(gamesStore.unlinkArsenalBall).not.toHaveBeenCalled();
+    });
+
+    it('does nothing more when no ball was removed', async () => {
+      ballsStore.removeFromArsenal.mockResolvedValue(undefined);
+
+      await facade.removeArsenalBall(phaze);
+
+      expect(gamesStore.unlinkArsenalBall).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the arsenal gets a ball', () => {
+    it("links the games that name it, once the app's data is loaded", async () => {
+      const arsenal = signal<Ball[]>([]);
+      TestBed.resetTestingModule();
+      (ballsStore as { arsenal: unknown }).arsenal = arsenal;
+      build();
+      const added = makeBall({ arsenalId: 'one' });
+
+      // before the data is loaded the games are left to the startup migration
+      arsenal.set([makeBall({ arsenalId: 'early' })]);
+      TestBed.tick();
+      expect(gamesStore.migrateBallWeights).not.toHaveBeenCalled();
+
+      await facade.init();
+      gamesStore.migrateBallWeights.mockClear();
+      arsenal.set([added]);
+      TestBed.tick();
+
+      expect(gamesStore.migrateBallWeights).toHaveBeenCalledWith([added], []);
+
+      // a change to a ball that is already there (drilling, order) links nothing
+      gamesStore.migrateBallWeights.mockClear();
+      arsenal.set([{ ...added, position: 1 }]);
+      TestBed.tick();
+      expect(gamesStore.migrateBallWeights).not.toHaveBeenCalled();
     });
   });
 

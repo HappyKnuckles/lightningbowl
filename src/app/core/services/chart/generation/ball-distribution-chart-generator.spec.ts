@@ -42,7 +42,7 @@ describe('generateBallDistributionChart', () => {
   const pointsOf = (chart: Chart) => chart.data.datasets[0].data as unknown as BallPoint[];
 
   it('plots each ball at its differential against its RG', () => {
-    const ball = makeBall({ ball_name: 'Phaze II', core_diff: '0.051', core_rg: '2.48' });
+    const ball = makeBall({ ball_name: 'Phaze II', core_diff: 0.051, core_rg: 2.48 });
 
     const chart = track(generateBallDistributionChart(host, [ball], undefined));
 
@@ -72,9 +72,9 @@ describe('generateBallDistributionChart', () => {
 
   it('zooms the axes to the plotted balls instead of the whole catalog', () => {
     const balls = [
-      makeBall({ ball_id: 'a', core_diff: '0.026', core_rg: '2.482' }),
-      makeBall({ ball_id: 'b', core_diff: '0.049', core_rg: '2.497' }),
-      makeBall({ ball_id: 'c', core_diff: '0.052', core_rg: '2.461' }),
+      makeBall({ ball_id: 'a', core_diff: 0.026, core_rg: 2.482 }),
+      makeBall({ ball_id: 'b', core_diff: 0.049, core_rg: 2.497 }),
+      makeBall({ ball_id: 'c', core_diff: 0.052, core_rg: 2.461 }),
     ];
 
     const chart = track(generateBallDistributionChart(host, balls, undefined));
@@ -84,9 +84,9 @@ describe('generateBallDistributionChart', () => {
   });
 
   it('refits the axes when the existing chart gets new balls', () => {
-    const first = track(generateBallDistributionChart(host, [makeBall({ core_diff: '0.02', core_rg: '2.48' })], undefined));
+    const first = track(generateBallDistributionChart(host, [makeBall({ core_diff: 0.02, core_rg: 2.48 })], undefined));
 
-    generateBallDistributionChart(host, [makeBall({ core_diff: '0.055', core_rg: '2.6' })], first);
+    generateBallDistributionChart(host, [makeBall({ core_diff: 0.055, core_rg: 2.6 })], first);
 
     const x = first.options.scales?.['x'] as { min: number; max: number };
     expect(x.min).toBeLessThan(0.055);
@@ -95,7 +95,7 @@ describe('generateBallDistributionChart', () => {
 
   it('labels roll and flare with the same scoring as the Compare tab', () => {
     // Low-RG core, but a polished pearl cover: the core alone would say "early", the whole ball reads late.
-    const pearl = makeBall({ coverstock_type: 'Pearl Reactive', factory_finish: 'Power Edge', core_rg: '2.47', core_diff: '0.055' });
+    const pearl = makeBall({ coverstock_type: 'Pearl Reactive', factory_finish: 'Power Edge', core_rg: 2.47, core_diff: 0.055 });
 
     const chart = track(generateBallDistributionChart(host, [pearl], undefined));
     const point = pointsOf(chart)[0] as BallPoint & { lengthLabel: string; flareLabel: string };
@@ -107,7 +107,7 @@ describe('generateBallDistributionChart', () => {
 
   it('skips balls whose core numbers cannot be parsed', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const balls = [makeBall({ ball_id: 'ok', ball_name: 'Good' }), makeBall({ ball_id: 'bad', ball_name: 'Mystery', core_rg: 'n/a' })];
+    const balls = [makeBall({ ball_id: 'ok', ball_name: 'Good' }), makeBall({ ball_id: 'bad', ball_name: 'Mystery', core_rg: null })];
 
     const chart = track(generateBallDistributionChart(host, balls, undefined));
 
@@ -118,7 +118,7 @@ describe('generateBallDistributionChart', () => {
   it('yields an empty plot when no ball has usable numbers', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    const chart = track(generateBallDistributionChart(host, [makeBall({ core_diff: '', core_rg: '' })], undefined));
+    const chart = track(generateBallDistributionChart(host, [makeBall({ core_diff: null, core_rg: null })], undefined));
 
     expect(pointsOf(chart)).toEqual([]);
   });

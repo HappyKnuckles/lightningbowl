@@ -1,27 +1,32 @@
-import { Frame, Throw } from 'src/app/core/models/game.model';
-import { makeFrame, makeGame, makeThrow } from 'src/testing/fixtures';
+import { Frame, Game, Throw } from 'src/app/core/models/game.model';
+import { makeBall, makeFrame, makeGame, makeThrow } from 'src/testing/fixtures';
 import {
-  ballValueMatches,
-  canonicalBallKey,
+  migrateGameBalls,
+  toGameBall,
+  weightFromArsenal,
+  findBall,
+  sameGameBall,
   clearThrowBalls,
   countThrowBalls,
   getBallTracking,
   resolveBallTracking,
   getCarryOverThrowBall,
+  getGameBallLabels,
   getGameBallNames,
   getGameBalls,
   getPendingBall,
   getThrowBallForPosition,
   getThrowBallKeys,
   keepArsenalThrowBalls,
+  parseStoredBall,
   setThrowBall,
-} from './ball.utils';
+} from './game-ball.utils';
 
 function emptyFrames(): Frame[] {
   return Array.from({ length: 10 }, (_, i) => ({ frameIndex: i + 1, throws: [] }));
 }
 
-describe('ball.utils', () => {
+describe('game-ball.utils', () => {
   describe('setThrowBall', () => {
     it('stores the ball as pendingBall instead of fabricating a throw when none exists yet', () => {
       const frames = emptyFrames();
@@ -107,58 +112,69 @@ describe('ball.utils', () => {
     });
   });
 
-  describe('ballValueMatches', () => {
-    const ball = { ball_name: 'Rocket A.I.', core_weight: '15' };
+  describe('findBall / sameGameBall', () => {
+    const arsenal = [makeBall({ ball_name: 'Rocket A.I.', core_weight: '14' }), makeBall({ ball_name: 'Rocket A.I.', core_weight: '15' })];
 
-    it('matches every format Game.balls has been written in', () => {
-      expect(ballValueMatches('Rocket A.I.15', ball)).toBe(true);
-      expect(ballValueMatches('Rocket A.I.', ball)).toBe(true);
-      expect(ballValueMatches('Rocket A.I. 15lbs', ball)).toBe(true);
+    it('finds the ball in the same weight', () => {
+      expect(findBall({ name: 'Rocket A.I.', weight: '15' }, arsenal)).toBe(arsenal[1]);
+      expect(findBall({ name: 'Rocket A.I.', weight: '16' }, arsenal)).toBeUndefined();
+      expect(findBall(undefined, arsenal)).toBeUndefined();
     });
 
-    it('does not match another ball or another weight of it', () => {
-      expect(ballValueMatches('Phaze II15', ball)).toBe(false);
-      expect(ballValueMatches('Rocket A.I.14', ball)).toBe(false);
+    it('compares exactly, since migrated games hold canonical balls', () => {
+      expect(sameGameBall({ name: 'Zen U', weight: '15' }, { name: 'Zen U', weight: '15' })).toBe(true);
+      expect(sameGameBall({ name: 'Zen U', weight: '15' }, { name: 'Zen U', weight: '14' })).toBe(false);
     });
   });
 
-  describe('canonicalBallKey', () => {
-    const arsenal = [{ ball_name: 'Rocket A.I.', core_weight: '15' }];
+  describe('getGameBallLabels', () => {
+    it('shows each ball with its weight, telling two weights of one ball apart', () => {
+      const game = makeGame({
+        balls: [
+          { name: 'Phaze', weight: '14' },
+          { name: 'Phaze', weight: '15' },
+        ],
+      });
 
-    it('reduces the stored formats of one ball to a single key', () => {
-      const key = canonicalBallKey('Rocket A.I.15', arsenal);
-
-      expect(canonicalBallKey('Rocket A.I.', arsenal)).toBe(key);
-      expect(canonicalBallKey('Rocket A.I. 15lbs', arsenal)).toBe(key);
+      expect(getGameBallLabels(game)).toEqual(['Phaze 14lbs', 'Phaze 15lbs']);
+      expect(getGameBallNames(game)).toEqual(['Phaze']);
     });
 
-    it('still compares a ball outside the arsenal against itself', () => {
-      expect(canonicalBallKey('Zen U', [])).toBe(canonicalBallKey('zen u', []));
-      expect(canonicalBallKey('Zen U', [])).not.toBe(canonicalBallKey('Zen Master', []));
+    it('reads the throws on a throw-tracked game', () => {
+      const game = makeGame({
+        ballTracking: 'throw',
+        frames: [
+          makeFrame(0, [
+            makeThrow(0, [10], { ball: { name: 'Phaze', weight: '15' } }),
+            makeThrow(1, [], { available: [10], ball: { name: 'Spare', weight: '14' } }),
+          ]),
+        ],
+      });
+
+      expect(getGameBallLabels(game)).toEqual(['Phaze 15lbs', 'Spare 14lbs']);
     });
   });
 
   describe('getGameBallNames', () => {
-    const arsenal = [{ ball_name: 'Rocket A.I.', core_weight: '15' }];
+    it("lists the game's ball names without their weights", () => {
+      const game = makeGame({
+        balls: [
+          { name: 'Rocket A.I.', weight: '15' },
+          { name: 'Zen U', weight: '14' },
+        ],
+      });
 
-    it('resolves every stored game.balls format back to the ball name', () => {
-      const game = makeGame({ balls: ['Rocket A.I.15', 'Rocket A.I. 15lbs', 'Rocket A.I.'] });
-
-      expect(getGameBallNames(game, arsenal)).toEqual(['Rocket A.I.', 'Rocket A.I.', 'Rocket A.I.']);
-    });
-
-    it('keeps a ball outside the arsenal as stored', () => {
-      expect(getGameBallNames(makeGame({ balls: ['Zen U 15lbs'] }), arsenal)).toEqual(['Zen U 15lbs']);
+      expect(getGameBallNames(game)).toEqual(['Rocket A.I.', 'Zen U']);
     });
 
     it('reads the selection, not leftover throw balls, on a game-tracked game', () => {
       const game = makeGame({
         ballTracking: 'game',
-        balls: ['Rocket A.I.15'],
+        balls: [{ name: 'Rocket A.I.', weight: '15' }],
         frames: [makeFrame(0, [makeThrow(0, [], { ball: { name: 'Phaze II', weight: '15' } })])],
       });
 
-      expect(getGameBallNames(game, arsenal)).toEqual(['Rocket A.I.']);
+      expect(getGameBallNames(game)).toEqual(['Rocket A.I.']);
     });
   });
 });
@@ -177,7 +193,7 @@ describe('getBallTracking', () => {
   });
 
   it('reads a legacy game with no flag and no per-throw balls as game-tracked', () => {
-    expect(getBallTracking(makeGame({ balls: ['IQ Tour15'] }))).toBe('game');
+    expect(getBallTracking(makeGame({ balls: [{ name: 'IQ Tour', weight: '15' }] }))).toBe('game');
   });
 });
 
@@ -192,13 +208,13 @@ describe('resolveBallTracking', () => {
   });
 
   it('keeps the mode of a game that carries ball data', () => {
-    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
+    expect(resolveBallTracking({ ballTracking: 'game', frames: [], balls: [{ name: 'IQ Tour', weight: '15' }] }, 'throw')).toBe('game');
     expect(resolveBallTracking({ ballTracking: 'throw', frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
   });
 
   it('reads the mode from the data when the game has no flag', () => {
     expect(resolveBallTracking({ frames: withThrowBall(), balls: [] }, 'game')).toBe('throw');
-    expect(resolveBallTracking({ frames: [], balls: ['IQ Tour15'] }, 'throw')).toBe('game');
+    expect(resolveBallTracking({ frames: [], balls: [{ name: 'IQ Tour', weight: '15' }] }, 'throw')).toBe('game');
   });
 });
 
@@ -375,16 +391,18 @@ describe('getGameBalls', () => {
   const throwFrames = () => [makeFrame(0, [makeThrow(0, [], { ball: { name: 'Phaze II', weight: '15' } })])];
 
   it('reads the throws of a throw-tracked game', () => {
-    expect(getGameBalls(makeGame({ ballTracking: 'throw', balls: ['Hammer15'], frames: throwFrames() }))).toEqual(['Phaze II15']);
+    expect(getGameBalls(makeGame({ ballTracking: 'throw', balls: [{ name: 'Hammer', weight: '15' }], frames: throwFrames() }))).toEqual([
+      'Phaze II15',
+    ]);
   });
 
   it('reads the selection of a game-tracked game, ignoring balls left on its throws', () => {
-    expect(getGameBalls(makeGame({ ballTracking: 'game', balls: ['Hammer15'], frames: throwFrames() }))).toEqual(['Hammer15']);
+    expect(getGameBalls(makeGame({ ballTracking: 'game', balls: [{ name: 'Hammer', weight: '15' }], frames: throwFrames() }))).toEqual(['Hammer15']);
   });
 
   it('derives the mode of an untagged game from its throws', () => {
-    expect(getGameBalls(makeGame({ balls: ['Hammer15'], frames: throwFrames() }))).toEqual(['Phaze II15']);
-    expect(getGameBalls(makeGame({ balls: ['Hammer15'] }))).toEqual(['Hammer15']);
+    expect(getGameBalls(makeGame({ balls: [{ name: 'Hammer', weight: '15' }], frames: throwFrames() }))).toEqual(['Phaze II15']);
+    expect(getGameBalls(makeGame({ balls: [{ name: 'Hammer', weight: '15' }] }))).toEqual(['Hammer15']);
   });
 });
 
@@ -407,5 +425,113 @@ describe('countThrowBalls / clearThrowBalls', () => {
     expect(cleared[1].pendingBall).toBeUndefined();
     expect(cleared[1].pendingBallThrowIndex).toBeUndefined();
     expect(cleared[0].throws.map((t) => t.value)).toEqual([9, 1]);
+  });
+});
+
+describe('weightFromArsenal', () => {
+  const arsenal = [
+    makeBall({ ball_name: 'Phaze', core_weight: '14' }),
+    makeBall({ ball_name: 'Phaze', core_weight: '15' }),
+    makeBall({ ball_name: 'Zen', core_weight: '13' }),
+  ];
+
+  it("takes the arsenal's weight for the name, the heaviest when it holds several", () => {
+    expect(weightFromArsenal('Zen', arsenal)).toBe('13');
+    expect(weightFromArsenal('phaze', arsenal)).toBe('15');
+  });
+
+  it('falls back to 15 for a ball the arsenal lacks', () => {
+    expect(weightFromArsenal('Hammer', arsenal)).toBe('15');
+  });
+});
+
+describe('toGameBall', () => {
+  const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' }), makeBall({ ball_name: 'Black Widow 3.0', core_weight: '12' })];
+
+  it('keeps a stored weight in any format', () => {
+    expect(toGameBall('Phaze 15lbs', arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+    expect(toGameBall('Phaze15', arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+    expect(toGameBall({ name: 'Phaze', weight: '16' }, arsenal)).toEqual({ name: 'Phaze', weight: '16' });
+  });
+
+  it('gives a name alone the weight from the arsenal', () => {
+    expect(toGameBall('Phaze', arsenal)).toEqual({ name: 'Phaze', weight: '14' });
+    expect(toGameBall({ name: 'Phaze' }, arsenal)).toEqual({ name: 'Phaze', weight: '14' });
+    expect(toGameBall('Hammer', arsenal)).toEqual({ name: 'Hammer', weight: '15' });
+  });
+
+  it('does not split a number off a name the arsenal knows', () => {
+    expect(toGameBall('Black Widow 3.0', arsenal)).toEqual({ name: 'Black Widow 3.0', weight: '12' });
+  });
+
+  it('takes the spelling of the known ball and the catalog form of the weight', () => {
+    expect(toGameBall('phaze 15lbs', arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+    expect(toGameBall({ name: 'PHAZE', weight: '15.0' }, arsenal)).toEqual({ name: 'Phaze', weight: '15' });
+  });
+
+  it('spells a ball only the known balls hold their way, weighing it from the arsenal', () => {
+    const known = [...arsenal, makeBall({ ball_name: 'Zen U', core_weight: '13' })];
+
+    expect(toGameBall('zen u', arsenal, known)).toEqual({ name: 'Zen U', weight: '15' });
+  });
+
+  it('keeps the spelling of an unknown ball', () => {
+    expect(toGameBall({ name: 'hammer', weight: '15' }, arsenal)).toEqual({ name: 'hammer', weight: '15' });
+  });
+});
+
+describe('migrateGameBalls', () => {
+  const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' }), makeBall({ ball_name: 'Phaze', core_weight: '15' })];
+
+  it('turns stored strings into balls with a weight, once each', () => {
+    const game = { ...makeGame(), balls: ['Phaze 15lbs', 'Phaze'] } as unknown as Game;
+
+    expect(migrateGameBalls(game, arsenal).balls).toEqual([{ name: 'Phaze', weight: '15' }]);
+  });
+
+  it('gives throw balls without a weight one, and leaves the rest alone', () => {
+    const game = makeGame({
+      frames: [makeFrame(0, [makeThrow(1, [7], { ball: { name: 'Phaze' } }), makeThrow(2, [], { ball: { name: 'Spare', weight: '12' } })])],
+    });
+
+    const migrated = migrateGameBalls(game, [makeBall({ ball_name: 'Phaze', core_weight: '14' })]);
+
+    expect(migrated.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '14' });
+    expect(migrated.frames[0].throws[1]).toBe(game.frames[0].throws[1]);
+  });
+
+  it('brings names to the known spelling and merges what that makes duplicates', () => {
+    const game = makeGame({
+      balls: [
+        { name: 'phaze', weight: '15' },
+        { name: 'Phaze', weight: '15' },
+      ],
+      frames: [makeFrame(0, [makeThrow(1, [7], { ball: { name: 'PHAZE', weight: '14' } })])],
+    });
+
+    const migrated = migrateGameBalls(game, arsenal);
+
+    expect(migrated.balls).toEqual([{ name: 'Phaze', weight: '15' }]);
+    expect(migrated.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '14' });
+  });
+
+  it('returns the same game when every ball is canonical', () => {
+    const game = makeGame({ balls: [{ name: 'Phaze', weight: '15' }] });
+
+    expect(migrateGameBalls(game, arsenal)).toBe(game);
+  });
+});
+
+describe('parseStoredBall', () => {
+  it('splits the weight off the name in every stored format', () => {
+    for (const value of ['Phaze II15', 'Phaze II 15', 'Phaze II 15lbs', 'Phaze II 15 lb', 'Phaze II 15#']) {
+      expect(parseStoredBall(value)).toEqual({ name: 'Phaze II', weight: '15' });
+    }
+  });
+
+  it('keeps plain names, including names ending in a number that is no ball weight', () => {
+    expect(parseStoredBall('Phaze II')).toEqual({ name: 'Phaze II' });
+    expect(parseStoredBall('Black Widow 3.0')).toEqual({ name: 'Black Widow 3.0' });
+    expect(parseStoredBall('Hy-Road 40')).toEqual({ name: 'Hy-Road 40' });
   });
 });

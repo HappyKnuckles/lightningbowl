@@ -31,9 +31,9 @@ describe('BallSortService', () => {
 
   describe('sortBalls', () => {
     const balls: Ball[] = [
-      makeBall({ ball_id: 'b1', ball_name: 'Zen', brand_name: 'Storm', release_date: '2024-01-01', core_rg: '2.55', core_diff: '0.050' }),
-      makeBall({ ball_id: 'b2', ball_name: 'alpha', brand_name: 'Hammer', release_date: '2026-01-01', core_rg: '2.48', core_diff: '0.030' }),
-      makeBall({ ball_id: 'b3', ball_name: 'Match', brand_name: 'Motiv', release_date: '2025-01-01', core_rg: '2.51', core_diff: '0.040' }),
+      makeBall({ ball_id: 'b1', ball_name: 'Zen', brand_name: 'Storm', release_date: '2024-01-01', core_rg: 2.55, core_diff: 0.050 }),
+      makeBall({ ball_id: 'b2', ball_name: 'alpha', brand_name: 'Hammer', release_date: '2026-01-01', core_rg: 2.48, core_diff: 0.030 }),
+      makeBall({ ball_id: 'b3', ball_name: 'Match', brand_name: 'Motiv', release_date: '2025-01-01', core_rg: 2.51, core_diff: 0.040 }),
     ];
 
     it('sorts names case-insensitively', () => {
@@ -51,11 +51,11 @@ describe('BallSortService', () => {
     it('sorts numeric core values as numbers', () => {
       const sorted = service.sortBalls(balls, option(BallSortField.CORE_RG));
 
-      expect(sorted.map((b) => b.core_rg)).toEqual(['2.48', '2.51', '2.55']);
+      expect(sorted.map((b) => b.core_rg)).toEqual([2.48, 2.51, 2.55]);
     });
 
     it('treats an unparsable numeric value as zero', () => {
-      const withBlank = [...balls, makeBall({ ball_id: 'b4', core_diff: 'n/a' })];
+      const withBlank = [...balls, makeBall({ ball_id: 'b4', core_diff: null })];
 
       const sorted = service.sortBalls(withBlank, option(BallSortField.CORE_DIFF));
 
@@ -90,6 +90,23 @@ describe('BallSortService', () => {
       const sorted = service.sortBalls([fourteen, fifteen], option(BallSortField.BALL_NAME), true);
 
       expect(sorted.map((b) => b.core_weight)).toEqual(['15', '14']);
+    });
+
+    it('only moves favorites that are in the given list', () => {
+      const elsewhere = makeBall({ ball_id: 'other', ball_name: 'Not In Results' });
+      favoritesService.getFavoriteBalls.mockReturnValue([elsewhere, balls[2]]);
+
+      const sorted = service.sortBalls(balls, option(BallSortField.BALL_NAME), true);
+
+      expect(sorted.map((b) => b.ball_name)).toEqual(['Match', 'alpha', 'Zen']);
+    });
+
+    it('keeps relevance order within favorites and the rest', () => {
+      favoritesService.getFavoriteBalls.mockReturnValue([balls[2]]);
+
+      const sorted = service.sortBalls(balls, { field: BallSortField.RELEVANCE, direction: SortDirection.DESC, label: 'Best Match' }, true);
+
+      expect(sorted.map((b) => b.ball_name)).toEqual(['Match', 'Zen', 'alpha']);
     });
 
     it('ignores favorites when the flag is off', () => {

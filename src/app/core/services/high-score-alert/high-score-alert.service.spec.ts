@@ -70,7 +70,7 @@ describe('HighScoreAlertService', () => {
     });
 
     it('lists league, patterns and balls of the record game', async () => {
-      const newGame = makeGame({ gameId: 'new', totalScore: 250, league: 'Monday', patterns: ['Shark'], balls: ['Hammer'] });
+      const newGame = makeGame({ gameId: 'new', totalScore: 250, league: 'Monday', patterns: ['Shark'], balls: [{ name: 'Hammer', weight: '15' }] });
 
       await service.checkAndDisplayHighScoreAlerts(newGame, [newGame]);
 

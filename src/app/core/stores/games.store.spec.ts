@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Game } from 'src/app/core/models/game.model';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
+import { StorageKeys } from 'src/app/core/services/storage/storage-keys';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
-import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
+import { makeBall, makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { GamesStore } from './games.store';
 
 describe('GamesStore', () => {
@@ -30,6 +31,25 @@ describe('GamesStore', () => {
 
   afterEach(() => {
     localStorage.removeItem('first-game');
+  });
+
+  describe('migrateBallWeights', () => {
+    const arsenal = [makeBall({ ball_name: 'Phaze', core_weight: '14' }), makeBall({ ball_name: 'Phaze', core_weight: '16' })];
+
+    it('gives balls stored without a weight the heaviest of the arsenal, and saves those games', async () => {
+      const legacy = { ...makeGame({ gameId: 'old' }), balls: ['Phaze 15lbs', 'Phaze'] } as unknown as Game;
+      const current = makeGame({ gameId: 'new', balls: [{ name: 'Phaze', weight: '14' }] });
+      store.games.set([legacy, current]);
+
+      await store.migrateBallWeights(arsenal);
+
+      expect(store.games()[0].balls).toEqual([
+        { name: 'Phaze', weight: '15' },
+        { name: 'Phaze', weight: '16' },
+      ]);
+      expect(store.games()[1]).toBe(current);
+      expect(storageRepository.set).toHaveBeenCalledExactlyOnceWith(StorageKeys.game('old'), store.games()[0]);
+    });
   });
 
   describe('loadGameHistory', () => {
@@ -64,19 +84,18 @@ describe('GamesStore', () => {
       expect(store.games()[0].patterns).toEqual([]);
     });
 
-    it('sorts unsorted patterns and balls, then persists the migration', async () => {
-      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', patterns: ['Shark', 'Cheetah'], balls: ['Spare', 'Hammer'] })]);
+    it('sorts unsorted patterns, then persists the migration', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', patterns: ['Shark', 'Cheetah'] })]);
 
       await store.loadGameHistory();
 
       expect(store.games()[0].patterns).toEqual(['Cheetah', 'Shark']);
-      expect(store.games()[0].balls).toEqual(['Hammer', 'Spare']);
       expect(storageRepository.set).toHaveBeenCalledTimes(1);
     });
 
     it('skips the rewrite when nothing needs migrating', async () => {
       storageRepository.loadByPrefix.mockResolvedValue([
-        makeGame({ gameId: 'g1', patterns: ['Cheetah', 'Shark'], balls: ['Hammer'], ballTracking: 'game' }),
+        makeGame({ gameId: 'g1', patterns: ['Cheetah', 'Shark'], balls: [{ name: 'Hammer', weight: '15' }], ballTracking: 'game' }),
       ]);
 
       await store.loadGameHistory();
@@ -85,7 +104,7 @@ describe('GamesStore', () => {
     });
 
     it('tags a legacy game with no per-throw balls as game-tracked', async () => {
-      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', balls: ['Hammer15'] })]);
+      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', balls: [{ name: 'Hammer', weight: '15' }] })]);
 
       await store.loadGameHistory();
 
@@ -93,7 +112,7 @@ describe('GamesStore', () => {
     });
 
     it('does not rewrite the history just to persist the derived tracking tag', async () => {
-      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', balls: ['Hammer15'] })]);
+      storageRepository.loadByPrefix.mockResolvedValue([makeGame({ gameId: 'g1', balls: [{ name: 'Hammer', weight: '15' }] })]);
 
       await store.loadGameHistory();
 
@@ -103,7 +122,7 @@ describe('GamesStore', () => {
     it('does not backfill per-throw balls from the game-level selection', async () => {
       const game = makeGame({
         gameId: 'g1',
-        balls: ['Hammer15'],
+        balls: [{ name: 'Hammer', weight: '15' }],
         frames: [makeFrame(0, [makeThrow(0, [])]), ...makeFrames().slice(1)],
       });
       storageRepository.loadByPrefix.mockResolvedValue([game]);

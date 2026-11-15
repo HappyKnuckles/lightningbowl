@@ -24,7 +24,7 @@
     <p class="empty-msg">{{ emptyMessage() }}</p>
   } @else {
     @if (item().image) {
-      <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + item().image"> </ion-img>
+      <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="item().image"> </ion-img>
     }
 
     <div class="item-meta">
@@ -71,8 +71,7 @@
         <ion-list style="background: none">
           @for (listItem of allItemsSorted(); track listItem.name) {
             <article class="item-card modal-card">
-              <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="(imageUrlBase() ?? ballsStore.url) + listItem.image">
-              </ion-img>
+              <ion-img [class.round]="roundImage()" [class.pattern-img]="!roundImage()" [src]="listItem.image"> </ion-img>
               <div class="item-meta">
                 <header class="item-top">
                   <h3 class="item-name">{{ listItem.name }}</h3>

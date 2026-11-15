@@ -2,8 +2,8 @@ import { ElementRef } from '@angular/core';
 import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Ball } from 'src/app/core/models/ball.model';
-import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
 import { getBallMetrics } from 'src/app/core/services/ball/ball-metrics.util';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 import { getBallDistributionBounds, getBallMarkerSize } from 'src/app/core/utils/chart-utils/ball-distribution.utils';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
 import { BallMarkerPoint, ballMarkersPlugin } from '../plugins/ball-markers.plugin';
@@ -19,7 +19,6 @@ export function generateBallDistributionChart(
   isReload?: boolean,
 ): Chart {
   try {
-    const baseUrl = BOWWWL_URL;
     const canvas = ballDistributionChartCanvas.nativeElement as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
@@ -34,23 +33,24 @@ export function generateBallDistributionChart(
     const dataPoints: (ScatterDataPoint &
       BallMarkerPoint & { image: HTMLImageElement; imageUrl: string; cover: string; lengthLabel: string; flareLabel: string })[] = [];
     for (const ball of balls) {
-      const x = parseFloat(ball.core_diff);
-      const y = parseFloat(ball.core_rg);
-      if (isNaN(x) || isNaN(y)) {
+      const x = ball.core_diff;
+      const y = ball.core_rg;
+      if (x === null || y === null) {
         console.warn(`Skipping invalid RG/Diff for ${ball.ball_name}`);
         continue;
       }
 
+      const imageUrl = ballImageUrl(ball);
       const image = new Image();
-      image.src = baseUrl + ball.thumbnail_image;
+      image.src = imageUrl;
       image.onerror = () => console.warn(`Failed to load image for ${ball.ball_name}`);
       const { lengthLabel, flareLabel } = getBallMetrics(ball);
       dataPoints.push({
         x,
         y,
         name: ball.ball_name,
-        imageUrl: baseUrl + ball.thumbnail_image,
-        cover: ball.coverstock_type,
+        imageUrl,
+        cover: ball.coverstock_type ?? '',
         image,
         lengthLabel,
         flareLabel,

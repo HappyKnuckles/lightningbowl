@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
-import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
 import { BallsStore } from './balls.store';
@@ -22,7 +21,6 @@ export class AppFacade {
     private settingsStore: SettingsStore,
     private ballService: BallService,
     private analyticsService: AnalyticsService,
-    private ballFilterService: BallFilterService,
   ) {}
 
   async init(): Promise<void> {
@@ -50,31 +48,38 @@ export class AppFacade {
         console.warn('Persistent Storage API is not supported by this browser.');
       }
 
-      const weight = parseInt(this.ballFilterService.filters().weight, 10);
-      await this.loadInitialData(weight);
+      await this.loadInitialData();
     } catch (error) {
       console.error('Error during AppFacade init:', error);
     }
   }
 
-  async loadInitialData(weight: number): Promise<void> {
+  async loadInitialData(): Promise<void> {
     try {
       this.settingsStore.loadPinInputMode();
       this.settingsStore.loadBallTracking();
       this.settingsStore.loadHandedness();
+      const ballData = Promise.all([this.ballsStore.loadBallCache(), this.gamesStore.loadGameHistory(), this.ballsStore.loadArsenal()]).then(() =>
+        this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()),
+      );
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
         this.patternsStore.loadPatternImageMap(),
-        this.ballsStore.loadAllBalls(undefined, weight),
+        ballData,
         this.leaguesStore.loadLeagues(),
-        this.gamesStore.loadGameHistory(),
-        this.ballsStore.loadArsenal(),
         this.settingsStore.loadFit(),
         this.settingsStore.loadLayoutPresets(),
         this.ballService.getBrands(),
         this.ballService.getCores(),
         this.ballService.getCoverstocks(),
       ]);
+      // Make the balls named in games available offline (fetches only unknown names).
+      // Then migrate again, so games take the catalog spelling of balls resolved just now.
+      void this.ballsStore
+        .resolveBallNames(this.gamesStore.games().flatMap((game) => game.balls ?? []))
+        .then(() => this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
+      // Arsenal and favorite balls saved before the ball API get its data (images on its own host) once.
+      void this.ballsStore.refreshSavedBalls(true).catch((error) => console.error('Error refreshing saved balls:', error));
     } catch (error) {
       console.error('Error during initial data load:', error);
       throw error;

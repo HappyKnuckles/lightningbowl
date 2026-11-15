@@ -13,6 +13,7 @@ const mockGamesStore = {
 const mockBallsStore = {
   allBalls: vi.fn().mockReturnValue([]),
   arsenal: vi.fn().mockReturnValue([]),
+  knownBalls: vi.fn().mockReturnValue([]),
 };
 
 describe('StatsPage', () => {

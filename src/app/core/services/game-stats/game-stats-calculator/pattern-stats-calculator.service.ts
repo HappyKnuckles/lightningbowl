@@ -4,6 +4,7 @@ import { HighlightItemStats } from 'src/app/core/models/stats.model';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
 import { pickTop } from 'src/app/core/utils/stat-utils/stat.utils';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -59,7 +60,8 @@ export class PatternStatsCalculatorService {
     const finalStats: Record<string, HighlightItemStats> = {};
     for (const patternName in tempStats) {
       const stats = tempStats[patternName];
-      const patternImage = this.patternsStore.patternImageMap()[patternName] ?? '';
+      const chart = this.patternsStore.patternImageMap()[patternName];
+      const patternImage = chart ? environment.imagesUrl + chart : '';
       const totalPossibleStrikes = stats.gameCount * 12;
       const strikeRate = totalPossibleStrikes > 0 ? Math.round((stats.totalStrikes / totalPossibleStrikes) * 100) : 0;
       finalStats[patternName] = {

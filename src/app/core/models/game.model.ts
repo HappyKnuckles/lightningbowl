@@ -89,7 +89,6 @@ export interface Game {
   note?: string;
   league?: string;
   patterns: string[];
-  /** Balls used. The user's selection in `game` tracking, derived from the throws in `throw` tracking. */
-  balls?: string[];
+  balls?: ThrowBall[];
   ballTracking?: BallTracking;
 }

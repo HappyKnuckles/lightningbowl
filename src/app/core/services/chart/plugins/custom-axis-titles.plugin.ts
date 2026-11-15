@@ -42,9 +42,9 @@ const customAxisTitlesPlugin = {
       ctx.restore();
     }
 
-    drawRotated('← Earlier Roll', yAxisXPos, earlierRollYPos, 'bold 12px Arial', 'grey');
+    drawRotated('← Revs Earlier', yAxisXPos, earlierRollYPos, 'bold 12px Arial', 'grey');
     drawRotated('RG', yAxisXPos, diffYPos, 'bold 14px Arial', 'white');
-    drawRotated('Later Roll →', yAxisXPos, laterRollPos, 'bold 12px Arial', 'grey');
+    drawRotated('Revs Later →', yAxisXPos, laterRollPos, 'bold 12px Arial', 'grey');
 
     ctx.restore();
   },

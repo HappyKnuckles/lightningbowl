@@ -51,20 +51,30 @@ const ballDistributionZonePlugin = {
           ctx.lineWidth = 1; // Adjust line width as needed
           ctx.strokeRect(left, top, width, height);
 
-          // Draw the text labels
-          ctx.fillStyle = style.textColor;
-          ctx.font = 'bold 9px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const lines = [xR.label, yR.label];
-          const lineH = 10;
-          let yText = top + (height - lines.length * lineH) / 2 + lineH / 2;
-          for (const line of lines) {
-            ctx.fillText(line, left + width / 2, yText);
-            yText += lineH;
-          }
         }
       }
+    }
+
+    // Band labels sit along the edges (Diff on top, RG on the left) so the balls never hide them.
+    ctx.font = 'bold 10px Arial';
+    ctx.fillStyle = '#F5F5F5';
+    ctx.textBaseline = 'middle';
+    const labelPadding = 4;
+
+    ctx.textAlign = 'center';
+    for (const xR of xRanges) {
+      const left = Math.max(chartArea.left, scales['x'].getPixelForValue(xR.min));
+      const right = Math.min(chartArea.right, scales['x'].getPixelForValue(xR.max));
+      if (right - left < ctx.measureText(xR.label).width + labelPadding * 2) continue;
+      ctx.fillText(xR.label, (left + right) / 2, chartArea.top + 8);
+    }
+
+    ctx.textAlign = 'left';
+    for (const yR of yRanges) {
+      const top = Math.max(chartArea.top, scales['y'].getPixelForValue(yR.max));
+      const bottom = Math.min(chartArea.bottom, scales['y'].getPixelForValue(yR.min));
+      if (bottom - top < 24) continue;
+      ctx.fillText(yR.label, chartArea.left + labelPadding, (top + bottom) / 2);
     }
 
     ctx.restore();

@@ -14,6 +14,8 @@ export const StorageKeys = {
   legacyArsenal: (ballId: string | number, coreWeight: string | number): string => `${STORAGE_PREFIX.arsenal}_${ballId}_${coreWeight}`,
   searchHistory: (context: string): string => `${STORAGE_PREFIX.searchHistory}_${context}`,
   ballCache: 'ball_cache',
+  /** The arsenals (named groups of arsenal balls) and which one is open: one record. */
+  arsenals: 'ball_arsenals',
 } as const;
 
 // Single-record keys.

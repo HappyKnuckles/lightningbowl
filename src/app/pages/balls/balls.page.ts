@@ -62,6 +62,7 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { ArsenalPickerService } from 'src/app/core/services/arsenal-picker/arsenal-picker.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { buildBallQueryParams } from 'src/app/core/utils/ball-utils/ball-query.utils';
@@ -240,6 +241,7 @@ export class BallsPage implements OnInit {
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
     private appFacade: AppFacade,
+    private arsenalPicker: ArsenalPickerService,
   ) {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline, chevronForward });
     this.searchSubject.subscribe((query) => {
@@ -312,7 +314,10 @@ export class BallsPage implements OnInit {
   async saveBallToArsenal(ball: Ball): Promise<void> {
     try {
       this.hapticService.vibrate(ImpactStyle.Light);
-      await this.ballsStore.saveBallToArsenal(ball);
+      // with several arsenals the bowler says which ones it goes into
+      const arsenalIds = await this.arsenalPicker.chooseForNewBalls();
+      if (!arsenalIds) return;
+      await this.ballsStore.saveBallsToArsenal([ball], { arsenalIds });
       this.toastService.showToast(`${ball.ball_name} added to Arsenal.`, 'add');
     } catch (error) {
       console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);

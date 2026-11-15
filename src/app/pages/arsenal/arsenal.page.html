@@ -1,6 +1,17 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Arsenal</ion-title>
+    <ion-title>
+      <span
+        class="arsenal-title"
+        role="button"
+        tabindex="0"
+        aria-label="Switch or manage arsenals"
+        (click)="openArsenalMenu()"
+        (keydown.enter)="openArsenalMenu()">
+        {{ ballsStore.currentArsenal()?.name ?? "Arsenal" }}
+        <ion-icon name="chevron-down-outline"></ion-icon>
+      </span>
+    </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openFitModal()" aria-label="Ball fit">
         <ion-icon slot="icon-only" name="hand-left-outline"></ion-icon>
@@ -20,7 +31,7 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
-  @if (ballsStore.arsenal().length > 0) {
+  @if (ballsStore.currentArsenalBalls().length > 0) {
     <ion-toolbar>
       <ion-segment [(ngModel)]="selectedSegment">
         <ion-segment-button value="arsenal" contentId="arsenal">Arsenal</ion-segment-button>
@@ -34,12 +45,17 @@
 <ion-content [fullscreen]="true">
   <ion-segment-view>
     <ion-segment-content id="arsenal">
-      @if (ballsStore.activeArsenal().length > 0) {
+      @if (ballsInUse().length > 0) {
         <ion-list>
           <ion-reorder-group disabled="false" (ionItemReorder)="reorderArsenal($event)">
-            @for (ball of ballsStore.activeArsenal(); track ball.arsenalId) {
+            @for (ball of ballsInUse(); track ball.arsenalId) {
               <ion-item-sliding #slidingItem class="sliding">
                 <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); slidingItem.closeOpened()">
+                  @if (ballsStore.arsenals().length > 1) {
+                    <ion-item-option color="primary" (click)="editBallArsenals(ball); slidingItem.closeOpened()" aria-label="Choose arsenals">
+                      <ion-icon class="title" style="transform: translateY(-2px)" name="albums-outline"></ion-icon>
+                    </ion-item-option>
+                  }
                   <ion-item-option color="medium" (click)="setRetired(ball, true); slidingItem.closeOpened()" aria-label="Retire ball">
                     <ion-icon class="title" style="transform: translateY(-2px)" name="archive-outline"></ion-icon>
                   </ion-item-option>
@@ -89,16 +105,21 @@
           </ion-reorder-group>
         </ion-list>
       }
-      @if (ballsStore.retiredBalls().length > 0) {
+      @if (retiredBalls().length > 0) {
         <ion-accordion-group class="retired">
           <ion-accordion value="retired">
             <ion-item slot="header">
-              <ion-label>Retired ({{ ballsStore.retiredBalls().length }})</ion-label>
+              <ion-label>Retired ({{ retiredBalls().length }})</ion-label>
             </ion-item>
             <ion-list slot="content">
-              @for (ball of ballsStore.retiredBalls(); track ball.arsenalId) {
+              @for (ball of retiredBalls(); track ball.arsenalId) {
                 <ion-item-sliding #retiredItem class="sliding">
                   <ion-item-options side="end" (ionSwipe)="removeFromArsenal(ball); retiredItem.closeOpened()">
+                    @if (ballsStore.arsenals().length > 1) {
+                      <ion-item-option color="primary" (click)="editBallArsenals(ball); retiredItem.closeOpened()" aria-label="Choose arsenals">
+                        <ion-icon class="title" style="transform: translateY(-2px)" name="albums-outline"></ion-icon>
+                      </ion-item-option>
+                    }
                     <ion-item-option color="medium" (click)="setRetired(ball, false); retiredItem.closeOpened()" aria-label="Restore ball">
                       <ion-icon class="title" style="transform: translateY(-2px)" name="arrow-undo-outline"></ion-icon>
                     </ion-item-option>
@@ -133,7 +154,7 @@
     </ion-segment-content>
 
     <ion-segment-content id="compare">
-      @if (ballsStore.activeArsenal().length > 0) {
+      @if (ballsInUse().length > 0) {
         <div class="arsenal-chart-container">
           <canvas #balls style="width: 600px; height: 800px; max-height: 100%"> </canvas>
         </div>
@@ -145,7 +166,7 @@
     </ion-segment-content>
   </ion-segment-view>
 
-  @if (ballsStore.arsenal().length <= 0) {
+  @if (ballsStore.currentArsenalBalls().length <= 0) {
     <ion-text class="no-game-text"> You have no balls in your arsenal. Add a ball to get started! </ion-text>
   }
   <!-- <ng-template #content>

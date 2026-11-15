@@ -23,6 +23,17 @@ export interface Ball extends ApiBall {
 }
 
 /**
+ * A named group of arsenal balls, e.g. "League" or "Tournament". A ball is owned once and can be in
+ * several arsenals; every arsenal ball is in at least one.
+ */
+export interface Arsenal {
+  id: string;
+  name: string;
+  /** `Ball.arsenalId`s of its balls. */
+  ballIds: string[];
+}
+
+/**
  * Layout systems as written on drill sheets:
  * - Dual Angle: drilling angle (°) × pin to PAP (") × VAL angle (°), e.g. 45° × 4 1/2" × 30°
  * - VLS / 2LS: pin to PAP (") × PSA to PAP (") × pin buffer ("), e.g. 5" × 4" × 2"

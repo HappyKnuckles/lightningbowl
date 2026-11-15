@@ -104,7 +104,8 @@ describe('BallsStore', () => {
       await store.loadArsenal();
 
       expect(store.arsenal()).toEqual([ball]);
-      expect(storageRepository.set).not.toHaveBeenCalled();
+      // only the arsenals record is written (the first arsenal is started), no ball
+      expect(storageRepository.set.mock.calls.map(([key]) => key)).toEqual(['ball_arsenals']);
       expect(storageRepository.remove).not.toHaveBeenCalled();
     });
 
@@ -133,7 +134,7 @@ describe('BallsStore', () => {
 
       await Promise.all([store.loadArsenal(), store.loadArsenal()]);
 
-      expect(storageRepository.set).toHaveBeenCalledTimes(1);
+      expect(storageRepository.set.mock.calls.filter(([key]) => String(key).startsWith('arsenal_'))).toHaveLength(1);
     });
   });
 
@@ -692,6 +693,175 @@ describe('BallsStore', () => {
       await store.reorderArsenal(added);
 
       expect(storageRepository.set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('arsenals', () => {
+    const stored = () => storageRepository.set.mock.calls.filter(([key]) => key === 'ball_arsenals').at(-1)?.[1];
+    const names = () => store.arsenals().map((arsenal) => arsenal.name);
+
+    it('starts a bowler without arsenals with one that holds every ball', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([
+        makeBall({ ball_id: 'b1', arsenalId: 'one' }),
+        makeBall({ ball_id: 'b2', arsenalId: 'two' }),
+      ]);
+
+      await store.loadArsenal();
+
+      expect(store.arsenals()).toEqual([{ id: expect.any(String), name: 'Arsenal', ballIds: ['one', 'two'] }]);
+      expect(store.currentArsenal()).toBe(store.arsenals()[0]);
+      expect(stored()).toEqual({ arsenals: store.arsenals(), currentId: store.arsenals()[0].id });
+    });
+
+    it('loads the stored arsenals, drops balls that are gone and puts balls in no arsenal into the open one', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([
+        makeBall({ ball_id: 'b1', arsenalId: 'one' }),
+        makeBall({ ball_id: 'b2', arsenalId: 'two' }),
+      ]);
+      storageRepository.get.mockImplementation((key: string) =>
+        Promise.resolve(
+          key === 'ball_arsenals'
+            ? {
+                arsenals: [
+                  { id: 'a1', name: 'League', ballIds: ['one', 'gone'] },
+                  { id: 'a2', name: 'Tournament', ballIds: [] },
+                ],
+                currentId: 'a2',
+              }
+            : null,
+        ),
+      );
+
+      await store.loadArsenal();
+
+      expect(store.arsenals()).toEqual([
+        { id: 'a1', name: 'League', ballIds: ['one'] },
+        { id: 'a2', name: 'Tournament', ballIds: ['two'] },
+      ]);
+      expect(store.currentArsenal()?.id).toBe('a2');
+      expect(store.currentArsenalBalls().map((b) => b.arsenalId)).toEqual(['two']);
+    });
+
+    it('saves nothing when the stored arsenals are already in line', async () => {
+      storageRepository.loadByPrefix.mockResolvedValue([makeBall({ ball_id: 'b1', arsenalId: 'one' })]);
+      storageRepository.get.mockResolvedValue({ arsenals: [{ id: 'a1', name: 'League', ballIds: ['one'] }], currentId: 'a1' });
+
+      await store.loadArsenal();
+
+      expect(stored()).toBeUndefined();
+      expect(names()).toEqual(['League']);
+    });
+
+    it('creates an arsenal, opens it and puts new balls into it', async () => {
+      await store.loadArsenal();
+
+      const tournament = await store.createArsenal(' Tournament ');
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+
+      expect(names()).toEqual(['Arsenal', 'Tournament']);
+      expect(store.currentArsenal()?.id).toBe(tournament.id);
+      expect(store.arsenals()[1].ballIds).toEqual([added[0].arsenalId]);
+      expect(store.arsenals()[0].ballIds).toEqual([]);
+      expect((stored() as { currentId: string }).currentId).toBe(tournament.id);
+    });
+
+    it('puts new balls into the arsenals asked for', async () => {
+      await store.loadArsenal();
+      const first = store.arsenals()[0];
+      const tournament = await store.createArsenal('Tournament');
+      await store.createArsenal('Spares');
+
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })], { arsenalIds: [first.id, tournament.id] });
+
+      expect(store.arsenalsOf(added[0])).toEqual([first.id, tournament.id]);
+    });
+
+    it('refuses a missing or taken name', async () => {
+      await store.loadArsenal();
+
+      await expect(store.createArsenal('  ')).rejects.toMatchObject({ reason: 'missing' });
+      await expect(store.createArsenal('arsenal')).rejects.toMatchObject({ reason: 'taken' });
+      expect(names()).toEqual(['Arsenal']);
+    });
+
+    it('renames an arsenal, also to its own name in another case', async () => {
+      await store.loadArsenal();
+      const { id } = store.arsenals()[0];
+
+      await store.renameArsenal(id, 'ARSENAL');
+      expect(names()).toEqual(['ARSENAL']);
+
+      await store.renameArsenal(id, 'League');
+      expect(names()).toEqual(['League']);
+    });
+
+    it('lists the open arsenal first among the balls in use', async () => {
+      await store.loadArsenal();
+      const first = store.arsenals()[0];
+      await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      await store.createArsenal('Tournament');
+      await store.addBallsToArsenal([makeBall({ ball_id: 'b2' })]);
+
+      expect(store.activeArsenal().map((b) => b.ball_id)).toEqual(['b2', 'b1']);
+
+      await store.setCurrentArsenal(first.id);
+      expect(store.activeArsenal().map((b) => b.ball_id)).toEqual(['b1', 'b2']);
+      expect(store.currentArsenalBalls().map((b) => b.ball_id)).toEqual(['b1']);
+    });
+
+    it('puts a ball into exactly the arsenals given, but never into none', async () => {
+      await store.loadArsenal();
+      const first = store.arsenals()[0];
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      const tournament = await store.createArsenal('Tournament');
+
+      await store.setBallArsenals(added[0], [first.id, tournament.id]);
+      expect(store.arsenalsOf(added[0])).toEqual([first.id, tournament.id]);
+
+      await store.setBallArsenals(added[0], [tournament.id]);
+      expect(store.arsenalsOf(added[0])).toEqual([tournament.id]);
+
+      await store.setBallArsenals(added[0], []);
+      expect(store.arsenalsOf(added[0])).toEqual([tournament.id]);
+    });
+
+    it('deletes an arsenal and moves balls that were only in it to the first one left', async () => {
+      await store.loadArsenal();
+      const first = store.arsenals()[0];
+      const { added: shared } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      const tournament = await store.createArsenal('Tournament');
+      const { added: only } = await store.addBallsToArsenal([makeBall({ ball_id: 'b2' })]);
+      await store.setBallArsenals(shared[0], [first.id, tournament.id]);
+
+      await store.deleteArsenal(tournament.id);
+
+      expect(names()).toEqual(['Arsenal']);
+      expect(store.arsenals()[0].ballIds).toEqual([shared[0].arsenalId, only[0].arsenalId]);
+      expect(store.currentArsenal()?.id).toBe(first.id);
+      expect(store.arsenal()).toHaveLength(2);
+    });
+
+    it('never deletes the last arsenal', async () => {
+      await store.loadArsenal();
+
+      await store.deleteArsenal(store.arsenals()[0].id);
+
+      expect(names()).toEqual(['Arsenal']);
+    });
+
+    it('takes a removed ball out of its arsenals', async () => {
+      await store.loadArsenal();
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+
+      await store.removeFromArsenal(added[0]);
+
+      expect(store.arsenals()[0].ballIds).toEqual([]);
+    });
+
+    it('starts the first arsenal for a ball added before any exists', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+
+      expect(store.arsenals()).toEqual([{ id: expect.any(String), name: 'Arsenal', ballIds: [added[0].arsenalId] }]);
     });
   });
 

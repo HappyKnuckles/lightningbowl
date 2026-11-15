@@ -3,7 +3,7 @@ import { Component, ElementRef, Signal, ViewChild, computed, effect, model, sign
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
+import { ActionSheetButton, ActionSheetController, AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -45,8 +45,11 @@ import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {
   add,
+  albumsOutline,
   archiveOutline,
   arrowUndoOutline,
+  checkmarkOutline,
+  createOutline,
   chevronBack,
   chevronDownOutline,
   closeCircle,
@@ -74,14 +77,16 @@ import {
 import { BowlerFitPipe, HoleSizesPipe, InchesPipe, LayoutPipe } from 'src/app/shared/pipes/drill-pipes/drill.pipes';
 import { BallStats } from 'src/app/core/models/stats.model';
 import { getBallModelKey, getThrowBallKey, toThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
-import { arsenalBallLabel, isInArsenal, twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { arsenalBallLabel, isInArsenal, isRetired, twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { ArsenalPickerService } from 'src/app/core/services/arsenal-picker/arsenal-picker.service';
 import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { ChartGenerationService } from 'src/app/core/services/chart/chart-generation.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { ArsenalNameError, BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { GameStatsService } from 'src/app/core/services/game-stats/game-stats.service';
 import { BallStatsComponent } from 'src/app/shared/components/ball-stats/ball-stats.component';
@@ -158,6 +163,15 @@ export class ArsenalPage implements OnInit {
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore.myBalls().filter((ball) => !this.ballsStore.arsenal().some((b) => b.key === ball.key)),
   );
+  /** The open arsenal's balls in use, as listed and charted. */
+  readonly ballsInUse = computed(() => this.ballsStore.currentArsenalBalls().filter((ball) => !isRetired(ball)));
+  /** The open arsenal's retired balls, last retired first. */
+  readonly retiredBalls = computed(() =>
+    this.ballsStore
+      .currentArsenalBalls()
+      .filter(isRetired)
+      .sort((a, b) => (b.retiredAt ?? 0) - (a.retiredAt ?? 0)),
+  );
   /**
    * What the list shows next to a ball's specs, by `arsenalId`: its nickname, or its number ("#2") for a
    * ball the arsenal has twice with nothing else to tell them apart (a twin's layout has its own chip).
@@ -174,7 +188,7 @@ export class ArsenalPage implements OnInit {
   selectedSegment = model('arsenal');
 
   /**
-   * Per-ball stats for the balls currently in the arsenal, across all time.
+   * Per-ball stats for the balls currently in the open arsenal, across all time.
    *
    * This deliberately differs from the stats page in both directions. It ignores the game
    * filter, because the question here is whether a ball has earned its place in the bag
@@ -184,14 +198,15 @@ export class ArsenalPage implements OnInit {
    */
   readonly ballStats = computed<BallStats[]>(() => {
     const arsenal = this.ballsStore.arsenal();
+    const shown = this.ballsStore.currentArsenalBalls();
     const fromHistory = this.statsService.calculateBallStats(this.gamesStore.games());
 
     // an arsenal ball's own games, and games that name an owned ball without saying which one
-    const ownKeys = new Set(arsenal.flatMap((ball) => [getThrowBallKey(toThrowBall(ball)), getBallModelKey(toThrowBall(ball))]));
+    const ownKeys = new Set(shown.flatMap((ball) => [getThrowBallKey(toThrowBall(ball)), getBallModelKey(toThrowBall(ball))]));
     const owned = fromHistory.filter((stats) => ownKeys.has(stats.key));
     const covered = new Set(owned.map((stats) => stats.key));
 
-    const neverThrown = arsenal
+    const neverThrown = shown
       .filter((ball) => !covered.has(getThrowBallKey(toThrowBall(ball))))
       .map(
         (ball): BallStats => ({
@@ -248,10 +263,15 @@ export class ArsenalPage implements OnInit {
     private statsService: GameStatsService,
     private settingsStore: SettingsStore,
     private appFacade: AppFacade,
+    private actionSheetController: ActionSheetController,
+    private arsenalPicker: ArsenalPickerService,
   ) {
     addIcons({
       add,
+      albumsOutline,
       archiveOutline,
+      checkmarkOutline,
+      createOutline,
       ellipsisVerticalOutline,
       trashOutline,
       chevronBack,
@@ -279,7 +299,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.ballsStore.activeArsenal(),
+        this.ballsInUse(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -293,7 +313,10 @@ export class ArsenalPage implements OnInit {
       this.hapticService.vibrate(ImpactStyle.Heavy);
       const alert = await this.alertController.create({
         header: 'Confirm Deletion',
-        message: `Are you sure you want to remove ${ball.ball_name} from your arsenal?`,
+        message:
+          this.ballsStore.arsenals().length > 1
+            ? `Are you sure you want to remove ${ball.ball_name} from all your arsenals?`
+            : `Are you sure you want to remove ${ball.ball_name} from your arsenal?`,
         buttons: [
           {
             text: 'Cancel',
@@ -324,8 +347,8 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    // the list shows the balls in use; retired balls keep their place after them
-    const active = [...this.ballsStore.activeArsenal()];
+    // the list shows the open arsenal's balls in use; all other balls keep their order after them
+    const active = [...this.ballsInUse()];
     const [movedItem] = active.splice(event.detail.from, 1);
     active.splice(event.detail.to, 0, movedItem);
     try {
@@ -359,10 +382,68 @@ export class ArsenalPage implements OnInit {
     this.detailSegment.set(value === 'drilling' || value === 'notes' ? value : 'ball');
   }
 
-  /** Adds catalog balls to the arsenal; with `allowTwin` also ones the arsenal already has. */
-  async saveBallToArsenal(balls: Ball[], allowTwin = false): Promise<void> {
+  /** The arsenals: switch to one, or create, rename or delete one. */
+  async openArsenalMenu(): Promise<void> {
+    const current = this.ballsStore.currentArsenal();
+    const arsenals = this.ballsStore.arsenals();
+    const buttons: ActionSheetButton[] = arsenals.map((arsenal) => ({
+      text: arsenal.name,
+      icon: arsenal.id === current?.id ? 'checkmark-outline' : undefined,
+      handler: () => void this.ballsStore.setCurrentArsenal(arsenal.id),
+    }));
+    buttons.push({ text: 'New Arsenal', icon: 'add', handler: () => void this.promptArsenalName() });
+    if (current) {
+      buttons.push({
+        text: `Rename "${current.name}"`,
+        icon: 'create-outline',
+        handler: () => void this.promptArsenalName(current.id, current.name),
+      });
+    }
+    if (current && arsenals.length > 1) {
+      buttons.push({ text: `Delete "${current.name}"`, icon: 'trash-outline', role: 'destructive', handler: () => void this.confirmDeleteArsenal() });
+    }
+    buttons.push({ text: 'Cancel', role: 'cancel' });
+    const sheet = await this.actionSheetController.create({ header: 'Arsenals', buttons });
+    await sheet.present();
+  }
+
+  /** Creates the arsenal, or renames the one with `id`. False for a name that can't be used. */
+  async saveArsenalName(name: string, id?: string): Promise<boolean> {
+    try {
+      if (id) {
+        await this.ballsStore.renameArsenal(id, name);
+      } else {
+        await this.ballsStore.createArsenal(name);
+      }
+      this.toastService.showToast(TOAST_MESSAGES.arsenalSaveSuccess, 'checkmark-outline');
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof ArsenalNameError
+          ? error.reason === 'taken'
+            ? TOAST_MESSAGES.arsenalNameTaken
+            : TOAST_MESSAGES.arsenalNameMissing
+          : TOAST_MESSAGES.arsenalSaveError;
+      this.toastService.showToast(message, 'bug', true);
+      return false;
+    }
+  }
+
+  /** Which arsenals a ball is in. */
+  async editBallArsenals(ball: Ball): Promise<void> {
+    const before = this.ballsStore.arsenalsOf(ball);
+    const picked = await this.arsenalPicker.choose(`Arsenals for ${ball.ball_name}`, before);
+    if (!picked) return;
+    await this.ballsStore.setBallArsenals(ball, picked);
+  }
+
+  /**
+   * Adds catalog balls to the arsenal, into `arsenalIds` (the open arsenal by default); with `allowTwin`
+   * also ones the bowler already has.
+   */
+  async saveBallToArsenal(balls: Ball[], allowTwin = false, arsenalIds?: string[]): Promise<void> {
     if (balls.length === 0) return;
-    const { added, failed } = await this.ballsStore.addBallsToArsenal(balls, { allowTwin });
+    const { added, failed } = await this.ballsStore.addBallsToArsenal(balls, { allowTwin, arsenalIds });
 
     if (added.length) {
       this.toastService.showToast(`Balls added to arsenal: ${added.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
@@ -413,11 +494,27 @@ export class ArsenalPage implements OnInit {
 
   async onBallSelectionChange(selected: Ball[]): Promise<void> {
     const arsenal = this.ballsStore.arsenal();
-    const owned = selected.filter((ball) => isInArsenal(ball, arsenal));
-    await this.saveBallToArsenal(selected.filter((ball) => !owned.includes(ball)));
-    if (owned.length) {
-      await this.confirmAddTwins(owned);
+    const here = this.ballsStore.currentArsenalBalls();
+    const fresh = selected.filter((ball) => !isInArsenal(ball, arsenal));
+    // owned, but only in other arsenals: it joins this one, it isn't bought a second time
+    const elsewhere = selected.filter((ball) => isInArsenal(ball, arsenal) && !isInArsenal(ball, here));
+    const twins = selected.filter((ball) => isInArsenal(ball, here));
+
+    for (const ball of elsewhere) {
+      const entry = arsenal.find((owned) => ballKey(owned) === ballKey(ball));
+      const current = this.ballsStore.currentArsenal();
+      if (entry && current) await this.ballsStore.setBallArsenals(entry, [...this.ballsStore.arsenalsOf(entry), current.id]);
     }
+    if (elsewhere.length) {
+      this.toastService.showToast(`Balls added to arsenal: ${elsewhere.map((b) => b.ball_name).join(', ')}`, 'checkmark-outline');
+    }
+
+    const again = twins.length && (await this.confirmAddTwins(twins)) ? twins : [];
+    if (fresh.length + again.length === 0) return;
+    const arsenalIds = await this.arsenalPicker.chooseForNewBalls();
+    if (!arsenalIds) return;
+    await this.saveBallToArsenal(fresh, false, arsenalIds);
+    await this.saveBallToArsenal(again, true, arsenalIds);
   }
 
   async getSameCoreBalls(ball: Ball): Promise<void> {
@@ -668,8 +765,42 @@ export class ArsenalPage implements OnInit {
     }
   }
 
+  private async promptArsenalName(id?: string, name = ''): Promise<void> {
+    const alert = await this.alertController.create({
+      header: id ? 'Rename Arsenal' : 'New Arsenal',
+      inputs: [{ name: 'name', type: 'text', value: name, placeholder: 'e.g. Tournament', attributes: { maxlength: 30 } }],
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        // stays open for a name that can't be used
+        { text: 'Save', handler: (data: { name: string }) => this.saveArsenalName(data.name, id) },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async confirmDeleteArsenal(): Promise<void> {
+    const current = this.ballsStore.currentArsenal();
+    if (!current) return;
+    const alert = await this.alertController.create({
+      header: 'Delete Arsenal?',
+      message: `Delete "${current.name}"? Its balls stay yours: any that are in no other arsenal move to another one.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        {
+          text: 'Delete',
+          role: 'destructive',
+          handler: async () => {
+            await this.ballsStore.deleteArsenal(current.id);
+            this.toastService.showToast(TOAST_MESSAGES.arsenalDeleteSuccess, 'checkmark-outline');
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
   // A ball picked again is most likely a second one of it (e.g. drilled differently), but it's asked, not assumed.
-  private async confirmAddTwins(owned: Ball[]): Promise<void> {
+  private async confirmAddTwins(owned: Ball[]): Promise<boolean> {
     const names = owned.map((ball) => `${ball.ball_name} ${ball.core_weight}lbs`).join(', ');
     const alert = await this.alertController.create({
       header: owned.length === 1 ? 'Add another one?' : 'Add more of these?',
@@ -684,9 +815,7 @@ export class ArsenalPage implements OnInit {
     });
     await alert.present();
     const { role } = await alert.onDidDismiss();
-    if (role === 'confirm') {
-      await this.saveBallToArsenal(owned, true);
-    }
+    return role === 'confirm';
   }
 }
 

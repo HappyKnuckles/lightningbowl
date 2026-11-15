@@ -27,6 +27,7 @@ import {
 import { addIcons } from 'ionicons';
 import {
   calendarOutline,
+  chevronBack,
   cloudDoneOutline,
   cloudOfflineOutline,
   cloudUploadOutline,
@@ -120,6 +121,7 @@ export class CloudSyncSettingsComponent {
       folderOutline,
       calendarOutline,
       warningOutline,
+      chevronBack,
     });
   }
 

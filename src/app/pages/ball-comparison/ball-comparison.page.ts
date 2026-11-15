@@ -1,3 +1,4 @@
+import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
@@ -42,6 +43,7 @@ import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 
 interface SavedEntry {
   id: string;
@@ -55,6 +57,7 @@ interface SavedEntry {
   providers: [ModalController],
   standalone: true,
   imports: [
+    BallImagePipe,
     IonCol,
     IonRow,
     IonGrid,
@@ -87,8 +90,11 @@ interface SavedEntry {
 })
 export class BallComparisonPage implements OnDestroy, OnInit {
   protected readonly ballsStore = inject(BallsStore);
-  protected readonly url = this.ballsStore.url;
-  protected readonly allBalls = this.ballsStore.allBalls;
+  /** Picker list: the current selection (which may come from a search), then your arsenal and favorites. */
+  protected readonly pickerBalls = computed(() => {
+    const selectedKeys = new Set(this.selectedBalls().map(ballKey));
+    return [...this.selectedBalls(), ...this.ballsStore.myBalls().filter((b) => !selectedKeys.has(ballKey(b)))];
+  });
   private readonly ballService = inject(BallService);
   private readonly chartGenerationService = inject(ChartGenerationService);
   private readonly toastService = inject(ToastService);
@@ -110,7 +116,7 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     title: 'Select Balls to Compare',
     maxSelections: this.maxBalls,
   };
-  readonly selectedBallIds = computed(() => this.selectedBalls().map((b) => b.ball_id));
+  readonly selectedBallKeys = computed(() => this.selectedBalls().map(ballKey));
   readonly availableWeights = ['12', '13', '14', '15', '16'];
 
   readonly displayBalls = computed(() =>
@@ -133,7 +139,7 @@ export class BallComparisonPage implements OnDestroy, OnInit {
   constructor() {
     addIcons({ add, chevronDownOutline, closeOutline, scaleOutline });
     this.initChartEffect();
-    this.initRestoreEffect();
+    this.restoreSelection();
   }
 
   ngOnInit() {
@@ -148,9 +154,8 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     this.addBallModal?.present();
   }
 
-  onBallSelectionChange(ballIds: string[]): void {
-    const allBalls = this.ballsStore.allBalls();
-    const selected = ballIds.map((id) => allBalls.find((b) => b.ball_id === id)).filter((b): b is Ball => !!b);
+  onBallSelectionChange(selected: Ball[]): void {
+    void this.ballsStore.rememberBalls(selected);
     this.selectedBalls.set(selected);
     this.saveSelectedIds(selected);
   }
@@ -167,12 +172,11 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     const selectedWeight = Number(weight);
     if (!Number.isFinite(selectedWeight) || selectedWeight === Number(ball.core_weight)) return;
 
-    const key = ball.ball_id + ball.core_weight;
+    const key = ball.key;
     this.loadingWeightBallIds.update((s) => new Set([...s, key]));
 
     try {
-      const ballsAtWeight = await this.ballService.getBallsByWeight(selectedWeight);
-      const replacementBall = ballsAtWeight.find((c) => c.ball_id === ball.ball_id);
+      const replacementBall = await this.ballService.getBallVariant(ball.ball_id, selectedWeight);
 
       if (!replacementBall) {
         selectEl.value = ball.core_weight;
@@ -225,7 +229,7 @@ export class BallComparisonPage implements OnDestroy, OnInit {
     });
   }
 
-  private initRestoreEffect(): void {
+  private restoreSelection(): void {
     const raw = localStorage.getItem(BallComparisonPage.STORAGE_KEY);
     if (!raw) return;
 
@@ -238,30 +242,29 @@ export class BallComparisonPage implements OnDestroy, OnInit {
       return;
     }
 
-    effect(
-      () => {
-        const allBalls = this.ballsStore.allBalls();
-        if (allBalls.length === 0 || this.hasRestored) return;
-        this.hasRestored = true;
-        void this.restoreFromEntries(entries, allBalls);
-      },
-      { allowSignalWrites: true },
-    );
+    if (this.hasRestored) return;
+    this.hasRestored = true;
+    void this.restoreFromEntries(entries);
   }
 
-  private async restoreFromEntries(entries: SavedEntry[], allBalls: Ball[]): Promise<void> {
-    const defaultBallMap = new Map(allBalls.map((b) => [b.ball_id, b]));
+  /** Restores the saved selection: known balls first, the rest from the ball API by id. */
+  private async restoreFromEntries(entries: SavedEntry[]): Promise<void> {
+    const matches = (ball: Ball, { id, weight }: SavedEntry) => ball.ball_id === id && Number(ball.core_weight) === Number(weight);
+    const known = this.ballsStore.knownBalls();
+    const missing = entries.filter((entry) => !known.some((ball) => matches(ball, entry)));
 
-    const resolved = await Promise.all(
-      entries.map(async ({ id, weight }) => {
-        const defaultBall = defaultBallMap.get(id);
-        if (defaultBall && defaultBall.core_weight === weight) return defaultBall;
-        const ballsAtWeight = await this.ballService.getBallsByWeight(Number(weight));
-        return ballsAtWeight.find((b) => b.ball_id === id) ?? defaultBall ?? null;
-      }),
-    );
+    let fetched: Ball[] = [];
+    if (missing.length > 0) {
+      try {
+        fetched = await this.ballService.getBallsByIds(missing.map((entry) => entry.id));
+        await this.ballsStore.rememberBalls(fetched.filter((ball) => missing.some((entry) => matches(ball, entry))));
+      } catch (error) {
+        console.error('Error restoring compared balls:', error);
+      }
+    }
 
-    const restored = resolved.filter((b): b is Ball => !!b);
+    const pool = [...known, ...fetched];
+    const restored = entries.map((entry) => pool.find((ball) => matches(ball, entry))).filter((b): b is Ball => !!b);
     if (restored.length > 0) this.selectedBalls.set(restored);
   }
 

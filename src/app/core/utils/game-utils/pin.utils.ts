@@ -1,6 +1,6 @@
 import { PINS, PIN_TO_COLUMN, UNMAKEABLE_SPLITS } from 'src/app/core/constants/app.constants';
 import { Frame, Throw } from 'src/app/core/models/game.model';
-import { clearPendingBall, getCarryOverThrowBall, getPendingBall } from './ball.utils';
+import { clearPendingBall, getCarryOverThrowBall, getPendingBall } from './game-ball.utils';
 
 export interface PinThrowResult {
   updatedFrames: Frame[];

@@ -15,7 +15,6 @@ import {
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { HighlightItemStats } from 'src/app/core/models/stats.model';
-import { BallsStore } from 'src/app/core/stores/balls.store';
 import { ItemSortMode, sortGenericItems } from 'src/app/core/utils/sort-utils/sort.utils';
 
 @Component({
@@ -29,7 +28,6 @@ export class StatHighlightItemComponent {
   item = input.required<HighlightItemStats>();
   title = input.required<string>();
   totalGames = input.required<number>();
-  imageUrlBase = input<string>();
   emptyMessage = input<string>('No data saved.');
   roundImage = input<boolean>(true);
   allItems = input<HighlightItemStats[]>();
@@ -39,7 +37,7 @@ export class StatHighlightItemComponent {
     const items = this.allItems();
     return items && sortGenericItems(items, this.sortMode());
   });
-  constructor(public ballsStore: BallsStore) {
+  constructor() {
     addIcons({ chevronForwardOutline, chevronBack });
   }
 

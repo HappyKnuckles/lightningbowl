@@ -144,9 +144,7 @@
     </ion-item>
     <ion-modal [enterAnimation]="enterAnimation" [leaveAnimation]="leaveAnimation" #modal trigger="ball-filter" class="ball-modal">
       <ng-template>
-        <app-ball-select
-          (ballSelect)="updateFilter('balls', $event); modal.dismiss()"
-          [selectedBalls]="gameFilterService.filters().balls"></app-ball-select>
+        <app-ball-select (ballSelect)="onBallFilterSelect($event); modal.dismiss()" [selectedBalls]="selectedFilterBalls()"></app-ball-select>
       </ng-template>
     </ion-modal>
 

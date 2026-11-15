@@ -4,7 +4,7 @@ import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonModal, IonTit
 import { addIcons } from 'ionicons';
 import { chevronBack } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
-import { Frame, Game } from 'src/app/core/models/game.model';
+import { Frame, Game, ThrowBall } from 'src/app/core/models/game.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameImageImportService } from 'src/app/core/services/game-image-import/game-image-import.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
@@ -94,7 +94,7 @@ export class GameOcrImportComponent {
     this.gameData.update((current) => ({ ...current, note }));
   }
 
-  onBallsChange(balls: string[]): void {
+  onBallsChange(balls: ThrowBall[]): void {
     this.gameData.update((current) => ({ ...current, balls }));
   }
 

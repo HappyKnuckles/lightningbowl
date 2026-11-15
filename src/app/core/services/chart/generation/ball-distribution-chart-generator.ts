@@ -2,7 +2,7 @@ import { ElementRef } from '@angular/core';
 import Chart, { ChartConfiguration, ScatterDataPoint } from 'chart.js/auto';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Ball } from 'src/app/core/models/ball.model';
-import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
+import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 import { ballDistributionZonePlugin } from '../plugins/ball-distribution.plugin';
 import { customAxisTitlesPlugin } from '../plugins/custom-axis-titles.plugin';
 
@@ -16,7 +16,6 @@ export function generateBallDistributionChart(
   isReload?: boolean,
 ): Chart {
   try {
-    const baseUrl = BOWWWL_URL;
     const canvas = ballDistributionChartCanvas.nativeElement as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
@@ -33,18 +32,18 @@ export function generateBallDistributionChart(
     const dataPoints: (ScatterDataPoint & { name: string; imageUrl: string; cover: string })[] = [];
     const pointImages: HTMLImageElement[] = [];
     for (const ball of balls) {
-      const xRaw = parseFloat(ball.core_diff);
-      const yRaw = parseFloat(ball.core_rg);
-      if (isNaN(xRaw) || isNaN(yRaw)) {
+      const xRaw = ball.core_diff;
+      const yRaw = ball.core_rg;
+      if (xRaw === null || yRaw === null) {
         console.warn(`Skipping invalid RG/Diff for ${ball.ball_name}`);
         continue;
       }
       const x = xRaw + jitter();
       const y = yRaw + jitter();
-      dataPoints.push({ x, y, name: ball.ball_name, imageUrl: baseUrl + ball.thumbnail_image, cover: ball.coverstock_type });
+      dataPoints.push({ x, y, name: ball.ball_name, imageUrl: ballImageUrl(ball), cover: ball.coverstock_type ?? '' });
 
       const img = new Image(70, 70);
-      img.src = baseUrl + ball.thumbnail_image;
+      img.src = ballImageUrl(ball);
       img.onerror = () => console.warn(`Failed to load image for ${ball.ball_name}`);
       pointImages.push(img);
     }

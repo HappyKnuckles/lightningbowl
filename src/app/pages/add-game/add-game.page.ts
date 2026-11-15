@@ -25,7 +25,7 @@ import {
 } from '@ionic/angular/standalone';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
-import { chevronDown, chevronUp } from 'ionicons/icons';
+import { chevronBack, chevronDown, chevronUp } from 'ionicons/icons';
 import { LIVE_SERIES_STAT_DEFINTIONS } from 'src/app/core/configs/stat-definitions/stat-definitions';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Frame, Game, GameDraft, PinModeState, ThrowBall } from 'src/app/core/models/game.model';
@@ -49,7 +49,7 @@ import {
   keepArsenalThrowBalls,
   resolveBallTracking,
   setThrowBall,
-} from 'src/app/core/utils/game-utils/ball.utils';
+} from 'src/app/core/utils/game-utils/game-ball.utils';
 import { cloneFrames, createEmptyGame, recordThrow, removeThrow, toCompletedFramesGame } from 'src/app/core/utils/game-utils/frame.utils';
 import {
   canRecordSpare,
@@ -268,6 +268,7 @@ export class AddGamePage implements OnInit {
     addIcons({
       chevronDown,
       chevronUp,
+      chevronBack,
     });
     effect(() => {
       const games = this.games();
@@ -531,7 +532,7 @@ export class AddGamePage implements OnInit {
   onNoteChange(note: string, index = 0) {
     this.updateSingleGameProperty('note', note, index);
   }
-  onBallsChange(balls: string[], index = 0) {
+  onBallsChange(balls: ThrowBall[], index = 0) {
     this.games.update((games) =>
       games.map((g, i) => {
         if (i !== index) return g;

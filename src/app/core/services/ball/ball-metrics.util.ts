@@ -1,8 +1,8 @@
 import { Ball, BallMetrics, BallTraits } from 'src/app/core/models/ball.model';
 
 function getBallTraits(ball: Ball): BallTraits {
-  const rg = parseFloat(ball.core_rg);
-  const diff = parseFloat(ball.core_diff);
+  const rg = ball.core_rg ?? NaN;
+  const diff = ball.core_diff ?? NaN;
   const coverstockType = (ball.coverstock_type || '').toLowerCase();
   const factoryFinish = (ball.factory_finish || '').toLowerCase();
 

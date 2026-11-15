@@ -3,7 +3,11 @@ import { ImpactStyle } from '@capacitor/haptics';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { Frame, Game, ThrowBall } from '../../models/game.model';
-import { clearThrowBalls as clearThrowBallsInFrames, countThrowBalls, setThrowBall as setThrowBallInFrames } from '../../utils/game-utils/ball.utils';
+import {
+  clearThrowBalls as clearThrowBallsInFrames,
+  countThrowBalls,
+  setThrowBall as setThrowBallInFrames,
+} from '../../utils/game-utils/game-ball.utils';
 import { calculateIsClean, cloneFrames, recordThrow, removeThrow } from '../../utils/game-utils/frame.utils';
 import { canUndoLastThrow, isGameValid, isValidFrameScore } from '../../utils/game-utils/game-validation.utils';
 import { applyPinModeUndo, getAvailablePins, isCellAccessible, processPinThrow } from '../../utils/game-utils/pin.utils';

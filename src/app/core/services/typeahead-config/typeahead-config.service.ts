@@ -1,11 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  BALL_BRAND_TYPEAHEAD_CONFIG,
-  BALL_CORE_TYPEAHEAD_CONFIG,
-  BALL_COVERSTOCK_TYPEAHEAD_CONFIG,
-  BALL_TYPEAHEAD_CONFIG,
+  createBallTypeaheadConfig,
+  createBrandTypeaheadConfig,
+  createCoreTypeaheadConfig,
+  createCoverstockTypeaheadConfig,
 } from '../../configs/typeahead/ball.config';
 import { createPartialPatternTypeaheadConfig, createPatternTypeaheadConfig } from '../../configs/typeahead/pattern.config';
+import { BallFilterService } from '../ball-filter/ball-filter.service';
+import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
 
 @Injectable({
@@ -13,11 +15,13 @@ import { PatternService } from '../pattern/pattern.service';
 })
 export class TypeaheadConfigService {
   private patternService = inject(PatternService);
+  private ballService = inject(BallService);
+  private ballFilterService = inject(BallFilterService);
 
-  readonly brand = BALL_BRAND_TYPEAHEAD_CONFIG;
-  readonly core = BALL_CORE_TYPEAHEAD_CONFIG;
-  readonly coverstock = BALL_COVERSTOCK_TYPEAHEAD_CONFIG;
-  readonly ball = BALL_TYPEAHEAD_CONFIG;
+  readonly brand = createBrandTypeaheadConfig();
+  readonly core = createCoreTypeaheadConfig();
+  readonly coverstock = createCoverstockTypeaheadConfig();
+  readonly ball = createBallTypeaheadConfig((term, page) => this.ballService.findBallsPage(term, page, this.ballFilterService.filters().weight));
   // readonly league = LEAGUE_TYPEAHEAD_CONFIG;
 
   readonly pattern = createPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));

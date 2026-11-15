@@ -128,8 +128,8 @@ describe('GameFilterService.filterGames', () => {
     });
 
     it('matches games containing a selected ball', () => {
-      const phaze = makeGame({ balls: ['Phaze II'] });
-      const other = makeGame({ balls: ['Zen Master'] });
+      const phaze = makeGame({ balls: [{ name: 'Phaze II', weight: '15' }] });
+      const other = makeGame({ balls: [{ name: 'Zen Master', weight: '15' }] });
 
       const result = service.filterGames([phaze, other], { ...baseFilters(), balls: ['Phaze II'] });
 
@@ -139,10 +139,10 @@ describe('GameFilterService.filterGames', () => {
     it('matches a ball across the formats Game.balls has been stored in', () => {
       // The picker emits "Name{weight}" keys; games saved before weights were tracked hold
       // plain names, and imported ones hold the display string. All three are the same ball.
-      const key = makeGame({ balls: ['Phaze II15'] });
-      const plain = makeGame({ balls: ['Phaze II'] });
-      const display = makeGame({ balls: ['Phaze II 15lbs'] });
-      const other = makeGame({ balls: ['Zen Master'] });
+      const key = makeGame({ balls: [{ name: 'Phaze II', weight: '15' }] });
+      const plain = makeGame({ balls: [{ name: 'Phaze II', weight: '15' }] });
+      const display = makeGame({ balls: [{ name: 'Phaze II', weight: '15' }] });
+      const other = makeGame({ balls: [{ name: 'Zen Master', weight: '15' }] });
 
       const result = service.filterGames([key, plain, display, other], { ...baseFilters(), balls: ['Phaze II15'] });
 

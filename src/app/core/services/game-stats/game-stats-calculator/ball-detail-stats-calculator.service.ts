@@ -3,7 +3,7 @@ import { Frame, Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { BallDetailStats, BallPatternStats, LeaveStats, PinConversionStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { formatThrowBall, getBallTracking, getThrowBallKey } from 'src/app/core/utils/game-utils/ball.utils';
+import { formatThrowBall, getBallTracking, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import {
   isCornerPinLeave,
   isFlatCornerLeave,

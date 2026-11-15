@@ -27,4 +27,5 @@ export interface TypeaheadConfig<T> {
   customDisplayFormatter?: (item: T, fieldKey: string) => string;
   searchMode: 'local' | 'api';
   apiSearchFn?: (searchTerm: string) => Promise<{ items: T[] }>;
+  apiPageFn?: (searchTerm: string, page: number) => Promise<{ items: T[]; hasMore: boolean }>;
 }

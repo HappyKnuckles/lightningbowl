@@ -1,4 +1,3 @@
-import { environment } from 'src/environments/environment';
 import { HighlightItemStats } from '../../models/stats.model';
 
 const DEFAULT_HIGHLIGHT: HighlightItemStats = {
@@ -38,7 +37,6 @@ export function buildHighlights(src: {
       allItems: src.allBalls,
       sortMode: 'gameCount' as const,
       emptyMessage: 'No Games with balls saved.',
-      imageUrlBase: undefined,
       roundImage: true,
     },
     {
@@ -47,7 +45,6 @@ export function buildHighlights(src: {
       allItems: src.allBalls,
       sortMode: 'avg' as const,
       emptyMessage: 'No Games with balls saved.',
-      imageUrlBase: undefined,
       roundImage: true,
     },
     {
@@ -56,7 +53,6 @@ export function buildHighlights(src: {
       allItems: src.allPatterns,
       sortMode: 'gameCount' as const,
       emptyMessage: 'No Games with patterns saved.',
-      imageUrlBase: environment.imagesUrl,
       roundImage: false,
     },
     {
@@ -65,7 +61,6 @@ export function buildHighlights(src: {
       allItems: src.allPatterns,
       sortMode: 'avg' as const,
       emptyMessage: 'No Games with patterns saved.',
-      imageUrlBase: environment.imagesUrl,
       roundImage: false,
     },
   ];

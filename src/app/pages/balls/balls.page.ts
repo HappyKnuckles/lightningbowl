@@ -2,9 +2,9 @@ import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.p
 import { ChangeDetectionStrategy, Component, computed, OnInit, Signal, signal, untracked, ViewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
-import { InfiniteScrollCustomEvent, ModalController, RefresherCustomEvent, SearchbarCustomEvent } from '@ionic/angular';
+import { AlertController, InfiniteScrollCustomEvent, ModalController, RefresherCustomEvent, SearchbarCustomEvent } from '@ionic/angular';
 import {
   IonButton,
   IonButtons,
@@ -62,9 +62,9 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { AppFacade } from 'src/app/core/stores/app.facade';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { buildBallQueryParams } from 'src/app/core/utils/ball-utils/ball-query.utils';
+import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
 import { buildSearchSuggestions } from 'src/app/core/utils/search-utils/suggestion.utils';
 import { BallFilterComponent } from 'src/app/shared/components/ball-filter/ball-filter.component';
 import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list.component';
@@ -87,6 +87,7 @@ import { BowlingRefresherComponent } from 'src/app/shared/components/bowling-ref
     IonModal,
     IonText,
     IonButton,
+    RouterLink,
     IonButtons,
     IonIcon,
     IonCardSubtitle,
@@ -135,6 +136,12 @@ export class BallsPage implements OnInit {
   );
   readonly isOnline = computed(() => this.networkService.isOnline);
   /** Online, the API searches; offline, search runs over your known balls. */
+  /** How many of each ball (by `ballKey`) the arsenal has. */
+  readonly ownedCounts = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const ball of this.ballsStore.arsenal()) counts[ballKey(ball)] = (counts[ballKey(ball)] ?? 0) + 1;
+    return counts;
+  });
   searchDisabled = computed(() => !this.isOnline() && this.ballsStore.knownBalls().length === 0);
   favoritesFirst = signal(false);
   isPageLoading = signal(false);
@@ -239,7 +246,7 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
-    private appFacade: AppFacade,
+    private alertController: AlertController,
   ) {
     addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline, chevronForward });
     this.searchSubject.subscribe((query) => {
@@ -298,24 +305,19 @@ export class BallsPage implements OnInit {
     this.searchSubject.next(term);
   }
 
-  async removeFromArsenal(ball: Ball): Promise<void> {
-    try {
-      this.hapticService.vibrate(ImpactStyle.Light);
-      await this.appFacade.removeArsenalBall(ball);
-      this.toastService.showToast(`${ball.ball_name} removed from Arsenal.`, 'checkmark-outline');
-    } catch (error) {
-      console.error(`Fehler beim Entfernen von ${ball.ball_name} aus dem Arsenal:`, error);
-      this.toastService.showToast(TOAST_MESSAGES.ballDeleteError, 'bug', true);
-    }
-  }
-
+  /**
+   * Adds the ball to the arsenal. One the bowler already has is added as another one (e.g. drilled
+   * differently), after asking. Removing happens on the arsenal page, where it shows which one it is.
+   */
   async saveBallToArsenal(ball: Ball): Promise<void> {
-    try {
-      this.hapticService.vibrate(ImpactStyle.Light);
-      await this.ballsStore.saveBallToArsenal(ball);
+    const owned = this.ownedCounts()[ballKey(ball)] ?? 0;
+    if (owned > 0 && !(await this.confirmAddAnother(ball))) return;
+    this.hapticService.vibrate(ImpactStyle.Light);
+    const { added, failed } = await this.ballsStore.addBallsToArsenal([ball], { allowTwin: owned > 0 });
+    if (added.length) {
       this.toastService.showToast(`${ball.ball_name} added to Arsenal.`, 'add');
-    } catch (error) {
-      console.error(`Fehler beim Speichern von ${ball.ball_name} im Arsenal:`, error);
+    }
+    if (failed.length) {
       this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
     }
   }
@@ -478,10 +480,6 @@ export class BallsPage implements OnInit {
     }
   }
 
-  isInArsenal(ball: Ball): boolean {
-    return this.ballsStore.arsenal().some((b: Ball) => b.key === ball.key);
-  }
-
   isFilterActive(): boolean {
     return this.ballFilterService.activeFilterCount() > 0;
   }
@@ -614,5 +612,20 @@ export class BallsPage implements OnInit {
       page,
       size: BALL_PAGE_SIZE,
     });
+  }
+
+  // Same wording as on the arsenal page: a ball picked again is most likely a second one of it, but it's asked.
+  private async confirmAddAnother(ball: Ball): Promise<boolean> {
+    const alert = await this.alertController.create({
+      header: 'Add another one?',
+      message: `${ball.ball_name} ${ball.core_weight}lbs is already in your arsenal. Add a second one, e.g. with a different layout?`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Add Another', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
   }
 }

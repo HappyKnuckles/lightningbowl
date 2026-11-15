@@ -184,13 +184,14 @@
               </div>
               <!-- Arsenal CTA -->
               <div class="arsenal-actions">
-                @if (!isInArsenal(ball)) {
-                  <ion-button class="arsenal-btn add" expand="block" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
-                }
-                @if (isInArsenal(ball)) {
-                  <ion-button class="arsenal-btn remove" expand="block" fill="outline" (click)="removeFromArsenal(ball)">
-                    Remove from arsenal
+                @if (ownedCounts()[ball.key]; as owned) {
+                  <!-- removing happens on the arsenal page, where it shows which one of the same ball it is -->
+                  <ion-button class="arsenal-btn owned" fill="outline" routerLink="/tabs/arsenal">
+                    In arsenal{{ owned > 1 ? " ×" + owned : "" }}
                   </ion-button>
+                  <ion-button class="arsenal-btn add" (click)="saveBallToArsenal(ball)">Add another</ion-button>
+                } @else {
+                  <ion-button class="arsenal-btn add" expand="block" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
                 }
               </div>
             </div>

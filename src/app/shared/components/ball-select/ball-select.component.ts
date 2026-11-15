@@ -56,8 +56,8 @@ export class BallSelectComponent implements OnInit {
   #tempSelectedBalls = signal<ThrowBall[]>([]);
 
   /**
-   * The arsenal balls in use, most thrown ball first, each with whether it is selected and its second
-   * line: the brand, plus the ball's nickname or what tells two of the same ball apart (on its own
+   * The arsenal balls in use, the open arsenal's first and within that the most thrown ball first, each
+   * with whether it is selected and its second line: the brand, plus the ball's nickname or what tells two of the same ball apart (on its own
    * line, as a long name is cut off). A retired ball is listed only with `includeRetired`, or when
    * it came in selected (e.g. on an older game), so it can still be taken off.
    */
@@ -67,7 +67,10 @@ export class BallSelectComponent implements OnInit {
     const selected = new Set(this.#tempSelectedBalls().map(getThrowBallKey));
     const cameSelected = new Set((this.selectedBalls() ?? []).map(getThrowBallKey));
     const offered = arsenal.filter((ball) => !isRetired(ball) || this.includeRetired() || cameSelected.has(getThrowBallKey(toThrowBall(ball))));
-    return rankByUsage(offered, usage, (ball) => getThrowBallKey(toThrowBall(ball))).map((ball) => ({
+    const open = new Set(this.ballsStore.currentArsenal()?.ballIds ?? []);
+    const inOpen = (ball: Ball) => !!ball.arsenalId && open.has(ball.arsenalId);
+    const ranked = rankByUsage(offered, usage, (ball) => getThrowBallKey(toThrowBall(ball)));
+    return [...ranked.filter(inOpen), ...ranked.filter((ball) => !inOpen(ball))].map((ball) => ({
       ball,
       detail: [ball.brand_name, twinLabel(ball, arsenal), isRetired(ball) ? 'retired' : ''].filter(Boolean).join(' · '),
       selected: selected.has(getThrowBallKey(toThrowBall(ball))),

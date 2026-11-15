@@ -43,6 +43,17 @@ ion-header {
   }
 }
 
+.arsenal-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
 .retired {
   margin-top: 8px;
 

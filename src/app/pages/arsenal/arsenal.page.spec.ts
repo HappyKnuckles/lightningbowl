@@ -1,11 +1,12 @@
 import { computed, signal } from '@angular/core';
 import { vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Ball } from 'src/app/core/models/ball.model';
+import { Arsenal, Ball } from 'src/app/core/models/ball.model';
+import { ArsenalPickerService } from 'src/app/core/services/arsenal-picker/arsenal-picker.service';
 import { Game } from 'src/app/core/models/game.model';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { BallsStore } from 'src/app/core/stores/balls.store';
+import { ArsenalNameError, BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { makeBall, makeGame } from 'src/testing/fixtures';
 import { ArsenalPage } from './arsenal.page';
@@ -17,10 +18,23 @@ describe('ArsenalPage', () => {
   const arsenal = signal<Ball[]>([]);
   const cachedBalls = signal<Ball[]>([]);
   const games = signal<Game[]>([]);
+  const arsenals = signal<Arsenal[]>([]);
+  // the open arsenal; without one every ball counts as in it, like for a bowler with a single arsenal
+  const currentArsenal = signal<Arsenal | undefined>(undefined);
   const ballsStore = {
     arsenal,
+    arsenals,
+    currentArsenal,
+    currentArsenalBalls: computed(() => {
+      const open = currentArsenal();
+      return open ? arsenal().filter((ball) => open.ballIds.includes(ball.arsenalId ?? '')) : arsenal();
+    }),
     activeArsenal: computed(() => arsenal().filter((ball) => !ball.retiredAt)),
-    retiredBalls: computed(() => arsenal().filter((ball) => !!ball.retiredAt)),
+    arsenalsOf: vi.fn(),
+    setBallArsenals: vi.fn(),
+    addBallsToArsenal: vi.fn(),
+    createArsenal: vi.fn(),
+    renameArsenal: vi.fn(),
     knownBalls: computed(() => [...arsenal(), ...cachedBalls()]),
     myBalls: arsenal,
     url: '',
@@ -29,6 +43,7 @@ describe('ArsenalPage', () => {
     reorderArsenal: vi.fn(),
   };
   const toastService = { showToast: vi.fn() };
+  const arsenalPicker = { choose: vi.fn(), chooseForNewBalls: vi.fn() };
 
   beforeEach(() => {
     arsenal.set([]);
@@ -38,12 +53,22 @@ describe('ArsenalPage', () => {
     ballsStore.updateBallNotes.mockReset().mockResolvedValue(undefined);
     ballsStore.reorderArsenal.mockReset().mockResolvedValue(undefined);
     toastService.showToast.mockReset();
+    arsenals.set([]);
+    currentArsenal.set(undefined);
+    ballsStore.arsenalsOf.mockReset().mockReturnValue([]);
+    ballsStore.setBallArsenals.mockReset().mockResolvedValue(undefined);
+    ballsStore.addBallsToArsenal.mockReset().mockResolvedValue({ added: [], failed: [] });
+    ballsStore.createArsenal.mockReset().mockResolvedValue(undefined);
+    ballsStore.renameArsenal.mockReset().mockResolvedValue(undefined);
+    arsenalPicker.choose.mockReset().mockResolvedValue(null);
+    arsenalPicker.chooseForNewBalls.mockReset().mockResolvedValue(['a1']);
 
     TestBed.configureTestingModule({
       providers: [
         // the migrated store: the arsenal plus balls remembered from games (no full catalog on the device)
         { provide: BallsStore, useValue: ballsStore },
         { provide: ToastService, useValue: toastService },
+        { provide: ArsenalPickerService, useValue: arsenalPicker },
         { provide: GamesStore, useValue: { games } },
       ],
     });
@@ -114,6 +139,98 @@ describe('ArsenalPage', () => {
 
       expect(complete).toHaveBeenCalled();
       expect(ballsStore.reorderArsenal).toHaveBeenCalledWith([iq, zen]);
+    });
+  });
+
+  describe('arsenals', () => {
+    const league: Arsenal = { id: 'a1', name: 'League', ballIds: ['zen'] };
+    const tournament: Arsenal = { id: 'a2', name: 'Tournament', ballIds: ['iq'] };
+    const zen = makeBall({ ball_id: 'z', ball_name: 'Zen', arsenalId: 'zen' });
+    const iq = makeBall({ ball_id: 'i', ball_name: 'IQ Tour', arsenalId: 'iq' });
+    const el = () => fixture.nativeElement as HTMLElement;
+
+    beforeEach(() => {
+      arsenal.set([zen, iq]);
+      arsenals.set([league, tournament]);
+      currentArsenal.set(league);
+      fixture.detectChanges();
+    });
+
+    it('shows the open arsenal by name, with only its balls', () => {
+      expect(el().querySelector('.arsenal-title')?.textContent).toContain('League');
+      expect(el().querySelector('ion-reorder-group')?.textContent).toContain('Zen');
+      expect(el().querySelector('ion-reorder-group')?.textContent).not.toContain('IQ Tour');
+
+      currentArsenal.set(tournament);
+      fixture.detectChanges();
+
+      expect(el().querySelector('.arsenal-title')?.textContent).toContain('Tournament');
+      expect(el().querySelector('ion-reorder-group')?.textContent).toContain('IQ Tour');
+    });
+
+    it("covers only the open arsenal's balls in the stats", () => {
+      expect(component.ballStats().map((stats) => stats.name)).toEqual(['Zen']);
+    });
+
+    it('creates and renames arsenals', async () => {
+      expect(await component.saveArsenalName('Spares')).toBe(true);
+      expect(ballsStore.createArsenal).toHaveBeenCalledWith('Spares');
+
+      expect(await component.saveArsenalName('Monday', 'a1')).toBe(true);
+      expect(ballsStore.renameArsenal).toHaveBeenCalledWith('a1', 'Monday');
+      expect(toastService.showToast).toHaveBeenLastCalledWith(TOAST_MESSAGES.arsenalSaveSuccess, 'checkmark-outline');
+    });
+
+    it('says why a name cannot be used', async () => {
+      ballsStore.createArsenal.mockRejectedValue(new ArsenalNameError('taken'));
+      expect(await component.saveArsenalName('League')).toBe(false);
+      expect(toastService.showToast).toHaveBeenLastCalledWith(TOAST_MESSAGES.arsenalNameTaken, 'bug', true);
+
+      ballsStore.createArsenal.mockRejectedValue(new ArsenalNameError('missing'));
+      expect(await component.saveArsenalName('')).toBe(false);
+      expect(toastService.showToast).toHaveBeenLastCalledWith(TOAST_MESSAGES.arsenalNameMissing, 'bug', true);
+    });
+
+    it('changes which arsenals a ball is in', async () => {
+      ballsStore.arsenalsOf.mockReturnValue(['a1']);
+      arsenalPicker.choose.mockResolvedValue(['a1', 'a2']);
+
+      await component.editBallArsenals(zen);
+
+      expect(arsenalPicker.choose).toHaveBeenCalledWith('Arsenals for Zen', ['a1']);
+      expect(ballsStore.setBallArsenals).toHaveBeenCalledWith(zen, ['a1', 'a2']);
+    });
+
+    it('leaves the ball alone when the choice is cancelled', async () => {
+      await component.editBallArsenals(zen);
+
+      expect(ballsStore.setBallArsenals).not.toHaveBeenCalled();
+    });
+
+    it('adds a new ball to the arsenals the bowler picks', async () => {
+      const fresh = makeBall({ ball_id: 'n', ball_name: 'New One' });
+      arsenalPicker.chooseForNewBalls.mockResolvedValue(['a1', 'a2']);
+
+      await component.onBallSelectionChange([fresh]);
+
+      expect(ballsStore.addBallsToArsenal).toHaveBeenCalledWith([fresh], { allowTwin: false, arsenalIds: ['a1', 'a2'] });
+    });
+
+    it('adds nothing when the bowler picks no arsenal', async () => {
+      arsenalPicker.chooseForNewBalls.mockResolvedValue(null);
+
+      await component.onBallSelectionChange([makeBall({ ball_id: 'n', ball_name: 'New One' })]);
+
+      expect(ballsStore.addBallsToArsenal).not.toHaveBeenCalled();
+    });
+
+    it('puts a ball owned in another arsenal into this one instead of adding it again', async () => {
+      ballsStore.arsenalsOf.mockReturnValue(['a2']);
+
+      await component.onBallSelectionChange([makeBall({ ball_id: 'i', ball_name: 'IQ Tour' })]);
+
+      expect(ballsStore.setBallArsenals).toHaveBeenCalledWith(iq, ['a2', 'a1']);
+      expect(ballsStore.addBallsToArsenal).not.toHaveBeenCalled();
     });
   });
 

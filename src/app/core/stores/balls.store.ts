@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 
 import { BOWWWL_URL } from 'src/app/core/constants/app.constants';
-import { Ball, BallDrilling } from 'src/app/core/models/ball.model';
+import { Arsenal, Ball, BallDrilling } from 'src/app/core/models/ball.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -24,6 +24,9 @@ function uniqueBalls(balls: Ball[]): Ball[] {
 
 const sameWeight = (a: number | string, b: number | string) => Number(a) === Number(b);
 
+const withoutBall = (arsenal: Arsenal, ballId: string): Arsenal =>
+  arsenal.ballIds.includes(ballId) ? { ...arsenal, ballIds: arsenal.ballIds.filter((id) => id !== ballId) } : arsenal;
+
 /** The catalog ball an arsenal ball is, without what the bowler added to it. */
 function toCatalogBall(ball: Ball): Ball {
   const catalog = { ...ball };
@@ -34,6 +37,23 @@ function toCatalogBall(ball: Ball): Ball {
 export interface AddToArsenalOptions {
   /** Add the ball even when the arsenal already has it in this weight (a second one of the same ball). */
   allowTwin?: boolean;
+  /** The arsenals (`Arsenal.id`) new balls go into; the open one by default. */
+  arsenalIds?: string[];
+}
+
+/** The arsenals as stored: the groups and which one is open. */
+interface StoredArsenals {
+  arsenals: Arsenal[];
+  currentId: string;
+}
+
+/** Name of the arsenal every bowler starts with. */
+export const DEFAULT_ARSENAL_NAME = 'Arsenal';
+
+export class ArsenalNameError extends Error {
+  constructor(readonly reason: 'missing' | 'taken') {
+    super(`arsenal name ${reason}`);
+  }
 }
 
 /**
@@ -55,8 +75,31 @@ export class BallsStore {
   readonly arsenal = signal<Ball[]>([]);
   readonly #cachedBalls = signal<Ball[]>([]);
 
-  /** The arsenal balls in use: what ball pickers offer. Retired balls are left out. */
-  readonly activeArsenal = computed(() => this.arsenal().filter((ball) => !isRetired(ball)));
+  /** The named groups the bowler's balls are in. There is always at least one once the arsenal is loaded. */
+  readonly arsenals = signal<Arsenal[]>([]);
+  readonly #currentArsenalId = signal('');
+
+  /** The arsenal that is open on the arsenal page, and that new balls go into. */
+  readonly currentArsenal = computed<Arsenal | undefined>(
+    () => this.arsenals().find((arsenal) => arsenal.id === this.#currentArsenalId()) ?? this.arsenals()[0],
+  );
+
+  /** Every ball of the open arsenal, retired ones included, in arsenal order. */
+  readonly currentArsenalBalls = computed(() => {
+    const ids = new Set(this.currentArsenal()?.ballIds ?? []);
+    return this.arsenal().filter((ball) => ball.arsenalId && ids.has(ball.arsenalId));
+  });
+
+  /**
+   * The arsenal balls in use: what ball pickers offer. The open arsenal's balls come first, then the
+   * balls of the other arsenals. Retired balls are left out.
+   */
+  readonly activeArsenal = computed(() => {
+    const active = this.arsenal().filter((ball) => !isRetired(ball));
+    const ids = new Set(this.currentArsenal()?.ballIds ?? []);
+    const inCurrent = (ball: Ball) => !!ball.arsenalId && ids.has(ball.arsenalId);
+    return [...active.filter(inCurrent), ...active.filter((ball) => !inCurrent(ball))];
+  });
 
   /** The retired arsenal balls, last retired first. */
   readonly retiredBalls = computed(() =>
@@ -291,6 +334,7 @@ export class BallsStore {
     if (added.length || updated.length) {
       const updatedById = new Map(updated.map((ball) => [ball.arsenalId, ball]));
       this.arsenal.update((existing) => [...existing.map((ball) => updatedById.get(ball.arsenalId) ?? ball), ...added]);
+      if (added.length) await this.#putInArsenals(added, options.arsenalIds);
       added.forEach((ball) => this.#analyticsService.trackBallAdded({ brand: ball.brand_name ?? undefined, name: ball.ball_name }));
     }
 
@@ -312,6 +356,9 @@ export class BallsStore {
       // Keep it resolvable (e.g. for games that used it) after leaving the arsenal.
       await this.rememberBalls([entry]);
       this.arsenal.update((balls) => balls.filter((b) => b.arsenalId !== entry.arsenalId));
+      if (this.arsenalsOf(entry).length) {
+        await this.#saveArsenals(this.arsenals().map((arsenal) => withoutBall(arsenal, entry.arsenalId!)));
+      }
       return entry;
     } catch (error) {
       console.error('Error removing ball from arsenal:', error);
@@ -321,6 +368,128 @@ export class BallsStore {
 
   clearArsenal(): void {
     this.arsenal.set([]);
+    this.arsenals.set([]);
+    this.#currentArsenalId.set('');
+  }
+
+  // -------------------------------------------------------------- arsenals
+
+  /** Opens an arsenal: the arsenal page shows it, pickers list its balls first, new balls go into it. */
+  async setCurrentArsenal(id: string): Promise<void> {
+    if (!this.arsenals().some((arsenal) => arsenal.id === id)) return;
+    this.#currentArsenalId.set(id);
+    await this.#saveArsenals(this.arsenals());
+  }
+
+  /** Creates an empty arsenal and opens it. Throws an `ArsenalNameError` for a missing or taken name. */
+  async createArsenal(name: string): Promise<Arsenal> {
+    const arsenal: Arsenal = { id: newArsenalId(), name: this.#checkedName(name), ballIds: [] };
+    this.#currentArsenalId.set(arsenal.id);
+    await this.#saveArsenals([...this.arsenals(), arsenal]);
+    return arsenal;
+  }
+
+  /** Throws an `ArsenalNameError` for a missing or taken name. */
+  async renameArsenal(id: string, name: string): Promise<void> {
+    const checked = this.#checkedName(name, id);
+    await this.#saveArsenals(this.arsenals().map((arsenal) => (arsenal.id === id ? { ...arsenal, name: checked } : arsenal)));
+  }
+
+  /**
+   * Deletes an arsenal, not its balls: a ball that was in no other arsenal moves to the first one
+   * that is left. The last arsenal can't be deleted.
+   */
+  async deleteArsenal(id: string): Promise<void> {
+    const deleted = this.arsenals().find((arsenal) => arsenal.id === id);
+    const left = this.arsenals().filter((arsenal) => arsenal.id !== id);
+    if (!deleted || left.length === 0) return;
+    const kept = new Set(left.flatMap((arsenal) => arsenal.ballIds));
+    const homeless = deleted.ballIds.filter((ballId) => !kept.has(ballId));
+    const arsenals = left.map((arsenal, index) => (index === 0 ? { ...arsenal, ballIds: [...arsenal.ballIds, ...homeless] } : arsenal));
+    if (this.#currentArsenalId() === id) this.#currentArsenalId.set(arsenals[0].id);
+    await this.#saveArsenals(arsenals);
+  }
+
+  /** The arsenals (`Arsenal.id`) a ball is in. */
+  arsenalsOf(ball: Ball): string[] {
+    return this.arsenals()
+      .filter((arsenal) => !!ball.arsenalId && arsenal.ballIds.includes(ball.arsenalId))
+      .map((arsenal) => arsenal.id);
+  }
+
+  /** Puts a ball into exactly these arsenals. It has to stay in at least one, so an empty list is ignored. */
+  async setBallArsenals(ball: Ball, arsenalIds: string[]): Promise<void> {
+    const ballId = ball.arsenalId;
+    const wanted = new Set(arsenalIds.filter((id) => this.arsenals().some((arsenal) => arsenal.id === id)));
+    if (!ballId || wanted.size === 0) return;
+    await this.#saveArsenals(
+      this.arsenals().map((arsenal) => {
+        const has = arsenal.ballIds.includes(ballId);
+        if (wanted.has(arsenal.id)) return has ? arsenal : { ...arsenal, ballIds: [...arsenal.ballIds, ballId] };
+        return has ? withoutBall(arsenal, ballId) : arsenal;
+      }),
+    );
+  }
+
+  /** A trimmed arsenal name that no other arsenal has (case doesn't count). */
+  #checkedName(name: string, ownId?: string): string {
+    const trimmed = name.trim();
+    if (!trimmed) throw new ArsenalNameError('missing');
+    const taken = this.arsenals().some((arsenal) => arsenal.id !== ownId && arsenal.name.toLowerCase() === trimmed.toLowerCase());
+    if (taken) throw new ArsenalNameError('taken');
+    return trimmed;
+  }
+
+  async #putInArsenals(balls: Ball[], arsenalIds: string[] | undefined): Promise<void> {
+    // a ball added before the arsenals were loaded (or with none stored yet) starts the first one
+    if (this.arsenals().length === 0) this.arsenals.set([{ id: newArsenalId(), name: DEFAULT_ARSENAL_NAME, ballIds: [] }]);
+    const current = this.currentArsenal()?.id;
+    const known = (arsenalIds ?? []).filter((id) => this.arsenals().some((arsenal) => arsenal.id === id));
+    const targets = new Set(known.length ? known : current ? [current] : []);
+    const ballIds = balls.map((ball) => ball.arsenalId!).filter(Boolean);
+    await this.#saveArsenals(
+      this.arsenals().map((arsenal) => (targets.has(arsenal.id) ? { ...arsenal, ballIds: [...new Set([...arsenal.ballIds, ...ballIds])] } : arsenal)),
+    );
+  }
+
+  /** Sets the arsenals and stores them with the open one. A failed save is logged: the arsenal balls themselves are safe. */
+  async #saveArsenals(arsenals: Arsenal[]): Promise<void> {
+    this.arsenals.set(arsenals);
+    try {
+      const stored: StoredArsenals = { arsenals, currentId: this.currentArsenal()?.id ?? '' };
+      await this.#storageRepository.set(StorageKeys.arsenals, stored);
+    } catch (error) {
+      console.error('Error saving arsenals:', error);
+    }
+  }
+
+  /**
+   * Loads the arsenals and brings them in line with the arsenal balls: a bowler without any gets one
+   * holding every ball (all there was before arsenals could be named); balls that are gone leave
+   * their arsenals; a ball in no arsenal goes into the open one.
+   */
+  async #loadArsenals(balls: Ball[]): Promise<void> {
+    let stored: StoredArsenals | null = null;
+    try {
+      stored = await this.#storageRepository.get<StoredArsenals>(StorageKeys.arsenals);
+    } catch (error) {
+      console.error('Error loading arsenals:', error);
+    }
+    const ballIds = balls.map((ball) => ball.arsenalId!).filter(Boolean);
+    const owned = new Set(ballIds);
+    let arsenals: Arsenal[] = (stored?.arsenals ?? []).map((arsenal) => ({ ...arsenal, ballIds: arsenal.ballIds.filter((id) => owned.has(id)) }));
+    if (arsenals.length === 0) arsenals = [{ id: newArsenalId(), name: DEFAULT_ARSENAL_NAME, ballIds: [] }];
+    const currentId = arsenals.some((arsenal) => arsenal.id === stored?.currentId) ? stored!.currentId : arsenals[0].id;
+    const placed = new Set(arsenals.flatMap((arsenal) => arsenal.ballIds));
+    const homeless = ballIds.filter((id) => !placed.has(id));
+    arsenals = arsenals.map((arsenal) => (arsenal.id === currentId ? { ...arsenal, ballIds: [...arsenal.ballIds, ...homeless] } : arsenal));
+
+    this.#currentArsenalId.set(currentId);
+    if (JSON.stringify({ arsenals, currentId }) === JSON.stringify(stored)) {
+      this.arsenals.set(arsenals);
+    } else {
+      await this.#saveArsenals(arsenals);
+    }
   }
 
   async #updateOwnFields(ball: Ball, changes: Pick<Ball, 'nickname' | 'note' | 'retiredAt'>, errorMessage: string): Promise<void> {
@@ -346,6 +515,7 @@ export class BallsStore {
       const arsenal = await this.#migrateArsenalIds(stored);
       const sortedArsenal = arsenal.sort((a, b) => (a.position || arsenal.length + 1) - (b.position || arsenal.length + 1));
       this.arsenal.set(sortedArsenal);
+      await this.#loadArsenals(sortedArsenal);
     } catch (error) {
       console.error('Error loading arsenal:', error);
       throw error;

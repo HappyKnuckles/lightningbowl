@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Ball } from 'src/app/core/models/ball.model';
+import { Arsenal, Ball } from 'src/app/core/models/ball.model';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
@@ -13,6 +13,7 @@ describe('BallSelectComponent', () => {
   let fixture: ComponentFixture<BallSelectComponent>;
   const arsenal = signal<Ball[]>([]);
   const games = signal<Game[]>([]);
+  const currentArsenal = signal<Arsenal | undefined>(undefined);
 
   const zen = makeBall({ ball_id: 'z', ball_name: 'Zen', core_weight: '15', arsenalId: 'zen' });
   const first = makeBall({ ball_id: 'p', ball_name: 'Phaze II', core_weight: '15', arsenalId: 'one' });
@@ -28,14 +29,22 @@ describe('BallSelectComponent', () => {
 
   beforeEach(async () => {
     arsenal.set([zen, first, second]);
+    currentArsenal.set(undefined);
     games.set([]);
     await TestBed.configureTestingModule({
       imports: [BallSelectComponent],
       providers: [
-        { provide: BallsStore, useValue: { arsenal, url: '' } },
+        { provide: BallsStore, useValue: { arsenal, currentArsenal, url: '' } },
         { provide: GamesStore, useValue: { games } },
       ],
     }).compileComponents();
+  });
+
+  it("lists the open arsenal's balls first", () => {
+    currentArsenal.set({ id: 'a1', name: 'Tournament', ballIds: ['two'] });
+    create();
+
+    expect(component.rows().map((row) => row.ball.arsenalId)).toEqual(['two', 'zen', 'one']);
   });
 
   it('lists two of the same ball apart', () => {

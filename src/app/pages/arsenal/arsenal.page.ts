@@ -1,9 +1,12 @@
 import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
 import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
 import {
+  IonAccordion,
+  IonAccordionGroup,
   IonButton,
   IonButtons,
   IonCard,
@@ -32,14 +35,17 @@ import {
   IonSelect,
   IonSelectOption,
   IonText,
+  IonTextarea,
   IonThumbnail,
   IonTitle,
+  IonToggle,
   IonToolbar,
 } from '@ionic/angular/standalone';
 import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {
   add,
+  archiveOutline,
   arrowUndoOutline,
   chevronBack,
   chevronDownOutline,
@@ -86,6 +92,8 @@ import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
+type DetailSegment = 'ball' | 'drilling' | 'notes';
+
 @Component({
   selector: 'app-arsenal',
   templateUrl: './arsenal.page.html',
@@ -128,6 +136,11 @@ import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
     IonSelect,
     IonSelectOption,
     IonInput,
+    IonTextarea,
+    IonToggle,
+    IonAccordion,
+    IonAccordionGroup,
+    DatePipe,
     InchesPipe,
     LayoutPipe,
     HoleSizesPipe,
@@ -145,15 +158,18 @@ export class ArsenalPage implements OnInit {
   ballsWithoutArsenal: Signal<Ball[]> = computed(() =>
     this.ballsStore.myBalls().filter((ball) => !this.ballsStore.arsenal().some((b) => b.key === ball.key)),
   );
-  /** For balls the arsenal has twice with nothing else to tell them apart: their number ("#2"), by `arsenalId`. */
-  readonly twinNumbers = computed<Record<string, string>>(() => {
+  /**
+   * What the list shows next to a ball's specs, by `arsenalId`: its nickname, or its number ("#2") for a
+   * ball the arsenal has twice with nothing else to tell them apart (a twin's layout has its own chip).
+   */
+  readonly ballTags = computed<Record<string, string>>(() => {
     const arsenal = this.ballsStore.arsenal();
-    const numbers: Record<string, string> = {};
+    const tags: Record<string, string> = {};
     for (const ball of arsenal) {
       const label = twinLabel(ball, arsenal);
-      if (ball.arsenalId && label.startsWith('#')) numbers[ball.arsenalId] = label;
+      if (ball.arsenalId && (ball.nickname || label.startsWith('#'))) tags[ball.arsenalId] = label;
     }
-    return numbers;
+    return tags;
   });
   selectedSegment = model('arsenal');
 
@@ -209,7 +225,7 @@ export class ArsenalPage implements OnInit {
   // the open ball's layout per system, so switching systems back and forth doesn't lose the values
   private readonly layoutsBySystem = new Map<LayoutSystem, BallLayout>();
   readonly gripStyles = Object.entries(GRIP_STYLE_LABELS) as [GripStyle, string][];
-  readonly detailSegment = signal<'ball' | 'drilling'>('ball');
+  readonly detailSegment = signal<DetailSegment>('ball');
   // `arsenalId` of the ball whose detail modal is open
   readonly openBallId = signal<string | null>(null);
   readonly isFitModalOpen = signal(false);
@@ -235,6 +251,7 @@ export class ArsenalPage implements OnInit {
   ) {
     addIcons({
       add,
+      archiveOutline,
       ellipsisVerticalOutline,
       trashOutline,
       chevronBack,
@@ -262,7 +279,7 @@ export class ArsenalPage implements OnInit {
       }
       this.ballsChartInstance = this.chartGenerationService.generateBallDistributionChart(
         this.ballChart!,
-        this.ballsStore.arsenal(),
+        this.ballsStore.activeArsenal(),
         this.ballsChartInstance!,
       );
     } catch (error) {
@@ -307,13 +324,39 @@ export class ArsenalPage implements OnInit {
   async reorderArsenal(event: ItemReorderCustomEvent): Promise<void> {
     event.detail.complete();
 
-    const arsenal = this.ballsStore.arsenal();
-    const [movedItem] = arsenal.splice(event.detail.from, 1);
-    arsenal.splice(event.detail.to, 0, movedItem);
+    // the list shows the balls in use; retired balls keep their place after them
+    const active = [...this.ballsStore.activeArsenal()];
+    const [movedItem] = active.splice(event.detail.from, 1);
+    active.splice(event.detail.to, 0, movedItem);
+    try {
+      await this.ballsStore.reorderArsenal(active);
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    }
+  }
 
-    arsenal.forEach((ball, idx) => (ball.position = idx + 1));
+  /** Retires a ball, or brings a retired one back into use. */
+  async setRetired(ball: Ball, retired: boolean): Promise<void> {
+    if (retired === !!ball.retiredAt) return;
+    try {
+      this.hapticService.vibrate(ImpactStyle.Light);
+      await this.ballsStore.setBallRetired(ball, retired);
+      this.toastService.showToast(retired ? TOAST_MESSAGES.ballRetireSuccess : TOAST_MESSAGES.ballRestoreSuccess, 'checkmark-outline');
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballRetireError, 'bug', true);
+    }
+  }
 
-    await Promise.all(arsenal.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
+  async onNotesChange(ball: Ball, field: 'nickname' | 'note' | 'surface', raw: string | number | null | undefined): Promise<void> {
+    try {
+      await this.ballsStore.updateBallNotes(ball, { nickname: ball.nickname, note: ball.note, surface: ball.surface, [field]: raw?.toString() ?? '' });
+    } catch {
+      this.toastService.showToast(TOAST_MESSAGES.ballNotesSaveError, 'bug', true);
+    }
+  }
+
+  onDetailSegmentChange(value: unknown): void {
+    this.detailSegment.set(value === 'drilling' || value === 'notes' ? value : 'ball');
   }
 
   /** Adds catalog balls to the arsenal; with `allowTwin` also ones the arsenal already has. */
@@ -332,7 +375,7 @@ export class ArsenalPage implements OnInit {
     }
   }
 
-  openBallDetail(ball: Ball, segment: 'ball' | 'drilling' = 'ball'): void {
+  openBallDetail(ball: Ball, segment: DetailSegment = 'ball'): void {
     this.detailSegment.set(segment);
     this.openBallId.set(ball.arsenalId ?? null);
   }
@@ -340,7 +383,7 @@ export class ArsenalPage implements OnInit {
   // The segment's initial value doesn't move the segment view, so jump it to the selected tab once the modal is shown.
   async syncDetailSegmentView(event: Event): Promise<void> {
     const view = (event.target as HTMLElement).querySelector('ion-segment-view');
-    const contentId = this.detailSegment() === 'drilling' ? 'ball-drilling' : 'ball-detail';
+    const contentId = { ball: 'ball-detail', drilling: 'ball-drilling', notes: 'ball-notes' }[this.detailSegment()];
     await view?.setContent(contentId, false);
   }
 

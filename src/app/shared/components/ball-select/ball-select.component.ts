@@ -18,7 +18,7 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { ThrowBall } from 'src/app/core/models/game.model';
 import { Ball } from 'src/app/core/models/ball.model';
-import { twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { isRetired, twinLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import { getThrowBallKey, sameGameBall, toThrowBall } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { countBallUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 
@@ -48,22 +48,28 @@ export class BallSelectComponent implements OnInit {
 
   selectedBalls = input.required<ThrowBall[] | undefined>();
   singleSelect = input<boolean>(false);
+  /** Also list retired balls, e.g. to filter the history by one. */
+  includeRetired = input<boolean>(false);
 
   ballSelect = output<ThrowBall[]>();
 
   #tempSelectedBalls = signal<ThrowBall[]>([]);
 
   /**
-   * The arsenal, most thrown ball first, each with whether it is selected and its second line: the
-   * brand, plus what tells two of the same ball apart (on its own line, as a long name is cut off).
+   * The arsenal balls in use, most thrown ball first, each with whether it is selected and its second
+   * line: the brand, plus the ball's nickname or what tells two of the same ball apart (on its own
+   * line, as a long name is cut off). A retired ball is listed only with `includeRetired`, or when
+   * it came in selected (e.g. on an older game), so it can still be taken off.
    */
   rows = computed(() => {
     const arsenal = this.ballsStore.arsenal();
     const usage = countBallUsage(this.#gamesStore.games());
     const selected = new Set(this.#tempSelectedBalls().map(getThrowBallKey));
-    return rankByUsage(arsenal, usage, (ball) => getThrowBallKey(toThrowBall(ball))).map((ball) => ({
+    const cameSelected = new Set((this.selectedBalls() ?? []).map(getThrowBallKey));
+    const offered = arsenal.filter((ball) => !isRetired(ball) || this.includeRetired() || cameSelected.has(getThrowBallKey(toThrowBall(ball))));
+    return rankByUsage(offered, usage, (ball) => getThrowBallKey(toThrowBall(ball))).map((ball) => ({
       ball,
-      detail: [ball.brand_name, twinLabel(ball, arsenal)].filter(Boolean).join(' · '),
+      detail: [ball.brand_name, twinLabel(ball, arsenal), isRetired(ball) ? 'retired' : ''].filter(Boolean).join(' · '),
       selected: selected.has(getThrowBallKey(toThrowBall(ball))),
     }));
   });

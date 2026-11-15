@@ -200,7 +200,8 @@ export class AddGamePage implements OnInit {
     for (const game of this.gamesStore.games()) {
       if (hasThrowLevelBalls(game.frames ?? []) && (!latest || game.date > latest.date)) latest = game;
     }
-    return latest ? keepArsenalThrowBalls(latest.frames, this.ballsStore.arsenal()) : undefined;
+    // a retired ball isn't carried over either
+    return latest ? keepArsenalThrowBalls(latest.frames, this.ballsStore.activeArsenal()) : undefined;
   });
 
   /**

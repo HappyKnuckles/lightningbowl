@@ -591,6 +591,110 @@ describe('BallsStore', () => {
     });
   });
 
+  describe('notes', () => {
+    it('saves a trimmed nickname and note under the ball id', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+
+      await store.updateBallNotes(added[0], { nickname: ' benchmark ', note: 'sanded to 2000 ' });
+
+      const saved = store.arsenal()[0];
+      expect(saved).toMatchObject({ nickname: 'benchmark', note: 'sanded to 2000' });
+      expect(storageRepository.set).toHaveBeenLastCalledWith(`arsenal_${saved.arsenalId}`, saved);
+    });
+
+    it('removes a nickname or note that is emptied', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      await store.updateBallNotes(added[0], { nickname: 'benchmark', note: 'sanded' });
+
+      await store.updateBallNotes(store.arsenal()[0], { nickname: '', note: 'sanded' });
+
+      expect(store.arsenal()[0].nickname).toBeUndefined();
+      expect('nickname' in store.arsenal()[0]).toBe(false);
+      expect(store.arsenal()[0].note).toBe('sanded');
+    });
+
+    it('builds on the ball as the arsenal has it now, not on an older copy', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      await store.updateBallDrilling(added[0], { thumbSize: 1 });
+
+      await store.updateBallNotes(added[0], { note: 'sanded' });
+
+      expect(store.arsenal()[0]).toMatchObject({ drilling: { thumbSize: 1 }, note: 'sanded' });
+    });
+
+    it('rejects a ball that is not in the arsenal', async () => {
+      await expect(store.updateBallNotes(makeBall({ arsenalId: 'gone' }), { note: 'x' })).rejects.toThrow('not an arsenal ball');
+    });
+  });
+
+  describe('retired balls', () => {
+    it('keeps a retired ball in the arsenal but takes it out of the balls in use', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' }), makeBall({ ball_id: 'b2' })]);
+
+      await store.setBallRetired(added[0], true);
+
+      expect(store.arsenal()).toHaveLength(2);
+      expect(store.activeArsenal().map((b) => b.ball_id)).toEqual(['b2']);
+      expect(store.retiredBalls().map((b) => b.ball_id)).toEqual(['b1']);
+      expect(store.retiredBalls()[0].retiredAt).toBeGreaterThan(0);
+      expect(storageRepository.set).toHaveBeenLastCalledWith(`arsenal_${added[0].arsenalId}`, store.retiredBalls()[0]);
+    });
+
+    it('brings a retired ball back into use', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      await store.setBallRetired(added[0], true);
+
+      await store.setBallRetired(store.arsenal()[0], false);
+
+      expect(store.retiredBalls()).toEqual([]);
+      expect('retiredAt' in store.activeArsenal()[0]).toBe(false);
+    });
+
+    it('lists the last retired ball first', async () => {
+      await store.addBallsToArsenal([makeBall({ ball_id: 'b1', retiredAt: 100 }), makeBall({ ball_id: 'b2', retiredAt: 300 })]);
+
+      expect(store.retiredBalls().map((b) => b.ball_id)).toEqual(['b2', 'b1']);
+    });
+
+    it('rethrows storage failures', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1' })]);
+      storageRepository.set.mockRejectedValue(new Error('storage down'));
+
+      await expect(store.setBallRetired(added[0], true)).rejects.toThrow('storage down');
+      expect(store.retiredBalls()).toEqual([]);
+    });
+  });
+
+  describe('reorderArsenal', () => {
+    it('puts the balls in use in the given order, retired balls after them, and saves the ones that moved', async () => {
+      const { added } = await store.addBallsToArsenal([
+        makeBall({ ball_id: 'b1', position: 1 }),
+        makeBall({ ball_id: 'old', position: 2, retiredAt: 100 }),
+        makeBall({ ball_id: 'b3', position: 3 }),
+      ]);
+      const [b1, , b3] = added;
+      storageRepository.set.mockClear();
+
+      await store.reorderArsenal([b3, b1]);
+
+      expect(store.arsenal().map((b) => [b.ball_id, b.position])).toEqual([
+        ['b3', 1],
+        ['b1', 2],
+        ['old', 3],
+      ]);
+      expect(storageRepository.set).toHaveBeenCalledTimes(3);
+    });
+
+    it('saves nothing for balls that stay where they are', async () => {
+      const { added } = await store.addBallsToArsenal([makeBall({ ball_id: 'b1', position: 1 }), makeBall({ ball_id: 'b2', position: 2 })]);
+      storageRepository.set.mockClear();
+
+      await store.reorderArsenal(added);
+
+      expect(storageRepository.set).not.toHaveBeenCalled();
+    });
+  });
+
   describe('clearArsenal', () => {
     it('empties the arsenal in memory', async () => {
       await store.saveBallToArsenal(makeBall());

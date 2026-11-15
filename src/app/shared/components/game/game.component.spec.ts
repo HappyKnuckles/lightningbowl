@@ -20,6 +20,7 @@ const mockPatternsStore = {
 const mockBallsStore = {
   allBalls: vi.fn().mockReturnValue([]),
   arsenal: vi.fn().mockReturnValue([]),
+  activeArsenal: vi.fn().mockReturnValue([]),
   knownBalls: vi.fn().mockReturnValue([]),
 };
 
@@ -122,6 +123,7 @@ describe('GameComponent', () => {
   describe('ball typeahead items', () => {
     afterEach(() => {
       mockBallsStore.arsenal.mockReturnValue([]);
+      mockBallsStore.activeArsenal.mockReturnValue([]);
       mockBallsStore.knownBalls.mockReturnValue([]);
     });
 
@@ -130,6 +132,7 @@ describe('GameComponent', () => {
       const retired = makeBall({ ball_id: 'r', ball_name: 'Retired', core_weight: '15' });
       const other = makeBall({ ball_id: 'o', ball_name: 'Other', core_weight: '15' });
       mockBallsStore.arsenal.mockReturnValue([owned]);
+      mockBallsStore.activeArsenal.mockReturnValue([owned]);
       mockBallsStore.knownBalls.mockReturnValue([owned, retired, other]);
       fixture.componentRef.setInput(
         'game',
@@ -142,6 +145,20 @@ describe('GameComponent', () => {
       );
 
       expect(component.ballPicker()).toEqual({ items: [owned, retired], selected: ['a-15', 'r-15'] });
+    });
+
+    it('offers the balls in use, and a retired ball only on a game that has it', () => {
+      const owned = makeBall({ ball_id: 'a', ball_name: 'Owned', core_weight: '15', arsenalId: 'one' });
+      const shelved = makeBall({ ball_id: 's', ball_name: 'Shelved', core_weight: '15', arsenalId: 'two', retiredAt: 100 });
+      mockBallsStore.arsenal.mockReturnValue([owned, shelved]);
+      mockBallsStore.activeArsenal.mockReturnValue([owned]);
+      mockBallsStore.knownBalls.mockReturnValue([owned, shelved]);
+
+      fixture.componentRef.setInput('game', makeGame({ balls: [] }));
+      expect(component.ballPicker().items).toEqual([owned]);
+
+      fixture.componentRef.setInput('game', makeGame({ balls: [{ name: 'Shelved', weight: '15', arsenalId: 'two' }] }));
+      expect(component.ballPicker()).toEqual({ items: [owned, shelved], selected: ['s-15'] });
     });
   });
 });

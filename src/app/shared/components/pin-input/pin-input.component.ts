@@ -112,7 +112,7 @@ export class PinInputComponent {
   }
 
   openBallSelector(): void {
-    if (this.ballsStore.arsenal().length === 0) {
+    if (this.ballsStore.activeArsenal().length === 0) {
       this.isAddBallModalOpen.set(true);
       return;
     }

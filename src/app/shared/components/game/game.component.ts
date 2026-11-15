@@ -302,7 +302,7 @@ export class GameComponent implements OnInit {
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
   /** The ball typeahead's list and selection for this game. */
-  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
+  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.activeArsenal(), this.ballsStore.knownBalls()));
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
@@ -435,7 +435,7 @@ export class GameComponent implements OnInit {
     if (!(await this.confirmReplaceThrowBalls())) return;
     // picked balls may come from an API search, so keep them resolvable offline
     void this.ballsStore.rememberBalls(selected);
-    this.ballsChanged.emit(pickedGameBalls(selected, this.currentGame().balls, this.ballsStore.arsenal()));
+    this.ballsChanged.emit(pickedGameBalls(selected, this.currentGame().balls, this.ballsStore.activeArsenal()));
     this.saveBallToArsenal(selected);
   }
 

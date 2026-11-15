@@ -75,6 +75,9 @@
                       }
                       <ion-chip>{{ ball.core_type }}</ion-chip>
                       <ion-chip>{{ ball.coverstock_type }}</ion-chip>
+                      @if (ball.surface) {
+                        <ion-chip>{{ ball.surface }}</ion-chip>
+                      }
                       @if (ball.drilling?.layout | layout; as layoutText) {
                         <ion-chip>{{ layoutText }}</ion-chip>
                       }
@@ -439,10 +442,18 @@
                   (ionChange)="onNotesChange(ball, 'nickname', $event.detail.value)"></ion-input>
               </ion-item>
               <ion-item>
+                <ion-input
+                  class="ion-text-right"
+                  label="Surface"
+                  placeholder="500 Grit"
+                  [value]="ball.surface ?? ''"
+                  (ionChange)="onNotesChange(ball, 'surface', $event.detail.value)"></ion-input>
+              </ion-item>
+              <ion-item>
                 <ion-textarea
                   label="Note"
                   labelPlacement="stacked"
-                  placeholder="Surface changes, what it's for, how it reacts"
+                  placeholder="What it's for, how it reacts"
                   [autoGrow]="true"
                   [value]="ball.note ?? ''"
                   (ionChange)="onNotesChange(ball, 'note', $event.detail.value)"></ion-textarea>

@@ -347,9 +347,9 @@ export class ArsenalPage implements OnInit {
     }
   }
 
-  async onNotesChange(ball: Ball, field: 'nickname' | 'note', raw: string | number | null | undefined): Promise<void> {
+  async onNotesChange(ball: Ball, field: 'nickname' | 'note' | 'surface', raw: string | number | null | undefined): Promise<void> {
     try {
-      await this.ballsStore.updateBallNotes(ball, { nickname: ball.nickname, note: ball.note, [field]: raw?.toString() ?? '' });
+      await this.ballsStore.updateBallNotes(ball, { nickname: ball.nickname, note: ball.note, surface: ball.surface, [field]: raw?.toString() ?? '' });
     } catch {
       this.toastService.showToast(TOAST_MESSAGES.ballNotesSaveError, 'bug', true);
     }

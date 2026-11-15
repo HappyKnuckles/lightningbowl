@@ -15,6 +15,7 @@ export interface Ball extends ApiBall {
   nickname?: string;
   /** Free text about this arsenal ball: surface changes, what it's for, how it reacts. */
   note?: string;
+  surface?: string;
   /**
    * When the ball was retired (ms since epoch); absent for a ball in use. A retired ball stays in the
    * arsenal with its games and stats, but is no longer offered when picking balls.

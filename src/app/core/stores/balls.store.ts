@@ -218,10 +218,11 @@ export class BallsStore {
   }
 
   /** Saves the bowler's own name and note for an arsenal ball; an empty value removes it. */
-  async updateBallNotes(ball: Ball, notes: Pick<Ball, 'nickname' | 'note'>): Promise<void> {
+  async updateBallNotes(ball: Ball, notes: Pick<Ball, 'nickname' | 'note' | 'surface'>): Promise<void> {
     const nickname = notes.nickname?.trim() || undefined;
     const note = notes.note?.trim() || undefined;
-    await this.#updateOwnFields(ball, { nickname, note }, 'Error saving ball notes:');
+    const surface = notes.surface?.trim() || undefined;
+    await this.#updateOwnFields(ball, { nickname, note, surface }, 'Error saving ball notes:');
   }
 
   /** Retires an arsenal ball, or brings a retired one back into use. */
@@ -323,7 +324,7 @@ export class BallsStore {
     this.arsenal.set([]);
   }
 
-  async #updateOwnFields(ball: Ball, changes: Pick<Ball, 'nickname' | 'note' | 'retiredAt'>, errorMessage: string): Promise<void> {
+  async #updateOwnFields(ball: Ball, changes: Pick<Ball, 'nickname' | 'note' | 'retiredAt' | 'surface'>, errorMessage: string): Promise<void> {
     try {
       // the arsenal's ball as it is now: the one passed in may be an older copy (e.g. held by an open modal)
       const current = this.arsenal().find((b) => b.arsenalId && b.arsenalId === ball.arsenalId);

@@ -17,8 +17,20 @@ export function newArsenalId(): string {
  * What belongs to the bowler's own ball rather than to the catalog ball: these survive when the
  * catalog data is replaced (a refresh from the ball API, a change of weight).
  */
-export function ownBallFields(ball: Ball): Pick<Ball, 'arsenalId' | 'position' | 'drilling'> {
-  return { arsenalId: ball.arsenalId, position: ball.position, drilling: ball.drilling };
+export function ownBallFields(ball: Ball): Pick<Ball, 'arsenalId' | 'position' | 'drilling' | 'nickname' | 'note' | 'retiredAt'> {
+  return {
+    arsenalId: ball.arsenalId,
+    position: ball.position,
+    drilling: ball.drilling,
+    nickname: ball.nickname,
+    note: ball.note,
+    retiredAt: ball.retiredAt,
+  };
+}
+
+/** Whether an arsenal ball is retired: kept, but no longer offered when picking balls. */
+export function isRetired(ball: Pick<Ball, 'retiredAt'>): boolean {
+  return !!ball.retiredAt;
 }
 
 /** The arsenal's other balls of the same model and weight, the ball itself included, in arsenal order. */
@@ -33,10 +45,12 @@ export function isInArsenal(ball: Ball, arsenal: Ball[]): boolean {
 }
 
 /**
- * What tells an arsenal ball apart from the same ball owned twice: its layout when the twins are
- * drilled differently, else its number among them ("#2"). Empty for a ball owned once.
+ * What tells an arsenal ball apart: its nickname when it has one. Else, for the same ball owned
+ * twice, its layout when the twins are drilled differently, or its number among them ("#2").
+ * Empty for a ball without a nickname that is owned once.
  */
 export function twinLabel(ball: Ball, arsenal: Ball[]): string {
+  if (ball.nickname) return ball.nickname;
   const twins = twinsOf(ball, arsenal);
   if (twins.length < 2) return '';
   const layout = formatLayout(ball.drilling?.layout);
@@ -45,7 +59,10 @@ export function twinLabel(ball: Ball, arsenal: Ball[]): string {
   return `#${twins.findIndex((twin) => twin.arsenalId === ball.arsenalId) + 1}`;
 }
 
-/** An arsenal ball as shown in lists and pickers: "Phaze II 15lbs", or "Phaze II 15lbs · 45° × 4" × 30°" for one of two. */
+/**
+ * An arsenal ball as shown in lists and pickers: "Phaze II 15lbs", with its nickname or what tells it
+ * apart from its twin after it ("Phaze II 15lbs · benchmark", "Phaze II 15lbs · 45° × 4" × 30°").
+ */
 export function arsenalBallLabel(ball: Ball, arsenal: Ball[]): string {
   const name = `${ball.ball_name} ${ball.core_weight}lbs`;
   const twin = twinLabel(ball, arsenal);

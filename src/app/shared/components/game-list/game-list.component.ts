@@ -184,7 +184,7 @@ export class GameListComponent implements OnInit {
   sortedGames = computed(() => [...this.games()].sort((a, b) => b.date - a.date));
   /** The ball typeahead's list and selection per game id. */
   ballPickers = computed(() => {
-    const arsenal = this.ballsStore.arsenal();
+    const arsenal = this.ballsStore.activeArsenal();
     const known = this.ballsStore.knownBalls();
     return Object.fromEntries(this.games().map((game) => [game.gameId, ballPickerFor(game.balls, arsenal, known)]));
   });
@@ -554,7 +554,7 @@ export class GameListComponent implements OnInit {
   async onBallAdd(selected: Ball[], game: Game, modal: IonModal) {
     // picked balls may come from an API search, so keep them resolvable offline
     void this.ballsStore.rememberBalls(selected);
-    const applied = await this.onBallSelect(pickedGameBalls(selected, game.balls, this.ballsStore.arsenal()), game, modal);
+    const applied = await this.onBallSelect(pickedGameBalls(selected, game.balls, this.ballsStore.activeArsenal()), game, modal);
     if (applied) this.saveBallToArsenal(selected);
   }
 

@@ -46,6 +46,40 @@ describe('BallSelectComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(' · #2');
   });
 
+  it('leaves retired balls out, unless the selection came with one', () => {
+    const retired = makeBall({ ball_id: 'r', ball_name: 'Old Faithful', core_weight: '15', arsenalId: 'old', retiredAt: 100 });
+    arsenal.set([zen, retired]);
+
+    create();
+    expect(component.rows().map((row) => row.ball.arsenalId)).toEqual(['zen']);
+
+    create([{ name: 'Old Faithful', weight: '15', arsenalId: 'old' }]);
+    expect(component.rows().map((row) => row.ball.arsenalId)).toEqual(['zen', 'old']);
+    // still listed after it's taken off, so it can be put back before confirming
+    component.toggleBallSelection(retired);
+    expect(component.rows().map((row) => row.ball.arsenalId)).toEqual(['zen', 'old']);
+    expect(component.rows()[1].detail).toContain('retired');
+  });
+
+  it('lists retired balls when asked to, e.g. to filter the history', () => {
+    const retired = makeBall({ ball_id: 'r', ball_name: 'Old Faithful', core_weight: '15', arsenalId: 'old', retiredAt: 100 });
+    arsenal.set([zen, retired]);
+    fixture = TestBed.createComponent(BallSelectComponent);
+    component = fixture.componentInstance;
+    fixture.componentRef.setInput('selectedBalls', []);
+    fixture.componentRef.setInput('includeRetired', true);
+    fixture.detectChanges();
+
+    expect(component.rows().map((row) => row.ball.arsenalId)).toEqual(['zen', 'old']);
+  });
+
+  it('shows a nickname on the second line', () => {
+    arsenal.set([{ ...zen, nickname: 'benchmark' }]);
+    create();
+
+    expect(component.rows()[0].detail).toBe('Test Brand · benchmark');
+  });
+
   it('selects only the one that was picked, by its arsenal id', () => {
     create();
     const picked: ThrowBall[][] = [];

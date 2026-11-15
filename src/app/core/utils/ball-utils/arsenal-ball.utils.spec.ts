@@ -1,6 +1,15 @@
 import { BallDrilling } from 'src/app/core/models/ball.model';
 import { makeBall, makeGame } from 'src/testing/fixtures';
-import { arsenalBallLabel, gameBallLabel, isInArsenal, newArsenalId, ownBallFields, savedGameBallLabeler, twinLabel } from './arsenal-ball.utils';
+import {
+  arsenalBallLabel,
+  gameBallLabel,
+  isInArsenal,
+  isRetired,
+  newArsenalId,
+  ownBallFields,
+  savedGameBallLabeler,
+  twinLabel,
+} from './arsenal-ball.utils';
 
 const layout = (drillingAngle: number): BallDrilling => ({ layout: { system: 'dual-angle', drillingAngle, pinToPap: 4, valAngle: 30 } });
 
@@ -14,9 +23,21 @@ describe('arsenal-ball.utils', () => {
   });
 
   it("names what is the bowler's own on an arsenal ball", () => {
-    const ball = makeBall({ arsenalId: 'one', position: 2, drilling: layout(45) });
+    const ball = makeBall({ arsenalId: 'one', position: 2, drilling: layout(45), nickname: 'benchmark', note: 'sanded to 2000', retiredAt: 5 });
 
-    expect(ownBallFields(ball)).toEqual({ arsenalId: 'one', position: 2, drilling: layout(45) });
+    expect(ownBallFields(ball)).toEqual({
+      arsenalId: 'one',
+      position: 2,
+      drilling: layout(45),
+      nickname: 'benchmark',
+      note: 'sanded to 2000',
+      retiredAt: 5,
+    });
+  });
+
+  it('knows a retired ball by its retirement date', () => {
+    expect(isRetired(makeBall({ retiredAt: 1_700_000_000_000 }))).toBe(true);
+    expect(isRetired(makeBall())).toBe(false);
   });
 
   it('knows whether the arsenal has a ball in a weight', () => {
@@ -25,6 +46,15 @@ describe('arsenal-ball.utils', () => {
   });
 
   describe('labels', () => {
+    it('shows a nickname before anything else, also for a ball owned once', () => {
+      const named = { ...zen, nickname: 'benchmark' };
+      const namedTwin = { ...first, nickname: 'pin up' };
+
+      expect(arsenalBallLabel(named, [named, first])).toBe('Zen 15lbs · benchmark');
+      expect(twinLabel(namedTwin, [namedTwin, second])).toBe('pin up');
+      expect(gameBallLabel({ name: 'Zen', weight: '15', arsenalId: 'zen' }, [named])).toBe('Zen 15lbs · benchmark');
+    });
+
     it('shows a ball owned once by name and weight', () => {
       expect(twinLabel(zen, [zen, first])).toBe('');
       expect(arsenalBallLabel(zen, [zen, first])).toBe('Zen 15lbs');

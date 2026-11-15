@@ -11,7 +11,7 @@ import { StorageRepository } from 'src/app/core/services/storage/storage.reposit
 import { ThrowBall } from 'src/app/core/models/game.model';
 import { findBall, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { ballKey, SavedBall, savedBeforeBallApi, toStoredBall } from 'src/app/core/utils/ball-utils/stored-ball.utils';
-import { isInArsenal, newArsenalId, ownBallFields } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { isInArsenal, isRetired, newArsenalId, ownBallFields } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 
 /** Unique by ball and weight; earlier entries win. */
 function uniqueBalls(balls: Ball[]): Ball[] {
@@ -54,6 +54,16 @@ export class BallsStore {
   /** The bowler's balls. Each is one physical ball with its own `arsenalId`; the same ball can be in it twice. */
   readonly arsenal = signal<Ball[]>([]);
   readonly #cachedBalls = signal<Ball[]>([]);
+
+  /** The arsenal balls in use: what ball pickers offer. Retired balls are left out. */
+  readonly activeArsenal = computed(() => this.arsenal().filter((ball) => !isRetired(ball)));
+
+  /** The retired arsenal balls, last retired first. */
+  readonly retiredBalls = computed(() =>
+    this.arsenal()
+      .filter(isRetired)
+      .sort((a, b) => (b.retiredAt ?? 0) - (a.retiredAt ?? 0)),
+  );
 
   /**
    * The bowler's own balls, one per ball and weight: arsenal first, then favorites. Unlike `knownBalls` this
@@ -207,6 +217,36 @@ export class BallsStore {
     }
   }
 
+  /** Saves the bowler's own name and note for an arsenal ball; an empty value removes it. */
+  async updateBallNotes(ball: Ball, notes: Pick<Ball, 'nickname' | 'note'>): Promise<void> {
+    const nickname = notes.nickname?.trim() || undefined;
+    const note = notes.note?.trim() || undefined;
+    await this.#updateOwnFields(ball, { nickname, note }, 'Error saving ball notes:');
+  }
+
+  /** Retires an arsenal ball, or brings a retired one back into use. */
+  async setBallRetired(ball: Ball, retired: boolean): Promise<void> {
+    await this.#updateOwnFields(ball, { retiredAt: retired ? Date.now() : undefined }, 'Error retiring ball:');
+  }
+
+  /**
+   * Puts the balls in use in this order. Retired balls come after them, in the order they had.
+   * `ordered` are arsenal balls; ones it leaves out keep their place after the ordered ones.
+   */
+  async reorderArsenal(ordered: Ball[]): Promise<void> {
+    const ids = new Set(ordered.map((ball) => ball.arsenalId));
+    const rest = this.arsenal().filter((ball) => !ids.has(ball.arsenalId));
+    const arsenal = [...ordered, ...rest].map((ball, index): Ball => (ball.position === index + 1 ? ball : { ...ball, position: index + 1 }));
+    const moved = arsenal.filter((ball) => ball.arsenalId && !this.arsenal().includes(ball));
+    this.arsenal.set(arsenal);
+    try {
+      await Promise.all(moved.map((ball) => this.#storageRepository.set(StorageKeys.arsenal(ball.arsenalId!), ball)));
+    } catch (error) {
+      console.error('Error saving arsenal order:', error);
+      throw error;
+    }
+  }
+
   async saveBallToArsenal(ball: Ball): Promise<Ball[]> {
     return this.saveBallsToArsenal([ball]);
   }
@@ -281,6 +321,23 @@ export class BallsStore {
 
   clearArsenal(): void {
     this.arsenal.set([]);
+  }
+
+  async #updateOwnFields(ball: Ball, changes: Pick<Ball, 'nickname' | 'note' | 'retiredAt'>, errorMessage: string): Promise<void> {
+    try {
+      // the arsenal's ball as it is now: the one passed in may be an older copy (e.g. held by an open modal)
+      const current = this.arsenal().find((b) => b.arsenalId && b.arsenalId === ball.arsenalId);
+      if (!current?.arsenalId) throw new Error('not an arsenal ball');
+      const updated: Ball = { ...current, ...changes };
+      for (const field of Object.keys(changes) as (keyof typeof changes)[]) {
+        if (updated[field] === undefined) delete updated[field];
+      }
+      await this.#storageRepository.set(StorageKeys.arsenal(current.arsenalId), updated);
+      this.arsenal.update((balls) => balls.map((b) => (b.arsenalId === current.arsenalId ? updated : b)));
+    } catch (error) {
+      console.error(errorMessage, error);
+      throw error;
+    }
   }
 
   async #loadArsenal(): Promise<void> {

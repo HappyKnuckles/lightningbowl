@@ -1,10 +1,12 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { ModalController } from '@ionic/angular/standalone';
 import { of } from 'rxjs';
 import { Ball, BallPage } from 'src/app/core/models/ball.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
+import { ArsenalPickerService } from 'src/app/core/services/arsenal-picker/arsenal-picker.service';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
@@ -14,7 +16,9 @@ import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { BallsStore } from 'src/app/core/stores/balls.store';
+import { makeBall } from 'src/testing/fixtures';
 import { BallsPage } from './balls.page';
 import { vi } from 'vitest';
 import { createSpyObj, SpyObj } from '../../../testing/spy-obj';
@@ -26,6 +30,12 @@ describe('BallsPage', () => {
   let knownBalls: ReturnType<typeof signal<Ball[]>>;
   let online: ReturnType<typeof signal<boolean>>;
   let ballService: SpyObj<BallService>;
+  let arsenal: ReturnType<typeof signal<Ball[]>>;
+  let addBallsToArsenal: ReturnType<typeof vi.fn>;
+  let toastService: SpyObj<ToastService>;
+  let alertRole: string;
+  let alertCreate: ReturnType<typeof vi.fn>;
+  let chooseForNewBalls: ReturnType<typeof vi.fn>;
 
   const ball = (name: string): Ball => ({ ball_id: name, ball_name: name, core_weight: '15' }) as Ball;
   const page = (content: Ball[], number = 0, totalPages = 1): BallPage => ({
@@ -39,13 +49,19 @@ describe('BallsPage', () => {
 
   beforeEach(async () => {
     knownBalls = signal<Ball[]>([]);
+    arsenal = signal<Ball[]>([]);
+    addBallsToArsenal = vi.fn().mockImplementation((balls: Ball[]) => Promise.resolve({ added: balls, failed: [] }));
+    alertRole = 'cancel';
+    chooseForNewBalls = vi.fn().mockResolvedValue(['a1']);
+    alertCreate = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve({ present: () => Promise.resolve(), onDidDismiss: () => Promise.resolve({ role: alertRole }) }));
     online = signal(true);
     const mockBallsStore = {
       url: '',
       knownBalls,
-      arsenal: signal<Ball[]>([]),
-      saveBallToArsenal: vi.fn().mockResolvedValue([]),
-      removeFromArsenal: vi.fn().mockResolvedValue(undefined),
+      arsenal,
+      addBallsToArsenal,
       refreshKnownBalls: vi.fn().mockResolvedValue(undefined),
       refreshSavedBalls: vi.fn().mockResolvedValue(undefined),
       loadArsenal: vi.fn().mockResolvedValue(undefined),
@@ -89,6 +105,8 @@ describe('BallsPage', () => {
         { provide: AnalyticsService, useValue: analyticsServiceSpy },
         { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
         ModalController,
+        { provide: AlertController, useValue: { create: alertCreate } },
+        { provide: ArsenalPickerService, useValue: { chooseForNewBalls } },
       ],
     }).compileComponents();
 
@@ -96,6 +114,53 @@ describe('BallsPage', () => {
     component = fixture.componentInstance;
     favoritesService = TestBed.inject(FavoritesService) as SpyObj<FavoritesService>;
     ballService = TestBed.inject(BallService) as SpyObj<BallService>;
+    toastService = TestBed.inject(ToastService) as SpyObj<ToastService>;
+  });
+
+  describe('arsenal', () => {
+    const phaze = makeBall({ ball_id: 'p', key: 'p-15', ball_name: 'Phaze II', core_weight: '15' });
+    const owned = (arsenalId: string) => ({ ...phaze, arsenalId });
+
+    it('counts how many of each ball the arsenal has', () => {
+      arsenal.set([owned('one'), owned('two'), makeBall({ ball_id: 'z', key: 'z-15', arsenalId: 'zen' })]);
+
+      expect(component.ownedCounts()).toEqual({ 'p-15': 2, 'z-15': 1 });
+    });
+
+    it('adds a ball the bowler does not have without asking', async () => {
+      await component.saveBallToArsenal(phaze);
+
+      expect(alertCreate).not.toHaveBeenCalled();
+      expect(addBallsToArsenal).toHaveBeenCalledWith([phaze], { allowTwin: false, arsenalIds: ['a1'] });
+      expect(toastService.showToast).toHaveBeenCalledWith('Phaze II added to Arsenal.', 'add');
+    });
+
+    it('adds another one of an owned ball only after asking', async () => {
+      arsenal.set([owned('one')]);
+
+      await component.saveBallToArsenal(phaze);
+      expect(addBallsToArsenal).not.toHaveBeenCalled();
+
+      alertRole = 'confirm';
+      await component.saveBallToArsenal(phaze);
+      expect(addBallsToArsenal).toHaveBeenCalledWith([phaze], { allowTwin: true, arsenalIds: ['a1'] });
+    });
+
+    it('adds nothing when the bowler picks no arsenal', async () => {
+      chooseForNewBalls.mockResolvedValue(null);
+
+      await component.saveBallToArsenal(phaze);
+
+      expect(addBallsToArsenal).not.toHaveBeenCalled();
+    });
+
+    it('tells the user when the ball could not be saved', async () => {
+      addBallsToArsenal.mockResolvedValue({ added: [], failed: [phaze] });
+
+      await component.saveBallToArsenal(phaze);
+
+      expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.ballSaveError, 'bug', true);
+    });
   });
 
   it('should create', () => {

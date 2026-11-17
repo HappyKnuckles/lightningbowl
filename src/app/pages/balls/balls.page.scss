@@ -1,4 +1,9 @@
 ion-header {
+  // next to the searchbar: centred on its input instead of sitting at the top of the toolbar
+  .photo-search {
+    align-self: center;
+  }
+
   ion-button {
     position: relative;
 

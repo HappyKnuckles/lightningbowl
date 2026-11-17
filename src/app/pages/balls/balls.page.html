@@ -43,7 +43,7 @@
       placeholder="Search for a ball"
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
-    <ion-buttons slot="end">
+    <ion-buttons slot="end" class="photo-search">
       <ion-button fill="clear" aria-label="Search by photo" [disabled]="!isOnline() || searchingByPhoto()" (click)="searchByPhoto()">
         <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
       </ion-button>

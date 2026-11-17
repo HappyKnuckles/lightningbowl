@@ -23,7 +23,7 @@ describe('BallService', () => {
   it('posts a photo to the image search and returns the balls, most alike first', async () => {
     const result = service.findBallsByImage('data:image/jpeg;base64,AAAA', 5);
 
-    const req = http.expectOne((r) => r.url === `${api}balls/image-search`);
+    const req = http.expectOne((r) => r.url === `${environment.ballImageSearchEndpoint}balls/image-search`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ image: 'data:image/jpeg;base64,AAAA' });
     expect(req.request.params.get('limit')).toBe('5');

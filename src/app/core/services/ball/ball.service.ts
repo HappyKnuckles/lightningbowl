@@ -47,7 +47,9 @@ export class BallService {
 
   /** The balls that look most like a photo (base64 or a data URL, ideally about 512 px), most alike first. */
   async findBallsByImage(image: string, limit = 10): Promise<Ball[]> {
-    const matches = await firstValueFrom(this.http.post<BallImageMatch[]>(this.url(BALL_API.imageSearch), { image }, { params: { limit } }));
+    const matches = await firstValueFrom(
+      this.http.post<BallImageMatch[]>(`${environment.ballImageSearchEndpoint}${BALL_API.imageSearch}`, { image }, { params: { limit } }),
+    );
     return matches.map((match) => match.ball);
   }
 

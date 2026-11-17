@@ -6,6 +6,8 @@ export const BALL_API = {
   ball: (ballId: string) => `balls/${encodeURIComponent(ballId)}`,
   /** Balls with a similar expected reaction to the given ball. */
   similar: (ballId: string) => `balls/${encodeURIComponent(ballId)}/similar`,
+  /** Balls that look like a photo (POST). */
+  imageSearch: 'balls/image-search',
   brands: 'brands',
   cores: 'cores',
   coverstocks: 'coverstocks',

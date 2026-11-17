@@ -20,6 +20,20 @@ describe('BallService', () => {
 
   afterEach(() => http.verify());
 
+  it('posts a photo to the image search and returns the balls, most alike first', async () => {
+    const result = service.findBallsByImage('data:image/jpeg;base64,AAAA', 5);
+
+    const req = http.expectOne((r) => r.url === `${api}balls/image-search`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ image: 'data:image/jpeg;base64,AAAA' });
+    expect(req.request.params.get('limit')).toBe('5');
+    req.flush([
+      { score: 0.93, ball: makeBall({ ball_id: '1', ball_name: 'Phaze II' }) },
+      { score: 0.81, ball: makeBall({ ball_id: '2', ball_name: 'Phaze 4' }) },
+    ]);
+    expect((await result).map((b) => b.ball_name)).toEqual(['Phaze II', 'Phaze 4']);
+  });
+
   it('searches balls with the given query parameters', async () => {
     const result = service.searchBalls({ page: 1, brand: ['Storm', 'Hammer'] });
 

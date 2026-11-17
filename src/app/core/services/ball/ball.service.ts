@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { BALL_API, BALL_LOOKUP_CHUNK } from 'src/app/core/constants/ball-api.constants';
-import { Ball, BallPage, BallQueryParams, Brand, Core, Coverstock, SimilarBallsQueryParams } from 'src/app/core/models/ball.model';
+import { Ball, BallImageMatch, BallPage, BallQueryParams, Brand, Core, Coverstock, SimilarBallsQueryParams } from 'src/app/core/models/ball.model';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
 import { NetworkService } from '../network/network.service';
@@ -43,6 +43,12 @@ export class BallService {
     }
     const response = await this.searchBalls(params);
     return { items: response.content, hasMore: response.page.number + 1 < response.page.totalPages };
+  }
+
+  /** The balls that look most like a photo (base64 or a data URL, ideally about 512 px), most alike first. */
+  async findBallsByImage(image: string, limit = 10): Promise<Ball[]> {
+    const matches = await firstValueFrom(this.http.post<BallImageMatch[]>(this.url(BALL_API.imageSearch), { image }, { params: { limit } }));
+    return matches.map((match) => match.ball);
   }
 
   /** All weight variants of the given ball ids. */

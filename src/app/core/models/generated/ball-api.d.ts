@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/balls/image-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Balls that look like a photo
+         * @description Compares the photo with the catalog pictures and returns the most alike balls first, each ball once (in `weight`, or its heaviest weight). Works best with the ball filling most of the photo. Pictures are embedded during the nightly sync, so the newest balls may be missing for a day.
+         */
+        post: operations["searchBallsByImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/brands": {
         parameters: {
             query?: never;
@@ -213,6 +233,15 @@ export interface components {
         BallPage: {
             content: components["schemas"]["Ball"][];
             page: components["schemas"]["PageMeta"];
+        };
+        ImageMatch: {
+            /** @description How alike the photo and the ball picture are (cosine similarity, at most 1). Compare scores of one search, not across searches. */
+            score: number;
+            ball: components["schemas"]["Ball"];
+        };
+        ImageSearchRequest: {
+            /** @description The photo as base64, or as a data URL (`data:image/jpeg;base64,...`). JPEG, PNG or WebP, at most 3 MB; about 512 px on the long side is plenty. */
+            image: string;
         };
         PageMeta: {
             number: number;
@@ -578,6 +607,80 @@ export interface operations {
             };
             /** @description Server error. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    searchBallsByImage: {
+        parameters: {
+            query?: {
+                /** @description Ball weight in lbs. */
+                weight?: number;
+                /** @description Maximum number of results. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Most alike first (empty before any picture is embedded). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageMatch"][];
+                };
+            };
+            /** @description Invalid parameter, or the body is no readable JPEG, PNG or WebP. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limit exceeded (100 requests per minute per IP). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Server error. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The image search service failed; try again later. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Image search is not set up. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

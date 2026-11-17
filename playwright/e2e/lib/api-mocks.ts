@@ -23,8 +23,8 @@ const firstPage = (url: string): boolean => {
   return page === null || page === '0' || page === '1';
 };
 
-/** Hosts the app may use as `ballApiEndpoint`: own ball API, bowwwl proxy, proxy previews. */
-const BALL_API_HOST = /(?:balls|proxy)\.lightningbowl\.de\/api\/|lightningbowl-bowwwl-proxy-[^/]*\.vercel\.app\/api\//;
+/** Hosts the app may use as `ballApiEndpoint`: own ball API and its previews, bowwwl proxy and its previews. */
+const BALL_API_HOST = /(?:balls|proxy)\.lightningbowl\.de\/api\/|lightningbowl-(?:bowwwl-proxy|ball-api)-[^/]*\.vercel\.app\/api\//;
 
 const lower = (value: unknown): string => String(value ?? '').toLowerCase();
 
@@ -78,6 +78,18 @@ export async function installBowwwlMocks(page: Page, balls: Ball[]): Promise<voi
   });
   // Similar reaction: own API `balls/{id}/similar`, proxy `similar-balls`.
   await page.route(/\/api\/balls\/[^/?]+\/similar|\/api\/similar-balls/, (route) => json(route, []));
+  // Search by photo: the first three balls, most alike first.
+  await page.route(/\/api\/balls\/image-search/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fulfill({
+          status: 204,
+          headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' },
+        })
+      : json(
+          route,
+          balls.slice(0, 3).map((ball, i) => ({ score: 0.9 - i / 10, ball })),
+        ),
+  );
   // Ball thumbnails (bowwwl.com) → instant 1×1 PNG so image waiters don't hang.
   await page.route(/bowwwl\.com\//, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PNG_1x1 }));
 }

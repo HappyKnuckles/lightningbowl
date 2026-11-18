@@ -49,10 +49,15 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # With a prompt set, the action still only accepts `labeled` events whose
+          # label matches label_trigger (default "claude"). Without this, adding
+          # "triage" exits green as "No trigger found" and Claude never runs.
+          label_trigger: triage
           # Posts a tracking comment on the issue and ticks off steps as it works,
           # so the run is visible from the issue itself rather than only in Actions.
-          # Ignored on workflow_dispatch — that event has no issue to comment on.
-          track_progress: true
+          # Off on workflow_dispatch: the action throws when track_progress is set
+          # for an event without an issue payload.
+          track_progress: ${{ github.event_name != 'workflow_dispatch' }}
           # Issues can be opened by people without write access.
           allowed_non_write_users: "*"
           # `gh issue create` is only in the allowlist for maintainer-triggered runs:

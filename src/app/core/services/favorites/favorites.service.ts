@@ -1,6 +1,6 @@
 import { inject, Injectable, signal, Signal } from '@angular/core';
 import { Ball } from '../../models/ball.model';
-import { Pattern } from '../../models/pattern.model';
+import { PatternSummary } from '../../models/pattern.model';
 import { BallService } from '../ball/ball.service';
 import { PatternService } from '../pattern/pattern.service';
 import { ballKey as keyOf, SavedBall, toStoredBall } from '../../utils/ball-utils/stored-ball.utils';
@@ -11,9 +11,9 @@ import { ballKey as keyOf, SavedBall, toStoredBall } from '../../utils/ball-util
 export class FavoritesService {
   private patternService = inject(PatternService);
   private ballService = inject(BallService);
-  private _favoritePatterns = signal<Map<string, Pattern>>(new Map());
+  private _favoritePatterns = signal<Map<string, PatternSummary>>(new Map());
   private _favoriteBalls = signal<Map<string, Ball>>(new Map());
-  readonly favoritePatterns: Signal<Map<string, Pattern>> = this._favoritePatterns;
+  readonly favoritePatterns: Signal<Map<string, PatternSummary>> = this._favoritePatterns;
   readonly favoriteBalls: Signal<Map<string, Ball>> = this._favoriteBalls;
 
   constructor() {
@@ -32,7 +32,7 @@ export class FavoritesService {
     return this._favoritePatterns().has(patternUrl);
   }
 
-  toggleFavorite(pattern: Pattern): boolean {
+  toggleFavorite(pattern: PatternSummary): boolean {
     const currentFavorites = new Map(this._favoritePatterns());
     let isFavorited: boolean;
 
@@ -50,7 +50,7 @@ export class FavoritesService {
     return isFavorited;
   }
 
-  addFavorite(pattern: Pattern): void {
+  addFavorite(pattern: PatternSummary): void {
     const currentFavorites = new Map(this._favoritePatterns());
     currentFavorites.set(pattern.url, pattern);
     this._favoritePatterns.set(currentFavorites);
@@ -68,7 +68,7 @@ export class FavoritesService {
     return Array.from(this._favoritePatterns().keys());
   }
 
-  getFavoritePatterns(): Pattern[] {
+  getFavoritePatterns(): PatternSummary[] {
     return Array.from(this._favoritePatterns().values());
   }
 
@@ -144,7 +144,7 @@ export class FavoritesService {
           // Old format — return URLs for async migration
           return parsed as string[];
         } else if (typeof parsed[0] === 'object' && parsed[0] !== null) {
-          const map = new Map<string, Pattern>((parsed as Pattern[]).map((p) => [p.url, p]));
+          const map = new Map<string, PatternSummary>((parsed as PatternSummary[]).map((p) => [p.url, p]));
           this._favoritePatterns.set(map);
         }
       }

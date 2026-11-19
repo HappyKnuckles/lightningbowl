@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Pattern } from '../../models/pattern.model';
+import { PatternSummary } from '../../models/pattern.model';
 import { PatternSortOption, PatternSortField, SortDirection } from '../../models/sort.model';
 import { FavoritesService } from '../favorites/favorites.service';
 
@@ -20,7 +20,7 @@ export class PatternSortService {
     { field: PatternSortField.VOLUME, direction: SortDirection.DESC, label: 'Volume (High to Low)' },
   ];
 
-  sortPatterns(patterns: Pattern[], sortOption: PatternSortOption, favoritesFirst = false): Pattern[] {
+  sortPatterns(patterns: PatternSummary[], sortOption: PatternSortOption, favoritesFirst = false): PatternSummary[] {
     if (!favoritesFirst) {
       return [...patterns];
     }
@@ -35,7 +35,7 @@ export class PatternSortService {
     return [...sortedFavorites, ...nonFavoritePatterns];
   }
 
-  private applySortToPatterns(patterns: Pattern[], sortOption: PatternSortOption): Pattern[] {
+  private applySortToPatterns(patterns: PatternSummary[], sortOption: PatternSortOption): PatternSummary[] {
     return patterns.sort((a, b) => {
       const { field, direction } = sortOption;
 

@@ -91,10 +91,19 @@ export async function installPatternMocks(page: Page, patterns: Pattern[]): Prom
   // Its URL carries no query string, so without this it fell to the catch-all
   // above and the search input stayed [disabled] forever.
   await page.route(/\/patterns\/all-stripped/, (route) => json(route, { count: patterns.length, patterns }));
-  // Library list, paged.
+  // Library list and search, paged, without the oil rows (as the app asks for them).
   await page.route(/\/patterns\?page=/, (route) => {
-    const isFirst = firstPage(route.request().url());
-    return json(route, { total: isFirst ? patterns.length : 0, patterns: isFirst ? patterns : [] });
+    const url = route.request().url();
+    const q = (new URL(url).searchParams.get('q') ?? '').toLowerCase();
+    const matched = patterns.filter((p) => p.title.toLowerCase().includes(q));
+    const summaries = matched.map(({ forwards_data: _f, reverse_data: _r, ...summary }) => summary);
+    return json(route, { total: matched.length, patterns: firstPage(url) ? summaries : [] });
+  });
+  // A pattern's detail, with its oil rows.
+  await page.route(/\/api\/patterns\/[^?]+$/, (route) => {
+    const url = decodeURIComponent(route.request().url().split('/api/patterns/')[1] ?? '');
+    const pattern = patterns.find((p) => p.url === url);
+    return pattern ? json(route, pattern) : route.fallback();
   });
   // Title search.
   await page.route(/\/search\?q=/, (route) => {

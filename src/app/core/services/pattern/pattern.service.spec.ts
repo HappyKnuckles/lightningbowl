@@ -77,6 +77,17 @@ describe('PatternService', () => {
     await list;
   });
 
+  it('sends the favorites to be listed first, and caches that list apart', async () => {
+    const result = service.getPatterns(1, false, 'title', 'asc', '', ['u2', 'u1']);
+
+    const req = await request('patterns');
+    expect(req.request.params.getAll('favorite')).toEqual(['u2', 'u1']);
+    req.flush({ total: 2, patterns: [{ url: 'u2' }, { url: 'u1' }] });
+    await result;
+
+    expect([...store.keys()]).toEqual(['patterns_page_1_title_asc_fav_u1,u2']);
+  });
+
   it('keeps an opened pattern for offline use', async () => {
     const pattern = { url: 'https://patternlibrary.kegel.net/pattern/abc', title: 'Badger', forwards_data: [], reverse_data: [] };
     const first = service.getPatternData(pattern.url);

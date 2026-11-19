@@ -8,7 +8,7 @@
       <app-sort-header
         #sortHeader
         [id]="'pattern-sort-header'"
-        [sortOptions]="sortService.PATTERN_SORT_OPTIONS"
+        [sortOptions]="sortOptions()"
         [selectedSort]="currentSortOption()"
         [storageKey]="'patterns-sort-option'"
         [favoritesFirst]="favoritesFirst()"

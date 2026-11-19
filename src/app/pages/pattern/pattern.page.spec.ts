@@ -29,9 +29,14 @@ describe('PatternPage', () => {
     const toastServiceSpy = createSpyObj(['showToast']);
     const loadingServiceSpy = createSpyObj(['setLoading']);
     const hapticServiceSpy = createSpyObj(['vibrate']);
-    const sortServiceSpy = createSpyObj(['sortPatterns'], { PATTERN_SORT_OPTIONS: [] });
-    const networkServiceSpy = createSpyObj([], { isOffline: false });
-    const favoritesServiceSpy = createSpyObj(['toggleFavorite', 'isFavorite']);
+    const sortServiceSpy = createSpyObj(['sortPatterns'], {
+      PATTERN_SORT_OPTIONS: [{ field: 'title', direction: 'asc', label: 'Title (A-Z)' }],
+      BEST_MATCH_OPTION: { field: 'relevance', direction: 'desc', label: 'Best Match' },
+    });
+    const networkServiceSpy = createSpyObj([], { isOffline: false, isOnline: true });
+    const favoritesServiceSpy = createSpyObj(['toggleFavorite', 'isFavorite'], {
+      favoritePatterns: signal(new Map([['fav-1', { url: 'fav-1', title: 'Favorite' }]])),
+    });
     const analyticsServiceSpy = createSpyObj(['trackEvent', 'trackPatternLookup']);
 
     await TestBed.configureTestingModule({
@@ -89,7 +94,7 @@ describe('PatternPage', () => {
       patternService.getPatterns.mockResolvedValueOnce(page(3, 1, 2)).mockResolvedValueOnce(page(3, 3, 1));
 
       await component.searchPatterns(new CustomEvent('ionInput', { detail: { value: 'shark' } }));
-      expect(patternService.getPatterns).toHaveBeenLastCalledWith(1, false, 'title', 'asc', 'shark');
+      expect(patternService.getPatterns).toHaveBeenLastCalledWith(1, false, 'relevance', 'desc', 'shark', []);
       expect(component.hasMoreData).toBe(true);
 
       const complete = vi.fn();
@@ -97,7 +102,7 @@ describe('PatternPage', () => {
       const now = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
       await component.loadPatterns({ target: { complete } } as never);
       now.mockRestore();
-      expect(patternService.getPatterns).toHaveBeenLastCalledWith(2, false, 'title', 'asc', 'shark');
+      expect(patternService.getPatterns).toHaveBeenLastCalledWith(2, false, 'relevance', 'desc', 'shark', []);
       expect(component.patterns().map((p) => p.url)).toEqual(['u1', 'u2', 'u3']);
       expect(component.hasMoreData).toBe(false);
       expect(complete).toHaveBeenCalled();
@@ -113,6 +118,29 @@ describe('PatternPage', () => {
       await old;
 
       expect(component.patterns().map((p) => p.url)).toEqual(['u9']);
+    });
+
+    it('sorts a search by best match, and goes back to the previous sort when it is cleared', async () => {
+      patternService.getPatterns.mockResolvedValue(page(1, 1, 1));
+      component.currentSortOption.set({ field: 'distance', direction: 'desc', label: 'Distance (High to Low)' } as never);
+
+      await component.searchPatterns(new CustomEvent('ionInput', { detail: { value: 'shark' } }));
+      expect(component.currentSortOption().label).toBe('Best Match');
+      expect(component.sortOptions()[0].label).toBe('Best Match');
+
+      await component.searchPatterns(new CustomEvent('ionInput', { detail: { value: '' } }));
+      expect(component.currentSortOption().label).toBe('Distance (High to Low)');
+      expect(patternService.getPatterns).toHaveBeenLastCalledWith(1, false, 'distance', 'desc', '', []);
+      expect(component.sortOptions().map((o) => o.label)).toEqual(['Title (A-Z)']);
+    });
+
+    it('asks the API to put the favorites first', async () => {
+      patternService.getPatterns.mockResolvedValue(page(1, 1, 1));
+
+      component.onFavoritesFirstChange(true);
+      await vi.waitFor(() => expect(patternService.getPatterns).toHaveBeenCalled());
+
+      expect(patternService.getPatterns).toHaveBeenLastCalledWith(1, false, 'title', 'asc', '', ['fav-1']);
     });
 
     it('loads the oil rows when a pattern is opened', async () => {

@@ -130,12 +130,22 @@ export class PatternPage implements OnInit {
     label: 'Title (A-Z)',
   });
   imagesUrl = environment.imagesUrl;
+  /** "Best Match" is offered only while searching. */
+  readonly sortOptions = computed(() =>
+    this.searchTerm().trim() !== ''
+      ? [this.sortService.BEST_MATCH_OPTION, ...this.sortService.PATTERN_SORT_OPTIONS]
+      : this.sortService.PATTERN_SORT_OPTIONS,
+  );
+  // Online, the API already searched, sorted and put favorites first. Offline (cached pages), the
+  // favorites are put first here.
   displayedPatterns = computed(() => {
-    if (this.searchTerm().trim() !== '') {
+    if (this.networkService.isOnline) {
       return this.patterns();
     }
     return this.sortService.sortPatterns(this.patterns(), this.currentSortOption(), this.favoritesFirst());
   });
+  /** The sort before a search switched to "Best Match", restored when the search is cleared. */
+  private sortBeforeSearch: PatternSortOption | null = null;
   private lastLoadTime = 0;
   private debounceMs = 300;
   /** Bumped for every new list (search, sort, refresh), so a slower answer to an older one is dropped. */
@@ -176,7 +186,7 @@ export class PatternPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       this.isPageLoading.set(true);
-      this.searchTerm.set('');
+      this.setSearchTerm('');
       await this.reloadList(true);
     } catch (error) {
       console.error(error);
@@ -201,7 +211,8 @@ export class PatternPage implements OnInit {
         this.isPageLoading.set(true);
       }
       const { field, direction } = this.currentSortOption();
-      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh, field, direction, this.searchTerm());
+      const favorites = this.favoritesFirst() ? [...this.favoritesService.favoritePatterns().keys()] : [];
+      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh, field, direction, this.searchTerm(), favorites);
       if (version !== this.listVersion) return;
       if (response.patterns.length > 0) {
         this.patterns.update((current) => [...current, ...response.patterns]);
@@ -255,7 +266,7 @@ export class PatternPage implements OnInit {
   private async runSearch(searchValue: string): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      this.searchTerm.set(searchValue);
+      this.setSearchTerm(searchValue);
       await this.reloadList();
       if (searchValue.trim() !== '') {
         void this.analyticsService.trackPatternLookup(searchValue);
@@ -266,6 +277,25 @@ export class PatternPage implements OnInit {
     } finally {
       this.loadingService.setLoading(false);
     }
+  }
+
+  /**
+   * Starting a search switches to "Best Match"; clearing it restores the previous sort unless another
+   * sort was picked meanwhile (as on the ball page).
+   */
+  private setSearchTerm(term: string): void {
+    const wasSearching = this.searchTerm().trim() !== '';
+    const isSearching = term.trim() !== '';
+    if (!wasSearching && isSearching) {
+      this.sortBeforeSearch = this.currentSortOption();
+      this.currentSortOption.set(this.sortService.BEST_MATCH_OPTION);
+    } else if (wasSearching && !isSearching) {
+      if (this.currentSortOption().field === PatternSortField.RELEVANCE && this.sortBeforeSearch) {
+        this.currentSortOption.set(this.sortBeforeSearch);
+      }
+      this.sortBeforeSearch = null;
+    }
+    this.searchTerm.set(term);
   }
 
   /** Starts the list over from the first page, for the current search and sort. */
@@ -354,6 +384,10 @@ export class PatternPage implements OnInit {
   onFavoritesFirstChange(checked: boolean): void {
     this.favoritesFirst.set(checked);
     this.saveFavoritesFirstSetting(checked);
+    // online the API puts them first; offline the cached pages are reordered here
+    if (this.networkService.isOnline) {
+      void this.reloadList();
+    }
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);

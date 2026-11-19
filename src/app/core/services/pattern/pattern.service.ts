@@ -58,14 +58,23 @@ export class PatternService {
 
   /**
    * One page of the pattern list, without the oil rows (`getPatternData` has them): every pattern,
-   * or the matches of `searchTerm`. The API searches, sorts and pages, so a search never loads more
-   * than a page.
+   * or the matches of `searchTerm`, with `favorites` first. The API searches, sorts and pages, so a
+   * search never loads more than a page.
    */
-  async getPatterns(page: number, forceRefresh = false, sortField = 'title', sortDirection = 'asc', searchTerm = ''): Promise<AllPatternsResult> {
+  async getPatterns(
+    page: number,
+    forceRefresh = false,
+    sortField = 'title',
+    sortDirection = 'asc',
+    searchTerm = '',
+    favorites: string[] = [],
+  ): Promise<AllPatternsResult> {
     const term = searchTerm.trim();
-    const cacheKey = term
-      ? `patterns_search_${encodeURIComponent(term.toLowerCase())}_${page}_${sortField}_${sortDirection}`
-      : `patterns_page_${page}_${sortField}_${sortDirection}`;
+    const favoritesKey = favorites.length ? `_fav_${[...favorites].sort().join(',')}` : '';
+    const cacheKey =
+      (term
+        ? `patterns_search_${encodeURIComponent(term.toLowerCase())}_${page}_${sortField}_${sortDirection}`
+        : `patterns_page_${page}_${sortField}_${sortDirection}`) + favoritesKey;
 
     try {
       if (!forceRefresh) {
@@ -81,7 +90,7 @@ export class PatternService {
         return { total: 0, patterns: [] };
       }
 
-      const params: Record<string, string | number> = {
+      const params: Record<string, string | number | string[]> = {
         page,
         per_page: PATTERN_PAGE_SIZE,
         sort_field: sortField,
@@ -89,6 +98,8 @@ export class PatternService {
         include_oil: 'false',
       };
       if (term) params['q'] = term;
+      // the API lists them first, on every page
+      if (favorites.length) params['favorite'] = favorites;
       const response = await firstValueFrom(
         this.http.get<AllPatternsResult>(`${environment.patternEndpoint}patterns`, { params }).pipe(retry({ count: 3, delay: 2000 })),
       );

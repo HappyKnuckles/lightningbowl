@@ -17,6 +17,8 @@ export enum BallSortField {
 }
 
 export enum PatternSortField {
+  /** Best match, as the API orders a search. */
+  RELEVANCE = 'relevance',
   TITLE = 'title',
   CATEGORY = 'category',
   DISTANCE = 'distance',

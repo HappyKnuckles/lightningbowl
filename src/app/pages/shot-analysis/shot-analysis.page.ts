@@ -45,6 +45,8 @@ import {
   validateCalibration,
 } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
 import { clampTrimWindow, defaultTrimWindow, MAX_SHOT_WINDOW_S, TrimWindow } from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
+import { findLaneCornersInVideo } from 'src/app/core/utils/shot-tracker/lane-detection.utils';
+import { loadOpenCv } from 'src/app/core/utils/shot-tracker/opencv.utils';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
 
@@ -118,7 +120,11 @@ export class ShotAnalysisPage implements OnDestroy {
   });
   readonly points = signal<NormalizedPoint[]>([]);
 
-  readonly instruction = computed(() => CALIBRATION_STEPS[this.points().length]?.label ?? 'Lane marked. Drag a corner to adjust it.');
+  /** Looking for the lane on the marking frame, right after a video is picked. */
+  readonly findingLane = signal(false);
+  readonly instruction = computed(() =>
+    this.findingLane() ? 'Finding the lane…' : (CALIBRATION_STEPS[this.points().length]?.label ?? 'Lane marked. Drag a corner to adjust it.'),
+  );
   readonly calibrationError = computed(() => validateCalibration(this.points()));
   readonly canAnalyze = computed(() => this.points().length === CALIBRATION_STEPS.length && this.calibrationError() === null);
   readonly frameSize = signal<{ height: number; width: number } | null>(null);
@@ -269,6 +275,9 @@ export class ShotAnalysisPage implements OnDestroy {
     const time = this.points().length > 0 ? this.frameTime() : Math.min(this.trimWindow().startS + 0.05, duration);
     this.frameTime.set(time);
     showFrame(video, time);
+    if (this.points().length === 0) {
+      void this.#placeLaneCorners(video);
+    }
   }
 
   onVideoError(): void {
@@ -438,12 +447,39 @@ export class ShotAnalysisPage implements OnDestroy {
       URL.revokeObjectURL(previous);
     }
     this.#file = file;
+    if (file) {
+      // needed for finding the lane and for the analysis: loaded while the video opens
+      void loadOpenCv().catch(() => undefined);
+    }
     this.videoUrl.set(file ? URL.createObjectURL(file) : null);
     this.frameSize.set(null);
     this.duration.set(0);
     this.frameTime.set(0);
     this.trimWindow.set({ startS: 0, endS: 0 });
     this.points.set([]);
+  }
+
+  /**
+   * Places the four corners on the lane found on the marking frame, for the bowler to correct by dragging.
+   * Nothing is placed when no lane is found, or when the bowler started marking (or picked another video)
+   * in the meantime: then the corners are tapped as before.
+   */
+  async #placeLaneCorners(video: HTMLVideoElement): Promise<void> {
+    const file = this.#file;
+    this.findingLane.set(true);
+    try {
+      await frameShown(video);
+      const corners = await findLaneCornersInVideo(video);
+      if (corners && validateCalibration(corners) === null && this.#file === file && this.points().length === 0) {
+        this.points.set([...corners]);
+      }
+    } catch (error) {
+      console.warn('Finding the lane failed:', error);
+    } finally {
+      if (this.#file === file) {
+        this.findingLane.set(false);
+      }
+    }
   }
 
   /** The pointer position in video pixels (the overlay's viewBox), or null outside the frame. */
@@ -578,4 +614,29 @@ function loadHandedness(): Handedness {
   } catch {
     return 'right';
   }
+}
+
+/** Resolves once the video shows a decoded frame and isn't seeking (gives up after a few seconds). */
+function frameShown(video: HTMLVideoElement, timeoutMs = 5000): Promise<void> {
+  return new Promise((resolve) => {
+    const ready = () => !video.seeking && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+    if (ready()) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      if (!ready()) return;
+      clearTimeout(timer);
+      video.removeEventListener('seeked', done);
+      video.removeEventListener('loadeddata', done);
+      resolve();
+    };
+    const timer = setTimeout(() => {
+      video.removeEventListener('seeked', done);
+      video.removeEventListener('loadeddata', done);
+      resolve();
+    }, timeoutMs);
+    video.addEventListener('seeked', done);
+    video.addEventListener('loadeddata', done);
+  });
 }

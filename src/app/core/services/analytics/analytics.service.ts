@@ -54,6 +54,8 @@ export class AnalyticsService {
   private processingQueue = false;
   private storageReady = false;
   private batchFlushTimer?: ReturnType<typeof setTimeout>;
+  /** Changes to the stored queue, one after another (see `updateQueue`). */
+  private queueChanges: Promise<unknown> = Promise.resolve();
 
   private navigationStartTime?: number;
   private currentRoute?: string;
@@ -406,15 +408,19 @@ export class AnalyticsService {
     const batchRequest = { events };
 
     try {
+      // text/plain: a beacon sends credentials, so a JSON one needs a CORS preflight, which the
+      // backend's `Access-Control-Allow-Origin: *` fails. The beacon still reported success and the
+      // queue was cleared, so the events were lost. The backend reads the body as JSON either way.
       const blob = new Blob([JSON.stringify(batchRequest)], {
-        type: 'application/json',
+        type: 'text/plain;charset=UTF-8',
       });
 
       const sent = navigator.sendBeacon(this.analyticsBatchEndpoint, blob);
 
       if (sent) {
-        // Clear the entire queue if beacon was accepted
-        await this.storage.set(this.QUEUE_KEY, []);
+        // Remove what was sent; events tracked meanwhile stay
+        const sentIds = new Set(queue.map((queuedEvent) => queuedEvent.id));
+        await this.updateQueue((current) => current.filter((queuedEvent) => !sentIds.has(queuedEvent.id)));
       }
     } catch (error) {
       console.warn('Beacon API failed:', error);
@@ -432,17 +438,24 @@ export class AnalyticsService {
   }
 
   /**
+   * Reads, changes and stores the queue, one change after another. Done side by side, two changes
+   * read the same queue and the later write drops what the earlier added: an action's event and the
+   * navigation it causes are tracked at the same moment, so the action's event was lost.
+   */
+  private updateQueue(change: (queue: QueuedEvent[]) => QueuedEvent[]): Promise<QueuedEvent[]> {
+    const run = this.queueChanges.then(async () => {
+      const queue = change(await this.getQueue());
+      await this.storage.set(this.QUEUE_KEY, queue);
+      return queue;
+    });
+    this.queueChanges = run.catch(() => undefined);
+    return run;
+  }
+
+  /**
    * Add event to queue
    */
   private async addToQueue(payload: AnalyticsEvent): Promise<void> {
-    const queue = await this.getQueue();
-
-    // Prevent queue from growing infinitely
-    if (queue.length >= this.MAX_QUEUE_SIZE) {
-      console.warn('Analytics queue is full, discarding oldest events');
-      queue.splice(0, 50); // Remove oldest 50 events
-    }
-
     const queuedEvent: QueuedEvent = {
       id: this.generateId(),
       payload: {
@@ -452,8 +465,15 @@ export class AnalyticsService {
       retryCount: 0,
       timestamp: Date.now(),
     };
-    queue.push(queuedEvent);
-    await this.storage.set(this.QUEUE_KEY, queue);
+
+    const queue = await this.updateQueue((current) => {
+      // Prevent queue from growing infinitely
+      if (current.length >= this.MAX_QUEUE_SIZE) {
+        console.warn('Analytics queue is full, discarding oldest events');
+        current.splice(0, 50); // Remove oldest 50 events
+      }
+      return [...current, queuedEvent];
+    });
 
     // Schedule a debounced batch send
     this.scheduleBatchFlush(queue.length);
@@ -511,9 +531,10 @@ export class AnalyticsService {
         const response = await firstValueFrom(this.http.post<{ success: boolean; count: number }>(this.analyticsBatchEndpoint, { events }));
 
         if (response.success) {
-          // Remove successfully sent events from queue
-          const remainingQueue = queue.slice(batch.length);
-          await this.storage.set(this.QUEUE_KEY, remainingQueue);
+          // Remove the sent events from the queue as it is now: writing back the queue read before
+          // sending dropped every event tracked while the request was on its way
+          const sentIds = new Set(batch.map((queuedEvent) => queuedEvent.id));
+          await this.updateQueue((current) => current.filter((queuedEvent) => !sentIds.has(queuedEvent.id)));
         } else {
           // Increment retry count for failed batch
           await this.handleFailedBatch(batch);
@@ -531,25 +552,24 @@ export class AnalyticsService {
    * Handle failed batch (retry or remove)
    */
   private async handleFailedBatch(batch: QueuedEvent[]): Promise<void> {
-    const queue = await this.getQueue();
+    await this.updateQueue((queue) => {
+      // Increment retry count for events in the failed batch
+      batch.forEach((batchEvent) => {
+        const eventIndex = queue.findIndex((e) => e.id === batchEvent.id);
+        if (eventIndex !== -1) {
+          queue[eventIndex].retryCount++;
+        }
+      });
 
-    // Increment retry count for events in the failed batch
-    batch.forEach((batchEvent) => {
-      const eventIndex = queue.findIndex((e) => e.id === batchEvent.id);
-      if (eventIndex !== -1) {
-        queue[eventIndex].retryCount++;
+      // Remove events that exceeded max retries
+      const filteredQueue = queue.filter((event) => event.retryCount < this.MAX_RETRIES);
+      const removedCount = queue.length - filteredQueue.length;
+
+      if (removedCount > 0) {
+        console.warn(`Removed ${removedCount} analytics events after ${this.MAX_RETRIES} failed attempts`);
       }
+      return filteredQueue;
     });
-
-    // Remove events that exceeded max retries
-    const filteredQueue = queue.filter((event) => event.retryCount < this.MAX_RETRIES);
-    const removedCount = queue.length - filteredQueue.length;
-
-    if (removedCount > 0) {
-      console.warn(`Removed ${removedCount} analytics events after ${this.MAX_RETRIES} failed attempts`);
-    }
-
-    await this.storage.set(this.QUEUE_KEY, filteredQueue);
   }
 
   /**

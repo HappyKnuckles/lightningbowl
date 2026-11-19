@@ -75,10 +75,6 @@ export class GameEditService {
     delete this.editedGameStates[game.gameId];
     delete this.editedFocusMap[game.gameId];
 
-    if (game.isSeries) {
-      this.propagateSeriesFields(game, game.league, game.patterns);
-    }
-
     this.isEditModeMap[game.gameId] = false;
     this.hapticService.vibrate(ImpactStyle.Light);
   }
@@ -276,24 +272,6 @@ export class GameEditService {
       this.toastService.showToast(TOAST_MESSAGES.gameUpdateError, 'bug', true);
       console.error('Error saving series edit:', error);
     }
-  }
-
-  // SERIES PROPAGATION (in-memory only)
-  propagateSeriesFields(game: Game, league?: string, patterns?: string[]): void {
-    if (!game.isSeries) return;
-
-    this.gamesStore.updateGamesInMemory((games) =>
-      games.map((g) => {
-        if (g.seriesId === game.seriesId) {
-          return {
-            ...g,
-            ...(league !== undefined && { league }),
-            ...(patterns !== undefined && { patterns }),
-          };
-        }
-        return g;
-      }),
-    );
   }
 
   // PRIVATE HELPERS

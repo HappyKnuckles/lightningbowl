@@ -7,6 +7,7 @@ import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { GameListComponent } from './game-list.component';
+import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 
@@ -106,6 +107,62 @@ describe('GameListComponent', () => {
       expect(game.ballTracking).toBe('throw');
       expect(game.balls).toBeUndefined();
       expect(game.frames[0].throws[0].ball).toEqual({ name: 'Phaze II' });
+    });
+  });
+
+  describe('editing the league', () => {
+    type SeriesRow = Parameters<GameListComponent['toggleSeriesEdit']>[0];
+    const series = (): SeriesRow => {
+      const games = [1, 2, 3].map((n) =>
+        makeGame({ gameId: `g${n}`, isSeries: true, seriesId: 's1', league: 'Monday Night League', patterns: ['Badger'] }),
+      );
+      return { kind: 'series', id: 'series-g1', games, count: 3, total: 600, avg: 200, firstNumber: 1, lastNumber: 3 };
+    };
+
+    beforeEach(() => vi.clearAllMocks());
+
+    it("keeps a series' new league and patterns as a draft, leaving the games where they are until Save", () => {
+      const row = series();
+      component.toggleSeriesEdit(row);
+
+      component.onSeriesLeagueChanged('City Classic');
+      component.onSeriesPatternsChanged(['Cheetah']);
+
+      expect(component.seriesDraft()).toEqual({ rowId: 'series-g1', league: 'City Classic', patterns: ['Cheetah'] });
+      expect(mockGamesStore.updateGamesInMemory).not.toHaveBeenCalled();
+      expect(row.games.map((g) => g.league)).toEqual(['Monday Night League', 'Monday Night League', 'Monday Night League']);
+    });
+
+    it('saves the draft to the whole series and closes the edit', async () => {
+      const save = vi.spyOn(fixture.debugElement.injector.get(GameEditService), 'saveSeriesFields').mockResolvedValue();
+      const row = series();
+      component.toggleSeriesEdit(row);
+      component.onSeriesLeagueChanged('City Classic');
+
+      await component.saveSeriesEdit(row);
+
+      expect(save).toHaveBeenCalledWith(row.games[0], 'City Classic', ['Badger']);
+      expect(component.editingSeriesId()).toBeNull();
+    });
+
+    it('drops the draft on cancel, without saving anything', () => {
+      const save = vi.spyOn(fixture.debugElement.injector.get(GameEditService), 'saveSeriesFields');
+      component.toggleSeriesEdit(series());
+      component.onSeriesLeagueChanged('City Classic');
+
+      component.cancelSeriesEdit();
+
+      expect(component.seriesDraft()).toBeNull();
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('changes only the edited game when its league is picked, not the store', () => {
+      const game = makeGame({ gameId: 'g9', league: 'Monday Night League' });
+
+      component.onEditLeagueChanged(game, 'City Classic');
+
+      expect(game.league).toBe('City Classic');
+      expect(mockGamesStore.updateGamesInMemory).not.toHaveBeenCalled();
     });
   });
 });

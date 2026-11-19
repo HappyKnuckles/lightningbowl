@@ -58,6 +58,18 @@ describe('GameEditService', () => {
         makeGame({ gameId: `g${n}`, isSeries: true, seriesId: 's1', league: 'Monday Night League', frames: perfectFrames(), totalScore: 300 }),
       );
 
+    it('tells which of the series fields an edit changes', () => {
+      const [game] = seriesGames();
+      service.startEdit(game);
+      expect(service.changedSeriesFields(game)).toEqual([]);
+
+      game.league = 'City Classic';
+      game.patterns = ['Badger'];
+
+      expect(service.changedSeriesFields(game)).toEqual(['league', 'patterns']);
+      expect(service.changedSeriesFields(makeGame({ league: 'City Classic' }))).toEqual([]);
+    });
+
     it('leaves the store alone on cancel', () => {
       const store = TestBed.inject(GamesStore);
       const inMemory = vi.spyOn(store, 'updateGamesInMemory');

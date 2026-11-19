@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AlertController, IonModal } from '@ionic/angular';
 
+import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { LeaguesStore } from 'src/app/core/stores/leagues.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { GameListComponent } from './game-list.component';
-import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { makeFrame, makeFrames, makeGame, makeThrow } from 'src/testing/fixtures';
 import { vi } from 'vitest';
 
@@ -163,6 +163,61 @@ describe('GameListComponent', () => {
 
       expect(game.league).toBe('City Classic');
       expect(mockGamesStore.updateGamesInMemory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saving a lone series game with a new league', () => {
+    const answer = (role: 'confirm' | 'cancel') => {
+      const alert = { present: vi.fn().mockResolvedValue(undefined), onDidDismiss: vi.fn().mockResolvedValue({ role }) };
+      return vi.spyOn(TestBed.inject(AlertController), 'create').mockResolvedValue(alert as never);
+    };
+    const edit = () => {
+      const games = [1, 2, 3].map((n) => makeGame({ gameId: `g${n}`, isSeries: true, seriesId: 's1', league: 'Monday Night League' }));
+      mockGamesStore.games.mockReturnValue(games);
+      const editService = fixture.debugElement.injector.get(GameEditService);
+      editService.startEdit(games[0]);
+      component.onEditLeagueChanged(games[0], 'City Classic');
+      return { game: games[0], save: vi.spyOn(editService, 'saveEdit').mockResolvedValue(true) };
+    };
+
+    afterEach(() => mockGamesStore.games.mockReturnValue([]));
+
+    it('asks first, naming how many games the change reaches', async () => {
+      const create = answer('confirm');
+      const { game, save } = edit();
+
+      await component.saveEdit(game);
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          header: 'Change the whole series?',
+          message: 'This game is part of a 3-game series. The new league will apply to all 3 games.',
+        }),
+      );
+      expect(save).toHaveBeenCalledWith(game);
+    });
+
+    it('keeps editing without saving when the user cancels', async () => {
+      answer('cancel');
+      const { game, save } = edit();
+
+      await component.saveEdit(game);
+
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('saves a game outside a series without asking', async () => {
+      const create = answer('confirm');
+      const game = makeGame({ gameId: 'g9', league: 'Monday Night League' });
+      const editService = fixture.debugElement.injector.get(GameEditService);
+      editService.startEdit(game);
+      component.onEditLeagueChanged(game, 'City Classic');
+      const save = vi.spyOn(editService, 'saveEdit').mockResolvedValue(true);
+
+      await component.saveEdit(game);
+
+      expect(create).not.toHaveBeenCalled();
+      expect(save).toHaveBeenCalledWith(game);
     });
   });
 });

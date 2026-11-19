@@ -90,11 +90,7 @@ export class GameEditService {
         return false;
       }
 
-      const original = this.originalGameState[game.gameId];
-      const leagueChanged = original && original.league !== updatedGame.league;
-      const patternsChanged = original && JSON.stringify(original.patterns) !== JSON.stringify(updatedGame.patterns);
-
-      if (updatedGame.isSeries && (leagueChanged || patternsChanged)) {
+      if (this.changedSeriesFields(game).length > 0) {
         await this.saveWithSeriesPropagation(updatedGame);
       } else {
         await this.gamesStore.saveGameToLocalStorage(updatedGame);
@@ -115,6 +111,16 @@ export class GameEditService {
       console.error('Error saving game edit:', error);
       return false;
     }
+  }
+
+  /** League and patterns are shared by a series: which of them this edit changes, for a game in one. */
+  changedSeriesFields(game: Game): ('league' | 'patterns')[] {
+    const original = this.originalGameState[game.gameId];
+    if (!game.isSeries || !original) return [];
+    const changed: ('league' | 'patterns')[] = [];
+    if ((original.league ?? '') !== (game.league ?? '')) changed.push('league');
+    if (JSON.stringify(original.patterns) !== JSON.stringify(game.patterns)) changed.push('patterns');
+    return changed;
   }
 
   // SCORE MODE

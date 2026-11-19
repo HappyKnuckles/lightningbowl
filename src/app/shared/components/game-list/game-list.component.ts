@@ -487,6 +487,7 @@ export class GameListComponent implements OnInit {
   }
 
   async saveEdit(game: Game): Promise<void> {
+    if (!(await this.confirmSeriesChange(game))) return;
     const success = await this.editService.saveEdit(game);
     if (!success) return;
 
@@ -632,6 +633,30 @@ export class GameListComponent implements OnInit {
     if (failed.length) {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
+  }
+
+  /**
+   * A series game shown on its own (when a filter hides the rest of its series) can have its league or
+   * patterns changed, and those belong to the whole series. Asks first, so the other games aren't
+   * changed unnoticed.
+   */
+  private async confirmSeriesChange(game: Game): Promise<boolean> {
+    const changed = this.editService.changedSeriesFields(game);
+    if (changed.length === 0) return true;
+
+    const count = this.gamesStore.games().filter((g) => g.seriesId === game.seriesId).length;
+    const fields = changed.join(' and ');
+    const alert = await this.alertController.create({
+      header: 'Change the whole series?',
+      message: `This game is part of a ${count}-game series. The new ${fields} will apply to all ${count} games.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Change series', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
   }
 
   /**

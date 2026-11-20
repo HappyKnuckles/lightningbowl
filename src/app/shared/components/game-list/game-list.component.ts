@@ -315,9 +315,10 @@ export class GameListComponent implements OnInit {
   public loadedCount = signal(0);
   public presentingElement?: HTMLElement;
 
-  // Series header editing (league/patterns preview in memory, persist on Save)
-  editingSeriesId = signal<string | null>(null);
-  private seriesEditSnapshots = new Map<string, { game: Game; league: string; patterns: string[] }>();
+  // Series header editing: league and patterns stay a draft until Save. Changing them in the store right
+  // away would move the series out of a league's list or a filtered history while it's being edited.
+  seriesDraft = signal<{ rowId: string; league: string; patterns: string[] } | null>(null);
+  editingSeriesId = computed(() => this.seriesDraft()?.rowId ?? null);
 
   // Accordion open state per game before editing started, restored when editing ends
   private editAccordionWasOpen = new Map<string, boolean>();
@@ -486,6 +487,7 @@ export class GameListComponent implements OnInit {
   }
 
   async saveEdit(game: Game): Promise<void> {
+    if (!(await this.confirmSeriesChange(game))) return;
     const success = await this.editService.saveEdit(game);
     if (!success) return;
 
@@ -577,54 +579,39 @@ export class GameListComponent implements OnInit {
     this.ballEditVersion.update((v) => v + 1);
   }
 
-  updateSeries(game: Game, league?: string, patterns?: string[]): void {
-    this.editService.propagateSeriesFields(game, league, patterns);
-  }
-
   // SERIES HEADER EDIT
   toggleSeriesEdit(row: SeriesRow): void {
-    const openId = this.editingSeriesId();
-    if (openId === row.id) {
-      this.cancelSeriesEdit(row);
+    if (this.editingSeriesId() === row.id) {
+      this.cancelSeriesEdit();
       return;
     }
-    if (openId) this.revertSeriesEdit(openId);
-
     const lead = row.games[0];
-    this.seriesEditSnapshots.set(row.id, { game: lead, league: lead.league ?? '', patterns: [...lead.patterns] });
-    this.editingSeriesId.set(row.id);
+    this.seriesDraft.set({ rowId: row.id, league: lead.league ?? '', patterns: [...lead.patterns] });
   }
 
-  cancelSeriesEdit(row: SeriesRow): void {
-    this.revertSeriesEdit(row.id);
-    this.editingSeriesId.set(null);
+  cancelSeriesEdit(): void {
+    this.seriesDraft.set(null);
   }
 
   async saveSeriesEdit(row: SeriesRow): Promise<void> {
-    const lead = row.games[0];
-    await this.editService.saveSeriesFields(lead, lead.league ?? '', lead.patterns);
-    this.seriesEditSnapshots.delete(row.id);
-    this.editingSeriesId.set(null);
+    const draft = this.seriesDraft();
+    if (draft?.rowId !== row.id) return;
+    await this.editService.saveSeriesFields(row.games[0], draft.league, draft.patterns);
+    this.seriesDraft.set(null);
   }
 
-  onSeriesLeagueChanged(row: SeriesRow, league: string): void {
-    this.editService.propagateSeriesFields(row.games[0], league);
+  onSeriesLeagueChanged(league: string): void {
+    this.seriesDraft.update((draft) => draft && { ...draft, league });
   }
 
-  onSeriesPatternsChanged(row: SeriesRow, patterns: string[]): void {
-    this.editService.propagateSeriesFields(row.games[0], undefined, patterns);
-  }
-
-  private revertSeriesEdit(rowId: string): void {
-    const snapshot = this.seriesEditSnapshots.get(rowId);
-    if (snapshot) this.editService.propagateSeriesFields(snapshot.game, snapshot.league, snapshot.patterns);
-    this.seriesEditSnapshots.delete(rowId);
+  onSeriesPatternsChanged(patterns: string[]): void {
+    this.seriesDraft.update((draft) => draft && { ...draft, patterns });
   }
 
   // LEAGUE
+  // Only on the game being edited: Save writes it, to the rest of its series too.
   onEditLeagueChanged(game: Game, league: string): void {
     game.league = league;
-    this.updateSeries(game, league);
   }
 
   // HELPERS
@@ -646,6 +633,30 @@ export class GameListComponent implements OnInit {
     if (failed.length) {
       this.toastService.showToast(`Failed to add: ${failed.map((b) => b.ball_name).join(', ')}.`, 'bug', true);
     }
+  }
+
+  /**
+   * A series game shown on its own (when a filter hides the rest of its series) can have its league or
+   * patterns changed, and those belong to the whole series. Asks first, so the other games aren't
+   * changed unnoticed.
+   */
+  private async confirmSeriesChange(game: Game): Promise<boolean> {
+    const changed = this.editService.changedSeriesFields(game);
+    if (changed.length === 0) return true;
+
+    const count = this.gamesStore.games().filter((g) => g.seriesId === game.seriesId).length;
+    const fields = changed.join(' and ');
+    const alert = await this.alertController.create({
+      header: 'Change the whole series?',
+      message: `This game is part of a ${count}-game series. The new ${fields} will apply to all ${count} games.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Change series', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    return role === 'confirm';
   }
 
   /**

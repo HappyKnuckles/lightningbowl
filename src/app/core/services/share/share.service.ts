@@ -87,6 +87,9 @@ export class ShareService {
         // transform: a swiped list item is still shifted aside while its options close
         style: { margin: '0', overflow: 'visible', transform: 'none' },
         imagePlaceholder: TRANSPARENT_PIXEL,
+        // images are fetched again with CORS: the browser's cached copy from the <img> was loaded without
+        // CORS and may lack the Access-Control-Allow-Origin header, which would leave the image out
+        cacheBust: true,
         filter: (node) => !(node instanceof HTMLElement && node.hasAttribute(SHARE_EXCLUDE_ATTRIBUTE)),
       });
     } catch (error) {

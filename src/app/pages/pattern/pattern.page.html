@@ -8,7 +8,7 @@
       <app-sort-header
         #sortHeader
         [id]="'pattern-sort-header'"
-        [sortOptions]="sortService.PATTERN_SORT_OPTIONS"
+        [sortOptions]="sortOptions()"
         [selectedSort]="currentSortOption()"
         [storageKey]="'patterns-sort-option'"
         [favoritesFirst]="favoritesFirst()"
@@ -105,7 +105,7 @@
             'green-card': getRatioValue(pattern.ratio ?? '0') >= 8,
           }"
           button
-          (click)="selectedPattern.set(pattern)">
+          (click)="openPattern(pattern)">
           @if (pattern.chart_horizontal) {
             <img
               [src]="imagesUrl + pattern.chart_horizontal"
@@ -194,13 +194,13 @@
 </ion-content>
 
 @if (!loadingService.isLoading()) {
-  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="selectedPattern.set(null)">
+  <ion-modal [isOpen]="selectedPattern() !== null" (didDismiss)="closePattern()">
     <ng-template>
       @if (selectedPattern(); as pattern) {
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" style="padding: 4px">
-              <ion-button color="medium" (click)="selectedPattern.set(null)">
+              <ion-button color="medium" (click)="closePattern()">
                 <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
               </ion-button>
             </ion-buttons>
@@ -227,7 +227,13 @@
               </ion-content>
             </ng-template>
           </ion-popover>
-          <app-pattern-info [pattern]="pattern"></app-pattern-info>
+          @if (selectedPatternDetail(); as detail) {
+            <app-pattern-info [pattern]="detail"></app-pattern-info>
+          } @else {
+            <div class="detail-loading">
+              <ion-spinner name="crescent"></ion-spinner>
+            </div>
+          }
         </ion-content>
       }
     </ng-template>

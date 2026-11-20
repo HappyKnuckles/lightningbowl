@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Pattern } from '../../models/pattern.model';
+import { Pattern, PatternSummary } from '../../models/pattern.model';
 import { firstValueFrom, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
@@ -16,10 +16,13 @@ interface SearchResult {
 
 interface AllPatternsResult {
   total: number;
-  patterns: Pattern[];
+  patterns: PatternSummary[];
   page?: number;
   per_page?: number;
 }
+
+/** Patterns per page of the pattern list, browsing or searching. */
+export const PATTERN_PAGE_SIZE = 50;
 
 interface PatternChartsResult {
   count: number;
@@ -53,8 +56,25 @@ export class PatternService {
     }
   }
 
-  async getPatterns(page: number, forceRefresh = false, sortField = 'title', sortDirection = 'asc'): Promise<AllPatternsResult> {
-    const cacheKey = `patterns_page_${page}_${sortField}_${sortDirection}`;
+  /**
+   * One page of the pattern list, without the oil rows (`getPatternData` has them): every pattern,
+   * or the matches of `searchTerm`, with `favorites` first. The API searches, sorts and pages, so a
+   * search never loads more than a page.
+   */
+  async getPatterns(
+    page: number,
+    forceRefresh = false,
+    sortField = 'title',
+    sortDirection = 'asc',
+    searchTerm = '',
+    favorites: string[] = [],
+  ): Promise<AllPatternsResult> {
+    const term = searchTerm.trim();
+    const favoritesKey = favorites.length ? `_fav_${[...favorites].sort().join(',')}` : '';
+    const cacheKey =
+      (term
+        ? `patterns_search_${encodeURIComponent(term.toLowerCase())}_${page}_${sortField}_${sortDirection}`
+        : `patterns_page_${page}_${sortField}_${sortDirection}`) + favoritesKey;
 
     try {
       if (!forceRefresh) {
@@ -70,14 +90,23 @@ export class PatternService {
         return { total: 0, patterns: [] };
       }
 
+      const params: Record<string, string | number | string[]> = {
+        page,
+        per_page: PATTERN_PAGE_SIZE,
+        sort_field: sortField,
+        sort_direction: sortDirection,
+        include_oil: 'false',
+      };
+      if (term) params['q'] = term;
+      // the API lists them first, on every page
+      if (favorites.length) params['favorite'] = favorites;
       const response = await firstValueFrom(
-        this.http
-          .get<AllPatternsResult>(`${environment.patternEndpoint}patterns?page=${page}&sort_field=${sortField}&sort_direction=${sortDirection}`)
-          .pipe(retry({ count: 5, delay: 2000 })),
+        this.http.get<AllPatternsResult>(`${environment.patternEndpoint}patterns`, { params }).pipe(retry({ count: 3, delay: 2000 })),
       );
 
       if (response.total !== 0) {
-        await this.cacheService.set(cacheKey, response, 24 * 60 * 60 * 1000); // 6 hours
+        // a search goes stale sooner than the list it narrows
+        await this.cacheService.set(cacheKey, response, (term ? 2 : 24) * 60 * 60 * 1000);
       }
 
       return response;
@@ -107,18 +136,6 @@ export class PatternService {
     }
   }
 
-  async getAllPatterns(): Promise<Pattern[]> {
-    try {
-      const response = await firstValueFrom(
-        this.http.get<{ count: number; patterns: Pattern[] }>(`${environment.patternEndpoint}patterns/all`).pipe(retry({ count: 5, delay: 2000 })),
-      );
-      return response.patterns;
-    } catch (error) {
-      console.error('Error fetching all patterns:', error);
-      return [];
-    }
-  }
-
   async getPatternCategories(): Promise<string[]> {
     try {
       const response = await firstValueFrom(this.http.get<string[]>(`${environment.patternEndpoint}categories`));
@@ -129,13 +146,20 @@ export class PatternService {
     }
   }
 
+  /** A pattern with its oil rows; kept for offline use, since a list only has the summary. */
   async getPatternData(url: string): Promise<Pattern> {
+    const cacheKey = `pattern_${encodeURIComponent(url)}`;
     try {
+      const cached = await this.cacheService.get<Pattern>(cacheKey);
+      if (cached && ((await this.cacheService.isValid(cacheKey)) || this.networkService.isOffline)) {
+        return cached;
+      }
       const response = await firstValueFrom(this.http.get<Pattern>(`${environment.patternEndpoint}patterns/${url}`));
+      if (response?.url) await this.cacheService.set(cacheKey, response);
       return response;
     } catch (error) {
       console.error('Error fetching pattern data:', error);
-      return {} as Pattern;
+      return (await this.cacheService.get<Pattern>(cacheKey)) ?? ({} as Pattern);
     }
   }
 

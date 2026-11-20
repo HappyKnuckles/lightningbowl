@@ -47,3 +47,6 @@ export interface Pattern {
   chart_standard: string;
   chart_horizontal: string;
 }
+
+/** A pattern as lists get it: everything but the oil rows, which only a pattern's detail has. */
+export type PatternSummary = Omit<Pattern, 'forwards_data' | 'reverse_data'> & { score?: number };

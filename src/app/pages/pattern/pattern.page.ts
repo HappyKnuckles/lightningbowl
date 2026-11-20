@@ -25,6 +25,7 @@ import {
   IonRefresher,
   IonSearchbar,
   IonSkeletonText,
+  IonSpinner,
   IonText,
   IonTitle,
   IonMenuButton,
@@ -47,7 +48,7 @@ import {
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { SearchHistoryDirective } from 'src/app/core/directives/search-history/search-history.directive';
-import { Pattern } from 'src/app/core/models/pattern.model';
+import { Pattern, PatternSummary } from 'src/app/core/models/pattern.model';
 import { PatternSortField, PatternSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -81,6 +82,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
     IonText,
     IonSearchbar,
     IonSkeletonText,
+    IonSpinner,
     IonRefresher,
     IonInfiniteScrollContent,
     IonInfiniteScroll,
@@ -106,7 +108,7 @@ import { BowlingRefresherComponent } from '../../shared/components/bowling-refre
 })
 export class PatternPage implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
-  patterns = signal<Pattern[]>([]);
+  patterns = signal<PatternSummary[]>([]);
   currentPage = 1;
   hasMoreData = true;
   isPageLoading = signal(false);
@@ -119,21 +121,35 @@ export class PatternPage implements OnInit {
   );
   searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
-  selectedPattern = signal<Pattern | null>(null);
+  selectedPattern = signal<PatternSummary | null>(null);
+  /** The open pattern with its oil rows, which the list doesn't load. */
+  selectedPatternDetail = signal<Pattern | null>(null);
   currentSortOption = signal<PatternSortOption>({
     field: PatternSortField.TITLE,
     direction: SortDirection.ASC,
     label: 'Title (A-Z)',
   });
   imagesUrl = environment.imagesUrl;
+  /** "Best Match" is offered only while searching. */
+  readonly sortOptions = computed(() =>
+    this.searchTerm().trim() !== ''
+      ? [this.sortService.BEST_MATCH_OPTION, ...this.sortService.PATTERN_SORT_OPTIONS]
+      : this.sortService.PATTERN_SORT_OPTIONS,
+  );
+  // Online, the API already searched, sorted and put favorites first. Offline (cached pages), the
+  // favorites are put first here.
   displayedPatterns = computed(() => {
-    if (this.searchTerm().trim() !== '') {
+    if (this.networkService.isOnline) {
       return this.patterns();
     }
     return this.sortService.sortPatterns(this.patterns(), this.currentSortOption(), this.favoritesFirst());
   });
+  /** The sort before a search switched to "Best Match", restored when the search is cleared. */
+  private sortBeforeSearch: PatternSortOption | null = null;
   private lastLoadTime = 0;
   private debounceMs = 300;
+  /** Bumped for every new list (search, sort, refresh), so a slower answer to an older one is dropped. */
+  private listVersion = 0;
   constructor(
     private patternService: PatternService,
     private patternsStore: PatternsStore,
@@ -170,11 +186,8 @@ export class PatternPage implements OnInit {
     try {
       this.hapticService.vibrate(ImpactStyle.Medium);
       this.isPageLoading.set(true);
-      this.currentPage = 1;
-      this.hasMoreData = true;
-      this.patterns.set([]);
-      this.searchTerm.set('');
-      await this.loadPatterns(undefined, true);
+      this.setSearchTerm('');
+      await this.reloadList(true);
     } catch (error) {
       console.error(error);
       this.toastService.showToast(TOAST_MESSAGES.ballLoadError, 'bug', true);
@@ -184,23 +197,27 @@ export class PatternPage implements OnInit {
     }
   }
 
+  /** The next page of the list on screen: all patterns, or the matches of the search. */
   async loadPatterns(event?: InfiniteScrollCustomEvent, forceRefresh = false): Promise<void> {
     const now = Date.now();
-    if (now - this.lastLoadTime < this.debounceMs) {
-      if (event) event.target.complete();
+    if (event && now - this.lastLoadTime < this.debounceMs) {
+      event.target.complete();
       return;
     }
     this.lastLoadTime = now;
+    const version = this.listVersion;
     try {
       if (!event) {
         this.isPageLoading.set(true);
       }
       const { field, direction } = this.currentSortOption();
-      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh, field, direction);
-      const patterns = response.patterns;
-      if (response.total > 0) {
-        this.patterns.update((current) => [...current, ...patterns]);
+      const favorites = this.favoritesFirst() ? [...this.favoritesService.favoritePatterns().keys()] : [];
+      const response = await this.patternService.getPatterns(this.currentPage, forceRefresh, field, direction, this.searchTerm(), favorites);
+      if (version !== this.listVersion) return;
+      if (response.patterns.length > 0) {
+        this.patterns.update((current) => [...current, ...response.patterns]);
         this.currentPage++;
+        this.hasMoreData = this.patterns().length < response.total;
       } else if (this.networkService.isOffline) {
         this.toastService.showToast('You are offline and no cached data is available.', 'information-circle-outline', true);
       } else {
@@ -216,7 +233,6 @@ export class PatternPage implements OnInit {
       if (event) {
         event.target.complete();
       }
-      // this.generateChartImages();
     }
   }
 
@@ -228,35 +244,67 @@ export class PatternPage implements OnInit {
     void this.runSearch(term);
   }
 
+  /** Opens a pattern and loads its oil rows for the detail. */
+  async openPattern(pattern: PatternSummary): Promise<void> {
+    this.selectedPatternDetail.set(null);
+    this.selectedPattern.set(pattern);
+    const detail = await this.patternService.getPatternData(pattern.url);
+    if (this.selectedPattern()?.url !== pattern.url) return;
+    if (detail?.url) {
+      this.selectedPatternDetail.set(detail);
+    } else {
+      this.selectedPattern.set(null);
+      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
+    }
+  }
+
+  closePattern(): void {
+    this.selectedPattern.set(null);
+    this.selectedPatternDetail.set(null);
+  }
+
   private async runSearch(searchValue: string): Promise<void> {
     try {
       this.loadingService.setLoading(true);
-      this.searchTerm.set(searchValue);
-
-      const { field, direction } = this.currentSortOption();
-      if (searchValue === '') {
-        this.hasMoreData = true;
-        const response = await this.patternService.getPatterns(this.currentPage, false, field, direction);
-        this.patterns.set(response.patterns);
-        this.currentPage++;
-      } else {
-        const response = await this.patternService.searchPattern(searchValue, true, field, direction);
-        this.patterns.set(response.patterns);
-        this.hasMoreData = false;
-        this.currentPage = 1;
-
+      this.setSearchTerm(searchValue);
+      await this.reloadList();
+      if (searchValue.trim() !== '') {
         void this.analyticsService.trackPatternLookup(searchValue);
       }
       setTimeout(() => {
         this.content.scrollToTop(300);
       }, 300);
-    } catch (error) {
-      console.error('Error searching patterns:', error);
-      this.toastService.showToast(TOAST_MESSAGES.patternLoadError, 'bug', true);
     } finally {
       this.loadingService.setLoading(false);
-      // this.generateChartImages();
     }
+  }
+
+  /**
+   * Starting a search switches to "Best Match"; clearing it restores the previous sort unless another
+   * sort was picked meanwhile (as on the ball page).
+   */
+  private setSearchTerm(term: string): void {
+    const wasSearching = this.searchTerm().trim() !== '';
+    const isSearching = term.trim() !== '';
+    if (!wasSearching && isSearching) {
+      this.sortBeforeSearch = this.currentSortOption();
+      this.currentSortOption.set(this.sortService.BEST_MATCH_OPTION);
+    } else if (wasSearching && !isSearching) {
+      if (this.currentSortOption().field === PatternSortField.RELEVANCE && this.sortBeforeSearch) {
+        this.currentSortOption.set(this.sortBeforeSearch);
+      }
+      this.sortBeforeSearch = null;
+    }
+    this.searchTerm.set(term);
+  }
+
+  /** Starts the list over from the first page, for the current search and sort. */
+  private async reloadList(forceRefresh = false): Promise<void> {
+    this.listVersion++;
+    this.currentPage = 1;
+    this.hasMoreData = true;
+    this.patterns.set([]);
+    await this.loadPatterns(undefined, forceRefresh);
   }
 
   async openAddPatternModal(): Promise<void> {
@@ -296,17 +344,7 @@ export class PatternPage implements OnInit {
 
   onSortChanged(sortOption: PatternSortOption): void {
     this.currentSortOption.set(sortOption);
-    if (this.searchTerm().trim() !== '') {
-      const { field, direction } = sortOption;
-      void this.patternService.searchPattern(this.searchTerm(), true, field, direction).then((response) => {
-        this.patterns.set(response.patterns);
-      });
-    } else {
-      this.currentPage = 1;
-      this.hasMoreData = true;
-      this.patterns.set([]);
-      void this.loadPatterns();
-    }
+    void this.reloadList();
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);
@@ -320,7 +358,7 @@ export class PatternPage implements OnInit {
     });
   }
 
-  toggleFavorite(event: Event, pattern: Pattern): void {
+  toggleFavorite(event: Event, pattern: PatternSummary): void {
     event.stopPropagation();
     const isFavorited = this.favoritesService.toggleFavorite(pattern);
 
@@ -346,6 +384,10 @@ export class PatternPage implements OnInit {
   onFavoritesFirstChange(checked: boolean): void {
     this.favoritesFirst.set(checked);
     this.saveFavoritesFirstSetting(checked);
+    // online the API puts them first; offline the cached pages are reordered here
+    if (this.networkService.isOnline) {
+      void this.reloadList();
+    }
     if (this.content) {
       setTimeout(() => {
         this.content.scrollToTop(300);

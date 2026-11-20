@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Pattern } from '../../models/pattern.model';
+import { PatternSummary } from '../../models/pattern.model';
 import { PatternSortOption, PatternSortField, SortDirection } from '../../models/sort.model';
 import { FavoritesService } from '../favorites/favorites.service';
 
@@ -8,6 +8,8 @@ import { FavoritesService } from '../favorites/favorites.service';
 })
 export class PatternSortService {
   private favoritesService = inject(FavoritesService);
+  /** Offered only while searching: the API's order of the matches. */
+  readonly BEST_MATCH_OPTION: PatternSortOption = { field: PatternSortField.RELEVANCE, direction: SortDirection.DESC, label: 'Best Match' };
   readonly PATTERN_SORT_OPTIONS: PatternSortOption[] = [
     { field: PatternSortField.TITLE, direction: SortDirection.ASC, label: 'Title (A-Z)' },
     { field: PatternSortField.TITLE, direction: SortDirection.DESC, label: 'Title (Z-A)' },
@@ -20,7 +22,7 @@ export class PatternSortService {
     { field: PatternSortField.VOLUME, direction: SortDirection.DESC, label: 'Volume (High to Low)' },
   ];
 
-  sortPatterns(patterns: Pattern[], sortOption: PatternSortOption, favoritesFirst = false): Pattern[] {
+  sortPatterns(patterns: PatternSummary[], sortOption: PatternSortOption, favoritesFirst = false): PatternSummary[] {
     if (!favoritesFirst) {
       return [...patterns];
     }
@@ -35,10 +37,10 @@ export class PatternSortService {
     return [...sortedFavorites, ...nonFavoritePatterns];
   }
 
-  private applySortToPatterns(patterns: Pattern[], sortOption: PatternSortOption): Pattern[] {
+  private applySortToPatterns(patterns: PatternSummary[], sortOption: PatternSortOption): PatternSummary[] {
+    const { field, direction } = sortOption;
+    if (field === PatternSortField.RELEVANCE) return patterns;
     return patterns.sort((a, b) => {
-      const { field, direction } = sortOption;
-
       let aValue: string | number | undefined | null = a[field];
       let bValue: string | number | undefined | null = b[field];
 

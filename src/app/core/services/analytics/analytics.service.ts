@@ -54,7 +54,6 @@ export class AnalyticsService {
   private processingQueue = false;
   private storageReady = false;
   private batchFlushTimer?: ReturnType<typeof setTimeout>;
-  /** Changes to the stored queue, one after another (see `updateQueue`). */
   private queueChanges: Promise<unknown> = Promise.resolve();
 
   private navigationStartTime?: number;
@@ -408,9 +407,7 @@ export class AnalyticsService {
     const batchRequest = { events };
 
     try {
-      // text/plain: a beacon sends credentials, so a JSON one needs a CORS preflight, which the
-      // backend's `Access-Control-Allow-Origin: *` fails. The beacon still reported success and the
-      // queue was cleared, so the events were lost. The backend reads the body as JSON either way.
+
       const blob = new Blob([JSON.stringify(batchRequest)], {
         type: 'text/plain;charset=UTF-8',
       });
@@ -418,7 +415,6 @@ export class AnalyticsService {
       const sent = navigator.sendBeacon(this.analyticsBatchEndpoint, blob);
 
       if (sent) {
-        // Remove what was sent; events tracked meanwhile stay
         const sentIds = new Set(queue.map((queuedEvent) => queuedEvent.id));
         await this.updateQueue((current) => current.filter((queuedEvent) => !sentIds.has(queuedEvent.id)));
       }

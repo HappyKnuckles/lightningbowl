@@ -10,6 +10,7 @@ import {
   OnInit,
   Signal,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -285,6 +286,15 @@ export class StatsPage implements OnInit {
   readonly scoreDistributionChart = viewChild<ElementRef>('scoreDistributionChart');
   readonly spareDistributionChart = viewChild<ElementRef>('spareDistributionChart');
 
+  private readonly chartCanvases = computed(() => [
+    this.scoreChart(),
+    this.averageScoreChart(),
+    this.scoreDistributionChart(),
+    this.throwChart(),
+    this.pinChart(),
+    this.spareDistributionChart(),
+  ]);
+
   private spareDistributionChartInstance: Chart | null = null;
   private scoreDistributionChartInstance: Chart | null = null;
   private pinChartInstance: Chart | null = null;
@@ -311,8 +321,12 @@ export class StatsPage implements OnInit {
     addIcons({ filterOutline, calendarNumberOutline, calendarNumber, trendingUpOutline, trendingDownOutline });
 
     effect(() => {
-      if (this.gameFilterService.filteredGames().length > 0) {
-        this.generateCharts(true);
+      const hasGames = this.gameFilterService.filteredGames().length > 0;
+      // The tabs besides Overall render when first shown (@defer), so their canvases appear later: redraw then.
+      this.chartCanvases();
+      if (hasGames) {
+        // Update the existing charts in place instead of rebuilding them.
+        untracked(() => this.generateCharts());
       }
     });
   }
@@ -409,10 +423,16 @@ export class StatsPage implements OnInit {
     this.generateAverageScoreChart(true);
   }
 
+  /** A chart is drawn on one canvas; when @if or @defer replaced that canvas, the chart has to be built anew. */
+  private isNewCanvas(instance: Chart | null, canvas: ElementRef): boolean {
+    return !instance || instance.canvas !== canvas.nativeElement;
+  }
+
   private generateScoreChart(isReload?: boolean): void {
     try {
       const canvas = this.scoreChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.scoreChartInstance, canvas) || isReload;
 
       this.scoreChartInstance = this.chartService.generateScoreChart(
         canvas,
@@ -420,7 +440,7 @@ export class StatsPage implements OnInit {
         this.scoreChartInstance!,
         this.chartViewMode,
         () => this.toggleChartView(),
-        isReload,
+        rebuild,
       );
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
@@ -432,6 +452,7 @@ export class StatsPage implements OnInit {
     try {
       const canvas = this.averageScoreChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.averageScoreChartInstance, canvas) || isReload;
 
       this.averageScoreChartInstance = this.chartService.generateAverageScoreChart(
         canvas,
@@ -439,7 +460,7 @@ export class StatsPage implements OnInit {
         this.averageScoreChartInstance!,
         this.averageChartViewMode,
         () => this.toggleAverageChartView(),
-        isReload,
+        rebuild,
       );
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
@@ -451,12 +472,13 @@ export class StatsPage implements OnInit {
     try {
       const canvas = this.scoreDistributionChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.scoreDistributionChartInstance, canvas) || isReload;
 
       this.scoreDistributionChartInstance = this.chartService.generateScoreDistributionChart(
         canvas,
         this.chartGames(),
         this.scoreDistributionChartInstance!,
-        isReload,
+        rebuild,
       );
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
@@ -468,12 +490,13 @@ export class StatsPage implements OnInit {
     try {
       const canvas = this.spareDistributionChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.spareDistributionChartInstance, canvas) || isReload;
 
       this.spareDistributionChartInstance = this.chartService.generateSpareDistributionChart(
         canvas,
         this.statsService.currentStats(),
         this.spareDistributionChartInstance!,
-        isReload,
+        rebuild,
       );
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
@@ -485,8 +508,9 @@ export class StatsPage implements OnInit {
     try {
       const canvas = this.pinChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.pinChartInstance, canvas) || isReload;
 
-      this.pinChartInstance = this.chartService.generatePinChart(canvas, this.statsService.currentStats(), this.pinChartInstance!, isReload);
+      this.pinChartInstance = this.chartService.generatePinChart(canvas, this.statsService.currentStats(), this.pinChartInstance!, rebuild);
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating pin chart:', error);
@@ -497,8 +521,9 @@ export class StatsPage implements OnInit {
     try {
       const canvas = this.throwChart();
       if (!canvas) return;
+      const rebuild = this.isNewCanvas(this.throwChartInstance, canvas) || isReload;
 
-      this.throwChartInstance = this.chartService.generateThrowChart(canvas, this.statsService.currentStats(), this.throwChartInstance!, isReload);
+      this.throwChartInstance = this.chartService.generateThrowChart(canvas, this.statsService.currentStats(), this.throwChartInstance!, rebuild);
     } catch (error) {
       this.toastService.showToast(TOAST_MESSAGES.chartGenerationError, 'bug', true);
       console.error('Error generating throw chart:', error);

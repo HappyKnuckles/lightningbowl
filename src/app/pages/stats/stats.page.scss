@@ -293,3 +293,8 @@
     }
   }
 }
+
+// Stand-in for a tab that has not been opened yet (@defer on viewport needs something with a size to observe).
+.segment-placeholder {
+  min-height: 50vh;
+}

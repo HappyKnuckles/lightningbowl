@@ -216,92 +216,113 @@
     </ion-segment-content>
 
     <ion-segment-content id="Throws">
-      @if (hasFilteredGames()) {
-        <section class="tab">
-          <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
-          </app-stat-display>
-          <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
-          </app-stat-display>
-          <h2 class="sec-heading"><span>Throw distribution</span><span class="divider-line"></span></h2>
-          <figure class="chart-card">
-            <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-          </figure>
-        </section>
+      <!-- Built when first shown: rendering all six tabs up front made opening Stats slow. -->
+      @defer (on viewport) {
+        @if (hasFilteredGames()) {
+          <section class="tab">
+            <app-stat-display [title]="'Throw stats'" [statDefinitions]="THROW_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+            </app-stat-display>
+            <app-stat-display [title]="'Strike stats'" [statDefinitions]="STRIKE_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+            </app-stat-display>
+            <h2 class="sec-heading"><span>Throw distribution</span><span class="divider-line"></span></h2>
+            <figure class="chart-card">
+              <canvas #throwChart class="throws" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+            </figure>
+          </section>
+        }
+      } @placeholder {
+        <div class="segment-placeholder"></div>
       }
     </ion-segment-content>
 
     <ion-segment-content id="Spares">
-      @if (hasFilteredGames()) {
-        <section class="tab">
-          <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overallSpareStats">
-          </app-stat-spare>
-          <app-stat-display
-            [title]="'Spare conversion by pin count'"
-            [statDefinitions]="SPARE_STAT_DEFINITIONS"
-            [currentStats]="stats"
-            [prevStats]="prevStats">
-          </app-stat-display>
-          <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="divider-line"></span></h2>
-          <figure class="chart-card">
-            <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
-          </figure>
-          <h2 class="sec-heading"><span>Spare distribution</span><span class="divider-line"></span></h2>
-          <figure class="chart-card">
-            <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
-          </figure>
-        </section>
+      @defer (on viewport) {
+        @if (hasFilteredGames()) {
+          <section class="tab">
+            <app-stat-spare [title]="'Spare stats'" [stats]="statsService.currentStats()" [prevStats]="prevStats" id="overallSpareStats">
+            </app-stat-spare>
+            <app-stat-display
+              [title]="'Spare conversion by pin count'"
+              [statDefinitions]="SPARE_STAT_DEFINITIONS"
+              [currentStats]="stats"
+              [prevStats]="prevStats">
+            </app-stat-display>
+            <h2 class="sec-heading"><span>Converted vs missed spares</span><span class="divider-line"></span></h2>
+            <figure class="chart-card">
+              <canvas #pinChart class="spares" style="width: 300px; height: 400px; max-height: 500px"></canvas>
+            </figure>
+            <h2 class="sec-heading"><span>Spare distribution</span><span class="divider-line"></span></h2>
+            <figure class="chart-card">
+              <canvas #spareDistributionChart style="width: 300px; height: 400px; max-height: 500px"></canvas>
+            </figure>
+          </section>
+        }
+      } @placeholder {
+        <div class="segment-placeholder"></div>
       }
     </ion-segment-content>
 
     <ion-segment-content id="Pins">
-      @if (hasFilteredGames()) {
-        <section class="tab">
-          <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
-          </app-stat-display>
-          <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
-          </app-stat-pin-leave>
-        </section>
+      @defer (on viewport) {
+        @if (hasFilteredGames()) {
+          <section class="tab">
+            <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="stats" [prevStats]="prevStats">
+            </app-stat-display>
+            <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="statsService.bestLeaves()"></app-stat-pin-leave>
+            <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="statsService.worstLeaves()"></app-stat-pin-leave>
+            <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="statsService.commonLeaves()" [allLeaves]="statsService.allLeaves()">
+            </app-stat-pin-leave>
+          </section>
+        }
+      } @placeholder {
+        <div class="segment-placeholder"></div>
       }
     </ion-segment-content>
 
     <ion-segment-content id="Balls">
-      @if (hasFilteredGames()) {
-        <section class="tab">
-          <app-ball-stats [ballStats]="statsService.ballStats()" [title]="'Ball comparison'" [scopeLabel]="ballScopeLabel()"></app-ball-stats>
-        </section>
+      @defer (on viewport) {
+        @if (hasFilteredGames()) {
+          <section class="tab">
+            <app-ball-stats [ballStats]="statsService.ballStats()" [title]="'Ball comparison'" [scopeLabel]="ballScopeLabel()"></app-ball-stats>
+          </section>
+        }
+      } @placeholder {
+        <div class="segment-placeholder"></div>
       }
     </ion-segment-content>
 
     <ion-segment-content id="Sessions">
-      @if (hasFilteredGames()) {
-        <section class="tab">
-          <app-stat-display
-            [title]="'Overall stats'"
-            [statDefinitions]="SESSION_STAT_DEFINITIONS"
-            [currentStats]="sessionStats()"
-            [prevStats]="stats">
-          </app-stat-display>
-          @for (highlight of sessionHighlights(); track highlight.title) {
-            <app-stat-highlight-item
-              [title]="highlight.title"
-              [item]="highlight.item"
-              [allItems]="highlight.allItems"
-              [sortMode]="highlight.sortMode"
-              [totalGames]="sessionStats().totalGames"
-              [emptyMessage]="highlight.emptyMessage"
-              [roundImage]="highlight.roundImage">
-            </app-stat-highlight-item>
-          }
-          <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
-          <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
-          <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-stat-pin-leave>
-          <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
-          </app-stat-pin-leave>
-          <app-ball-stats [ballStats]="sessionBallStats()" [title]="'Ball comparison'" [scopeLabel]="'This session'"></app-ball-stats>
-        </section>
+      @defer (on viewport) {
+        @if (hasFilteredGames()) {
+          <section class="tab">
+            <app-stat-display
+              [title]="'Overall stats'"
+              [statDefinitions]="SESSION_STAT_DEFINITIONS"
+              [currentStats]="sessionStats()"
+              [prevStats]="stats">
+            </app-stat-display>
+            @for (highlight of sessionHighlights(); track highlight.title) {
+              <app-stat-highlight-item
+                [title]="highlight.title"
+                [item]="highlight.item"
+                [allItems]="highlight.allItems"
+                [sortMode]="highlight.sortMode"
+                [totalGames]="sessionStats().totalGames"
+                [emptyMessage]="highlight.emptyMessage"
+                [roundImage]="highlight.roundImage">
+              </app-stat-highlight-item>
+            }
+            <app-stat-display [title]="'Pin stats'" [statDefinitions]="PIN_STAT_DEFINITIONS" [currentStats]="sessionStats()"></app-stat-display>
+            <app-spare-display [title]="'Spare stats'" [prevStats]="stats" [stats]="sessionStats()" [id]="'sessionSpareStats'"> </app-spare-display>
+            <app-stat-pin-leave [title]="'Strongest spares'" [leaveStats]="sessionLeaves().best"></app-stat-pin-leave>
+            <app-stat-pin-leave [title]="'Weakest spares'" [leaveStats]="sessionLeaves().worst"></app-stat-pin-leave>
+            <app-stat-pin-leave [title]="'Most common leaves'" [leaveStats]="sessionLeaves().common" [allLeaves]="sessionAllLeaves()">
+            </app-stat-pin-leave>
+            <app-ball-stats [ballStats]="sessionBallStats()" [title]="'Ball comparison'" [scopeLabel]="'This session'"></app-ball-stats>
+          </section>
+        }
+      } @placeholder {
+        <div class="segment-placeholder"></div>
       }
     </ion-segment-content>
   </ion-segment-view>

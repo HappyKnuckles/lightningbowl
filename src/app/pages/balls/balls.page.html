@@ -70,7 +70,7 @@
     } @else {
       @for (ball of displayedBalls(); track ball.ball_id) {
         <ion-card role="article">
-          <div class="action-header">
+          <div class="action-header" data-share-exclude>
             <ion-select
               #weightSelect
               class="weight-change"
@@ -83,6 +83,14 @@
                 <ion-select-option [value]="weight"> {{ weight }}lbs </ion-select-option>
               }
             </ion-select>
+            <ion-button
+              fill="clear"
+              size="default"
+              (click)="shareBall($event, ball)"
+              style="margin: 0 0 0 auto; height: auto; min-height: auto"
+              [attr.aria-label]="'Share ' + ball.ball_name">
+              <ion-icon name="share-outline" slot="icon-only" style="color: var(--ion-color-primary); font-size: 24px"></ion-icon>
+            </ion-button>
             <ion-button fill="clear" size="default" (click)="toggleFavorite($event, ball)" style="margin: 0; height: auto; min-height: auto">
               <ion-icon
                 [name]="favoritesService.isBallFavorite(ball.ball_id, ball.core_weight) ? 'heart' : 'heart-outline'"
@@ -183,7 +191,7 @@
                 <ion-ripple-effect></ion-ripple-effect>
               </div>
               <!-- Arsenal CTA -->
-              <div class="arsenal-actions">
+              <div class="arsenal-actions" data-share-exclude>
                 @if (!isInArsenal(ball)) {
                   <ion-button class="arsenal-btn add" expand="block" (click)="saveBallToArsenal(ball)"> Add to arsenal </ion-button>
                 }

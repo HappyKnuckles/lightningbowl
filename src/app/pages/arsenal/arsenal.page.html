@@ -44,6 +44,11 @@
                     <ion-icon class="title" style="transform: translateY(-2px)" name="trash-outline"></ion-icon>
                   </ion-item-option>
                 </ion-item-options>
+                <ion-item-options side="start">
+                  <ion-item-option (click)="shareBall($event, ball); slidingItem.closeOpened()" [attr.aria-label]="'Share ' + ball.ball_name">
+                    <ion-icon class="title" style="transform: translateY(-2px)" name="share-outline"></ion-icon>
+                  </ion-item-option>
+                </ion-item-options>
                 <ion-item button (click)="openBallDetail(ball)">
                   <ion-reorder slot="start">
                     <ion-thumbnail>

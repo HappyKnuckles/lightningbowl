@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
-import { OnDeviceOptions, trackOnDevice, TrackingError } from 'src/app/core/utils/shot-tracker/pipeline.utils';
+import { OnDeviceOptions, TrackingError, trackOnDevice } from 'src/app/core/utils/shot-analysis-utils/tracking/pipeline.utils';
 
 /** Analyzes a recorded shot on this device: the ball tracker runs in the browser, nothing is uploaded. */
 @Injectable({ providedIn: 'root' })

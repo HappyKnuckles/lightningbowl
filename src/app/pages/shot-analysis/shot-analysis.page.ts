@@ -35,18 +35,18 @@ import { ShotAnalysisService } from 'src/app/core/services/shot-analysis/shot-an
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
-import { patternRatioColor, withPatternRows } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
 import {
   buildCalibration,
   CALIBRATION_STEPS,
-  loupeSourceRect,
   normalizePoint,
-  shotMetricRows,
   validateCalibration,
-} from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
-import { clampTrimWindow, defaultTrimWindow, MAX_SHOT_WINDOW_S, TrimWindow } from 'src/app/core/utils/shot-analysis-utils/video-trim.utils';
-import { findLaneCornersInVideo } from 'src/app/core/utils/shot-tracker/lane-detection.utils';
-import { loadOpenCv } from 'src/app/core/utils/shot-tracker/opencv.utils';
+} from 'src/app/core/utils/shot-analysis-utils/display/calibration.utils';
+import { loupeSourceRect } from 'src/app/core/utils/shot-analysis-utils/display/lane-drawing.utils';
+import { shotMetricRows } from 'src/app/core/utils/shot-analysis-utils/display/metrics.utils';
+import { patternRatioColor, withPatternRows } from 'src/app/core/utils/shot-analysis-utils/display/pattern-overlay.utils';
+import { findLaneCornersInVideo } from 'src/app/core/utils/shot-analysis-utils/tracking/lane-detection.utils';
+import { loadOpenCv } from 'src/app/core/utils/shot-analysis-utils/video/opencv.utils';
+import { clampTrimWindow, defaultTrimWindow, MAX_SHOT_WINDOW_S, TrimWindow } from 'src/app/core/utils/shot-analysis-utils/video/trim.utils';
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { ShotLaneComponent } from 'src/app/shared/components/shot-lane/shot-lane.component';
 

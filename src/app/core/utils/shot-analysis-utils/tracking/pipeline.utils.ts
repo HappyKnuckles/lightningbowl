@@ -8,17 +8,17 @@
  */
 import type { VideoSample } from 'mediabunny';
 
-import { ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
+import { Handedness, ShotAnalysisResult, ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 
-import { CropRect, frameSimilarity, laneCropRect, shownFrame } from '../shot-analysis-utils/video-trim.utils';
-import { PathAnalysis } from './analysis.utils';
-import { Handedness, LANE_LENGTH_IN, LANE_WIDTH_IN, LaneCalibration, Point } from './lane.utils';
-import { applyHomography, IDENTITY, invert3, Mat3, mul3 } from './math.utils';
-import { Cv, loadOpenCv, release } from './opencv.utils';
-import { BallCrop, estimateRevRate, normalizeCrop } from './revs.utils';
-import { matThumbnail, readStoredRegion, Rotation } from './stored-frame.utils';
-import { BallTracker, Detection } from './tracker.utils';
-import { BallDetector, FrameStabilizer } from './vision.utils';
+import { LANE_LENGTH_IN, LANE_WIDTH_IN, LaneCalibration, Point } from '../geometry/lane.utils';
+import { applyHomography, IDENTITY, invert3, Mat3, mul3 } from '../geometry/math.utils';
+import { CropRect, frameSimilarity, laneCropRect, matThumbnail, readStoredRegion, Rotation, shownFrame } from '../video/frame.utils';
+import { Cv, loadOpenCv, release } from '../video/opencv.utils';
+import { BallDetector } from './ball-detector.utils';
+import { BallTracker, Detection } from './ball-tracker.utils';
+import { FrameStabilizer } from './frame-stabilizer.utils';
+import { PathAnalysis } from './path-analysis.utils';
+import { BallCrop, estimateRevRate, normalizeCrop } from './rev-rate.utils';
 
 export interface OnDeviceOptions {
   endFt?: number;

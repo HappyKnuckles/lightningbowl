@@ -16,9 +16,9 @@
  */
 import { NormalizedPoint } from 'src/app/core/models/shot-analysis.model';
 
-import { Point } from './lane.utils';
-import { seededRandom } from './math.utils';
-import { Cv, loadOpenCv, release } from './opencv.utils';
+import { Point } from '../geometry/lane.utils';
+import { seededRandom } from '../geometry/math.utils';
+import { Cv, loadOpenCv, release } from '../video/opencv.utils';
 
 export type LaneSide = 'left' | 'right';
 
@@ -26,14 +26,14 @@ type Line = [number, number, number];
 
 /** A frame's edges that run down the alley, in the pixels of `gray`. */
 export interface LaneLines {
-  /** Where the edges meet. */
-  vanishing: Point;
   /** The edges as lines `a·x + b·y + c = 0`, left to right. */
   edges: Line[];
   /** The frame in grey, for telling lane from gutter. */
   gray: Uint8Array;
-  width: number;
   height: number;
+  /** Where the edges meet. */
+  vanishing: Point;
+  width: number;
 }
 
 /** Frames are analysed at most this large (the longer side); a 4K frame is no more precise for this. */

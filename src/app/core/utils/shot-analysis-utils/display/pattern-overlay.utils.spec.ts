@@ -1,7 +1,8 @@
+import { ForwardsData } from 'src/app/core/models/pattern.model';
+import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
 import { makePattern } from 'src/testing/fixtures';
 
-import { ForwardsData } from '../../models/pattern.model';
-import { ShotAnalysisResult } from '../../models/shot-analysis.model';
+import { shotMetricRows } from './metrics.utils';
 import {
   boardAtDistance,
   boardFromLeft,
@@ -12,7 +13,6 @@ import {
   patternRatioColor,
   withPatternRows,
 } from './pattern-overlay.utils';
-import { shotMetricRows } from './shot-analysis.utils';
 
 function row(start: string, stop: string, totalOil: string, from: string, to: string): ForwardsData {
   return { number: '', start, stop, load: '', mics: '', speed: '', buf: '', tank: '', total_oil: totalOil, distance_start: from, distance_end: to };

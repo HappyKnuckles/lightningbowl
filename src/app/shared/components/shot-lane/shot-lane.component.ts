@@ -2,8 +2,9 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyR
 
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { ShotAnalysisResult } from 'src/app/core/models/shot-analysis.model';
-import { patternDistanceFt, patternOilRects, patternRatioColor } from 'src/app/core/utils/shot-analysis-utils/pattern-overlay.utils';
-import { boardToX, distanceToY, LANE_ARROWS, LANE_BOARDS, LANE_LENGTH_FT } from 'src/app/core/utils/shot-analysis-utils/shot-analysis.utils';
+import { boardToX, distanceToY, LANE_ARROWS } from 'src/app/core/utils/shot-analysis-utils/display/lane-drawing.utils';
+import { patternDistanceFt, patternOilRects, patternRatioColor } from 'src/app/core/utils/shot-analysis-utils/display/pattern-overlay.utils';
+import { BOARD_COUNT, LANE_LENGTH_FT } from 'src/app/core/utils/shot-analysis-utils/geometry/lane.utils';
 
 /**
  * Drawing size in SVG units; the SVG scales to its container. The width is fixed, the lane's length
@@ -66,8 +67,8 @@ export class ShotLaneComponent {
   readonly pattern = input<Pattern | null>(null);
 
   readonly boardLines = computed(() =>
-    Array.from({ length: LANE_BOARDS - 1 }, (_, i) => {
-      const x = PAD_X + ((i + 1) / LANE_BOARDS) * LANE_W;
+    Array.from({ length: BOARD_COUNT - 1 }, (_, i) => {
+      const x = PAD_X + ((i + 1) / BOARD_COUNT) * LANE_W;
       return { x, major: (i + 1) % 5 === 0 };
     }),
   );
@@ -98,7 +99,7 @@ export class ShotLaneComponent {
     if (!pattern) {
       return { color: '', rects: [] };
     }
-    const xFromLeft = (boards: number) => PAD_X + (boards / LANE_BOARDS) * LANE_W;
+    const xFromLeft = (boards: number) => PAD_X + (boards / BOARD_COUNT) * LANE_W;
     const rects = patternOilRects(pattern).map((r) => {
       const top = this.#y(r.toFt);
       return {

@@ -2,8 +2,8 @@ import { BufferTarget, CanvasSource, Mp4OutputFormat, Output } from 'mediabunny'
 
 import { ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 
-import { LaneCalibration, xToBoard } from './lane.utils';
-import { seededRandom } from './math.utils';
+import { LaneCalibration, xToBoard } from '../geometry/lane.utils';
+import { seededRandom } from '../geometry/math.utils';
 import { trackOnDevice } from './pipeline.utils';
 
 const W = 360;

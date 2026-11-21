@@ -4,6 +4,8 @@
  * Lane coordinates, in inches: x from the RIGHT gutter edge (0) to the left edge (LANE_WIDTH_IN), as a
  * bowler on the approach sees it; y from the foul line (0) down to the head pin (60 ft).
  */
+import { Handedness } from 'src/app/core/models/shot-analysis.model';
+
 import { applyHomography, homographyFrom4, invert3, Mat3, mul3 } from './math.utils';
 
 export const LANE_WIDTH_IN = 41.5;
@@ -14,7 +16,6 @@ export const BOARD_WIDTH_IN = LANE_WIDTH_IN / BOARD_COUNT;
 export const BALL_DIAMETER_IN = 8.5;
 export const ARROWS_FT = 15;
 
-export type Handedness = 'right' | 'left';
 export type Point = [number, number];
 
 /** Fractional board number for a lateral position; board 1 is the bowler's gutter-side board. */

@@ -1,9 +1,8 @@
-import { Pattern } from '../../models/pattern.model';
-import { Handedness, ShotAnalysisResult, ShotCurvePoint } from '../../models/shot-analysis.model';
-import { LANE_BOARDS, ShotMetricRow } from './shot-analysis.utils';
+import { Pattern } from 'src/app/core/models/pattern.model';
+import { Handedness, ShotAnalysisResult, ShotCurvePoint } from 'src/app/core/models/shot-analysis.model';
 
-/** Where the arrows are, in feet from the foul line. */
-const ARROWS_FT = 15;
+import { ARROWS_FT, BOARD_COUNT } from '../geometry/lane.utils';
+import { ShotMetricRow } from './metrics.utils';
 
 /**
  * Oil of a pattern drawn the way the pattern charts are (lightningbowl-patterns
@@ -34,7 +33,7 @@ const num = (value: string | undefined) => parseFloat(value ?? '') || 0;
 export function parseBoardEdge(value: string): number {
   const text = String(value).trim().toUpperCase();
   const n = parseFloat(text.replace(/[^\d.]/g, '')) || 0;
-  return text.endsWith('R') ? LANE_BOARDS - n : n;
+  return text.endsWith('R') ? BOARD_COUNT - n : n;
 }
 
 /** Colour of the oil by the pattern's ratio, like the charts: red under 4:1, orange up to 8:1, green above, blue without one. */
@@ -97,7 +96,7 @@ export function patternOilRects(pattern: Pattern): OilRect[] {
 /** A shot board (counted from the bowler's gutter) as boards from the lane's left edge, at the board's centre. */
 export function boardFromLeft(board: number, handedness: Handedness): number {
   const fromGutter = board - 0.5;
-  return handedness === 'right' ? LANE_BOARDS - fromGutter : fromGutter;
+  return handedness === 'right' ? BOARD_COUNT - fromGutter : fromGutter;
 }
 
 /** Whether a pass of the pattern (wash left out) puts oil on this spot. */

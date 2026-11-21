@@ -1,7 +1,7 @@
 import { NormalizedPoint } from 'src/app/core/models/shot-analysis.model';
 
+import { Cv, loadOpenCv } from '../video/opencv.utils';
 import { findLaneCorners } from './lane-detection.utils';
-import { Cv, loadOpenCv } from './opencv.utils';
 
 const W = 1080;
 const H = 1920;

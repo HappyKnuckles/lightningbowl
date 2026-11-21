@@ -3,7 +3,7 @@
  * the method): crops of the ball disc, normalized; what every crop shares is removed; the similarity of
  * crops k frames apart peaks at multiples of the revolution period.
  */
-import { interp } from './math.utils';
+import { interp } from '../geometry/math.utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Cv = any;

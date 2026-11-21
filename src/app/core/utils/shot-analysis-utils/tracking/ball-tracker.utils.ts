@@ -2,7 +2,7 @@
  * Associates detections into tracks and picks the ball's (port of the BallTracker's `tracker.py`).
  * Runs in lane inches, where the ball moves almost linearly from frame to frame.
  */
-import { polyfit } from './math.utils';
+import { polyfit } from '../geometry/math.utils';
 
 export const MIN_SPEED_IN_S = 100; // ~5.7 mph
 export const MAX_SPEED_IN_S = 650; // ~37 mph

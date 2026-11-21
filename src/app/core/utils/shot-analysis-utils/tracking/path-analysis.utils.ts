@@ -1,9 +1,9 @@
 /** Raw track points to a smoothed path and bowling metrics (port of the BallTracker's `analysis.py`). */
-import { ShotCurvePoint, ShotMetrics, ShotTrackPoint } from 'src/app/core/models/shot-analysis.model';
+import { Handedness, ShotCurvePoint, ShotMetrics, ShotTrackPoint } from 'src/app/core/models/shot-analysis.model';
 
-import { ARROWS_FT, BOARD_WIDTH_IN, Handedness, LANE_LENGTH_FT, LANE_LENGTH_IN, xToBoard } from './lane.utils';
-import { polyder, polyfit, polyval, seededRandom, smoothingSpline, Spline } from './math.utils';
-import { Detection, MAX_SPEED_IN_S, MIN_SPEED_IN_S } from './tracker.utils';
+import { ARROWS_FT, BOARD_WIDTH_IN, LANE_LENGTH_FT, LANE_LENGTH_IN, xToBoard } from '../geometry/lane.utils';
+import { polyder, polyfit, polyval, seededRandom, smoothingSpline, Spline } from '../geometry/math.utils';
+import { Detection, MAX_SPEED_IN_S, MIN_SPEED_IN_S } from './ball-tracker.utils';
 
 const IN_PER_S_TO_MPH = 3600 / 63360;
 const MEASUREMENT_SIGMA_IN = 1.2;

@@ -43,6 +43,7 @@ import {
   heart,
   heartOutline,
   openOutline,
+  shareOutline,
 } from 'ionicons/icons';
 import { debounceTime, Subject } from 'rxjs';
 import { BALL_FILTER_CONFIGS } from 'src/app/core/configs/filter/ball-filter.config';
@@ -60,6 +61,7 @@ import { FavoritesService } from 'src/app/core/services/favorites/favorites.serv
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
+import { ShareService } from 'src/app/core/services/share/share.service';
 import { BallSortService } from 'src/app/core/services/sort/ball-sort.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -238,8 +240,21 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
+    private shareService: ShareService,
   ) {
-    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline, chevronForward });
+    addIcons({
+      filterOutline,
+      closeCircle,
+      globeOutline,
+      openOutline,
+      addOutline,
+      camera,
+      heart,
+      heartOutline,
+      chevronDownOutline,
+      chevronForward,
+      shareOutline,
+    });
     this.searchSubject.subscribe((query) => {
       this.setSearchTerm(query);
       if (this.content) {
@@ -497,6 +512,13 @@ export class BallsPage implements OnInit {
       sort_direction: sortOption.direction,
       sort_label: sortOption.label,
     });
+  }
+
+  /** Shares the ball's card as a picture, with its specs as text. */
+  shareBall(event: Event, ball: Ball): void {
+    event.stopPropagation();
+    const card = (event.target as HTMLElement).closest('ion-card');
+    void this.shareService.shareBall(ball, card instanceof HTMLElement ? card : undefined);
   }
 
   toggleFavorite(event: Event, ball: Ball): void {

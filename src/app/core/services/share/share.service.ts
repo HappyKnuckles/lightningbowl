@@ -25,6 +25,9 @@ export const SHARE_EXCLUDE_ATTRIBUTE = 'data-share-exclude';
 /** Stands in for an image that can't be embedded (no CORS headers), so the rest still renders. */
 const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
+/** Safari's engine: Safari itself, every browser on iOS (Chrome, Firefox, … use it too) and the iOS app. */
+const isWebKit = (): boolean => /AppleWebKit/i.test(navigator.userAgent) && !/Chrome|Chromium|Android/i.test(navigator.userAgent);
+
 /** Shares any part of the app: a screenshot of an element plus a text, through the system share sheet. */
 @Injectable({ providedIn: 'root' })
 export class ShareService {
@@ -79,7 +82,7 @@ export class ShareService {
     // give an element that was just opened (e.g. an accordion) a moment to lay out
     await new Promise((r) => setTimeout(r, 100));
     try {
-      return await toPng(element, {
+      const options: Parameters<typeof toPng>[1] = {
         quality: 1,
         pixelRatio: 3,
         width: element.scrollWidth,
@@ -91,7 +94,15 @@ export class ShareService {
         // CORS and may lack the Access-Control-Allow-Origin header, which would leave the image out
         cacheBust: true,
         filter: (node) => !(node instanceof HTMLElement && node.hasAttribute(SHARE_EXCLUDE_ATTRIBUTE)),
-      });
+      };
+      // Safari (and so every browser on iOS) often draws the snapshot before the images inside it are decoded,
+      // leaving them blank; by the third pass they're there (a known html-to-image issue)
+      const passes = isWebKit() ? 3 : 1;
+      let dataUrl = '';
+      for (let pass = 0; pass < passes; pass++) {
+        dataUrl = await toPng(element, options);
+      }
+      return dataUrl;
     } catch (error) {
       console.error('Error rendering the share image, sharing the text only', error);
       return undefined;

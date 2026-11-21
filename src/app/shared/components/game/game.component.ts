@@ -51,8 +51,7 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 import {
   countThrowBalls,
   findBall,
-  formatThrowBall,
-  getGameBallLabels,
+  getUniqueGameBalls,
   getThrowBallForPosition,
   getThrowBallKey,
   hasThrowLevelBalls,
@@ -68,7 +67,8 @@ import { PinDeckComponent } from '../pin-deck/pin-deck.component';
 import { PinInputComponent, ThrowConfirmedEvent } from '../pin-input/pin-input.component';
 import { formatThrowDisplay } from 'src/app/core/utils/game-utils/score-input.utils';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
-import { ballPickerFor } from 'src/app/core/utils/ball-utils/ball-picker.utils';
+import { gameBallLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
+import { ballPickerFor, pickedGameBalls } from 'src/app/core/utils/ball-utils/ball-picker.utils';
 
 interface ThrowCellView {
   value: number | undefined;
@@ -218,7 +218,7 @@ export class GameComponent implements OnInit {
           disabled: (throwIndex === 1 && !isTenth && first === 10) || (throwIndex === 2 && first !== 10 && (first ?? 0) + (second ?? 0) !== 10),
           hasBall: !!ball,
           ballThumb: ball ? resolveThumb(ball) : undefined,
-          ballLabel: formatThrowBall(ball),
+          ballLabel: gameBallLabel(ball, arsenal),
         };
       });
 
@@ -239,7 +239,10 @@ export class GameComponent implements OnInit {
   });
 
   detailsAccordionValue = computed(() => (this.detailsOpen() ? GameComponent.DETAILS_ACCORDION : undefined));
-  ballsText = computed(() => getGameBallLabels(this.currentGame()).join(', '));
+  ballsText = computed(() => {
+    const arsenal = this.ballsStore.arsenal();
+    return [...new Set(getUniqueGameBalls(this.currentGame()).map((ball) => gameBallLabel(ball, arsenal)))].join(', ');
+  });
 
   /**
    * Which ball UI this game gets. A game that already carries ball data keeps its own mode;
@@ -278,6 +281,7 @@ export class GameComponent implements OnInit {
   /** Read-only summary of the balls used per throw: "IQ Tour · 34 throws". */
   throwBallSummary = computed(() => {
     const counts = new Map<string, { label: string; throws: number }>();
+    const arsenal = this.ballsStore.arsenal();
     let untracked = 0;
     for (const frame of this.currentGame().frames ?? []) {
       for (const t of frame.throws ?? []) {
@@ -285,7 +289,7 @@ export class GameComponent implements OnInit {
           untracked++;
           continue;
         }
-        const label = formatThrowBall(t.ball);
+        const label = gameBallLabel(t.ball, arsenal);
         const entry = counts.get(label) ?? { label, throws: 0 };
         entry.throws++;
         counts.set(label, entry);
@@ -298,7 +302,7 @@ export class GameComponent implements OnInit {
   });
   patternsText = computed(() => (this.currentGame().patterns ?? []).join(', '));
   /** The ball typeahead's list and selection for this game. */
-  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
+  ballPicker = computed(() => ballPickerFor(this.currentGame().balls, this.ballsStore.activeArsenal(), this.ballsStore.knownBalls()));
 
   /** Ball for the throw the pin input is currently on. */
   currentThrowBall = computed<ThrowBall | undefined>(() =>
@@ -431,7 +435,7 @@ export class GameComponent implements OnInit {
     if (!(await this.confirmReplaceThrowBalls())) return;
     // picked balls may come from an API search, so keep them resolvable offline
     void this.ballsStore.rememberBalls(selected);
-    this.ballsChanged.emit(selected.map((b) => ({ name: b.ball_name, weight: b.core_weight })));
+    this.ballsChanged.emit(pickedGameBalls(selected, this.currentGame().balls, this.ballsStore.activeArsenal()));
     this.saveBallToArsenal(selected);
   }
 

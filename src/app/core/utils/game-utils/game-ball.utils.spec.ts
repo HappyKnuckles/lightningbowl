@@ -20,6 +20,14 @@ import {
   keepArsenalThrowBalls,
   parseStoredBall,
   setThrowBall,
+  fromBallFilterValue,
+  getBallModelKey,
+  getThrowBallKey,
+  getThrowBalls,
+  toThrowBall,
+  unlinkArsenalBall,
+  usesArsenalBall,
+  withBallLayouts,
 } from './game-ball.utils';
 
 function emptyFrames(): Frame[] {
@@ -519,6 +527,199 @@ describe('migrateGameBalls', () => {
     const game = makeGame({ balls: [{ name: 'Phaze', weight: '15' }] });
 
     expect(migrateGameBalls(game, arsenal)).toBe(game);
+  });
+});
+
+describe('arsenal balls in games', () => {
+  const first = makeBall({ ball_name: 'Phaze', core_weight: '15', arsenalId: 'one' });
+  const second = makeBall({ ball_name: 'Phaze', core_weight: '15', arsenalId: 'two' });
+  const zen = makeBall({ ball_name: 'Zen', core_weight: '15', arsenalId: 'zen' });
+
+  describe('keys', () => {
+    it('tells two of the same ball apart, and keeps a ball that names none as it was', () => {
+      expect(getThrowBallKey({ name: 'Phaze', weight: '15' })).toBe('Phaze15');
+      expect(getThrowBallKey({ name: 'Phaze', weight: '15', arsenalId: 'one' })).not.toBe(
+        getThrowBallKey({ name: 'Phaze', weight: '15', arsenalId: 'two' }),
+      );
+      expect(sameGameBall(toThrowBall(first), toThrowBall(second))).toBe(false);
+      expect(getBallModelKey(toThrowBall(first))).toBe(getBallModelKey(toThrowBall(second)));
+    });
+
+    it('stores an arsenal ball with its id and a catalog ball without', () => {
+      expect(toThrowBall(first)).toEqual({ name: 'Phaze', weight: '15', arsenalId: 'one' });
+      expect(Object.keys(toThrowBall(makeBall({ ball_name: 'Phaze', core_weight: '15' })))).toEqual(['name', 'weight']);
+    });
+
+    it('carries the arsenal ball from the throws, without a layout', () => {
+      const frames = [makeFrame(0, [makeThrow(1, [], { ball: { name: 'Phaze', weight: '15', arsenalId: 'two', drilling: { thumbSize: 1 } } })])];
+
+      expect(getThrowBalls(frames)).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'two' }]);
+    });
+  });
+
+  describe('findBall', () => {
+    it('finds the arsenal ball a game ball points at', () => {
+      expect(findBall({ name: 'Phaze', weight: '15', arsenalId: 'two' }, [first, second])).toBe(second);
+    });
+
+    it('falls back to name and weight for a ball that is gone, or that names none', () => {
+      expect(findBall({ name: 'Phaze', weight: '15', arsenalId: 'gone' }, [first, second])).toBe(first);
+      expect(findBall({ name: 'Phaze', weight: '15' }, [first, second])).toBe(first);
+    });
+
+    it('finds an arsenal ball that changed weight by its id', () => {
+      const heavier = { ...first, core_weight: '16' };
+
+      expect(findBall({ name: 'Phaze', weight: '15', arsenalId: 'one' }, [heavier])).toBe(heavier);
+    });
+  });
+
+  describe('linking', () => {
+    it("links a ball to the arsenal's only ball of that name and weight", () => {
+      expect(toGameBall('Phaze 15lbs', [first, zen])).toEqual({ name: 'Phaze', weight: '15', arsenalId: 'one' });
+      expect(toGameBall({ name: 'Zen', weight: '15' }, [first, zen])).toEqual({ name: 'Zen', weight: '15', arsenalId: 'zen' });
+    });
+
+    it('links nothing when the arsenal has the ball twice, or in another weight, or not at all', () => {
+      expect(toGameBall('Phaze 15lbs', [first, second])).toEqual({ name: 'Phaze', weight: '15' });
+      expect(toGameBall('Phaze 14lbs', [first])).toEqual({ name: 'Phaze', weight: '14' });
+      expect(toGameBall('Hammer 15lbs', [first])).toEqual({ name: 'Hammer', weight: '15' });
+    });
+
+    it('keeps the arsenal ball and layout a ball already has', () => {
+      const ball = { name: 'Phaze', weight: '15', arsenalId: 'two', drilling: { thumbSize: 1 } };
+
+      expect(toGameBall(ball, [first])).toEqual(ball);
+    });
+
+    it('links the balls of a game and its throws, once', () => {
+      const game = makeGame({
+        balls: [{ name: 'Phaze', weight: '15' }],
+        frames: [makeFrame(0, [makeThrow(1, [], { ball: { name: 'Phaze', weight: '15' } })])],
+      });
+
+      const linked = migrateGameBalls(game, [first]);
+
+      expect(linked.balls).toEqual([{ name: 'Phaze', weight: '15', arsenalId: 'one' }]);
+      expect(linked.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '15', arsenalId: 'one' });
+      expect(migrateGameBalls(linked, [first])).toBe(linked);
+    });
+
+    it('leaves a game pointing at a ball that left the arsenal alone', () => {
+      const game = makeGame({ balls: [{ name: 'Phaze', weight: '15', arsenalId: 'gone' }] });
+
+      expect(migrateGameBalls(game, [first])).toBe(game);
+    });
+  });
+
+  it('does not carry over the one of two of the same ball that has left the arsenal', () => {
+    const frames = [
+      makeFrame(0, [
+        makeThrow(1, [7], { ball: { name: 'Phaze', weight: '15', arsenalId: 'one' } }),
+        makeThrow(2, [], { ball: { name: 'Phaze', weight: '15', arsenalId: 'two' } }),
+      ]),
+    ];
+
+    const kept = keepArsenalThrowBalls(frames, [second]);
+
+    expect(kept[0].throws.map((t) => t.ball?.arsenalId)).toEqual([undefined, 'two']);
+  });
+
+  describe('unlinkArsenalBall', () => {
+    it('takes the link off the game and its throws and keeps the layout', () => {
+      const game = makeGame({
+        balls: [
+          { name: 'Phaze', weight: '15', arsenalId: 'one', drilling: { thumbSize: 1 } },
+          { name: 'Zen', weight: '15', arsenalId: 'zen' },
+        ],
+        frames: [makeFrame(0, [makeThrow(1, [], { ball: { name: 'Phaze', weight: '15', arsenalId: 'one' } })])],
+      });
+
+      const unlinked = unlinkArsenalBall(game, 'one');
+
+      expect(usesArsenalBall(game, 'one')).toBe(true);
+      expect(unlinked.balls).toEqual([
+        { name: 'Phaze', weight: '15', drilling: { thumbSize: 1 } },
+        { name: 'Zen', weight: '15', arsenalId: 'zen' },
+      ]);
+      expect(unlinked.frames[0].throws[0].ball).toEqual({ name: 'Phaze', weight: '15' });
+    });
+
+    it('returns the same game when it never used the ball', () => {
+      const game = makeGame({ balls: [{ name: 'Zen', weight: '15', arsenalId: 'zen' }] });
+
+      expect(unlinkArsenalBall(game, 'one')).toBe(game);
+    });
+  });
+
+  describe('withBallLayouts', () => {
+    const drilling = { layout: { system: 'dual-angle' as const, drillingAngle: 45, pinToPap: 4.5, valAngle: 30 } };
+    const drilled = { ...first, drilling };
+
+    it('records the layout of a ball new to the game', () => {
+      const game = makeGame({ balls: [toThrowBall(first)] });
+
+      expect(withBallLayouts(game, undefined, [drilled]).balls).toEqual([{ ...toThrowBall(first), drilling }]);
+    });
+
+    it('records nothing for a ball without drilling, an empty drilling, or a ball outside the arsenal', () => {
+      const game = makeGame({ balls: [toThrowBall(first), { name: 'Hammer', weight: '15' }] });
+
+      expect(withBallLayouts(game, undefined, [{ ...first, drilling: {} }])).toBe(game);
+      expect(withBallLayouts(game, undefined, [first])).toBe(game);
+    });
+
+    it('keeps what the game was saved with: the layout then, or none', () => {
+      const then = { thumbSize: 1 };
+      const game = makeGame({ balls: [toThrowBall(first), toThrowBall(zen)] });
+      const saved = makeGame({ balls: [{ ...toThrowBall(first), drilling: then }, toThrowBall(zen)] });
+
+      const balls = withBallLayouts(game, saved, [drilled, { ...zen, drilling }]).balls;
+
+      expect(balls).toEqual([{ ...toThrowBall(first), drilling: then }, toThrowBall(zen)]);
+    });
+
+    it('records the other one of two of the same ball as a new ball', () => {
+      const game = makeGame({ balls: [toThrowBall(second)] });
+      const saved = makeGame({ balls: [{ ...toThrowBall(first), drilling: { thumbSize: 1 } }] });
+
+      expect(withBallLayouts(game, saved, [first, { ...second, drilling }]).balls).toEqual([{ ...toThrowBall(second), drilling }]);
+    });
+
+    it('rebuilds the balls from the throws in per-throw tracking', () => {
+      const game = makeGame({
+        ballTracking: 'throw',
+        balls: [toThrowBall(zen)],
+        frames: [makeFrame(0, [makeThrow(1, [], { ball: toThrowBall(first) })])],
+      });
+
+      expect(withBallLayouts(game, undefined, [drilled]).balls).toEqual([{ ...toThrowBall(first), drilling }]);
+    });
+
+    it('leaves a game without a ball selection alone', () => {
+      const game = makeGame();
+
+      expect(withBallLayouts(game, undefined, [drilled])).toBe(game);
+    });
+  });
+
+  describe('fromBallFilterValue', () => {
+    it('reads the arsenal ball a filter value names', () => {
+      const arsenalId = '0b9f6a52-7c1e-4d0a-9a43-1f2e3d4c5b6a';
+      const twin = { ...second, arsenalId };
+      const value = getThrowBallKey(toThrowBall(twin));
+
+      expect(fromBallFilterValue(value, [first, twin])).toEqual({ name: 'Phaze', weight: '15', arsenalId });
+    });
+
+    it('does not take a number sign in a ball name for an arsenal ball', () => {
+      expect(fromBallFilterValue('Hammer #1 15lbs', [first])).toEqual({ name: 'Hammer #1', weight: '15' });
+    });
+
+    it('brings an older value to the ball games hold today', () => {
+      expect(fromBallFilterValue('Phaze 15lbs', [first])).toEqual({ name: 'Phaze', weight: '15', arsenalId: 'one' });
+      expect(fromBallFilterValue('Phaze15', [first, second])).toEqual({ name: 'Phaze', weight: '15' });
+    });
   });
 });
 

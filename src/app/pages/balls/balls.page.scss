@@ -181,6 +181,13 @@ ion-card {
       // Arsenal buttons
       .arsenal-actions {
         margin-top: 4px;
+        display: flex;
+        gap: 8px;
+
+        ion-button {
+          flex: 1;
+          margin: 0;
+        }
 
         .arsenal-btn {
           --border-radius: var(--card-border-radius);
@@ -196,7 +203,7 @@ ion-card {
             --color: #000;
           }
 
-          &.remove {
+          &.owned {
             --border-color: rgba(255, 255, 255, 0.18);
             --color: #f1efef;
           }

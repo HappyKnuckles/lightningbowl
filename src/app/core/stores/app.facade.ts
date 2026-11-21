@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { computed, effect, Injectable, signal, untracked } from '@angular/core';
+import { Ball } from 'src/app/core/models/ball.model';
+import { isInArsenal } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
@@ -10,6 +12,14 @@ import { SettingsStore } from './settings.store';
 
 @Injectable({ providedIn: 'root' })
 export class AppFacade {
+  readonly #arsenalIds = computed(() =>
+    (this.ballsStore.arsenal() ?? [])
+      .map((ball) => ball.arsenalId)
+      .sort()
+      .join(),
+  );
+  /** Set once games, arsenal and ball cache are loaded and the games' balls are migrated. */
+  readonly #ballDataLoaded = signal(false);
   #initPromise: Promise<void> | null = null;
 
   constructor(
@@ -21,7 +31,15 @@ export class AppFacade {
     private settingsStore: SettingsStore,
     private ballService: BallService,
     private analyticsService: AnalyticsService,
-  ) {}
+  ) {
+    // Games name their balls. When the arsenal gets a ball, the games that must mean it are linked to it
+    // (e.g. a ball added after its games were imported, or added back after it was removed).
+    effect(() => {
+      this.#arsenalIds();
+      if (!this.#ballDataLoaded()) return;
+      untracked(() => void this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()));
+    });
+  }
 
   async init(): Promise<void> {
     if (this.#initPromise) {
@@ -59,9 +77,9 @@ export class AppFacade {
       this.settingsStore.loadPinInputMode();
       this.settingsStore.loadBallTracking();
       this.settingsStore.loadHandedness();
-      const ballData = Promise.all([this.ballsStore.loadBallCache(), this.gamesStore.loadGameHistory(), this.ballsStore.loadArsenal()]).then(() =>
-        this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()),
-      );
+      const ballData = Promise.all([this.ballsStore.loadBallCache(), this.gamesStore.loadGameHistory(), this.ballsStore.loadArsenal()])
+        .then(() => this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()))
+        .then(() => this.#ballDataLoaded.set(true));
       await Promise.all([
         this.patternsStore.loadAllPatterns(),
         this.patternsStore.loadPatternImageMap(),
@@ -98,11 +116,24 @@ export class AppFacade {
         return game;
       });
       this.analyticsService.trackLeagueEdited();
-      await this.gamesStore.saveGamesToLocalStorage(updatedGames);
+      await this.gamesStore.saveGamesToLocalStorage(updatedGames, { recordLayouts: false });
       this.gamesStore.updateGamesInMemory(() => updatedGames);
     } catch (error) {
       console.error('Error editing league:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Removes a ball from the arsenal (see `BallsStore.removeFromArsenal`). Games that used it stay as they
+   * are when the arsenal still has that ball in that weight: they point at the one that left, not at the
+   * one that stayed. When it was the only one, the games simply name the ball again, so they find it
+   * should it come back.
+   */
+  async removeArsenalBall(ball: Ball): Promise<void> {
+    const removed = await this.ballsStore.removeFromArsenal(ball);
+    if (removed?.arsenalId && !isInArsenal(removed, this.ballsStore.arsenal())) {
+      await this.gamesStore.unlinkArsenalBall(removed.arsenalId);
     }
   }
 

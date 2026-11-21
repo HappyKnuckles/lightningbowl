@@ -3,7 +3,8 @@ import { Frame, Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { BallDetailStats, BallPatternStats, LeaveStats, PinConversionStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';
-import { formatThrowBall, getBallTracking, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { getBallTracking, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { gameBallLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import {
   isCornerPinLeave,
   isFlatCornerLeave,
@@ -492,11 +493,8 @@ export class BallDetailStatsCalculatorService {
     return Math.round((total / count) * factor) / factor;
   }
 
-  /** Display name for a ball key, resolved against the arsenal where possible. */
+  /** Display name for a ball, with what tells it apart when the arsenal has that ball twice. */
   displayName(ball: ThrowBall): string {
-    const arsenalBall = this.#ballsStore
-      .arsenal()
-      .find((b) => getThrowBallKey({ name: b.ball_name, weight: b.core_weight }) === getThrowBallKey(ball));
-    return arsenalBall ? `${arsenalBall.ball_name} ${arsenalBall.core_weight}lbs` : formatThrowBall(ball);
+    return gameBallLabel(ball, this.#ballsStore.arsenal());
   }
 }

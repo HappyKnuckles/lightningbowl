@@ -3,7 +3,8 @@ import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { BallStats, HighlightItemStats } from 'src/app/core/models/stats.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
-import { findBall, formatThrowBall, getBallTracking, getThrowBallKey, getUniqueGameBalls } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { findBall, getBallTracking, getThrowBallKey, getUniqueGameBalls } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { gameBallLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import { isFirstBallThrow } from 'src/app/core/utils/game-utils/frame.utils';
 import { byAvg, byGameCount } from 'src/app/core/utils/sort-utils/sort.utils';
 import { pickTopFromList } from 'src/app/core/utils/stat-utils/stat.utils';
@@ -179,6 +180,7 @@ export class BallStatsCalculatorService {
       });
     });
 
+    const arsenal = this.ballsStore.arsenal();
     const finalStats = new Map<string, { ball: ThrowBall; stats: HighlightItemStats }>();
     for (const ballName in tempStats) {
       const stats = tempStats[ballName];
@@ -187,7 +189,7 @@ export class BallStatsCalculatorService {
       finalStats.set(ballName, {
         ball: stats.ball,
         stats: {
-          name: formatThrowBall(stats.ball),
+          name: gameBallLabel(stats.ball, arsenal),
           image: this.ballImage(stats.ball),
           avg: stats.gameCount > 0 ? Math.round(stats.totalScore / stats.gameCount) : 0,
           highestGame: stats.highestGame,

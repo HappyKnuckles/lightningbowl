@@ -8,7 +8,10 @@ export const STORAGE_PREFIX = {
 export const StorageKeys = {
   game: (gameId: string): string => `${STORAGE_PREFIX.game}${gameId}`,
   league: (leagueName: string): string => `${STORAGE_PREFIX.league}_${leagueName}`,
-  arsenal: (ballId: string | number, coreWeight: string | number): string => `${STORAGE_PREFIX.arsenal}_${ballId}_${coreWeight}`,
+  /** One arsenal ball, by its `arsenalId`. */
+  arsenal: (arsenalId: string): string => `${STORAGE_PREFIX.arsenal}_${arsenalId}`,
+  /** Where an arsenal ball was stored before arsenal balls had their own id (one per ball and weight). */
+  legacyArsenal: (ballId: string | number, coreWeight: string | number): string => `${STORAGE_PREFIX.arsenal}_${ballId}_${coreWeight}`,
   searchHistory: (context: string): string => `${STORAGE_PREFIX.searchHistory}_${context}`,
   ballCache: 'ball_cache',
 } as const;

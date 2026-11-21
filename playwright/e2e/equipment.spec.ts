@@ -21,6 +21,27 @@ test.describe('ball library (mocked API)', () => {
     expect(await balls.active().locator('ion-card').count()).toBeLessThan(total);
   });
 
+  test('adds a ball, then another one of it after asking, and leaves removing to the arsenal page', async ({ app }) => {
+    await app.boot('/tabs/balls', { mockApi: 'balls' });
+    const balls = new BallsPage(app.page);
+    await balls.waitForBalls();
+
+    // the buttons of the first ball not owned yet; by position, as they change once it is added
+    const actions = balls.active().locator('.arsenal-actions');
+    const labels = await actions.evaluateAll((els) => els.map((el) => el.textContent ?? ''));
+    const index = labels.findIndex((text) => text.includes('Add to arsenal'));
+    expect(index).toBeGreaterThanOrEqual(0);
+    const sameBall = actions.nth(index);
+
+    await sameBall.getByRole('button', { name: 'Add to arsenal' }).click();
+    await expect(sameBall.getByRole('link', { name: 'In arsenal' })).toBeVisible();
+    await expect(sameBall.getByRole('button', { name: /remove/i })).toHaveCount(0);
+
+    await sameBall.getByRole('button', { name: 'Add another' }).click();
+    await app.page.locator('ion-alert button', { hasText: 'Add Another' }).click();
+    await expect(sameBall.getByRole('link', { name: 'In arsenal ×2' })).toBeVisible();
+  });
+
   test('opens the ball filter modal', async ({ app }) => {
     await app.boot('/tabs/balls', { mockApi: 'balls' });
     const balls = new BallsPage(app.page);

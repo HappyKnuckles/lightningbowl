@@ -28,7 +28,8 @@ import { AnalyticsService } from 'src/app/core/services/analytics/analytics.serv
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
-import { getThrowBallKey, toGameBall } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { fromBallFilterValue, getThrowBallKey } from 'src/app/core/utils/game-utils/game-ball.utils';
+import { gameBallLabel } from 'src/app/core/utils/ball-utils/arsenal-ball.utils';
 import { sortGamesByLeagues } from 'src/app/core/utils/sort-utils/sort.utils';
 import { UtilsService } from 'src/app/core/utils/utils.service';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
@@ -71,8 +72,18 @@ export class GameFilterComponent implements OnInit {
   selectedFilterBalls = computed<ThrowBall[]>(() =>
     (this.gameFilterService.filters().balls ?? [])
       .filter((value) => value && value !== 'all')
-      .map((value) => toGameBall(value, this.ballsStore.arsenal(), this.ballsStore.knownBalls())),
+      .map((value) => fromBallFilterValue(value, this.ballsStore.arsenal(), this.ballsStore.knownBalls())),
   );
+
+  /** The selected balls as shown on the filter row. */
+  selectedBallsText = computed(() => {
+    const arsenal = this.ballsStore.arsenal();
+    return (
+      this.selectedFilterBalls()
+        .map((ball) => gameBallLabel(ball, arsenal))
+        .join(', ') || 'All'
+    );
+  });
 
   patterns = computed<string[]>(() => {
     return this.gamesStore
@@ -105,14 +116,6 @@ export class GameFilterComponent implements OnInit {
     }
     this.getHighlightedDates();
     this.getLeagues();
-  }
-
-  getSelectedBallsText(): string {
-    const balls = this.gameFilterService.filters().balls || [];
-    if (balls.length === 1 && balls[0] === 'all') {
-      return 'All';
-    }
-    return balls.length > 0 ? balls.join(', ') : 'All';
   }
 
   startDateChange(event: CustomEvent): void {

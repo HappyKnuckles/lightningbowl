@@ -50,7 +50,7 @@ describe('PinInputComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PinInputComponent],
       providers: [
-        { provide: BallsStore, useValue: { arsenal, saveBallsToArsenal, url: '' } },
+        { provide: BallsStore, useValue: { arsenal, activeArsenal: arsenal, saveBallsToArsenal, url: '' } },
         { provide: ToastService, useValue: { showToast } },
       ],
     }).compileComponents();

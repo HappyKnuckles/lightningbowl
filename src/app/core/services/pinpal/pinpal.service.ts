@@ -9,7 +9,8 @@ import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { Frame, Game, Throw } from '../../models/game.model';
-import { sameGameBall, toGameBall, toThrowBall } from '../../utils/game-utils/game-ball.utils';
+import { getBallModelKey, toGameBall, toThrowBall } from '../../utils/game-utils/game-ball.utils';
+import { isInArsenal } from '../../utils/ball-utils/arsenal-ball.utils';
 import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/frame.utils';
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
@@ -102,10 +103,12 @@ export class PinpalService {
       }
 
       const sortedGames = sortGameHistoryByDate(games);
-      await this.gamesStore.saveGamesToLocalStorage(sortedGames);
+      await this.gamesStore.saveGamesToLocalStorage(sortedGames, { recordLayouts: false });
       const used = games.flatMap((game) => game.balls ?? []);
-      const owned = (ball: Ball) => this.ballsStore.arsenal().some((b) => sameGameBall(toThrowBall(b), toThrowBall(ball)));
-      const toAdd = availableBalls.filter((ball) => used.some((stored) => sameGameBall(stored, toThrowBall(ball))) && !owned(ball));
+      const usedModels = new Set(used.map(getBallModelKey));
+      const toAdd = availableBalls.filter(
+        (ball) => usedModels.has(getBallModelKey(toThrowBall(ball))) && !isInArsenal(ball, this.ballsStore.arsenal()),
+      );
       const arsenalSaveResults = await Promise.allSettled(toAdd.map((ball) => this.ballsStore.saveBallToArsenal(ball)));
       const failedArsenalSaves = arsenalSaveResults.filter((result) => result.status === 'rejected');
       if (failedArsenalSaves.length > 0) {

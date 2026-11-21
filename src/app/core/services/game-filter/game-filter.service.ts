@@ -4,7 +4,7 @@ import { Game } from 'src/app/core/models/game.model';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 
-import { getGameBalls, getThrowBallKey, toGameBall } from '../../utils/game-utils/game-ball.utils';
+import { fromBallFilterValue, getGameBalls, getThrowBallKey } from '../../utils/game-utils/game-ball.utils';
 import { UtilsService } from '../../utils/utils.service';
 const FIFTY_YEARS_MS = 50 * 365.25 * 24 * 60 * 60 * 1000;
 
@@ -84,7 +84,7 @@ export class GameFilterService {
     // values are brought to the same key the games use.
     const arsenal = this.ballsStore.arsenal();
     const known = this.ballsStore.knownBalls();
-    const toKey = (value: string) => (value === '' || value === 'all' ? value : getThrowBallKey(toGameBall(value, arsenal, known)));
+    const toKey = (value: string) => (value === '' || value === 'all' ? value : getThrowBallKey(fromBallFilterValue(value, arsenal, known)));
     const selectedBalls = filters.balls.map(toKey);
 
     return games.filter((game) => {

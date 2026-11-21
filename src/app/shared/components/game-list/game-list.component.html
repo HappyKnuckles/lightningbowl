@@ -223,7 +223,7 @@
                   <ion-label>Balls</ion-label>
                   <span class="ion-text-right">{{ balls.text }}</span>
                 </ion-item>
-                @if (ballsStore.arsenal().length > 0) {
+                @if (ballsStore.activeArsenal().length > 0) {
                   <ion-modal
                     #modal
                     class="ball-modal"

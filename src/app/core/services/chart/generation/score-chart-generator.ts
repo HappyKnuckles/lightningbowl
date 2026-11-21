@@ -26,9 +26,6 @@ export function generateScoreChart(
 
     const plugins: Plugin<'line' | 'bar'>[] = [];
     const options: ChartOptions<'line' | 'bar'> = {
-      // One point per week/game/session: with a few years of games that's hundreds of points, and animating them
-      // redraws the whole chart every frame for a second.
-      animation: false,
       layout: {
         padding: {
           top: 40,

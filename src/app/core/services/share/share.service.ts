@@ -1,10 +1,11 @@
 import { inject, Injectable, LOCALE_ID } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { toPng } from 'html-to-image';
+import { toCanvas, toPng } from 'html-to-image';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Game } from 'src/app/core/models/game.model';
+import { drawImagesOnto } from 'src/app/core/utils/share-utils/share-image.utils';
 import { buildBallShareMessage, buildGameShareMessage } from 'src/app/core/utils/share-utils/share-message.utils';
 
 import { LoadingService } from '../loader/loading.service';
@@ -21,6 +22,9 @@ export interface ShareContent {
 
 /** Marks an element (e.g. buttons) to leave out of the screenshot: `<div data-share-exclude>`. */
 export const SHARE_EXCLUDE_ATTRIBUTE = 'data-share-exclude';
+
+/** Screenshots are rendered at 3× for sharp text on phones. */
+const SHARE_PIXEL_RATIO = 3;
 
 /** Stands in for an image that can't be embedded (no CORS headers), so the rest still renders. */
 const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -84,7 +88,7 @@ export class ShareService {
     try {
       const options: Parameters<typeof toPng>[1] = {
         quality: 1,
-        pixelRatio: 3,
+        pixelRatio: SHARE_PIXEL_RATIO,
         width: element.scrollWidth,
         height: element.scrollHeight,
         // transform: a swiped list item is still shifted aside while its options close
@@ -95,14 +99,13 @@ export class ShareService {
         cacheBust: true,
         filter: (node) => !(node instanceof HTMLElement && node.hasAttribute(SHARE_EXCLUDE_ATTRIBUTE)),
       };
-      // Safari (and so every browser on iOS) often draws the snapshot before the images inside it are decoded,
-      // leaving them blank; by the third pass they're there (a known html-to-image issue)
-      const passes = isWebKit() ? 3 : 1;
-      let dataUrl = '';
-      for (let pass = 0; pass < passes; pass++) {
-        dataUrl = await toPng(element, options);
-      }
-      return dataUrl;
+      if (!isWebKit()) return await toPng(element, options);
+
+      // Safari (and so every browser on iOS) draws the snapshot before the images inside it are decoded, so
+      // they come out blank (a known html-to-image issue). Draw them onto the snapshot ourselves.
+      const canvas = await toCanvas(element, options);
+      await drawImagesOnto(canvas, element, SHARE_PIXEL_RATIO, SHARE_EXCLUDE_ATTRIBUTE);
+      return canvas.toDataURL('image/png');
     } catch (error) {
       console.error('Error rendering the share image, sharing the text only', error);
       return undefined;

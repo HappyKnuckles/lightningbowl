@@ -2,7 +2,18 @@ import { ALL_FORMATS, BlobSource, BufferTarget, CanvasSource, Input, Mp4OutputFo
 
 import { ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 
-import { frameSimilarity, laneCropRect, matThumbnail, readStoredRegion, Rotation, shownFrame, storedRect } from './frame.utils';
+import { mul3 } from '../geometry/math.utils';
+import {
+  frameSimilarity,
+  laneCropRect,
+  matThumbnail,
+  planesPixels,
+  readStoredPlanes,
+  readStoredRegion,
+  Rotation,
+  shownFrame,
+  storedRect,
+} from './frame.utils';
 import { loadOpenCv } from './opencv.utils';
 
 const FPS = 30;
@@ -88,6 +99,43 @@ describe('frame utils', () => {
       stored.delete();
       drawn.delete();
       drawnRgb.delete();
+      sample.close();
+      input.dispose();
+    }, 60_000);
+
+    it(`maps the decoder's pixels, as stored, onto the frame as drawn (rotation ${rotation})`, async () => {
+      const cv = await loadOpenCv();
+      const input = new Input({ source: new BlobSource(await makeVideo(rotation)), formats: ALL_FORMATS });
+      const sample = (await new VideoSampleSink((await input.getPrimaryVideoTrack())!).getSample(0))!;
+      const [w, h] = [sample.displayWidth, sample.displayHeight];
+      const area = { left: 8, top: 10, width: w - 20, height: h - 18 };
+      const canvas = new OffscreenCanvas(w, h).getContext('2d', { willReadFrequently: true })!;
+      sample.draw(canvas, 0, 0, w, h);
+      const drawn = cv.matFromImageData(canvas.getImageData(area.left, area.top, area.width, area.height));
+      const drawnRgb = new cv.Mat();
+      cv.cvtColor(drawn, drawnRgb, cv.COLOR_RGBA2RGB);
+
+      const pixels = planesPixels(cv, (await readStoredPlanes(sample, area, rotation))!, 0);
+      const { mat, toFrame } = pixels.rgb(area)!;
+      // both read upright into the area: the colour part and the grey part
+      const toArea = [1, 0, -area.left, 0, 1, -area.top, 0, 0, 1] as const;
+      const upright = (source: typeof mat, map: number[]) => {
+        const m = cv.matFromArray(3, 3, cv.CV_64F, map);
+        const out = new cv.Mat();
+        cv.warpPerspective(source, out, m, new cv.Size(area.width, area.height), cv.INTER_NEAREST);
+        m.delete();
+        return out;
+      };
+      const rgb = upright(mat, mul3([...toArea], toFrame));
+      const gray = upright(pixels.gray, mul3([...toArea], pixels.grayToFrame));
+      const grayRgb = new cv.Mat();
+      cv.cvtColor(gray, grayRgb, cv.COLOR_GRAY2RGB);
+
+      expect(frameSimilarity(matThumbnail(cv, drawnRgb), matThumbnail(cv, rgb))).toBeGreaterThan(0.95);
+      expect(frameSimilarity(matThumbnail(cv, drawnRgb), matThumbnail(cv, grayRgb))).toBeGreaterThan(0.95);
+
+      pixels.dispose();
+      [drawn, drawnRgb, mat, rgb, gray, grayRgb].forEach((m) => m.delete());
       sample.close();
       input.dispose();
     }, 60_000);

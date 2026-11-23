@@ -1,6 +1,6 @@
 /**
  * The numerics the ball tracker takes from NumPy and SciPy: polynomial fits, interpolation, 3x3
- * homographies and a cubic smoothing spline.
+ * homographies (robustly fitted) and a penalized smoothing spline.
  */
 
 export type Mat3 = [number, number, number, number, number, number, number, number, number];
@@ -151,147 +151,226 @@ export function homographyFrom4(src: [number, number][], dst: [number, number][]
   return out;
 }
 
-// ------------------------------------------------------------------ smoothing spline
+/** Similarity moving points (flat x, y pairs) to their centroid, at a mean distance of √2 from it (Hartley). */
+function normalizing(points: ArrayLike<number>, idx: ArrayLike<number>, count: number): Mat3 {
+  let mx = 0;
+  let my = 0;
+  for (let k = 0; k < count; k++) {
+    mx += points[2 * idx[k]];
+    my += points[2 * idx[k] + 1];
+  }
+  mx /= count;
+  my /= count;
+  let dist = 0;
+  for (let k = 0; k < count; k++) dist += Math.hypot(points[2 * idx[k]] - mx, points[2 * idx[k] + 1] - my);
+  const s = dist > 0 ? (Math.SQRT2 * count) / dist : 1;
+  return [s, 0, -s * mx, 0, s, -s * my, 0, 0, 1];
+}
+
+/** Least-squares homography (h33 = 1, normalized DLT) taking the `idx` points of `src` onto those of `dst`. */
+function homographyLeastSquares(src: ArrayLike<number>, dst: ArrayLike<number>, idx: ArrayLike<number>, count: number): Mat3 | null {
+  const ts = normalizing(src, idx, count);
+  const td = normalizing(dst, idx, count);
+  const ata = Array.from({ length: 8 }, () => new Array<number>(8).fill(0));
+  const atb = new Array<number>(8).fill(0);
+  const row = new Array<number>(8);
+  const add = (target: number) => {
+    for (let r = 0; r < 8; r++) {
+      if (row[r] === 0) continue;
+      atb[r] += row[r] * target;
+      for (let c = 0; c < 8; c++) ata[r][c] += row[r] * row[c];
+    }
+  };
+  for (let k = 0; k < count; k++) {
+    const i = idx[k];
+    const x = ts[0] * src[2 * i] + ts[2];
+    const y = ts[4] * src[2 * i + 1] + ts[5];
+    const u = td[0] * dst[2 * i] + td[2];
+    const v = td[4] * dst[2 * i + 1] + td[5];
+    row.splice(0, 8, x, y, 1, 0, 0, 0, -u * x, -u * y);
+    add(u);
+    row.splice(0, 8, 0, 0, 0, x, y, 1, -v * x, -v * y);
+    add(v);
+  }
+  const h = solve(ata, atb);
+  const hn = [...h, 1] as Mat3;
+  if (!hn.every(Number.isFinite)) return null;
+  const out = mul3(mul3(invert3(td), hn), ts);
+  return out.every(Number.isFinite) && out[8] !== 0 ? (out.map((v) => v / out[8]) as Mat3) : null;
+}
+
+/**
+ * The homography taking `src` points onto `dst` points (flat x, y pairs), robust to outliers: RANSAC over
+ * four-point fits, then least squares over the points it maps within `tolerance` (px), twice. Null when
+ * fewer than `minInliers` points agree. Deterministic for a given `random`.
+ */
+export function fitHomography(
+  src: ArrayLike<number>,
+  dst: ArrayLike<number>,
+  tolerance: number,
+  minInliers: number,
+  random: () => number = seededRandom(0),
+): { h: Mat3; inliers: number } | null {
+  const n = Math.min(src.length, dst.length) / 2;
+  if (n < Math.max(4, minInliers)) return null;
+  const tol2 = tolerance * tolerance;
+  const isInlier = (h: Mat3, i: number) => {
+    const x = src[2 * i];
+    const y = src[2 * i + 1];
+    const w = h[6] * x + h[7] * y + h[8];
+    if (!(Math.abs(w) > 1e-12)) return false;
+    const du = (h[0] * x + h[1] * y + h[2]) / w - dst[2 * i];
+    const dv = (h[3] * x + h[4] * y + h[5]) / w - dst[2 * i + 1];
+    return du * du + dv * dv <= tol2;
+  };
+  const inliersOf = (h: Mat3, into: Int32Array) => {
+    let count = 0;
+    for (let i = 0; i < n; i++) if (isInlier(h, i)) into[count++] = i;
+    return count;
+  };
+  let best: Mat3 | null = null;
+  let bestCount = 0;
+  const scratch = new Int32Array(n);
+  let needed = 500;
+  for (let iter = 0; iter < needed; iter++) {
+    const pick = new Set<number>();
+    while (pick.size < 4) pick.add(Math.floor(random() * n));
+    const [a, b, c, d] = [...pick];
+    let h: Mat3;
+    try {
+      h = homographyFrom4(
+        [a, b, c, d].map((i) => [src[2 * i], src[2 * i + 1]] as [number, number]),
+        [a, b, c, d].map((i) => [dst[2 * i], dst[2 * i + 1]] as [number, number]),
+      );
+    } catch {
+      continue;
+    }
+    const count = inliersOf(h, scratch);
+    if (count > bestCount) {
+      best = h;
+      bestCount = count;
+      // enough rounds to have drawn four inliers at least once, 99.5 % of the time
+      const share = count / n;
+      needed = Math.min(500, Math.max(30, Math.ceil(Math.log(0.005) / Math.log(Math.max(1e-9, 1 - share ** 4)))));
+    }
+  }
+  if (!best || bestCount < Math.max(4, minInliers)) return null;
+  let h = best;
+  const idx = new Int32Array(n);
+  let count = inliersOf(h, idx);
+  for (let round = 0; round < 2; round++) {
+    const refined = homographyLeastSquares(src, dst, idx, count);
+    if (!refined) break;
+    const next = inliersOf(refined, scratch);
+    if (next < count) break;
+    h = refined;
+    count = next;
+    idx.set(scratch.subarray(0, next));
+  }
+  return count >= minInliers ? { h, inliers: count } : null;
+}
+
+// ------------------------------------------------------------------ smoothing
 
 export interface Spline {
   at(x: number): number;
   slope(x: number): number;
 }
 
+/** Uniform cubic B-spline weights of the four coefficients around a point `u` (0–1) into its segment, and their slopes. */
+function bsplineWeights(u: number): { slope: [number, number, number, number]; value: [number, number, number, number] } {
+  const v = 1 - u;
+  return {
+    value: [(v * v * v) / 6, (3 * u * u * u - 6 * u * u + 4) / 6, (-3 * u * u * u + 3 * u * u + 3 * u + 1) / 6, (u * u * u) / 6],
+    slope: [(-v * v) / 2, (3 * u * u - 4 * u) / 2, (-3 * u * u + 2 * u + 1) / 2, (u * u) / 2],
+  };
+}
+
 /**
- * Cubic smoothing spline through increasing `x`: the smoothest curve (least ∫f''²) whose squared residuals
- * add up to `s`, the criterion of SciPy's `UnivariateSpline(..., s=s)`. Natural ends: straight beyond the data.
- * Reinsch's algorithm: the penalty weight is searched until the residuals match `s`. When a cubic polynomial
- * already stays within `s`, that cubic is the answer, as with FITPACK.
+ * A penalized B-spline (P-spline, Eilers & Marx) through increasing `x`: cubic B-splines on knots `spacing`
+ * apart whose coefficients' third differences are penalized. Heavily smoothed it tends to a parabola, not a
+ * line, so a curve still bending where the data ends is followed rather than straightened (a natural
+ * smoothing spline has no curvature at its ends).
+ *
+ * The smoothing is the larger of: what lets the residuals, in units of `sigma`, add up to their count; and
+ * `bandwidth` (in x units), the least the curve averages over either side. Straight beyond the data.
  */
-export function smoothingSpline(x: readonly number[], y: readonly number[], s: number): Spline {
+export function pSpline(x: readonly number[], y: readonly number[], sigma: readonly number[], spacing: number, bandwidth: number): Spline {
   const n = x.length;
-  const line = (): Spline => {
-    const [slope, intercept] = n >= 2 ? polyfit(x, y, 1) : [0, y[0] ?? 0];
-    return { at: (v) => slope * v + intercept, slope: () => slope };
+  const x0 = x[0];
+  const span = Math.max(x[n - 1] - x0, 1e-9);
+  const segments = Math.max(1, Math.ceil(span / spacing));
+  const step = span / segments;
+  const m = segments + 3;
+  const locate = (v: number) => {
+    const s = Math.min(segments - 1, Math.max(0, Math.floor((v - x0) / step)));
+    return { s, u: (v - x0) / step - s };
   };
-  if (n < 4) {
-    return line();
+  // normal equations: Bᵀ W B and Bᵀ W y (W the weights), and the penalty D₃ᵀ D₃
+  const btb = Array.from({ length: m }, () => new Float64Array(m));
+  const bty = new Float64Array(m);
+  let totalWeight = 0;
+  for (let i = 0; i < n; i++) {
+    const w = 1 / Math.max(1e-12, sigma[i] ** 2);
+    totalWeight += w;
+    const { s, u } = locate(x[i]);
+    const { value } = bsplineWeights(u);
+    for (let a = 0; a < 4; a++) {
+      bty[s + a] += w * value[a] * y[i];
+      for (let b = 0; b < 4; b++) btb[s + a][s + b] += w * value[a] * value[b];
+    }
   }
-  const h = new Array<number>(n - 1);
-  for (let i = 0; i < n - 1; i++) h[i] = x[i + 1] - x[i];
-  const m = n - 2;
-
-  // Qᵀy, and the bands of R (tridiagonal) and QᵀQ (pentadiagonal)
-  const qty = new Array<number>(m);
-  for (let j = 0; j < m; j++) qty[j] = (y[j + 2] - y[j + 1]) / h[j + 1] - (y[j + 1] - y[j]) / h[j];
-  const q0 = (j: number) => 1 / h[j]; // Q[j][j]
-  const q1 = (j: number) => -1 / h[j] - 1 / h[j + 1]; // Q[j+1][j]
-  const q2 = (j: number) => 1 / h[j + 1]; // Q[j+2][j]
-  const qtq0 = (j: number) => q0(j) ** 2 + q1(j) ** 2 + q2(j) ** 2;
-  const qtq1 = (j: number) => q1(j) * q0(j + 1) + q2(j) * q1(j + 1);
-  const qtq2 = (j: number) => q2(j) * q0(j + 2);
-
-  const fit = (lambda: number) => {
-    // (R + λ QᵀQ) γ = Qᵀy, a symmetric positive definite band of width 2: band Cholesky
-    const d = new Float64Array(m);
-    const e1 = new Float64Array(m);
-    const e2 = new Float64Array(m);
-    for (let j = 0; j < m; j++) {
-      d[j] = (h[j] + h[j + 1]) / 3 + lambda * qtq0(j);
-      if (j + 1 < m) e1[j] = h[j + 1] / 6 + lambda * qtq1(j);
-      if (j + 2 < m) e2[j] = lambda * qtq2(j);
-    }
-    // L with diagonal l0, sub-diagonals l1, l2
-    const l0 = new Float64Array(m);
-    const l1 = new Float64Array(m);
-    const l2 = new Float64Array(m);
-    for (let j = 0; j < m; j++) {
-      const a2 = j >= 2 ? e2[j - 2] / l0[j - 2] : 0;
-      const a1 = j >= 1 ? (e1[j - 1] - (j >= 2 ? a2 * l1[j - 1] : 0)) / l0[j - 1] : 0;
-      l2[j] = a2;
-      l1[j] = a1;
-      l0[j] = Math.sqrt(Math.max(1e-300, d[j] - a1 * a1 - a2 * a2));
-    }
-    // forward, then backward substitution
-    const z = new Float64Array(m);
-    for (let j = 0; j < m; j++) z[j] = (qty[j] - (j >= 1 ? l1[j] * z[j - 1] : 0) - (j >= 2 ? l2[j] * z[j - 2] : 0)) / l0[j];
-    const gamma = new Float64Array(m);
-    for (let j = m - 1; j >= 0; j--)
-      gamma[j] = (z[j] - (j + 1 < m ? l1[j + 1] * gamma[j + 1] : 0) - (j + 2 < m ? l2[j + 2] * gamma[j + 2] : 0)) / l0[j];
-    // g = y − λ Q γ
-    const g = new Float64Array(n);
-    for (let i = 0; i < n; i++) {
-      let qg = 0;
-      if (i < m) qg += q0(i) * gamma[i];
-      if (i - 1 >= 0 && i - 1 < m) qg += q1(i - 1) * gamma[i - 1];
-      if (i - 2 >= 0 && i - 2 < m) qg += q2(i - 2) * gamma[i - 2];
-      g[i] = y[i] - lambda * qg;
-    }
-    let rss = 0;
-    for (let i = 0; i < n; i++) rss += (y[i] - g[i]) ** 2;
-    return { g, gamma, rss };
+  const diff = [-1, 3, -3, 1];
+  const penalty = Array.from({ length: m }, () => new Float64Array(m));
+  for (let k = 0; k + 3 < m; k++) {
+    for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) penalty[k + a][k + b] += diff[a] * diff[b];
+  }
+  const solveFor = (lambda: number) => {
+    const a = Array.from({ length: m }, (_, r) => Array.from({ length: m }, (__, c) => btb[r][c] + lambda * penalty[r][c]));
+    return solve(a, Array.from(bty));
   };
-
-  // like FITPACK: when a cubic polynomial already stays within `s`, the answer is that cubic
-  const cubic = polyfit(x, y, 3);
-  let cubicRss = 0;
-  for (let i = 0; i < n; i++) cubicRss += (y[i] - polyval(cubic, x[i])) ** 2;
-  if (s >= cubicRss) {
-    const d = polyder(cubic);
-    return { at: (v) => polyval(cubic, v), slope: (v) => polyval(d, v) };
-  }
-
-  // the residuals grow with the penalty: bisect its logarithm
-  const span = x[n - 1] - x[0];
-  let lo = -40;
-  let hi = 40;
-  let best = fit(0);
-  if (best.rss < s) {
-    for (let k = 0; k < 80; k++) {
-      const mid = (lo + hi) / 2;
-      const trial = fit(Math.exp(mid) * span ** 3);
-      if (trial.rss > s) {
-        hi = mid;
-      } else {
-        lo = mid;
-        best = trial;
+  const valueAt = (coeffs: number[], v: number) => {
+    const { s, u } = locate(v);
+    const { value } = bsplineWeights(u);
+    return value[0] * coeffs[s] + value[1] * coeffs[s + 1] + value[2] * coeffs[s + 2] + value[3] * coeffs[s + 3];
+  };
+  const chi2 = (coeffs: number[]) => {
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += ((y[i] - valueAt(coeffs, x[i])) / sigma[i]) ** 2;
+    return sum;
+  };
+  // the bandwidth's smoothing: a third-difference filter of knots `step` apart, cut off about `bandwidth` out
+  const least = (totalWeight / m) * (bandwidth / step) ** 6;
+  // the residuals grow with the penalty: bisect its logarithm for Σ(r/σ)² = n, then no less than `least`
+  let coeffs = solveFor(least);
+  if (chi2(coeffs) < n) {
+    // up to where the curve is a parabola for any data (stiffer only loses precision in the solve)
+    let lo = Math.log(Math.max(least, 1e-12));
+    let hi = Math.log(Math.max(least, totalWeight / m) * 1e8);
+    if (chi2(solveFor(Math.exp(hi))) < n) {
+      coeffs = solveFor(Math.exp(hi));
+    } else {
+      for (let k = 0; k < 40; k++) {
+        const mid = (lo + hi) / 2;
+        const trial = solveFor(Math.exp(mid));
+        if (chi2(trial) > n) hi = mid;
+        else {
+          lo = mid;
+          coeffs = trial;
+        }
       }
     }
   }
-  const { g, gamma } = best;
-  // second derivatives at all knots, natural ends
-  const c = new Float64Array(n);
-  for (let j = 0; j < m; j++) c[j + 1] = gamma[j];
-
-  const segment = (v: number) => {
-    let lo2 = 0;
-    let hi2 = n - 1;
-    while (hi2 - lo2 > 1) {
-      const mid = (lo2 + hi2) >> 1;
-      if (x[mid] <= v) lo2 = mid;
-      else hi2 = mid;
-    }
-    return lo2;
-  };
-  const slopeAtKnot = (i: number, end: 'left' | 'right') => {
-    const k = end === 'left' ? i : i - 1;
-    const hk = h[k];
-    const dy = (g[k + 1] - g[k]) / hk;
-    return end === 'left' ? dy - (hk * (2 * c[k] + c[k + 1])) / 6 : dy + (hk * (c[k] + 2 * c[k + 1])) / 6;
+  const slopeAt = (v: number) => {
+    const c = Math.min(Math.max(v, x0), x[n - 1]);
+    const { s, u } = locate(c);
+    const { slope } = bsplineWeights(u);
+    return (slope[0] * coeffs[s] + slope[1] * coeffs[s + 1] + slope[2] * coeffs[s + 2] + slope[3] * coeffs[s + 3]) / step;
   };
   const at = (v: number) => {
-    if (v <= x[0]) return g[0] + slopeAtKnot(0, 'left') * (v - x[0]);
-    if (v >= x[n - 1]) return g[n - 1] + slopeAtKnot(n - 1, 'right') * (v - x[n - 1]);
-    const i = segment(v);
-    const hk = h[i];
-    const a = (x[i + 1] - v) / hk;
-    const b = (v - x[i]) / hk;
-    return a * g[i] + b * g[i + 1] + (((a ** 3 - a) * c[i] + (b ** 3 - b) * c[i + 1]) * hk * hk) / 6;
-  };
-  const slopeAt = (v: number) => {
-    if (v <= x[0]) return slopeAtKnot(0, 'left');
-    if (v >= x[n - 1]) return slopeAtKnot(n - 1, 'right');
-    const i = segment(v);
-    const hk = h[i];
-    const a = (x[i + 1] - v) / hk;
-    const b = (v - x[i]) / hk;
-    return (g[i + 1] - g[i]) / hk + ((-(3 * a * a - 1) * c[i] + (3 * b * b - 1) * c[i + 1]) * hk) / 6;
+    if (v < x0) return valueAt(coeffs, x0) + slopeAt(x0) * (v - x0);
+    if (v > x[n - 1]) return valueAt(coeffs, x[n - 1]) + slopeAt(x[n - 1]) * (v - x[n - 1]);
+    return valueAt(coeffs, v);
   };
   return { at, slope: slopeAt };
 }

@@ -8,11 +8,15 @@ export const MIN_SPEED_IN_S = 100; // ~5.7 mph
 export const MAX_SPEED_IN_S = 650; // ~37 mph
 // the ball can vanish behind the bowler for most of a second
 const MAX_OCCLUSION_S = 1.2;
+/** Inches sideways per inch down the lane the ball may turn by over a gap (≈ 7°, more than any hook does in a few feet). */
+const MAX_GAP_HEADING_CHANGE = 0.12;
 
 export interface Detection {
   frame: number;
   /** Contact point in (lane crop) image pixels. */
   px: [number, number];
+  /** Lane inches one pixel (of the image the ball was found in) covers sideways. */
+  sigmaXIn?: number;
   /** Lane inches one pixel covers down-lane; grows towards the pins. */
   sigmaYIn: number;
   /** Observed width / expected ball width at that distance. */
@@ -73,7 +77,8 @@ export class Track {
       ySum += p.yIn / p.sigmaYIn;
     }
     const yPred = ySum / wSum + v[1] * (t - tMean);
-    return { pos: [this.last.xIn + v[0] * dt, yPred], gateX: 5 + 60 * dt, gateY: 6 + 60 * dt };
+    // sideways the ball barely changes course from frame to frame (a hook turns it a few inches per second)
+    return { pos: [this.last.xIn + v[0] * dt, yPred], gateX: 4 + 25 * dt, gateY: 6 + 60 * dt };
   }
 
   isPlausible(minPoints: number): boolean {
@@ -158,6 +163,7 @@ export class BallTracker {
       const last = track.last;
       const velocity = track.velocity();
       const speed = velocity && velocity[1] > 0 ? velocity[1] : 375;
+      const sideways = velocity ? velocity[0] : 0;
       let follow: { other: Track; score: number } | null = null;
       for (const other of others) {
         if (used.has(other) || other.points.length < 3) continue;
@@ -167,8 +173,9 @@ export class BallTracker {
         const gap = first.t - last.t;
         if (gap > MAX_OCCLUSION_S) continue;
         const dy = first.yIn - (last.yIn + speed * gap);
-        const dx = first.xIn - last.xIn;
-        if (Math.abs(dy) > 24 + 10 * first.sigmaYIn || Math.abs(dx) > 6 + 0.35 * Math.max(0, first.yIn - last.yIn)) continue;
+        // sideways, the ball keeps its heading through the gap, give or take a hook
+        const dx = first.xIn - (last.xIn + sideways * gap);
+        if (Math.abs(dy) > 24 + 10 * first.sigmaYIn || Math.abs(dx) > 4 + MAX_GAP_HEADING_CHANGE * Math.max(0, first.yIn - last.yIn)) continue;
         const score = Math.abs(dy) / (24 + 10 * first.sigmaYIn) + gap;
         if (!follow || score < follow.score) follow = { score, other };
       }

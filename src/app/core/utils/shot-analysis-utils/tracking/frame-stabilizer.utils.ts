@@ -1,88 +1,113 @@
-/** Frame stabilization for handheld videos (port of the BallTracker's `stabilizer.py`). */
-import { IDENTITY, Mat3, mul3 } from '../geometry/math.utils';
+/** Frame alignment for handheld videos (descendant of the BallTracker's `stabilizer.py`). */
+import { applyHomography, fitHomography, IDENTITY, invert3, Mat3, seededRandom } from '../geometry/math.utils';
 import { Cv, release } from '../video/opencv.utils';
 
-const toMat3 = (cv: Cv, m: Cv): Mat3 => Array.from(m.data64F as Float64Array) as Mat3;
-
+/** Corners of the reference frame that are followed into every frame. */
+const FLOW_CORNERS = 200;
+const FLOW_WINDOW = 15;
+const FLOW_LEVELS = 2;
+/** RANSAC tolerance (px of the grey frames): the flow is sub-pixel, a tight tolerance keeps only the static scene. */
+const FLOW_TOLERANCE_PX = 1;
+const MIN_INLIERS = 24;
+const ORB_FEATURES = 3000;
 const MIN_MATCHES = 12;
-const MAX_CORNERS = 400;
-const MIN_TRACKED = 40;
 
 /**
- * Aligns handheld frames to the reference frame: feature matching on an anchor frame every `anchorEvery`
- * frames, optical flow on corners in between, each frame fitted to the corners' positions in the anchor
- * frame. Works on downscaled grey frames; homographies are in those pixels.
+ * Aligns handheld frames to the reference frame (the one the lane was marked on). The reference frame's
+ * corners are followed into every frame with pyramidal optical flow, starting from where the previous
+ * frame's alignment puts them, and the frame is fitted to them. Every frame is measured against the
+ * reference itself, with sub-pixel corners, so the alignment neither drifts nor jumps (re-anchoring on
+ * matched features every few frames moved the far end of the lane by a board at a time). Feature matching
+ * (ORB) only finds the frame again when the flow loses it, e.g. after a fast swing of the phone.
  *
- * The server matches anchors with SIFT, which OpenCV's WebAssembly build doesn't include; this uses ORB.
+ * Works on grey frames of any scale; homographies are in their pixels.
  */
 export class FrameStabilizer {
-  private readonly orb: Cv;
-  private readonly matcher: Cv;
-  private readonly refKp: Cv;
-  private readonly refDes: Cv;
-  private readonly none: Cv;
-  private prev: Cv = null;
-  private pts: Float32Array | null = null;
-  private anchorPts: Float32Array | null = null;
-  private anchorH: Mat3 | null = null;
-  private sinceAnchor = 0;
+  private readonly reference: Cv;
+  private readonly corners: Float32Array;
+  private readonly criteria: Cv;
+  private last: Mat3 = IDENTITY;
+  private orb: { descriptors: Cv; detector: Cv; keypoints: Cv; matcher: Cv; none: Cv } | null = null;
+  private fits = 0;
 
   constructor(
     private readonly cv: Cv,
     referenceGray: Cv,
-    private readonly anchorEvery = 15,
   ) {
-    this.orb = new cv.ORB(3000);
-    this.matcher = new cv.BFMatcher(cv.NORM_HAMMING);
-    this.refKp = new cv.KeyPointVector();
-    this.refDes = new cv.Mat();
-    this.none = new cv.Mat();
-    this.orb.detectAndCompute(referenceGray, this.none, this.refKp, this.refDes);
+    this.reference = referenceGray.clone();
+    const corners = new cv.Mat();
+    cv.goodFeaturesToTrack(referenceGray, corners, FLOW_CORNERS, 0.01, 6);
+    this.corners = Float32Array.from(corners.data32F as Float32Array);
+    corners.delete();
+    this.criteria = new cv.TermCriteria(cv.TermCriteria_COUNT + cv.TermCriteria_EPS, 20, 0.03);
   }
 
-  /** Homography from this frame to the reference (downscaled pixels), or null if it couldn't be aligned. */
+  /** Homography from this frame to the reference (grey frame pixels), or null if it couldn't be aligned. */
   track(gray: Cv): Mat3 | null {
-    let h = this.pts && this.sinceAnchor < this.anchorEvery ? this.flow(gray) : null;
-    if (h) {
-      this.sinceAnchor++;
-    } else {
-      h = this.anchor(gray);
-    }
-    release(this.prev);
-    this.prev = gray.clone();
+    const h = this.followCorners(gray) ?? this.matchReference(gray);
+    if (h) this.last = h;
     return h;
   }
 
   dispose(): void {
-    release(this.orb, this.matcher, this.refKp, this.refDes, this.none, this.prev);
+    release(this.reference);
+    if (this.orb) release(this.orb.detector, this.orb.matcher, this.orb.keypoints, this.orb.descriptors, this.orb.none);
+    this.orb = null;
   }
 
-  private fit(src: number[] | Float32Array, dst: number[] | Float32Array, minInliers: number): { h: Mat3; inliers: Uint8Array } | null {
+  private followCorners(gray: Cv): Mat3 | null {
     const cv = this.cv;
-    const a = cv.matFromArray(src.length / 2, 1, cv.CV_32FC2, Array.from(src));
-    const b = cv.matFromArray(dst.length / 2, 1, cv.CV_32FC2, Array.from(dst));
-    const mask = new cv.Mat();
-    const h = cv.findHomography(a, b, cv.RANSAC, 2.0, mask);
+    const n = this.corners.length / 2;
+    if (n < MIN_INLIERS) return null;
+    const toFrame = invert3(this.last);
+    const guess = new Float32Array(2 * n);
+    for (let i = 0; i < n; i++) {
+      const [x, y] = applyHomography(toFrame, this.corners[2 * i], this.corners[2 * i + 1]);
+      guess[2 * i] = x;
+      guess[2 * i + 1] = y;
+    }
+    const from = cv.matFromArray(n, 1, cv.CV_32FC2, this.corners);
+    const to = cv.matFromArray(n, 1, cv.CV_32FC2, guess);
+    const status = new cv.Mat();
+    const err = new cv.Mat();
     try {
-      if (h.empty() || mask.empty()) return null;
-      const inliers = Uint8Array.from(mask.data as Uint8Array);
-      if (inliers.reduce((sum, v) => sum + (v ? 1 : 0), 0) < minInliers) return null;
-      return { h: toMat3(cv, h), inliers };
+      const win = new cv.Size(FLOW_WINDOW, FLOW_WINDOW);
+      cv.calcOpticalFlowPyrLK(this.reference, gray, from, to, status, err, win, FLOW_LEVELS, this.criteria, cv.OPTFLOW_USE_INITIAL_FLOW);
+      const found = to.data32F as Float32Array;
+      const ok = status.data as Uint8Array;
+      const src: number[] = [];
+      const dst: number[] = [];
+      for (let i = 0; i < n; i++) {
+        if (ok[i] !== 1) continue;
+        src.push(found[2 * i], found[2 * i + 1]);
+        dst.push(this.corners[2 * i], this.corners[2 * i + 1]);
+      }
+      return src.length / 2 >= MIN_INLIERS ? this.fit(src, dst, FLOW_TOLERANCE_PX, MIN_INLIERS) : null;
     } finally {
-      release(a, b, mask, h);
+      release(from, to, status, err);
     }
   }
 
+  /** The frame found again by matching ORB features against the reference (set up on first use). */
   private matchReference(gray: Cv): Mat3 | null {
     const cv = this.cv;
-    if (this.refDes.rows < MIN_MATCHES) return null;
+    if (!this.orb) {
+      const detector = new cv.ORB(ORB_FEATURES);
+      const keypoints = new cv.KeyPointVector();
+      const descriptors = new cv.Mat();
+      const none = new cv.Mat();
+      detector.detectAndCompute(this.reference, none, keypoints, descriptors);
+      this.orb = { detector, keypoints, descriptors, none, matcher: new cv.BFMatcher(cv.NORM_HAMMING) };
+    }
+    const { detector, keypoints: refKp, descriptors: refDes, none, matcher } = this.orb;
+    if (refDes.rows < MIN_MATCHES) return null;
     const kp = new cv.KeyPointVector();
     const des = new cv.Mat();
     const pairs = new cv.DMatchVectorVector();
     try {
-      this.orb.detectAndCompute(gray, this.none, kp, des);
+      detector.detectAndCompute(gray, none, kp, des);
       if (des.rows < MIN_MATCHES) return null;
-      this.matcher.knnMatch(des, this.refDes, pairs, 2);
+      matcher.knnMatch(des, refDes, pairs, 2);
       const src: number[] = [];
       const dst: number[] = [];
       for (let i = 0; i < pairs.size(); i++) {
@@ -90,68 +115,19 @@ export class FrameStabilizer {
         if (pair.size() === 2 && pair.get(0).distance < 0.75 * pair.get(1).distance) {
           const m = pair.get(0);
           const p = kp.get(m.queryIdx).pt;
-          const q = this.refKp.get(m.trainIdx).pt;
+          const q = refKp.get(m.trainIdx).pt;
           src.push(p.x, p.y);
           dst.push(q.x, q.y);
         }
       }
-      if (src.length / 2 < MIN_MATCHES) return null;
-      return this.fit(src, dst, MIN_MATCHES)?.h ?? null;
+      // ORB keypoints aren't sub-pixel: a looser tolerance
+      return src.length / 2 >= MIN_MATCHES ? this.fit(src, dst, 2, MIN_MATCHES) : null;
     } finally {
       release(kp, des, pairs);
     }
   }
 
-  private anchor(gray: Cv): Mat3 | null {
-    const cv = this.cv;
-    const h = this.matchReference(gray);
-    this.pts = null;
-    if (!h) return null;
-    const corners = new cv.Mat();
-    cv.goodFeaturesToTrack(gray, corners, MAX_CORNERS, 0.01, 8);
-    if (corners.rows >= MIN_TRACKED) {
-      this.pts = Float32Array.from(corners.data32F as Float32Array);
-      this.anchorPts = Float32Array.from(this.pts);
-      this.anchorH = h;
-      this.sinceAnchor = 0;
-    }
-    corners.delete();
-    return h;
-  }
-
-  private flow(gray: Cv): Mat3 | null {
-    const cv = this.cv;
-    const from = cv.matFromArray(this.pts!.length / 2, 1, cv.CV_32FC2, Array.from(this.pts!));
-    const to = new cv.Mat();
-    const status = new cv.Mat();
-    const err = new cv.Mat();
-    try {
-      cv.calcOpticalFlowPyrLK(this.prev, gray, from, to, status, err, new cv.Size(21, 21), 3);
-      const cur: number[] = [];
-      const anchored: number[] = [];
-      for (let i = 0; i < status.rows; i++) {
-        if (status.data[i] === 1) {
-          cur.push(to.data32F[2 * i], to.data32F[2 * i + 1]);
-          anchored.push(this.anchorPts![2 * i], this.anchorPts![2 * i + 1]);
-        }
-      }
-      if (cur.length / 2 < MIN_TRACKED) return null;
-      const fitted = this.fit(cur, anchored, MIN_TRACKED);
-      if (!fitted) return null;
-      // corners off the static scene (bowler, ball) are RANSAC outliers: stop following them
-      const keptCur: number[] = [];
-      const keptAnchor: number[] = [];
-      fitted.inliers.forEach((ok, i) => {
-        if (ok) {
-          keptCur.push(cur[2 * i], cur[2 * i + 1]);
-          keptAnchor.push(anchored[2 * i], anchored[2 * i + 1]);
-        }
-      });
-      this.pts = Float32Array.from(keptCur);
-      this.anchorPts = Float32Array.from(keptAnchor);
-      return mul3(this.anchorH ?? IDENTITY, fitted.h);
-    } finally {
-      release(from, to, status, err);
-    }
+  private fit(src: number[], dst: number[], tolerance: number, minInliers: number): Mat3 | null {
+    return fitHomography(src, dst, tolerance, minInliers, seededRandom(this.fits++))?.h ?? null;
   }
 }

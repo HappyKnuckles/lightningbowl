@@ -1,8 +1,8 @@
-import { ALL_FORMATS, BlobSource, BufferTarget, CanvasSource, Input, Mp4OutputFormat, Output, VideoSampleSink } from 'mediabunny';
+import { ALL_FORMATS, BlobSource, BufferTarget, CanvasSource, Input, Mp4OutputFormat, Output, VideoSample, VideoSampleSink } from 'mediabunny';
 
 import { ShotCalibration } from 'src/app/core/models/shot-analysis.model';
 
-import { mul3 } from '../geometry/math.utils';
+import { Mat3, mul3 } from '../geometry/math.utils';
 import {
   frameSimilarity,
   laneCropRect,
@@ -10,6 +10,7 @@ import {
   planesPixels,
   readStoredPlanes,
   readStoredRegion,
+  readWithWebGl,
   Rotation,
   shownFrame,
   storedRect,
@@ -65,6 +66,25 @@ async function makeVideo(rotation: Rotation): Promise<Blob> {
   await source.add(0, 1 / 30);
   await output.finalize();
   return new Blob([target.buffer!], { type: 'video/mp4' });
+}
+
+/**
+ * The same frame as 10-bit YUV (I420P10, how iPhones film HDR video by default), a format the decoder's
+ * planes aren't read in as they are.
+ */
+async function tenBit(sample: VideoSample): Promise<VideoSample> {
+  const frame = sample.toVideoFrame();
+  const [w, h] = [frame.visibleRect!.width, frame.visibleRect!.height];
+  // the test clips decode to 8-bit I420
+  expect(frame.format).toBe('I420');
+  const eight = new Uint8Array(frame.allocationSize());
+  await frame.copyTo(eight);
+  frame.close();
+  // the planes are packed tightly, Y then U then V: the same values, 10 bits wide
+  const ten = Uint16Array.from(eight, (v) => v << 2);
+  // (the DOM typings don't list the 10-bit formats yet)
+  const format = 'I420P10' as VideoPixelFormat;
+  return new VideoSample(new VideoFrame(ten, { format, codedWidth: w, codedHeight: h, timestamp: 0 }), { rotation: sample.rotation });
 }
 
 describe('frame utils', () => {
@@ -139,7 +159,69 @@ describe('frame utils', () => {
       sample.close();
       input.dispose();
     }, 60_000);
+
+    it(`has the browser convert frames it can't read as stored, like 10-bit HDR, and maps them the same (rotation ${rotation})`, async () => {
+      const cv = await loadOpenCv();
+      const input = new Input({ source: new BlobSource(await makeVideo(rotation)), formats: ALL_FORMATS });
+      const decoded = (await new VideoSampleSink((await input.getPrimaryVideoTrack())!).getSample(0))!;
+      const [w, h] = [decoded.displayWidth, decoded.displayHeight];
+      const area = { left: 8, top: 10, width: w - 20, height: h - 18 };
+      const canvas = new OffscreenCanvas(w, h).getContext('2d', { willReadFrequently: true })!;
+      decoded.draw(canvas, 0, 0, w, h);
+      const drawn = cv.matFromImageData(canvas.getImageData(area.left, area.top, area.width, area.height));
+      const drawnRgb = new cv.Mat();
+      cv.cvtColor(drawn, drawnRgb, cv.COLOR_RGBA2RGB);
+      const sample = await tenBit(decoded);
+
+      const planes = await readStoredPlanes(sample, area, rotation);
+      expect(planes?.format).toBe('RGBA');
+      const pixels = planesPixels(cv, planes!, 0);
+      const { mat, toFrame } = pixels.rgb(area)!;
+      const toArea: Mat3 = [1, 0, -area.left, 0, 1, -area.top, 0, 0, 1];
+      const upright = (source: typeof mat, map: number[]) => {
+        const m = cv.matFromArray(3, 3, cv.CV_64F, map);
+        const out = new cv.Mat();
+        cv.warpPerspective(source, out, m, new cv.Size(area.width, area.height), cv.INTER_NEAREST);
+        m.delete();
+        return out;
+      };
+      const rgb = upright(mat, mul3(toArea, toFrame));
+      const gray = upright(pixels.gray, mul3(toArea, pixels.grayToFrame));
+      const grayRgb = new cv.Mat();
+      cv.cvtColor(gray, grayRgb, cv.COLOR_GRAY2RGB);
+
+      expect(frameSimilarity(matThumbnail(cv, drawnRgb), matThumbnail(cv, rgb))).toBeGreaterThan(0.95);
+      expect(frameSimilarity(matThumbnail(cv, drawnRgb), matThumbnail(cv, grayRgb))).toBeGreaterThan(0.95);
+
+      pixels.dispose();
+      [drawn, drawnRgb, mat, rgb, gray, grayRgb].forEach((m) => m.delete());
+      sample.close();
+      decoded.close();
+      input.dispose();
+    }, 60_000);
   }
+
+  it('reads part of a frame through WebGL (frames on the GPU) the same as copying it out', async () => {
+    const input = new Input({ source: new BlobSource(await makeVideo(0)), formats: ALL_FORMATS });
+    const sample = (await new VideoSampleSink((await input.getPrimaryVideoTrack())!).getSample(0))!;
+    const frame = sample.toVideoFrame();
+    const rect = { x: 10, y: 6, width: 52, height: 34 };
+
+    const read = readWithWebGl(frame, rect);
+    const copied = new Uint8Array(rect.width * rect.height * 4);
+    const visible = frame.visibleRect!;
+    await frame.copyTo(copied, { rect: { ...rect, x: visible.x + rect.x, y: visible.y + rect.y }, format: 'RGBA', colorSpace: 'srgb' });
+
+    expect(read).not.toBeNull();
+    expect(read!.layout).toEqual([{ offset: 0, stride: rect.width * 4 }]);
+    let difference = 0;
+    for (let i = 0; i < copied.length; i++) if (i % 4 !== 3) difference += Math.abs(read!.data[i] - copied[i]);
+    expect(difference / ((copied.length * 3) / 4)).toBeLessThan(3);
+
+    frame.close();
+    sample.close();
+    input.dispose();
+  }, 60_000);
 
   describe('lane crop', () => {
     // a real handheld 4K clip (portrait, 2160 x 3840): the lane is a small part of the frame

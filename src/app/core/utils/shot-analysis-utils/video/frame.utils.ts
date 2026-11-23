@@ -58,6 +58,12 @@ export function laneCropRect(calibration: ShotCalibration, frame: { height: numb
 
 /** Side of the grey thumbnails {@link shownFrame} makes. */
 const MATCH_PX = 32;
+/**
+ * Right after `seeked` a busy device can still draw the frame from before the seek: the frame is drawn
+ * again this long apart (ms) until two draws agree, at most this many times.
+ */
+const SETTLE_MS = 40;
+const SETTLE_TRIES = 6;
 
 /** Resolves on `name`, rejects on an error or after `timeoutMs`. */
 function nextEvent(target: HTMLVideoElement, name: string, timeoutMs = 10_000): Promise<void> {
@@ -109,8 +115,7 @@ export async function shownGrays(
     video.currentTime = Math.max(timeS, 0.001);
     await seeked;
     const area = crop ?? { left: 0, top: 0, width: video.videoWidth, height: video.videoHeight };
-    const grays: Float32Array[] = [];
-    for (const { width, height } of sizes) {
+    const draw = (width: number, height: number): Float32Array | null => {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -124,9 +129,19 @@ export async function shownGrays(
       for (let i = 0; i < grey.length; i++) {
         grey[i] = 0.299 * data[4 * i] + 0.587 * data[4 * i + 1] + 0.114 * data[4 * i + 2];
       }
-      grays.push(grey);
+      return grey;
+    };
+    let before = draw(MATCH_PX, MATCH_PX);
+    for (let k = 0; k < SETTLE_TRIES && before; k++) {
+      await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+      const now = draw(MATCH_PX, MATCH_PX);
+      if (now && now.every((v, i) => v === before![i])) {
+        break;
+      }
+      before = now;
     }
-    return grays;
+    const grays = sizes.map(({ width, height }) => draw(width, height));
+    return grays.every((grey) => grey !== null) ? (grays as Float32Array[]) : null;
   } catch {
     return null;
   } finally {
@@ -161,17 +176,22 @@ interface StoredRect {
   y: number;
 }
 
-/** A region of a frame as the decoder stores it: YUV planes, the way `VideoFrame.copyTo` lays them out. */
+/**
+ * A region of a frame as the decoder stores it (not turned), the way `VideoFrame.copyTo` lays it out:
+ * 8-bit YUV planes as decoded, or RGBA the browser converted the frame to.
+ */
 export interface StoredPlanes {
   /** Size of the stored frame (its visible part). */
   codedH: number;
   codedW: number;
   data: Uint8Array;
-  format: 'NV12' | 'I420';
+  format: 'NV12' | 'I420' | 'RGBA';
   layout: { offset: number; stride: number }[];
   /** The copied rectangle, in the stored frame. */
   rect: StoredRect;
   rotation: Rotation;
+  /** How the pixels were read: copied out of the frame, or read back from a WebGL texture (frames on the GPU). */
+  via: 'copy' | 'webgl';
 }
 
 const evenDown = (v: number) => Math.floor(v / 2) * 2;
@@ -220,13 +240,18 @@ export function storedToShown(rotation: Rotation, codedW: number, codedH: number
 
 /**
  * Copies the part of the frame holding `area` (in the frame as shown) out of the decoder; null when the
- * decoder hands frames over in a format other than NV12 or I420.
+ * browser can't copy it out. 8-bit YUV is copied as decoded. Anything else is converted to RGBA by the
+ * browser: frames the decoder keeps on the GPU (no `format`, as hardware decoders hand them over) through
+ * WebGL, which reads back just the part (or copied, `gpuVia`), the rest (10-bit HDR, as iPhones film by
+ * default) while copying. Either costs a fraction of drawing the whole 4K frame to read it (~70 ms).
  */
-export async function readStoredPlanes(sample: VideoSample, area: CropRect, rotation: Rotation): Promise<StoredPlanes | null> {
-  const format = sample.format;
-  if (format !== 'NV12' && format !== 'I420') {
-    return null;
-  }
+export async function readStoredPlanes(
+  sample: VideoSample,
+  area: CropRect,
+  rotation: Rotation,
+  gpuVia: StoredPlanes['via'] = 'webgl',
+): Promise<StoredPlanes | null> {
+  const format = sample.format === 'NV12' || sample.format === 'I420' ? sample.format : 'RGBA';
   // coordinates within the visible part of the stored frame (decoders may pad it)
   const visible = sample.visibleRect;
   const codedW = visible.width;
@@ -235,14 +260,74 @@ export async function readStoredPlanes(sample: VideoSample, area: CropRect, rota
   if (rect.width <= 0 || rect.height <= 0) {
     return null;
   }
+  if (sample.format === null && gpuVia === 'webgl') {
+    const frame = sample.toVideoFrame();
+    try {
+      const read = readWithWebGl(frame, rect);
+      if (read) return { ...read, format, rect, codedW, codedH, rotation, via: 'webgl' };
+    } finally {
+      frame.close();
+    }
+  }
   const copyRect = { x: visible.left + rect.x, y: visible.top + rect.y, width: rect.width, height: rect.height };
-  const data = new Uint8Array(sample.allocationSize({ rect: copyRect }));
-  const layout = await sample.copyTo(data, { rect: copyRect });
-  return { data, layout, format, rect, codedW, codedH, rotation };
+  const options: VideoFrameCopyToOptions = format === 'RGBA' ? { rect: copyRect, format: 'RGBA', colorSpace: 'srgb' } : { rect: copyRect };
+  try {
+    const data = new Uint8Array(sample.allocationSize(options));
+    const layout = await sample.copyTo(data, options);
+    return { data, layout, format, rect, codedW, codedH, rotation, via: 'copy' };
+  } catch (error) {
+    // a browser that can't convert frames while copying them: they are drawn to a canvas instead
+    if (format === 'RGBA') return null;
+    throw error;
+  }
+}
+
+/** One WebGL context for reading frames, made on first use; null where WebGL 2 isn't available. */
+let webGl: { context: WebGL2RenderingContext; framebuffer: WebGLFramebuffer; texture: WebGLTexture } | null | undefined;
+
+/**
+ * `rect` of the stored (unturned, visible part of the) frame as RGBA, read through WebGL: the frame is put
+ * into a texture on the GPU (converted and tone mapped to sRGB there) and only `rect` is read back. Null
+ * when it can't be (no WebGL 2, a frame larger than a texture may be, or one already turned).
+ */
+export function readWithWebGl(frame: VideoFrame, rect: StoredRect): { data: Uint8Array; layout: { offset: number; stride: number }[] } | null {
+  const visible = frame.visibleRect;
+  // the texture is the frame at its display size: only when that is the stored size do the pixels match
+  if (!visible || frame.displayWidth !== visible.width || frame.displayHeight !== visible.height) return null;
+  if (webGl === undefined) {
+    const context =
+      typeof OffscreenCanvas === 'undefined' ? null : new OffscreenCanvas(1, 1).getContext('webgl2', { antialias: false, depth: false });
+    const texture = context?.createTexture();
+    const framebuffer = context?.createFramebuffer();
+    webGl = context && texture && framebuffer ? { context, texture, framebuffer } : null;
+  }
+  if (!webGl) return null;
+  const { context: gl, texture, framebuffer } = webGl;
+  if (Math.max(visible.width, visible.height) > gl.getParameter(gl.MAX_TEXTURE_SIZE)) return null;
+  try {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) return null;
+    // the frame's first row is the texture's first row, read back first
+    const data = new Uint8Array(rect.width * rect.height * 4);
+    gl.readPixels(rect.x, rect.y, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    return gl.getError() === gl.NO_ERROR ? { data, layout: [{ offset: 0, stride: rect.width * 4 }] } : null;
+  } catch {
+    return null;
+  } finally {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
 }
 
 /** The planes' Y values in `part` (a rectangle of `planes.rect`, in stored pixels) as a grey Mat. */
 function lumaOf(cv: Cv, planes: StoredPlanes, part: StoredRect): Cv {
+  if (planes.format === 'RGBA') {
+    return converted(cv, rgbaOf(cv, planes, part), cv.COLOR_RGBA2GRAY);
+  }
   const gray = new cv.Mat(part.height, part.width, cv.CV_8UC1);
   const out = gray.data as Uint8Array;
   const { offset, stride } = planes.layout[0];
@@ -257,6 +342,9 @@ function lumaOf(cv: Cv, planes: StoredPlanes, part: StoredRect): Cv {
 
 /** RGB of `part` (an even-edged rectangle of `planes.rect`), as stored. */
 function rgbOf(cv: Cv, planes: StoredPlanes, part: StoredRect): Cv {
+  if (planes.format === 'RGBA') {
+    return converted(cv, rgbaOf(cv, planes, part), cv.COLOR_RGBA2RGB);
+  }
   // the planes packed tightly, one after the other, as OpenCV expects them
   const w = part.width;
   const h = part.height;
@@ -284,6 +372,31 @@ function rgbOf(cv: Cv, planes: StoredPlanes, part: StoredRect): Cv {
     return rgb;
   } finally {
     yuv.delete();
+  }
+}
+
+/** RGBA pixels of `part` of RGBA planes, as stored. */
+function rgbaOf(cv: Cv, planes: StoredPlanes, part: StoredRect): Cv {
+  const rgba = new cv.Mat(part.height, part.width, cv.CV_8UC4);
+  const out = rgba.data as Uint8Array;
+  const { offset, stride } = planes.layout[0];
+  const dx = part.x - planes.rect.x;
+  const dy = part.y - planes.rect.y;
+  for (let row = 0; row < part.height; row++) {
+    const from = offset + (dy + row) * stride + 4 * dx;
+    out.set(planes.data.subarray(from, from + 4 * part.width), 4 * row * part.width);
+  }
+  return rgba;
+}
+
+/** `source` converted with `code`; deletes `source`. */
+function converted(cv: Cv, source: Cv, code: number): Cv {
+  const out = new cv.Mat();
+  try {
+    cv.cvtColor(source, out, code);
+    return out;
+  } finally {
+    source.delete();
   }
 }
 

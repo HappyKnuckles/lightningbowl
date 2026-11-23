@@ -1,7 +1,8 @@
 import { NormalizedPoint } from 'src/app/core/models/shot-analysis.model';
 
+import { LANE_WIDTH_IN, LaneCalibration, Point } from '../geometry/lane.utils';
 import { Cv, loadOpenCv } from '../video/opencv.utils';
-import { findLaneCorners } from './lane-detection.utils';
+import { findLaneCorners, GrayImage, refineLaneEdges } from './lane-detection.utils';
 
 const W = 1080;
 const H = 1920;
@@ -117,6 +118,67 @@ describe('lane-detection.utils', () => {
 
   it('finds nothing without pins to measure the lane by', () => {
     expect(find(drawAlley('none'))).toBeNull();
+  });
+
+  describe('refineLaneEdges', () => {
+    const grayOf = ({ data, width, height }: ImageData, invert = false): GrayImage => {
+      const gray = new Uint8Array(width * height);
+      for (let i = 0; i < gray.length; i++) {
+        const v = Math.round(0.299 * data[4 * i] + 0.587 * data[4 * i + 1] + 0.114 * data[4 * i + 2]);
+        gray[i] = invert ? 255 - v : v;
+      }
+      return { data: gray, width, height };
+    };
+    /** Where a drawn edge is at row `y`; canvas shapes are drawn in pixel edges, half a pixel off pixel centres. */
+    const edgeAt = (footX: number, y: number): Point => [xAt(footX, y + 0.5) - 0.5, y];
+    /** The lane marked with its corners this many pixels off sideways: foul right, foul left, far left, far right. */
+    const marked = (off: [number, number, number, number]) => {
+      const at = (footX: number, y: number, dx: number): Point => [edgeAt(footX, y)[0] + dx, y];
+      return LaneCalibration.fromPoints(
+        at(EDGES.laneRight, FOUL_Y, off[0]),
+        at(EDGES.laneLeft, FOUL_Y, off[1]),
+        at(EDGES.laneRight, HEAD_PIN_Y, off[3]),
+        at(EDGES.laneLeft, HEAD_PIN_Y, off[2]),
+        60,
+      );
+    };
+    const corners = (lane: LaneCalibration): Point[] => [
+      lane.toImage([0, 0]),
+      lane.toImage([LANE_WIDTH_IN, 0]),
+      lane.toImage([LANE_WIDTH_IN, 720]),
+      lane.toImage([0, 720]),
+    ];
+    const truth = [
+      edgeAt(EDGES.laneRight, FOUL_Y),
+      edgeAt(EDGES.laneLeft, FOUL_Y),
+      edgeAt(EDGES.laneLeft, HEAD_PIN_Y),
+      edgeAt(EDGES.laneRight, HEAD_PIN_Y),
+    ];
+
+    it('moves marked lane edges onto those in the picture, to a fraction of a pixel', () => {
+      // at the pins a board is about 1.4 px here: the far corners are marked 2 boards off
+      const { lane, movedPx } = refineLaneEdges(grayOf(drawAlley()), marked([-6, 5, -3, 3]));
+
+      corners(lane).forEach(([x, y], i) => {
+        expect(Math.abs(x - truth[i][0])).toBeLessThan(0.25);
+        expect(Math.abs(y - truth[i][1])).toBeLessThan(0.25);
+      });
+      expect(movedPx[2]).toBeGreaterThan(2.5);
+    });
+
+    it('finds edges where the gutters are lighter than the lane', () => {
+      const { lane } = refineLaneEdges(grayOf(drawAlley(), true), marked([4, -4, 2, -2]));
+
+      corners(lane).forEach(([x], i) => expect(Math.abs(x - truth[i][0])).toBeLessThan(0.25));
+    });
+
+    it('keeps the marked edges where the picture shows none', () => {
+      const flat: GrayImage = { data: new Uint8Array(W * H).fill(128), width: W, height: H };
+      const { lane, movedPx } = refineLaneEdges(flat, marked([-6, 5, -3, 3]));
+
+      expect(movedPx).toEqual([0, 0, 0, 0]);
+      expect(corners(lane)[2][0]).toBeCloseTo(truth[2][0] - 3, 6);
+    });
   });
 
   it('finds nothing on a frame without a lane', () => {

@@ -102,7 +102,7 @@ src/app/
 - **Do** prefer Ionic components over custom HTML/CSS, and extend existing components in place rather than extracting new sibling components.
 - **Do** route storage access through `StorageRepository` and define new keys in `storage-keys.ts`, not ad-hoc strings (exception: a few UI prefs use `localStorage` directly).
 - **Do** keep changes surgical — this codebase's own guidelines (.github/copilot-instructions.md) stress minimal, scoped diffs.
-- **Don't** edit generated/build output: `www/`, `project-summary.md` (Capacitor-generated, stale), `.angular/`, native code under `android/`/`ios/` (updated via `npx cap sync`).
+- **Don't** edit generated/build output: `www/`, `project-summary.md` (Capacitor-generated, stale), `.angular/`, `src/assets/opencv/opencv.js` (built by `scripts/opencv/build.sh`), native code under `android/`/`ios/` (updated via `npx cap sync`).
 - **Don't** trust version/architecture claims in `.github/copilot-instructions.md` or `README.md` — both are stale (they say Angular 18/Capacitor 7 and "four tabs"); `package.json` is the source of truth.
 - **Don't** add NgModules, NgRx, or new state containers — extend the existing signal stores.
 
@@ -114,6 +114,7 @@ src/app/
 - Specs are typechecked by the editor and `npx tsc -p tsconfig.spec.json --noEmit`, not by the test run itself — the builder transpiles without type errors failing the run.
 - `src/app/core/services/ad/ad.service.ts` is dead code (nothing injects `AdService`), and its `@capacitor-community/admob` dep drags a nested Capacitor 6 core into `node_modules`. It never reaches the app bundle; its spec runs and passes.
 - Build warnings about CommonJS (`sql.js`) are expected (`allowedCommonJsDependencies`).
+- `src/assets/opencv/opencv.js` is a generated OpenCV.js build (WebAssembly SIMD, trimmed bindings), not an npm package — don't edit it; rebuild with `sh scripts/opencv/build.sh` (needs Docker, ~10 min). It only exposes the functions listed in [scripts/opencv/opencv_js.config.py](scripts/opencv/opencv_js.config.py): a `cv.*` call that isn't listed there is `undefined` at runtime, so add it to the list and rebuild first.
 - Tight style budget: component SCSS errors at 15 KB (angular.json).
 - Dev `environment.ts` points `authBackendUrl` at `http://localhost:3000` — the sibling `lightningbowl-oauth` repo; cloud-sync features need it running locally.
 - `npm run pretty` formats the entire repo — don't run it as part of an unrelated change or the diff explodes.

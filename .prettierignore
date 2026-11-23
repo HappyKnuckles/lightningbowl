@@ -27,6 +27,7 @@ plugins
 *.min.css
 
 # Ignore specific directories:
+src/assets/opencv
 android
 ios
 .angular

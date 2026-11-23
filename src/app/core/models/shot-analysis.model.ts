@@ -55,6 +55,8 @@ export interface ShotMetrics {
 }
 
 export interface ShotAnalysisResult {
+  /** The corners the path was measured with: as marked, the lane edges moved onto those found on the frame. */
+  calibration?: ShotCalibration;
   /**
    * The pin-end calibration was corrected from the moment the pins started flying. False when the
    * impact wasn't visible (pins covered, gutter ball): distances near the pins and speeds are then less precise.

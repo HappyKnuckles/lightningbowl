@@ -49,6 +49,11 @@ export class FrameStabilizer {
     return h;
   }
 
+  /** The next frame is searched for from this alignment (e.g. after going back in the video). */
+  seed(h: Mat3): void {
+    this.last = h;
+  }
+
   dispose(): void {
     release(this.reference);
     if (this.orb) release(this.orb.detector, this.orb.matcher, this.orb.keypoints, this.orb.descriptors, this.orb.none);

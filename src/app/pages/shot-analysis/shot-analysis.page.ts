@@ -427,8 +427,12 @@ export class ShotAnalysisPage implements OnDestroy {
     this.step.set('calibrate');
   }
 
-  /** Same video, marked again (e.g. when the corners were off). */
+  /** Same video, marked again (e.g. when the corners were off), from the corners the analysis used. */
   remark(): void {
+    const used = this.result()?.calibration;
+    if (used) {
+      this.points.set([used.foulLeft, used.foulRight, used.farLeft, used.farRight]);
+    }
     this.result.set(null);
     this.step.set('calibrate');
   }

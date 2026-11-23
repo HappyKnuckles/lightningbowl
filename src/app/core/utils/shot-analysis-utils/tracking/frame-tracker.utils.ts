@@ -11,6 +11,7 @@ import { Cv, release } from '../video/opencv.utils';
 import { BallDetector } from './ball-detector.utils';
 import { BallTracker, Detection } from './ball-tracker.utils';
 import { FrameStabilizer } from './frame-stabilizer.utils';
+import { EDGE_SEARCH_IN, refineLaneEdges } from './lane-detection.utils';
 import { PathAnalysis } from './path-analysis.utils';
 import { BallCrop, estimateRevRate, normalizeCrop } from './rev-rate.utils';
 
@@ -34,6 +35,8 @@ export interface FrameTrackerOptions {
   endFt?: number;
   maxWidth?: number;
   measureRevs?: boolean;
+  /** Moves the marked lane edges onto those on the reference frame (see {@link refineLaneEdges}); on by default. */
+  refineEdges?: boolean;
   stabilize?: boolean;
   startFt?: number;
 }
@@ -49,6 +52,11 @@ const PATCH_RADIUS = 1.5;
 /** Once the ball is this close to the pins, this much more video is looked at, then the shot is over. */
 const STOP_AFTER_PINS_S = 0.6;
 const PINS_IN = LANE_LENGTH_IN - 72;
+/**
+ * Something the size of the ball between these distances (ft) is the ball rolling: the bowler's feet and
+ * hands stay near the foul line, the pinsetter near the pins.
+ */
+const BALL_SEEN_FT: [number, number] = [6, 40];
 
 const translate = (x: number, y: number): Mat3 => [1, 0, x, 0, 1, y, 0, 0, 1];
 
@@ -87,16 +95,22 @@ export class ShotFrameTracker {
   private readonly startIn: number;
   private readonly endIn: number;
   private readonly measureRevs: boolean;
+  private readonly refineEdges: boolean;
   private readonly stabilize: boolean;
   private readonly toRoi: Mat3;
   private readonly roiW: number;
   private readonly roiH: number;
-  private readonly lane: LaneCalibration;
-  private readonly detector: BallDetector;
-  private readonly tracker = new BallTracker();
-  private readonly patches: BallPatches;
+  /** The lane in the pixels of the lane crop. */
+  private lane: LaneCalibration;
+  /** The calibration the lane comes from, its edges where they were found on the reference frame. */
+  private calibration: ShotCalibration;
+  private detector: BallDetector;
+  private tracker = new BallTracker();
+  private patches: BallPatches;
   /** Per frame: source pixels -> lane crop pixels (for the rev rate). */
   private readonly sourceToRoi: (Mat3 | null)[] = [];
+  /** Per frame aligned: the alignment (grey pixels) and the frame's pixels to the marked frame's. */
+  private readonly aligned = new Map<number, { h: Mat3; toMarked: Mat3 }>();
   private stabilizer: FrameStabilizer | null = null;
   private referenceGrayToFrame: Mat3 = IDENTITY;
   /** Reference frame pixels to pixels of the frame the corners were marked on. */
@@ -104,7 +118,9 @@ export class ShotFrameTracker {
   /** This frame's pixels to those of the frame the corners were marked on. */
   private lastH: Mat3 = IDENTITY;
   private frameIdx = 0;
+  private processed = 0;
   private pinsReachedAt: number | null = null;
+  private seenAt: number | null = null;
 
   constructor(
     private readonly cv: Cv,
@@ -117,7 +133,9 @@ export class ShotFrameTracker {
     this.startIn = (options.startFt ?? 2) * 12;
     this.endIn = (options.endFt ?? 60) * 12;
     this.measureRevs = options.measureRevs ?? true;
+    this.refineEdges = options.refineEdges ?? true;
     this.stabilize = options.stabilize ?? true;
+    this.calibration = calibration;
     const maxWidth = options.maxWidth ?? 2560;
 
     const px = (p: [number, number]): Point => [p[0] * frameW, p[1] * frameH];
@@ -147,7 +165,12 @@ export class ShotFrameTracker {
   }
 
   get framesProcessed(): number {
-    return this.frameIdx;
+    return this.processed;
+  }
+
+  /** The first frame on which something the size of the ball was rolling down the lane, or null. */
+  get ballSeenAt(): number | null {
+    return this.seenAt;
   }
 
   /**
@@ -158,20 +181,28 @@ export class ShotFrameTracker {
     this.referenceGrayToFrame = pixels.grayToFrame;
     this.referenceToMarked = toMarked;
     this.lastH = toMarked;
+    if (this.refineEdges) this.refineLane(pixels);
     if (this.stabilize) {
       this.stabilizer?.dispose();
       this.stabilizer = new FrameStabilizer(this.cv, pixels.gray);
     }
   }
 
-  /** The next frame. False once the shot is over (the ball reached the pins a moment ago): later frames aren't needed. */
-  process(pixels: FramePixels): boolean {
-    const t = this.frameIdx / this.fps;
+  /**
+   * Frame number `frame` (the next one by default; frames may be skipped). False once the shot is over (the
+   * ball reached the pins a moment ago): later frames aren't needed.
+   */
+  process(pixels: FramePixels, frame = this.frameIdx): boolean {
+    this.frameIdx = frame;
+    const t = frame / this.fps;
     let t0 = performance.now();
     if (this.stabilizer) {
       const h = this.stabilizer.track(pixels.gray);
       // a frame that can't be aligned keeps the previous alignment
-      if (h) this.lastH = mul3(this.referenceToMarked, mul3(mul3(this.referenceGrayToFrame, h), invert3(pixels.grayToFrame)));
+      if (h) {
+        this.lastH = mul3(this.referenceToMarked, mul3(mul3(this.referenceGrayToFrame, h), invert3(pixels.grayToFrame)));
+        this.aligned.set(frame, { h, toMarked: this.lastH });
+      }
     }
     this.spent.align += performance.now() - t0;
 
@@ -196,16 +227,21 @@ export class ShotFrameTracker {
     let detections: Detection[] = [];
     if (source) {
       const sourceToRoi = mul3(toRoiNow, source.toFrame);
-      detections = this.detector.detect(source.mat, sourceToRoi, this.frameIdx, t);
-      if (this.measureRevs) this.patches.keep(this.frameIdx, source.mat, sourceToRoi, detections);
-      this.sourceToRoi.push(sourceToRoi);
+      detections = this.detector.detect(source.mat, sourceToRoi, frame, t);
+      if (this.measureRevs) this.patches.keep(frame, source.mat, sourceToRoi, detections);
+      this.sourceToRoi[frame] = sourceToRoi;
       release(source.mat);
     } else {
-      this.sourceToRoi.push(null);
+      this.sourceToRoi[frame] = null;
     }
-    if (this.frameIdx >= WARMUP_FRAMES) this.tracker.update(t, detections);
+    if (this.processed >= WARMUP_FRAMES) {
+      this.tracker.update(t, detections);
+      const rolling = (d: Detection) => d.yIn >= BALL_SEEN_FT[0] * 12 && d.yIn <= BALL_SEEN_FT[1] * 12;
+      if (this.seenAt === null && detections.some(rolling)) this.seenAt = frame;
+    }
     this.spent.detect += performance.now() - t0;
-    this.frameIdx++;
+    this.frameIdx = frame + 1;
+    this.processed++;
 
     if (this.pinsReachedAt === null) {
       const atPins = this.tracker.active.some(
@@ -216,9 +252,29 @@ export class ShotFrameTracker {
     return this.pinsReachedAt === null || t - this.pinsReachedAt < STOP_AFTER_PINS_S;
   }
 
+  /**
+   * Back to `frame`, e.g. once a look ahead through the run-up found the ball: the ball is followed afresh
+   * from there, while the background model and the alignment carry on (the alignment from the last frame
+   * aligned before it).
+   */
+  restart(frame: number): void {
+    this.tracker = new BallTracker();
+    this.patches.dispose();
+    this.patches = new BallPatches(this.cv, this.lane);
+    this.sourceToRoi.length = 0;
+    this.pinsReachedAt = null;
+    const before = [...this.aligned.keys()].filter((f) => f <= frame);
+    if (before.length > 0) {
+      const { h, toMarked } = this.aligned.get(Math.max(...before))!;
+      this.stabilizer?.seed(h);
+      this.lastH = toMarked;
+    }
+    this.frameIdx = frame;
+  }
+
   /** The ball's path and metrics from the frames so far. Throws a {@link TrackingError} when no path was found. */
   result(handedness: Handedness): ShotAnalysisResult {
-    if (this.frameIdx === 0) throw new Error('video has no readable frames');
+    if (this.processed === 0) throw new Error('video has no readable frames');
     const best = this.tracker.bestTrack();
     if (!best) throw new TrackingError('no ball path found; check the calibration points and that the whole lane is in view');
     const analysis = new PathAnalysis(best.points, handedness);
@@ -233,8 +289,9 @@ export class ShotFrameTracker {
     const round = (v: number, d: number) => Math.round(v * 10 ** d) / 10 ** d;
     return {
       handedness,
+      calibration: this.calibration,
       fps: round(this.fps, 3),
-      framesProcessed: this.frameIdx,
+      framesProcessed: this.processed,
       trackedFromFt: round(analysis.fromFt, 2),
       trackedToFt: round(analysis.toFt, 2),
       points: analysis.points(),
@@ -247,6 +304,66 @@ export class ShotFrameTracker {
     this.stabilizer?.dispose();
     this.detector.dispose();
     this.patches.dispose();
+  }
+
+  /**
+   * The marked lane edges moved onto those on the reference frame (see {@link refineLaneEdges}): near the
+   * pins a pixel is about a board, finer than corners are placed by hand. Read at full resolution.
+   */
+  private refineLane(pixels: FramePixels): void {
+    const cv = this.cv;
+    const marked = this.lane.through(invert3(this.toRoi));
+    // the lane and the bands beside its edges, on the reference frame
+    const markedToFrame = invert3(this.referenceToMarked);
+    const band = EDGE_SEARCH_IN + 2;
+    const around = (
+      [
+        [-band, 0],
+        [LANE_WIDTH_IN + band, 0],
+        [LANE_WIDTH_IN + band, marked.farDistanceIn],
+        [-band, marked.farDistanceIn],
+      ] as Point[]
+    ).map((p) => {
+      const [x, y] = marked.toImage(p);
+      return applyHomography(markedToFrame, x, y);
+    });
+    const left = Math.max(0, Math.floor(Math.min(...around.map(([x]) => x))) - 4);
+    const top = Math.max(0, Math.floor(Math.min(...around.map(([, y]) => y))) - 4);
+    const right = Math.min(this.frameW, Math.ceil(Math.max(...around.map(([x]) => x))) + 4);
+    const bottom = Math.min(this.frameH, Math.ceil(Math.max(...around.map(([, y]) => y))) + 4);
+    const source = right > left && bottom > top ? pixels.rgb({ left, top, width: right - left, height: bottom - top }) : null;
+    if (!source) return;
+    const gray = new cv.Mat();
+    try {
+      cv.cvtColor(source.mat, gray, cv.COLOR_RGB2GRAY);
+      const sourceToMarked = mul3(this.referenceToMarked, source.toFrame);
+      const refined = refineLaneEdges(
+        { data: gray.data as Uint8Array, width: gray.cols, height: gray.rows },
+        marked.through(invert3(sourceToMarked)),
+      );
+      if (refined.movedPx.every((moved) => moved === 0)) return;
+      this.lane = refined.lane.through(mul3(this.toRoi, sourceToMarked));
+      this.detector.dispose();
+      this.detector = new BallDetector(cv, this.lane, this.roiW, this.roiH, this.startIn, this.endIn);
+      this.patches.dispose();
+      this.patches = new BallPatches(cv, this.lane);
+      // back in the marking's terms: shares of the frame as shown
+      const inMarked = refined.lane.through(sourceToMarked);
+      const at = (p: Point): [number, number] => {
+        const [x, y] = inMarked.toImage(p);
+        return [x / this.frameW, y / this.frameH];
+      };
+      const farIn = inMarked.farDistanceIn;
+      this.calibration = {
+        ...this.calibration,
+        foulLeft: at([LANE_WIDTH_IN, 0]),
+        foulRight: at([0, 0]),
+        farLeft: at([LANE_WIDTH_IN, farIn]),
+        farRight: at([0, farIn]),
+      };
+    } finally {
+      release(source.mat, gray);
+    }
   }
 }
 

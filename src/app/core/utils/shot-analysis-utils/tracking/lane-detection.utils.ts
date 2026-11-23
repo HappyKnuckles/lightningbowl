@@ -16,7 +16,7 @@
  */
 import { NormalizedPoint } from 'src/app/core/models/shot-analysis.model';
 
-import { Point } from '../geometry/lane.utils';
+import { LANE_WIDTH_IN, LaneCalibration, Point } from '../geometry/lane.utils';
 import { seededRandom } from '../geometry/math.utils';
 import { Cv, loadOpenCv, release } from '../video/opencv.utils';
 
@@ -80,6 +80,25 @@ const GUTTER_MIDDLE_SHARE = 0.11;
 
 /** A found lane shorter than this (px from pins to foul line) isn't trusted. */
 const MIN_LANE_HEIGHT_PX = 20;
+
+/** A marked lane edge is searched for this far (inches across the lane) to either side, about 4 boards. */
+export const EDGE_SEARCH_IN = 4;
+/** Points the edge is measured at, evenly along it; fewer on a short edge (one per 2 px). */
+const EDGE_SAMPLES = 300;
+/** The part of the lane the edges are measured along (ft): not beside the approach, not beside the pins. */
+const EDGE_FROM_FT = 2;
+const EDGE_TO_FT_BEFORE_FAR = 2;
+/** An edge point is on the fitted line within this much of a board's width (at least half a pixel). */
+const EDGE_INLIER_IN = 0.25;
+/** The brightness step at an edge point is at least this many grey levels over a pixel. */
+const MIN_EDGE_STEP = 4;
+/**
+ * An edge is only moved when its step is found on the fitted line in this share of the cuts across it, in
+ * the near and the middle third of it and in the far third (where reflections of the back wall run along
+ * the lane like edges do).
+ */
+const MIN_EDGE_SUPPORT = 0.6;
+const MIN_FAR_EDGE_SUPPORT = 0.4;
 
 /** The lane's corners in the order they are marked (foul left, foul right, far left, far right), as shares of the frame. */
 export type LaneCorners = [NormalizedPoint, NormalizedPoint, NormalizedPoint, NormalizedPoint];
@@ -156,6 +175,260 @@ export async function findLaneCornersInVideo(video: HTMLVideoElement): Promise<L
   } finally {
     release(rgba);
   }
+}
+
+/** A grey image as plain pixels, row by row. */
+export interface GrayImage {
+  data: Uint8Array;
+  height: number;
+  width: number;
+}
+
+/** A marked lane with its long edges moved onto those in the picture. */
+export interface RefinedLane {
+  /** The lane with its edges where they were found; the foul line and the far end stay as marked. */
+  lane: LaneCalibration;
+  /** How far the corners moved (px): foul right, foul left, far left, far right. */
+  movedPx: [number, number, number, number];
+}
+
+/**
+ * The marked lane with its two long edges moved onto the lane's edges in `gray`, to a fraction of a pixel.
+ * All along each edge, the step in brightness between lane and gutter is found within about 4 boards of
+ * where the edge was marked, and a line is fitted through those points: near the pins a pixel is about
+ * a board, more than corners can be placed to by hand, while the line through hundreds of points is off
+ * by a fraction of one. The foul line and the far end stay as marked (the corners slide along them). An
+ * edge that can't be followed most of the way and up to near the pins is kept as marked.
+ */
+export function refineLaneEdges(gray: GrayImage, lane: LaneCalibration): RefinedLane {
+  const farIn = lane.farDistanceIn;
+  // foul right, foul left, far left, far right (lane x runs from the right edge to the left one)
+  const marked: Point[] = [lane.toImage([0, 0]), lane.toImage([LANE_WIDTH_IN, 0]), lane.toImage([LANE_WIDTH_IN, farIn]), lane.toImage([0, farIn])];
+  const corners = marked.map((p) => [...p] as Point);
+  const foulLine = lineThrough(marked[0], marked[1]);
+  const farLine = lineThrough(marked[3], marked[2]);
+  for (const [xIn, near, far] of [
+    [0, 0, 3],
+    [LANE_WIDTH_IN, 1, 2],
+  ] as const) {
+    const edge = laneEdge(gray, lane, xIn);
+    const foulPoint = edge && intersection(edge.line, foulLine);
+    const farPoint = edge && intersection(edge.line, farLine);
+    // the line can't leave the band it was searched in, except by running past the ends of it
+    if (!edge || !foulPoint || !farPoint) continue;
+    if (distance(foulPoint, marked[near]) > 1.5 * edge.reachPx[0] || distance(farPoint, marked[far]) > 1.5 * edge.reachPx[1]) continue;
+    corners[near] = foulPoint;
+    corners[far] = farPoint;
+  }
+  return {
+    lane: LaneCalibration.fromPoints(corners[0], corners[1], corners[3], corners[2], farIn / 12),
+    movedPx: marked.map((p, i) => distance(p, corners[i])) as RefinedLane['movedPx'],
+  };
+}
+
+/** A cut across a lane edge: brightness slopes every half pixel along `across`, from -`reach` to `reach` px. */
+interface EdgeCut {
+  across: Point;
+  at: Point;
+  /** Share of the way along the edge, 0 at its near end. */
+  f: number;
+  reach: number;
+  /** Brightness change going into the lane (grey levels per pixel); the middle one is at `at`. */
+  slopes: Float64Array;
+  /** How far (px) a point may be off the edge's line, here. */
+  tolerance: number;
+}
+
+const CUT_STEP = 0.5;
+
+/**
+ * The lane edge at lane x `xIn` (0: the right one), as a line fitted to the brightness steps across it;
+ * null when too few of them line up. `reachPx` is how far it was searched at its near and far end.
+ *
+ * Of all straight lines through the band searched, the one along which the steps add up most is taken (a
+ * matched filter: an edge followed all the way outweighs reflections, a ball or a leg crossing it in a few
+ * places, and of two parallel edges, a groove and the lane's own, the one seen more clearly all along).
+ * Then a line is fitted to where each cut's step is steepest near it, to a fraction of a pixel.
+ */
+function laneEdge(gray: GrayImage, lane: LaneCalibration, xIn: number): { line: Line; reachPx: [number, number] } | null {
+  const inward = xIn === 0 ? 1 : -1;
+  const start = lane.toImage([xIn, EDGE_FROM_FT * 12]);
+  const end = lane.toImage([xIn, lane.farDistanceIn - EDGE_TO_FT_BEFORE_FAR * 12]);
+  const length = distance(start, end);
+  const count = Math.min(EDGE_SAMPLES, Math.floor(length / 2));
+  if (count < 20) return null;
+  const along: Point = [(end[0] - start[0]) / length, (end[1] - start[1]) / length];
+
+  const cuts: EdgeCut[] = [];
+  for (let i = 0; i < count; i++) {
+    const f = (i + 0.5) / count;
+    const at: Point = [start[0] + f * (end[0] - start[0]), start[1] + f * (end[1] - start[1])];
+    const inside = lane.toImage([xIn + inward, lane.toLane(at)[1]]);
+    const pxPerIn = distance(at, inside);
+    const across: Point = [(inside[0] - at[0]) / pxPerIn, (inside[1] - at[1]) / pxPerIn];
+    const reach = Math.max(3, EDGE_SEARCH_IN * pxPerIn);
+    const slopes = brightnessSlopes(gray, at, across, along, reach);
+    if (slopes) cuts.push({ at, across, f, reach, slopes, tolerance: Math.max(0.5, EDGE_INLIER_IN * pxPerIn) });
+  }
+  if (cuts.length < count / 2) return null;
+  const near = cuts[0].reach;
+  const far = cuts[cuts.length - 1].reach;
+
+  // the line (offsets at both ends, px) along which the steps add up most, each cut counting at most 1
+  // (its steepest step); lanes are mostly lighter than their gutters but not always, so both ways
+  // (on every other cut in steps of 2 px and 1 px first, then on all of them close to the best line found)
+  let best = { score: 0, sign: 1, from: 0, to: 0 };
+  for (const sign of [1, -1]) {
+    const scaled = cuts.map(({ slopes }) => {
+      const top = Math.max(MIN_EDGE_STEP, ...slopes.map(Math.abs));
+      return slopes.map((v) => Math.max(0, (sign * v) / top));
+    });
+    const scoreOf = (from: number, to: number, every: number) => {
+      let score = 0;
+      for (let i = 0; i < cuts.length; i += every) score += valueAt(scaled[i], cuts[i], from + cuts[i].f * (to - from));
+      return score * every;
+    };
+    let coarse = { score: 0, from: 0, to: 0 };
+    for (let from = -near; from <= near; from += 2) {
+      for (let to = -far; to <= far; to += 1) {
+        const score = scoreOf(from, to, 2);
+        if (score > coarse.score) coarse = { score, from, to };
+      }
+    }
+    for (let from = coarse.from - 2; from <= coarse.from + 2; from += 0.5) {
+      for (let to = coarse.to - 1; to <= coarse.to + 1; to += 0.25) {
+        if (Math.abs(from) > near || Math.abs(to) > far) continue;
+        const score = scoreOf(from, to, 1);
+        if (score > best.score) best = { score, sign, from, to };
+      }
+    }
+  }
+
+  // a line at the end of the band searched may only be the closest it got to something outside it
+  if (best.score === 0 || Math.abs(best.from) > near - 1 || Math.abs(best.to) > far - 0.5) return null;
+
+  // where each cut's step is steepest within its tolerance of that line, to a fraction of a step; a line
+  // through those, and again through those near it
+  let line: Line = lineThrough(
+    [start[0] + best.from * cuts[0].across[0], start[1] + best.from * cuts[0].across[1]],
+    [end[0] + best.to * cuts[cuts.length - 1].across[0], end[1] + best.to * cuts[cuts.length - 1].across[1]],
+  );
+  let points: { f: number; p: Point }[] = [];
+  for (let round = 0; round < 3; round++) {
+    points = [];
+    for (const cut of cuts) {
+      // the offset along the cut where it crosses the line
+      const [a, b, c] = line;
+      const crossing = -(a * cut.at[0] + b * cut.at[1] + c) / (a * cut.across[0] + b * cut.across[1]);
+      const offset = steepestNear(cut, best.sign, crossing);
+      if (offset !== null) points.push({ p: [cut.at[0] + offset * cut.across[0], cut.at[1] + offset * cut.across[1]], f: cut.f });
+    }
+    if (points.length < 2) return null;
+    line = lineThroughPoints(points.map(({ p }) => p));
+  }
+  const support = [0, 1, 2].map((third) => points.filter(({ f }) => Math.min(2, Math.floor(3 * f)) === third).length / (count / 3));
+  if (support[0] < MIN_EDGE_SUPPORT || support[1] < MIN_EDGE_SUPPORT || support[2] < MIN_FAR_EDGE_SUPPORT) return null;
+  return { line, reachPx: [near, far] };
+}
+
+/** A cut's (scaled) slope at an offset (px) along it, 0 outside it. */
+function valueAt(values: Float64Array, cut: EdgeCut, offset: number): number {
+  const k = offset / CUT_STEP + (values.length - 1) / 2;
+  const k0 = Math.floor(k);
+  if (k0 < 0 || k0 + 1 >= values.length) return 0;
+  return values[k0] + (k - k0) * (values[k0 + 1] - values[k0]);
+}
+
+/**
+ * The offset (px) along a cut of its steepest step (rising for `sign` 1) within its tolerance of
+ * `offset`; null when there is no clear step there.
+ */
+function steepestNear(cut: EdgeCut, sign: number, offset: number): number | null {
+  const { slopes, tolerance } = cut;
+  const middle = (slopes.length - 1) / 2;
+  const centre = offset / CUT_STEP + middle;
+  let bestK = -1;
+  for (let k = Math.max(1, Math.ceil(centre - tolerance / CUT_STEP)); k <= Math.min(slopes.length - 2, centre + tolerance / CUT_STEP); k++) {
+    if (bestK < 0 || sign * slopes[k] > sign * slopes[bestK]) bestK = k;
+  }
+  if (bestK < 0) return null;
+  const [l, m, r] = [sign * slopes[bestK - 1], sign * slopes[bestK], sign * slopes[bestK + 1]];
+  // a step's peak, not the edge of the window running up towards one outside it
+  if (m < MIN_EDGE_STEP || l > m || r > m) return null;
+  const curvature = l - 2 * m + r;
+  const shift = curvature < 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (l - r)) / curvature)) : 0;
+  return (bestK + shift - middle) * CUT_STEP;
+}
+
+/**
+ * Along a cut across an edge (`across`, from `at`, ±`reach` px; averaged over 3 px `along` it), how fast the
+ * brightness changes (grey levels per pixel, over a pixel and a half), every half pixel. Null when the cut
+ * leaves the image.
+ */
+function brightnessSlopes(gray: GrayImage, at: Point, across: Point, along: Point, reach: number): Float64Array | null {
+  const half = Math.ceil(reach / CUT_STEP);
+  const values: number[] = [];
+  for (let k = -half - 2; k <= half + 2; k++) {
+    let sum = 0;
+    for (const t of [-1, 0, 1]) {
+      const v = bilinear(gray, at[0] + k * CUT_STEP * across[0] + t * along[0], at[1] + k * CUT_STEP * across[1] + t * along[1]);
+      if (v === null) return null;
+      sum += v;
+    }
+    values.push(sum / 3);
+  }
+  // slopes[k] is at offset (k - half) * CUT_STEP, values[k + 2] there
+  const slopes = new Float64Array(2 * half + 1);
+  for (let k = 0; k < slopes.length; k++) slopes[k] = (values[k + 3] + values[k + 4] - values[k + 1] - values[k]) / 3;
+  return slopes;
+}
+
+/** Grey value at a point between pixel centres, null outside the image. */
+function bilinear({ data, width, height }: GrayImage, x: number, y: number): number | null {
+  if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return null;
+  const x0 = Math.min(width - 2, Math.floor(x));
+  const y0 = Math.min(height - 2, Math.floor(y));
+  const fx = x - x0;
+  const fy = y - y0;
+  const i = y0 * width + x0;
+  const top = data[i] + fx * (data[i + 1] - data[i]);
+  const bottom = data[i + width] + fx * (data[i + width + 1] - data[i + width]);
+  return top + fy * (bottom - top);
+}
+
+const distance = (p: Point, q: Point) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+
+/** The line through two points, `a·x + b·y + c = 0` with `a² + b² = 1`. */
+function lineThrough(p: Point, q: Point): Line {
+  const length = distance(p, q) || 1;
+  const a = (q[1] - p[1]) / length;
+  const b = -(q[0] - p[0]) / length;
+  return [a, b, -(a * p[0] + b * p[1])];
+}
+
+/** The line closest to points (total least squares), `a² + b² = 1`. */
+function lineThroughPoints(points: Point[]): Line {
+  const mx = mean(points.map(([x]) => x));
+  const my = mean(points.map(([, y]) => y));
+  let xx = 0;
+  let xy = 0;
+  let yy = 0;
+  for (const [x, y] of points) {
+    xx += (x - mx) ** 2;
+    xy += (x - mx) * (y - my);
+    yy += (y - my) ** 2;
+  }
+  const theta = 0.5 * Math.atan2(2 * xy, xx - yy);
+  const a = -Math.sin(theta);
+  const b = Math.cos(theta);
+  return [a, b, -(a * mx + b * my)];
+}
+
+/** Where two lines cross; null when they (nearly) don't. */
+function intersection([a1, b1, c1]: Line, [a2, b2, c2]: Line): Point | null {
+  const det = a1 * b2 - a2 * b1;
+  if (Math.abs(det) < 1e-9) return null;
+  return [(b1 * c2 - b2 * c1) / det, (a2 * c1 - a1 * c2) / det];
 }
 
 /** Where a line (not horizontal) is at height `y`. */

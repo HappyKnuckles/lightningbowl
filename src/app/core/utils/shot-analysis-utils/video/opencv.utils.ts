@@ -1,6 +1,8 @@
 /**
- * OpenCV's WebAssembly build, loaded on demand. It is 27 MB, so it isn't bundled: the build copies it to
- * `assets/opencv/` (angular.json) and it is loaded with a script tag the first time a shot is analyzed.
+ * OpenCV's WebAssembly build, loaded on demand. It is our own build (`scripts/opencv/build.sh`): with
+ * WebAssembly SIMD and only the functions the shot analysis calls, about 20% faster per frame and half the
+ * size of the npm builds. At 5.7 MB it isn't bundled: it lives in `assets/opencv/` and is loaded with a
+ * script tag the first time a video is picked.
  */
 
 // opencv.js has no types worth using here

@@ -13,111 +13,42 @@ concurrency:
 permissions:
   contents: read
 
+# Jobs live in HappyKnuckles/github-workflows; bump by publishing a release there.
+#
+# npm-version 11: package-lock.json is written by npm 11, which nests the chokidar
+# subtrees of @angular-devkit/core (chokidar@5) and sass (chokidar@3). npm 10 (what
+# Node 22 ships) expects them hoisted to the root instead and rejects the lockfile
+# as "out of sync". Verified still required on Angular 21.
+
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Use npm 11
-        # package-lock.json is written by npm 11, which nests the chokidar subtrees
-        # of @angular-devkit/core (chokidar@5) and sass (chokidar@3). npm 10 (what
-        # Node 22 ships) expects them hoisted to the root instead and rejects the
-        # lockfile as "out of sync". Verified still required on Angular 21.
-        run: npm install -g npm@11
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck specs
-        # The unit-test builder transpiles without failing on type errors, so specs
-        # are only typechecked here (see CLAUDE.md > Gotchas).
-        run: npx tsc -p tsconfig.spec.json --noEmit
-
-      - name: Install Chromium for Vitest browser mode
-        run: npx playwright install --with-deps chromium
-
-      - name: Unit tests
-        run: npx ng test --configuration=ci
-
-      - name: Build
-        run: npm run build
+    uses: HappyKnuckles/github-workflows/.github/workflows/node-ci.yml@v1
+    with:
+      npm-version: "11"
+      # The unit-test builder transpiles without failing on type errors, so specs
+      # are only typechecked here (see CLAUDE.md > Gotchas).
+      typecheck-command: npx tsc -p tsconfig.spec.json --noEmit
+      # Vitest browser mode runs in headless Chromium.
+      install-playwright: true
+      test-command: npx ng test --configuration=ci
 
   ball-api-types:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Use npm 11
-        # see verify
-        run: npm install -g npm@11
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Ball API types match the ball API's spec
-        run: npm run generate:ball-api -- --check
+    uses: HappyKnuckles/github-workflows/.github/workflows/node-run.yml@v1
+    with:
+      npm-version: "11"
+      # Ball API types match the ball API's spec.
+      command: npm run generate:ball-api -- --check
+      timeout-minutes: 10
 
   coverage:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
     permissions:
       contents: read
       pull-requests: write
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Use npm 11
-        # package-lock.json is written by npm 11, which nests the chokidar subtrees
-        # of @angular-devkit/core (chokidar@5) and sass (chokidar@3). npm 10 (what
-        # Node 22 ships) expects them hoisted to the root instead and rejects the
-        # lockfile as "out of sync". Verified still required on Angular 21.
-        run: npm install -g npm@11
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Chromium for Vitest browser mode
-        run: npx playwright install --with-deps chromium
-
-      - name: Unit tests with coverage
-        # Fails on its own if line coverage drops below the coverageThresholds
-        # floor on the "test" target in angular.json.
-        run: npm run test:coverage
-
-      - name: Summarise coverage
-        if: always()
-        run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment coverage on PR
-        if: always() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          node scripts/coverage-summary.mjs > coverage-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --body-file coverage-comment.md \
-            --edit-last --create-if-none
+    uses: HappyKnuckles/github-workflows/.github/workflows/node-coverage.yml@v1
+    with:
+      npm-version: "11"
+      install-playwright: true
+      # Fails on its own if line coverage drops below the coverageThresholds
+      # floor on the "test" target in angular.json.
+      coverage-command: npm run test:coverage
+      summary-command: node scripts/coverage-summary.mjs

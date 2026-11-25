@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AlertController, IonModal } from '@ionic/angular';
+import { AlertController, IonModal } from '@ionic/angular/lazy';
 
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';

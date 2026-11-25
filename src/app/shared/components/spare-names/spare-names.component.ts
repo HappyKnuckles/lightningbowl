@@ -1,5 +1,5 @@
 import { Component, computed, signal, Signal } from '@angular/core';
-import { IonButton } from '@ionic/angular/standalone';
+import { IonButton } from '@ionic/angular';
 
 enum SpareNames {
   BigFour = 'Big Four',

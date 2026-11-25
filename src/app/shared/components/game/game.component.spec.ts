@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AlertController, IonModal } from '@ionic/angular/standalone';
-import { AccordionGroupCustomEvent } from '@ionic/angular';
+import { AlertController, IonModal } from '@ionic/angular';
+import { AccordionGroupCustomEvent } from '@ionic/angular/lazy';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { SettingsStore } from 'src/app/core/stores/settings.store';

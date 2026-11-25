@@ -12,7 +12,7 @@ import {
   IonTitle,
   IonToolbar,
   ModalController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { chevronBack, close, trashOutline } from 'ionicons/icons';
 import { combineLatestWith, startWith } from 'rxjs';

@@ -1,7 +1,7 @@
 import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.pipe';
 import { Component, computed, effect, ElementRef, inject, model, OnDestroy, signal, ViewChild, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -29,7 +29,7 @@ import {
   IonTitle,
   IonMenuButton,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import type { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import { add, chevronDownOutline, closeOutline, scaleOutline } from 'ionicons/icons';

@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { IonButton, IonIcon, IonModal } from '@ionic/angular/standalone';
+import { IonButton, IonIcon, IonModal } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { arrowUndoOutline, barChartOutline, bowlingBallOutline, checkmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';

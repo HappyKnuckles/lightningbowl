@@ -1,7 +1,7 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { IonSearchbar } from '@ionic/angular/standalone';
+import { IonSearchbar } from '@ionic/angular';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
 import { SearchHistoryDirective } from './search-history.directive';
 import { createSpyObj, SpyObj } from '../../../../testing/spy-obj';

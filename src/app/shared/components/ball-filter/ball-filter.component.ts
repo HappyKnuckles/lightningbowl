@@ -18,7 +18,7 @@ import {
   IonToggle,
   IonToolbar,
   ModalController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { chevronExpandOutline } from 'ionicons/icons';
 import { debounceTime, switchMap } from 'rxjs';

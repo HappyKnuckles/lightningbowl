@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, si
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpactStyle } from '@capacitor/haptics';
-import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
+import { AlertController, InfiniteScrollCustomEvent, ModalController } from '@ionic/angular/lazy';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -22,7 +22,7 @@ import {
   IonModal,
   IonText,
   IonTextarea,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   bowlingBallOutline,

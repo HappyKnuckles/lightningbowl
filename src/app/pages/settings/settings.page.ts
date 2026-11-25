@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import emailjs from '@emailjs/browser';
-import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular';
+import { AlertController, InputCustomEvent, ModalController } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -27,7 +27,7 @@ import {
   IonTitle,
   IonMenuButton,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   addOutline,

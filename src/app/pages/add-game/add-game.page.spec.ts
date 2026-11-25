@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SegmentCustomEvent } from '@ionic/angular';
+import { SegmentCustomEvent } from '@ionic/angular/lazy';
 import { vi } from 'vitest';
 
 import { GamesStore } from 'src/app/core/stores/games.store';

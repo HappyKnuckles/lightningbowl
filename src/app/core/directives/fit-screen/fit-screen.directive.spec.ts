@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { IonContent } from '@ionic/angular/standalone';
+import { IonContent } from '@ionic/angular';
 
 import { FitScreenDirective } from './fit-screen.directive';
 

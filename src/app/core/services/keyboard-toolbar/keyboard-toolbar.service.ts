@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { Keyboard } from '@capacitor/keyboard';
-import { Platform } from '@ionic/angular';
+import { Platform } from '@ionic/angular/lazy';
 import type { PluginListenerHandle } from '@capacitor/core';
 
 @Injectable()

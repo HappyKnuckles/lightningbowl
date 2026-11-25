@@ -1,7 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
-import { IonToast } from '@ionic/angular/standalone';
+import { IonToast } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   add,

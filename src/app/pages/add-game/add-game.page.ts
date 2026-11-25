@@ -1,6 +1,6 @@
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, HostListener, OnInit, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular';
+import { ModalController, SegmentCustomEvent, Platform } from '@ionic/angular/lazy';
 import {
   ActionSheetController,
   AlertController,
@@ -22,7 +22,7 @@ import {
   IonSegmentView,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { defineCustomElements } from '@teamhive/lottie-player/loader';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronDown, chevronUp } from 'ionicons/icons';

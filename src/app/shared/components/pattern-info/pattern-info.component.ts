@@ -1,5 +1,5 @@
 import { afterNextRender, Component, computed, DestroyRef, effect, ElementRef, inject, input, signal, viewChild } from '@angular/core';
-import { IonCol, IonGrid, IonIcon, IonListHeader, IonRow } from '@ionic/angular/standalone';
+import { IonCol, IonGrid, IonIcon, IonListHeader, IonRow } from '@ionic/angular';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { arrowDownOutline, arrowUpOutline } from 'ionicons/icons';

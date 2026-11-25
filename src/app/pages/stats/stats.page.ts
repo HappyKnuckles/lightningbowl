@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
+import { ModalController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -33,7 +33,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import { calendarNumber, calendarNumberOutline, filterOutline, trendingDownOutline, trendingUpOutline } from 'ionicons/icons';

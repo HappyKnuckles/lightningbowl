@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular/standalone';
+import { AlertController, IonApp, IonBackdrop, IonRouterOutlet } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';

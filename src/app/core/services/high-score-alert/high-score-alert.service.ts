@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlertController } from '@ionic/angular';
+import { AlertController } from '@ionic/angular/lazy';
 
 import { Game } from '../../models/game.model';
 import { getGameBallLabels } from '../../utils/game-utils/game-ball.utils';

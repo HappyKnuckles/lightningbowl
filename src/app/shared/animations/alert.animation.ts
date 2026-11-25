@@ -1,4 +1,4 @@
-import { Animation, createAnimation } from '@ionic/angular';
+import { Animation, createAnimation } from '@ionic/angular/lazy';
 
 export const alertEnterAnimation = (baseEl: HTMLElement): Animation => {
   // try shadowRoot first (ion-modal uses shadow DOM in some builds), then fallback

@@ -35,6 +35,7 @@ import { addIcons } from 'ionicons';
 import {
   addOutline,
   camera,
+  cameraOutline,
   chevronDownOutline,
   chevronForward,
   closeCircle,
@@ -54,6 +55,7 @@ import { Ball } from 'src/app/core/models/ball.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
+import { BallPhotoService } from 'src/app/core/services/ball-photo/ball-photo.service';
 import { getFlareLabel, getLengthLabel } from 'src/app/core/services/ball/ball-metrics.util';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
@@ -126,6 +128,9 @@ export class BallsPage implements OnInit {
   coreBalls = signal<Ball[]>([]);
   coverstockBalls = signal<Ball[]>([]);
   movementBalls = signal<Ball[]>([]);
+  /** Balls that look like the photo the user took, most alike first. */
+  photoBalls = signal<Ball[]>([]);
+  searchingByPhoto = signal(false);
   searchSubject = new Subject<string>();
   searchTerm = signal('');
   // Names of balls you have plus the ones currently listed; the catalog itself isn't on the device.
@@ -238,8 +243,21 @@ export class BallsPage implements OnInit {
     private networkService: NetworkService,
     public favoritesService: FavoritesService,
     private analyticsService: AnalyticsService,
+    private ballPhotoService: BallPhotoService,
   ) {
-    addIcons({ filterOutline, closeCircle, globeOutline, openOutline, addOutline, camera, heart, heartOutline, chevronDownOutline, chevronForward });
+    addIcons({
+      filterOutline,
+      closeCircle,
+      globeOutline,
+      openOutline,
+      addOutline,
+      camera,
+      cameraOutline,
+      heart,
+      heartOutline,
+      chevronDownOutline,
+      chevronForward,
+    });
     this.searchSubject.subscribe((query) => {
       this.setSearchTerm(query);
       if (this.content) {
@@ -290,6 +308,29 @@ export class BallsPage implements OnInit {
     const query = event.detail.value!.toLowerCase();
     this.searchSubject.next(query);
     this.analyticsService.trackBallSearch(query);
+  }
+
+  /** Finds balls that look like a photo the user takes or picks, and lists them in a sheet. */
+  async searchByPhoto(): Promise<void> {
+    let photo: string | undefined;
+    try {
+      photo = await this.ballPhotoService.takePhoto();
+      if (!photo) return;
+      this.searchingByPhoto.set(true);
+      this.loadingService.setLoading(true);
+      const balls = await this.ballService.findBallsByImage(photo);
+      if (balls.length === 0) {
+        this.toastService.showToast(TOAST_MESSAGES.ballPhotoNoMatch, 'information-circle-outline');
+        return;
+      }
+      this.photoBalls.set(balls);
+    } catch (error) {
+      console.error('Error searching balls by photo:', error);
+      this.toastService.showToast(TOAST_MESSAGES.ballPhotoSearchError, 'bug', true);
+    } finally {
+      this.searchingByPhoto.set(false);
+      this.loadingService.setLoading(false);
+    }
   }
 
   onSearchSuggestionSelected(term: string): void {

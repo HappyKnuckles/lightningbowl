@@ -20,6 +20,8 @@ export const TOAST_MESSAGES = {
   ballSaveError: 'Error saving ball.',
   ballDeleteSuccess: 'Ball deleted successfully.',
   ballDeleteError: 'Error deleting ball.',
+  ballPhotoSearchError: 'Error searching balls by photo.',
+  ballPhotoNoMatch: 'No ball looks like this photo.',
   leagueSaveSuccess: 'League saved successfully.',
   leagueSaveError: 'Error saving league.',
   leagueDeleteSuccess: 'League deleted successfully.',

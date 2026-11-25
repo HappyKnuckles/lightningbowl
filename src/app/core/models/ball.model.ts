@@ -73,5 +73,7 @@ export interface BallTraits {
 }
 
 export type BallPage = ApiSchemas['BallPage'];
+/** A ball found by photo, with how alike its picture is (cosine similarity, at most 1). */
+export type BallImageMatch = ApiSchemas['ImageMatch'];
 export type BallQueryParams = NonNullable<operations['searchBalls']['parameters']['query']>;
 export type SimilarBallsQueryParams = NonNullable<operations['getSimilarBalls']['parameters']['query']>;

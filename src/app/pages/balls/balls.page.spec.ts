@@ -3,10 +3,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ModalController } from '@ionic/angular';
 import { of } from 'rxjs';
+import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { Ball, BallPage } from 'src/app/core/models/ball.model';
 import { BallSortField, BallSortOption, SortDirection } from 'src/app/core/models/sort.model';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { BallFilterService } from 'src/app/core/services/ball-filter/ball-filter.service';
+import { BallPhotoService } from 'src/app/core/services/ball-photo/ball-photo.service';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { FavoritesService } from 'src/app/core/services/favorites/favorites.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
@@ -26,6 +28,8 @@ describe('BallsPage', () => {
   let knownBalls: ReturnType<typeof signal<Ball[]>>;
   let online: ReturnType<typeof signal<boolean>>;
   let ballService: SpyObj<BallService>;
+  let ballPhotoService: SpyObj<BallPhotoService>;
+  let toastService: SpyObj<ToastService>;
 
   const ball = (name: string): Ball => ({ ball_id: name, ball_name: name, core_weight: '15' }) as Ball;
   const page = (content: Ball[], number = 0, totalPages = 1): BallPage => ({
@@ -58,7 +62,13 @@ describe('BallsPage', () => {
     };
     const favoritesServiceSpy = createSpyObj(['toggleBallFavorite', 'isBallFavorite']);
     const toastServiceSpy = createSpyObj(['showToast']);
-    const ballServiceSpy = createSpyObj<BallService>(['searchBalls', 'getBallsByCore', 'getBallsByCoverstock', 'getBallsByMovementPattern']);
+    const ballServiceSpy = createSpyObj<BallService>([
+      'searchBalls',
+      'getBallsByCore',
+      'getBallsByCoverstock',
+      'getBallsByMovementPattern',
+      'findBallsByImage',
+    ]);
     ballServiceSpy.searchBalls.mockResolvedValue(page([]));
     const loadingServiceSpy = createSpyObj(['setLoading']);
     const hapticServiceSpy = createSpyObj(['vibrate']);
@@ -87,6 +97,7 @@ describe('BallsPage', () => {
         { provide: BallSortService, useValue: sortServiceSpy },
         { provide: NetworkService, useValue: networkServiceSpy },
         { provide: AnalyticsService, useValue: analyticsServiceSpy },
+        { provide: BallPhotoService, useValue: createSpyObj<BallPhotoService>(['takePhoto']) },
         { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
         ModalController,
       ],
@@ -96,6 +107,51 @@ describe('BallsPage', () => {
     component = fixture.componentInstance;
     favoritesService = TestBed.inject(FavoritesService) as SpyObj<FavoritesService>;
     ballService = TestBed.inject(BallService) as SpyObj<BallService>;
+    ballPhotoService = TestBed.inject(BallPhotoService) as SpyObj<BallPhotoService>;
+    toastService = TestBed.inject(ToastService) as SpyObj<ToastService>;
+  });
+
+  describe('search by photo', () => {
+    it('lists the balls that look like the photo', async () => {
+      ballPhotoService.takePhoto.mockResolvedValue('data:image/jpeg;base64,AAAA');
+      ballService.findBallsByImage.mockResolvedValue([ball('Phaze II'), ball('Phaze 4')]);
+
+      await component.searchByPhoto();
+
+      expect(ballService.findBallsByImage).toHaveBeenCalledWith('data:image/jpeg;base64,AAAA');
+      expect(component.photoBalls().map((b) => b.ball_name)).toEqual(['Phaze II', 'Phaze 4']);
+      expect(component.searchingByPhoto()).toBe(false);
+    });
+
+    it('does nothing when no photo is taken', async () => {
+      ballPhotoService.takePhoto.mockResolvedValue(undefined);
+
+      await component.searchByPhoto();
+
+      expect(ballService.findBallsByImage).not.toHaveBeenCalled();
+      expect(component.photoBalls()).toEqual([]);
+    });
+
+    it('says so when nothing looks like the photo', async () => {
+      ballPhotoService.takePhoto.mockResolvedValue('data:image/jpeg;base64,AAAA');
+      ballService.findBallsByImage.mockResolvedValue([]);
+
+      await component.searchByPhoto();
+
+      expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.ballPhotoNoMatch, 'information-circle-outline');
+      expect(component.photoBalls()).toEqual([]);
+    });
+
+    it('shows an error when the search fails', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      ballPhotoService.takePhoto.mockResolvedValue('data:image/jpeg;base64,AAAA');
+      ballService.findBallsByImage.mockRejectedValue(new Error('503'));
+
+      await component.searchByPhoto();
+
+      expect(toastService.showToast).toHaveBeenCalledWith(TOAST_MESSAGES.ballPhotoSearchError, 'bug', true);
+      expect(component.searchingByPhoto()).toBe(false);
+    });
   });
 
   it('should create', () => {

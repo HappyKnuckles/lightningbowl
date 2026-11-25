@@ -43,6 +43,11 @@
       placeholder="Search for a ball"
       showCancelButton="focus"
       debounce="300"></ion-searchbar>
+    <ion-buttons slot="end" class="photo-search">
+      <ion-button fill="clear" aria-label="Search by photo" [disabled]="!isOnline() || searchingByPhoto()" (click)="searchByPhoto()">
+        <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
   @if (ballFilterService.activeFilterCount() !== 0) {
     <ion-toolbar style="text-align: center">
@@ -304,5 +309,11 @@
       [title]="'Similar reaction to ' + movementBalls()[0]!.ball_name"
       (ballSelected)="onBallSelected($event)">
     </app-ball-list>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [initialBreakpoint]="0.5" [breakpoints]="[0, 0.5, 0.75]" [isOpen]="photoBalls().length > 0" (didDismiss)="photoBalls.set([])">
+  <ng-template>
+    <app-ball-list [balls]="photoBalls()" [title]="'Balls like your photo'" (ballSelected)="onBallSelected($event)"></app-ball-list>
   </ng-template>
 </ion-modal>

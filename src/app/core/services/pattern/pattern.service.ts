@@ -1,6 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Pattern, PatternSummary } from '../../models/pattern.model';
+import { PatternSortField, SortDirection } from '../../models/sort.model';
+import { patternTitleKey } from '../../utils/pattern-utils/known-pattern.utils';
 import { firstValueFrom, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { CacheService } from '../cache/cache.service';
@@ -24,16 +26,6 @@ interface AllPatternsResult {
 /** Patterns per page of the pattern list, browsing or searching. */
 export const PATTERN_PAGE_SIZE = 50;
 
-interface PatternChartsResult {
-  count: number;
-  patterns: {
-    url: string;
-    title: string;
-    chart_standard: string;
-    chart_horizontal: string;
-  }[];
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -43,18 +35,6 @@ export class PatternService {
     private cacheService: CacheService,
     private networkService: NetworkService,
   ) {}
-
-  async getAllPatternCharts(): Promise<PatternChartsResult> {
-    try {
-      const response = await firstValueFrom(
-        this.http.get<PatternChartsResult>(`${environment.patternEndpoint}patterns/charts`).pipe(retry({ count: 5, delay: 2000 })),
-      );
-      return response;
-    } catch (error) {
-      console.error('Error fetching pattern charts:', error);
-      return { count: 0, patterns: [] };
-    }
-  }
 
   /**
    * One page of the pattern list, without the oil rows (`getPatternData` has them): every pattern,
@@ -122,18 +102,24 @@ export class PatternService {
     }
   }
 
-  async getAllPatternsStripped(): Promise<Partial<Pattern>[]> {
-    try {
-      const response = await firstValueFrom(
-        this.http
-          .get<{ count: number; patterns: Partial<Pattern>[] }>(`${environment.patternEndpoint}patterns/all-stripped`)
-          .pipe(retry({ count: 5, delay: 2000 })),
-      );
-      return response.patterns;
-    } catch (error) {
-      console.error('Error fetching stripped patterns:', error);
-      return [];
-    }
+  /** One page of patterns for a picker, counting from 0: the best matches of `term`, or all by title. */
+  async findPatternsPage(term: string, page: number): Promise<{ items: PatternSummary[]; hasMore: boolean }> {
+    const searching = term.trim() !== '';
+    const response = await this.getPatterns(
+      page + 1,
+      false,
+      searching ? PatternSortField.RELEVANCE : PatternSortField.TITLE,
+      searching ? SortDirection.DESC : SortDirection.ASC,
+      term,
+    );
+    return { items: response.patterns, hasMore: (page + 1) * PATTERN_PAGE_SIZE < response.total };
+  }
+
+  /** The pattern with exactly this title (ignoring case), found by searching the API; undefined when there is none or the API can't be reached. */
+  async findPatternByTitle(title: string): Promise<PatternSummary | undefined> {
+    const wanted = patternTitleKey(title);
+    const { items } = await this.findPatternsPage(title, 0);
+    return items.find((pattern) => pattern.title && patternTitleKey(pattern.title) === wanted);
   }
 
   async getPatternCategories(): Promise<string[]> {

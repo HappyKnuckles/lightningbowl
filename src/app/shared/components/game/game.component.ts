@@ -58,7 +58,6 @@ import {
   hasThrowLevelBalls,
   resolveBallTracking,
 } from 'src/app/core/utils/game-utils/game-ball.utils';
-import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
 import { createEmptyGame, getThrowValue } from 'src/app/core/utils/game-utils/frame.utils';
 import { alertEnterAnimation, alertLeaveAnimation } from '../../animations/alert.animation';
 import { BallSelectComponent } from '../ball-select/ball-select.component';
@@ -304,12 +303,6 @@ export class GameComponent implements OnInit {
   currentThrowBall = computed<ThrowBall | undefined>(() =>
     getThrowBallForPosition(this.game()?.frames ?? [], this.currentFrameIndex(), this.currentThrowIndex(), this.carryOverGames()),
   );
-
-  /** Patterns sorted by how often they were played, most used first. */
-  rankedPatterns = computed(() => {
-    const usage = countPatternUsage(this.gamesStore.games());
-    return rankByUsage(this.patternsStore.allPatterns(), usage, (pattern) => pattern.title ?? '');
-  });
 
   // --- Local UI State ---
   enterAnimation = alertEnterAnimation;

@@ -73,9 +73,8 @@ describe('AppFacade', () => {
     ballsStore.refreshSavedBalls.mockResolvedValue(undefined);
     ballsStore.loadArsenal.mockResolvedValue(undefined);
 
-    patternsStore = createSpyObj<PatternsStore>(['loadAllPatterns', 'loadPatternImageMap']);
-    patternsStore.loadAllPatterns.mockResolvedValue(undefined);
-    patternsStore.loadPatternImageMap.mockResolvedValue(undefined);
+    patternsStore = createSpyObj<PatternsStore>(['loadPatternCache']);
+    patternsStore.loadPatternCache.mockResolvedValue(undefined);
 
     leaguesStore = createSpyObj<LeaguesStore>(['loadLeagues', 'addLeague', 'deleteLeague', 'clearLeagues']);
     leaguesStore.loadLeagues.mockResolvedValue([]);
@@ -115,7 +114,7 @@ describe('AppFacade', () => {
       expect(ballsStore.resolveBallNames).toHaveBeenCalledWith([]);
       expect(gamesStore.loadGameHistory).toHaveBeenCalled();
       expect(leaguesStore.loadLeagues).toHaveBeenCalled();
-      expect(patternsStore.loadAllPatterns).toHaveBeenCalled();
+      expect(patternsStore.loadPatternCache).toHaveBeenCalled();
       expect(ballsStore.loadArsenal).toHaveBeenCalled();
     });
 
@@ -161,7 +160,7 @@ describe('AppFacade', () => {
 
   describe('loadInitialData', () => {
     it('rethrows when a store fails to load', async () => {
-      patternsStore.loadAllPatterns.mockRejectedValue(new Error('api down'));
+      patternsStore.loadPatternCache.mockRejectedValue(new Error('api down'));
 
       await expect(facade.loadInitialData()).rejects.toThrow('api down');
     });

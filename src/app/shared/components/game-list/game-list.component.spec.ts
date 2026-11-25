@@ -28,7 +28,8 @@ const mockSettingsStore = {
 };
 
 const mockPatternsStore = {
-  allPatterns: vi.fn().mockReturnValue([]),
+  myPatterns: vi.fn().mockReturnValue([]),
+  rememberPatterns: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockLeaguesStore = {

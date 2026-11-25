@@ -86,9 +86,10 @@
                   <ng-template>
                     <app-generic-typeahead
                       [config]="patternTypeaheadConfig"
-                      [items]="patternsStore.allPatterns()"
+                      [items]="patternsStore.myPatterns()"
                       [prevSelectedItems]="lead.patterns"
-                      (selectedItemsChange)="onSeriesPatternsChanged(row, $event)">
+                      (selectedItemsChange)="onSeriesPatternsChanged(row, $event)"
+                      (selectedObjectsChange)="patternsStore.rememberPatterns($event)">
                     </app-generic-typeahead>
                   </ng-template>
                 </ion-modal>
@@ -261,9 +262,10 @@
                   <ng-template>
                     <app-generic-typeahead
                       [config]="patternTypeaheadConfig"
-                      [items]="patternsStore.allPatterns()"
+                      [items]="patternsStore.myPatterns()"
                       [prevSelectedItems]="game.patterns"
-                      (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)">
+                      (selectedItemsChange)="game.patterns = $event; updateSeries(game, undefined, game.patterns)"
+                      (selectedObjectsChange)="patternsStore.rememberPatterns($event)">
                     </app-generic-typeahead>
                   </ng-template>
                 </ion-modal>

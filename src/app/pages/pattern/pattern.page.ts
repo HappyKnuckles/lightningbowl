@@ -113,13 +113,13 @@ export class PatternPage implements OnInit {
   hasMoreData = true;
   isPageLoading = signal(false);
   searchTerm = signal('');
+  /** Suggestions from the bowler's patterns; the search itself runs on the API. */
   searchSuggestions = computed(() =>
     buildSearchSuggestions(
-      this.patternsStore.allPatterns().map((pattern) => pattern.title),
+      this.patternsStore.myPatterns().map((pattern) => pattern.title),
       this.searchTerm(),
     ),
   );
-  searchDisabled = computed(() => this.patternsStore.allPatterns().length === 0);
   favoritesFirst = signal(false);
   selectedPattern = signal<PatternSummary | null>(null);
   /** The open pattern with its oil rows, which the list doesn't load. */

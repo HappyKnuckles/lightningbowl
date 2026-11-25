@@ -11,6 +11,7 @@ export const StorageKeys = {
   arsenal: (ballId: string | number, coreWeight: string | number): string => `${STORAGE_PREFIX.arsenal}_${ballId}_${coreWeight}`,
   searchHistory: (context: string): string => `${STORAGE_PREFIX.searchHistory}_${context}`,
   ballCache: 'ball_cache',
+  patternCache: 'pattern_cache',
 } as const;
 
 // Single-record keys.

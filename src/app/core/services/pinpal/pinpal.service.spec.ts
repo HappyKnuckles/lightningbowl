@@ -4,13 +4,14 @@ import type { SqlJsStatic } from 'sql.js';
 import { vi } from 'vitest';
 import { Ball } from 'src/app/core/models/ball.model';
 import { Frame, Throw } from 'src/app/core/models/game.model';
-import { Pattern } from 'src/app/core/models/pattern.model';
+import { Pattern, PatternSummary } from 'src/app/core/models/pattern.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { NetworkService } from 'src/app/core/services/network/network.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { PatternsStore } from 'src/app/core/stores/patterns.store';
 import { makeBall, makePattern } from 'src/testing/fixtures';
@@ -49,13 +50,14 @@ describe('PinpalService', () => {
   let ballsStore: SpyObj<BallsStore>;
   let isOffline: boolean;
   let ballService: SpyObj<BallService>;
+  let patternService: SpyObj<PatternService>;
   let gameFilterService: SpyObj<GameFilterService>;
   let toastService: SpyObj<ToastService>;
   let scoreCalculator: SpyObj<GameScoreCalculatorService>;
   let close: ReturnType<typeof vi.fn>;
 
   const allBalls = signal<Ball[]>([]);
-  const allPatterns = signal<Partial<Pattern>[]>([]);
+  const myPatterns = signal<Partial<Pattern>[]>([]);
 
   /** A file that carries the SQLite magic string, so the byte scan finds a database. */
   function pinpalFile(leadingBytes: number[] = []): File {
@@ -111,7 +113,7 @@ describe('PinpalService', () => {
 
   beforeEach(() => {
     allBalls.set([]);
-    allPatterns.set([]);
+    myPatterns.set([]);
 
     gamesStore = createSpyObj<GamesStore>(['saveGamesToLocalStorage']);
     gamesStore.saveGamesToLocalStorage.mockResolvedValue(undefined);
@@ -122,6 +124,9 @@ describe('PinpalService', () => {
     ballsStore.arsenal.mockReturnValue([]);
     // the bowler skips the weight question unless a test picks something
     isOffline = false;
+    patternService = createSpyObj<PatternService>(['findPatternsPage']);
+    patternService.findPatternsPage.mockResolvedValue({ items: [], hasMore: false });
+
     ballService = createSpyObj<BallService>(['findBallsByText']);
     ballService.findBallsByText.mockResolvedValue([]);
     ballsStore.saveBallToArsenal.mockResolvedValue([]);
@@ -145,7 +150,8 @@ describe('PinpalService', () => {
             },
           },
         },
-        { provide: PatternsStore, useValue: { allPatterns } },
+        { provide: PatternsStore, useValue: { myPatterns } },
+        { provide: PatternService, useValue: patternService },
         { provide: GameFilterService, useValue: gameFilterService },
         { provide: ToastService, useValue: toastService },
         { provide: GameScoreCalculatorService, useValue: scoreCalculator },
@@ -312,7 +318,7 @@ describe('PinpalService', () => {
     it('matches balls and patterns against what the app knows and adds the ball to the arsenal', async () => {
       const ball = makeBall({ ball_id: 'b1', ball_name: 'Phaze II', core_weight: '15' });
       allBalls.set([ball]);
-      allPatterns.set([makePattern({ title: 'Shark 48' })]);
+      myPatterns.set([makePattern({ title: 'Shark 48' })]);
       stubDatabase([{ pk: 1, ballName: 'phaze ii', patternName: 'shark' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
 
       await service.importFromFile(pinpalFile());
@@ -320,6 +326,26 @@ describe('PinpalService', () => {
       expect(savedGames()[0].balls).toEqual([{ name: 'Phaze II', weight: '15' }]);
       expect(savedGames()[0].patterns).toEqual(['Shark 48']);
       expect(ballsStore.saveBallToArsenal).toHaveBeenCalledWith(ball);
+    });
+
+    it('matches a pattern the bowler never played against the API search', async () => {
+      patternService.findPatternsPage.mockResolvedValue({ items: [makePattern({ title: 'Shark 48' }) as PatternSummary], hasMore: false });
+      stubDatabase([{ pk: 1, patternName: 'shark' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
+
+      await service.importFromFile(pinpalFile());
+
+      expect(patternService.findPatternsPage).toHaveBeenCalledWith('shark', 0);
+      expect(savedGames()[0].patterns).toEqual(['Shark 48']);
+    });
+
+    it("doesn't search the API for a pattern the bowler already has", async () => {
+      myPatterns.set([makePattern({ title: 'Shark' })]);
+      stubDatabase([{ pk: 1, patternName: 'shark' }], { 1: frameRows({ 0: { frameNum: 0, pins: SEVEN_THEN_SPARE_MASK } }) });
+
+      await service.importFromFile(pinpalFile());
+
+      expect(patternService.findPatternsPage).not.toHaveBeenCalled();
+      expect(savedGames()[0].patterns).toEqual(['Shark']);
     });
 
     it('keeps an unknown ball name and leaves the arsenal alone', async () => {

@@ -38,7 +38,10 @@ export function createPatternTypeaheadConfig(searchFn: (term: string) => Promise
   };
 }
 
-export function createPartialPatternTypeaheadConfig(searchFn: (term: string) => Promise<{ patterns: Pattern[] }>): TypeaheadConfig<Partial<Pattern>> {
+/** Pattern picker that pages through the pattern API: the passed-in items (the bowler's patterns) first, then all of them. */
+export function createPartialPatternTypeaheadConfig(
+  pageFn: (term: string, page: number) => Promise<{ items: Partial<Pattern>[]; hasMore: boolean }>,
+): TypeaheadConfig<Partial<Pattern>> {
   return {
     title: 'Select Patterns (max 2)',
     searchPlaceholder: 'Search for a pattern',
@@ -53,10 +56,7 @@ export function createPartialPatternTypeaheadConfig(searchFn: (term: string) => 
     valueKey: 'title',
     maxSelections: 2,
     searchMode: 'api',
-    apiSearchFn: async (searchTerm: string) => {
-      const response = await searchFn(searchTerm);
-      return { items: response.patterns };
-    },
+    apiPageFn: pageFn,
     customDisplayLogic: (pattern: Partial<Pattern>) => {
       const ratio = pattern.ratio ?? '0';
       const ratioValue = parseFloat(ratio.split(':')[0]);

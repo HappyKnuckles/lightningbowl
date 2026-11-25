@@ -3,6 +3,7 @@ import initSqlJs, { Database, SqlJsStatic, SqlValue } from 'sql.js';
 import { Ball } from 'src/app/core/models/ball.model';
 import { BallService } from 'src/app/core/services/ball/ball.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
+import { PatternService } from 'src/app/core/services/pattern/pattern.service';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';
 import { GameScoreCalculatorService } from 'src/app/core/services/game-score-calculator/game-score-calculator.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -14,6 +15,7 @@ import { calculateIsClean, createEmptyFrames } from '../../utils/game-utils/fram
 import { sortGameHistoryByDate } from '../../utils/sort-utils/sort.utils';
 import { ToastService } from '../toast/toast.service';
 import { ballKey } from 'src/app/core/utils/ball-utils/stored-ball.utils';
+import { patternTitleKey } from 'src/app/core/utils/pattern-utils/known-pattern.utils';
 
 interface GameRow {
   pk: number;
@@ -35,6 +37,8 @@ interface RawFrameRow {
 export class PinpalService {
   private static readonly SQLITE_HEADER = 'SQLite format 3';
   private static readonly SEARCH_CONCURRENCY = 4;
+  /** Search results per imported pattern name that the name is matched against. */
+  private static readonly PATTERN_CANDIDATES = 10;
   private sqlInstance: SqlJsStatic | null = null;
 
   constructor(
@@ -42,6 +46,7 @@ export class PinpalService {
     private ballService: BallService,
     private networkService: NetworkService,
     private patternsStore: PatternsStore,
+    private patternService: PatternService,
     private gamesStore: GamesStore,
     private scoreCalculator: GameScoreCalculatorService,
     private gameFilterService: GameFilterService,
@@ -64,7 +69,7 @@ export class PinpalService {
       // for every distinct ball name in the import.
       const availableBalls = await this.findBallCandidates(gameRows.map((row) => row.ballName));
       const availableBallNames = [...new Set(availableBalls.map((b) => b.ball_name))];
-      const availablePatternNames = this.patternsStore.allPatterns().map((p) => p.title || '');
+      const availablePatternNames = await this.findPatternCandidates(gameRows.map((row) => row.patternName));
 
       const games: Game[] = [];
       for (let i = 0; i < gameRows.length; i++) {
@@ -289,6 +294,31 @@ export class PinpalService {
 
     const seen = new Set(known.map(ballKey));
     return [...known, ...found.filter((b) => !seen.has(ballKey(b)))];
+  }
+
+  /** Pattern titles to match imported names against: the bowler's patterns plus API search results for every other name. */
+  private async findPatternCandidates(names: (string | null)[]): Promise<string[]> {
+    const known = this.patternsStore.myPatterns().map((pattern) => pattern.title ?? '');
+    const knownTitles = new Set(known.map(patternTitleKey));
+    const unique = [...new Set(names.map((name) => name?.trim()).filter((name): name is string => !!name))];
+    const unknown = unique.filter((name) => !knownTitles.has(patternTitleKey(name)));
+    if (unknown.length === 0 || this.networkService.isOffline) return known;
+
+    const found: string[] = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < unknown.length) {
+        const name = unknown[next++];
+        try {
+          const { items } = await this.patternService.findPatternsPage(name, 0);
+          found.push(...items.slice(0, PinpalService.PATTERN_CANDIDATES).map((pattern) => pattern.title));
+        } catch (error) {
+          console.warn(`PinPal import: pattern search for "${name}" failed`, error);
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PinpalService.SEARCH_CONCURRENCY, unknown.length) }, worker));
+    return [...new Set([...known, ...found])];
   }
 
   private findBestMatch(input: string | null, available: string[]): string | null {

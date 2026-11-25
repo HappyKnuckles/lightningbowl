@@ -206,23 +206,18 @@
               </ion-modal>
             }
           }
-          <ion-item
-            class="pattern-selector"
-            [id]="patternModalId()"
-            button
-            detail="true"
-            detailIcon="chevron-expand-outline"
-            [disabled]="patternsStore.allPatterns().length === 0">
+          <ion-item class="pattern-selector" [id]="patternModalId()" button detail="true" detailIcon="chevron-expand-outline">
             <ion-label>Patterns</ion-label>
             <span class="ion-text-right">{{ patternsText() || "None" }}</span>
           </ion-item>
           <ion-modal [presentingElement]="presentingElement" [trigger]="patternModalId()">
             <ng-template>
               <app-generic-typeahead
-                [items]="rankedPatterns()"
+                [items]="patternsStore.myPatterns()"
                 [config]="patternTypeaheadConfig"
                 [prevSelectedItems]="currentGame().patterns || []"
-                (selectedItemsChange)="onPatternChanged($event)">
+                (selectedItemsChange)="onPatternChanged($event)"
+                (selectedObjectsChange)="patternsStore.rememberPatterns($event)">
               </app-generic-typeahead>
             </ng-template>
           </ion-modal>

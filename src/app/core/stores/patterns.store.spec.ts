@@ -1,211 +1,169 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Game } from 'src/app/core/models/game.model';
+import { Pattern, PatternSummary } from 'src/app/core/models/pattern.model';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
-import { makePattern } from 'src/testing/fixtures';
+import { StorageKeys } from 'src/app/core/services/storage/storage-keys';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { makeGame, makePattern } from 'src/testing/fixtures';
 import { createSpyObj, SpyObj } from 'src/testing/spy-obj';
+import { GamesStore } from './games.store';
 import { PatternsStore } from './patterns.store';
 
-/** Chart payload shape returned by `PatternService.getAllPatternCharts`. */
-function charts(patterns: { url?: string; title: string; chart_standard: string; chart_horizontal?: string }[]) {
-  return { count: patterns.length, patterns: patterns.map((p) => ({ url: '', chart_horizontal: '', ...p })) };
-}
+const summary = (overrides: Partial<Pattern>): PatternSummary => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { forwards_data, reverse_data, ...rest } = makePattern(overrides);
+  return rest;
+};
 
 describe('PatternsStore', () => {
   let store: PatternsStore;
   let patternService: SpyObj<PatternService>;
+  let storage: SpyObj<StorageRepository>;
   let cacheService: SpyObj<CacheService>;
-  let isOnline: boolean;
+  let games: ReturnType<typeof signal<Game[]>>;
+  let online: ReturnType<typeof signal<boolean>>;
+  /** What the API finds per title; anything else isn't found. */
+  let catalog: PatternSummary[];
+
+  const played = (...titles: string[][]) => games.set(titles.map((patterns, i) => makeGame({ gameId: `g${i}`, date: i, patterns })));
 
   beforeEach(() => {
-    isOnline = true;
-    patternService = createSpyObj<PatternService>(['getAllPatternsStripped', 'getAllPatternCharts']);
-    patternService.getAllPatternsStripped.mockResolvedValue([]);
-    patternService.getAllPatternCharts.mockResolvedValue(charts([]));
+    catalog = [];
+    games = signal<Game[]>([]);
+    online = signal(true);
 
-    cacheService = createSpyObj<CacheService>(['get', 'set', 'isValid', 'isStale']);
-    cacheService.get.mockResolvedValue(null);
-    cacheService.set.mockResolvedValue(undefined);
-    cacheService.isValid.mockResolvedValue(false);
-    cacheService.isStale.mockResolvedValue(false);
+    patternService = createSpyObj<PatternService>(['findPatternByTitle']);
+    patternService.findPatternByTitle.mockImplementation(async (title) => catalog.find((p) => p.title.toLowerCase() === title.toLowerCase()));
 
-    const networkService = {
-      get isOnline() {
-        return isOnline;
-      },
-      get isOffline() {
-        return !isOnline;
-      },
-    } as NetworkService;
+    storage = createSpyObj<StorageRepository>(['get', 'set']);
+    storage.get.mockResolvedValue(null);
+    storage.set.mockResolvedValue(undefined);
+
+    cacheService = createSpyObj<CacheService>(['delete']);
+    cacheService.delete.mockResolvedValue(undefined);
 
     TestBed.configureTestingModule({
       providers: [
         { provide: PatternService, useValue: patternService },
+        { provide: StorageRepository, useValue: storage },
         { provide: CacheService, useValue: cacheService },
-        { provide: NetworkService, useValue: networkService },
+        { provide: GamesStore, useValue: { games } },
+        {
+          provide: NetworkService,
+          useValue: {
+            get isOnline() {
+              return online();
+            },
+            get isOffline() {
+              return !online();
+            },
+          },
+        },
       ],
     });
     store = TestBed.inject(PatternsStore);
   });
 
-  describe('loadAllPatterns', () => {
-    const cached = [makePattern({ title: 'Cached' })];
-    const fetched = [makePattern({ title: 'Fetched' })];
+  /** Runs the store's effect and waits for the lookups it starts. */
+  async function settle(): Promise<void> {
+    TestBed.tick();
+    await new Promise((resolve) => setTimeout(resolve));
+  }
 
-    it('fetches and caches when there is no cache', async () => {
-      patternService.getAllPatternsStripped.mockResolvedValue(fetched);
+  describe('loadPatternCache', () => {
+    it('loads the persisted patterns and drops the old full-list caches', async () => {
+      const shark = summary({ url: 'shark', title: 'Shark', chart_standard: 'shark.png' });
+      storage.get.mockResolvedValue([shark]);
 
-      await store.loadAllPatterns();
+      await store.loadPatternCache();
 
-      expect(store.allPatterns()).toEqual(fetched);
-      expect(store.isUsingCache()).toBe(false);
-      expect(cacheService.set).toHaveBeenCalledWith('all_patterns', fetched);
+      expect(storage.get).toHaveBeenCalledWith(StorageKeys.patternCache);
+      expect(store.myPatterns()).toEqual([shark]);
+      expect(store.patternImageMap()).toEqual({ Shark: 'shark.png' });
+      expect(cacheService.delete).toHaveBeenCalledWith('all_patterns');
+      expect(cacheService.delete).toHaveBeenCalledWith('pattern_image_map');
     });
 
-    it('serves a valid cache without hitting the network', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
+    it('starts empty when storage fails', async () => {
+      storage.get.mockRejectedValue(new Error('broken'));
 
-      await store.loadAllPatterns();
+      await store.loadPatternCache();
 
-      expect(store.allPatterns()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
-      expect(patternService.getAllPatternsStripped).not.toHaveBeenCalled();
-    });
-
-    it('refreshes a stale cache in the background', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
-      cacheService.isStale.mockResolvedValue(true);
-      patternService.getAllPatternsStripped.mockResolvedValue(fetched);
-
-      await store.loadAllPatterns();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(store.allPatterns()).toEqual(fetched);
-      expect(store.isUsingCache()).toBe(false);
-    });
-
-    it('serves an expired cache while offline', async () => {
-      isOnline = false;
-      cacheService.get.mockResolvedValue(cached);
-
-      await store.loadAllPatterns();
-
-      expect(store.allPatterns()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
-    });
-
-    it('does nothing when offline without a cache', async () => {
-      isOnline = false;
-
-      await store.loadAllPatterns();
-
-      expect(store.allPatterns()).toEqual([]);
-      expect(patternService.getAllPatternsStripped).not.toHaveBeenCalled();
-    });
-
-    it('bypasses the cache on a forced refresh', async () => {
-      cacheService.get.mockResolvedValue(cached);
-      cacheService.isValid.mockResolvedValue(true);
-      patternService.getAllPatternsStripped.mockResolvedValue(fetched);
-
-      await store.loadAllPatterns(true);
-
-      expect(store.allPatterns()).toEqual(fetched);
-    });
-
-    it('falls back to the cache when the fetch fails', async () => {
-      patternService.getAllPatternsStripped.mockRejectedValue(new Error('api down'));
-      cacheService.get.mockResolvedValueOnce(null).mockResolvedValueOnce(cached);
-
-      await store.loadAllPatterns();
-
-      expect(store.allPatterns()).toEqual(cached);
-      expect(store.isUsingCache()).toBe(true);
-    });
-
-    it('swallows a failed fetch when there is no cache either', async () => {
-      patternService.getAllPatternsStripped.mockRejectedValue(new Error('api down'));
-
-      await expect(store.loadAllPatterns()).resolves.toBeUndefined();
-      expect(store.allPatterns()).toEqual([]);
+      expect(store.myPatterns()).toEqual([]);
     });
   });
 
-  describe('loadPatternImageMap', () => {
-    it('maps pattern titles to their standard chart', async () => {
-      patternService.getAllPatternCharts.mockResolvedValue(charts([{ title: 'Shark', chart_standard: 'shark.png' }]));
+  describe('myPatterns', () => {
+    it('lists played patterns by usage, then the other known ones, with unresolved titles as the title alone', async () => {
+      online.set(false);
+      storage.get.mockResolvedValue([summary({ url: 'picked', title: 'Picked' }), summary({ url: 'shark', title: 'Shark' })]);
+      await store.loadPatternCache();
+      played(['Cheetah'], ['Shark'], ['Shark']);
 
-      await store.loadPatternImageMap();
+      expect(store.myPatterns().map((p) => p.title)).toEqual(['Shark', 'Cheetah', 'Picked']);
+      expect(store.myPatterns()[1]).toEqual({ title: 'Cheetah', url: 'Cheetah' });
+    });
+  });
 
+  describe('rememberPatterns', () => {
+    it('persists picked patterns without oil rows and replaces older copies', async () => {
+      await store.rememberPatterns([makePattern({ url: 'shark', title: 'Shark', chart_standard: 'old.png' })]);
+      await store.rememberPatterns([makePattern({ url: 'shark', title: 'Shark', chart_standard: 'new.png' })]);
+
+      const saved = storage.set.mock.lastCall![1] as PatternSummary[];
+      expect(saved).toHaveLength(1);
+      expect(saved[0].chart_standard).toBe('new.png');
+      expect('forwards_data' in saved[0]).toBe(false);
+    });
+
+    it('skips patterns that are only a title', async () => {
+      await store.rememberPatterns([{ title: 'Cheetah', url: 'Cheetah' }]);
+
+      expect(storage.set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resolving the patterns named in games', () => {
+    it('looks up unknown titles once loaded and remembers what it finds', async () => {
+      catalog = [summary({ url: 'shark', title: 'Shark', chart_standard: 'shark.png' })];
+      played(['Shark', 'Gone']);
+      await settle();
+      expect(patternService.findPatternByTitle).not.toHaveBeenCalled();
+
+      await store.loadPatternCache();
+      await settle();
+
+      expect(patternService.findPatternByTitle).toHaveBeenCalledTimes(2);
+      expect(store.myPatterns()[0].url).toBe('shark');
       expect(store.patternImageMap()).toEqual({ Shark: 'shark.png' });
-      expect(cacheService.set).toHaveBeenCalledWith('pattern_image_map', { Shark: 'shark.png' });
     });
 
-    it('skips patterns without a title or a chart', async () => {
-      patternService.getAllPatternCharts.mockResolvedValue(
-        charts([
-          { title: 'Shark', chart_standard: '' },
-          { title: '', chart_standard: 'nameless.png' },
-        ]),
-      );
+    it('searches each title once while online, and again after reconnecting', async () => {
+      await store.loadPatternCache();
+      played(['Gone']);
+      await settle();
+      played(['Gone'], ['Gone']);
+      await settle();
+      expect(patternService.findPatternByTitle).toHaveBeenCalledTimes(1);
 
-      await store.loadPatternImageMap();
+      online.set(false);
+      await settle();
+      online.set(true);
+      await settle();
 
-      expect(store.patternImageMap()).toEqual({});
+      expect(patternService.findPatternByTitle).toHaveBeenCalledTimes(2);
     });
 
-    it('serves the cached map when both it and the pattern cache are valid', async () => {
-      cacheService.get.mockResolvedValue({ Shark: 'cached.png' });
-      cacheService.isValid.mockResolvedValue(true);
+    it("doesn't search offline", async () => {
+      online.set(false);
+      await store.loadPatternCache();
+      played(['Shark']);
+      await settle();
 
-      await store.loadPatternImageMap();
-
-      expect(store.patternImageMap()).toEqual({ Shark: 'cached.png' });
-      expect(patternService.getAllPatternCharts).not.toHaveBeenCalled();
-    });
-
-    it('refetches when the pattern cache went stale even if the map is still valid', async () => {
-      cacheService.get.mockResolvedValue({ Shark: 'cached.png' });
-      cacheService.isValid.mockImplementation((key: string) => Promise.resolve(key === 'pattern_image_map'));
-      patternService.getAllPatternCharts.mockResolvedValue(charts([{ title: 'Shark', chart_standard: 'fresh.png' }]));
-
-      await store.loadPatternImageMap();
-
-      expect(store.patternImageMap()).toEqual({ Shark: 'fresh.png' });
-    });
-
-    it('refreshes a stale map in the background', async () => {
-      cacheService.get.mockResolvedValue({ Shark: 'cached.png' });
-      cacheService.isValid.mockResolvedValue(true);
-      cacheService.isStale.mockResolvedValue(true);
-      patternService.getAllPatternCharts.mockResolvedValue(charts([{ title: 'Shark', chart_standard: 'fresh.png' }]));
-
-      await store.loadPatternImageMap();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(store.patternImageMap()).toEqual({ Shark: 'fresh.png' });
-    });
-
-    it('does nothing when offline without a cache', async () => {
-      isOnline = false;
-
-      await store.loadPatternImageMap();
-
-      expect(store.patternImageMap()).toEqual({});
-      expect(patternService.getAllPatternCharts).not.toHaveBeenCalled();
-    });
-
-    it('falls back to the cached map when the fetch fails', async () => {
-      patternService.getAllPatternCharts.mockRejectedValue(new Error('api down'));
-      cacheService.get.mockResolvedValueOnce(null).mockResolvedValueOnce({ Shark: 'cached.png' });
-
-      await store.loadPatternImageMap();
-
-      expect(store.patternImageMap()).toEqual({ Shark: 'cached.png' });
+      expect(patternService.findPatternByTitle).not.toHaveBeenCalled();
     });
   });
 });

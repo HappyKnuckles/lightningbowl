@@ -88,6 +88,39 @@ describe('PatternService', () => {
     expect([...store.keys()]).toEqual(['patterns_page_1_title_asc_fav_u1,u2']);
   });
 
+  it('pages a picker through the list by title, or through the best matches of a search', async () => {
+    const browse = service.findPatternsPage('', 1);
+    const browseReq = await request('patterns');
+    expect(browseReq.request.params.get('page')).toBe('2');
+    expect(browseReq.request.params.get('sort_field')).toBe('title');
+    browseReq.flush({ total: 120, patterns: [{ url: 'u1', title: 'Badger' }] });
+    expect(await browse).toEqual({ items: [{ url: 'u1', title: 'Badger' }], hasMore: true });
+
+    const search = service.findPatternsPage('shark', 0);
+    const searchReq = await request('patterns');
+    expect(searchReq.request.params.get('q')).toBe('shark');
+    expect(searchReq.request.params.get('sort_field')).toBe('relevance');
+    expect(searchReq.request.params.get('sort_direction')).toBe('desc');
+    searchReq.flush({ total: 1, patterns: [{ url: 'u2', title: 'Shark' }] });
+    expect((await search).hasMore).toBe(false);
+  });
+
+  it('finds a pattern by its exact title, ignoring case', async () => {
+    const found = service.findPatternByTitle('shark');
+    (await request('patterns')).flush({
+      total: 2,
+      patterns: [
+        { url: 'u3', title: 'Shark 2' },
+        { url: 'u2', title: 'Shark' },
+      ],
+    });
+    expect((await found)?.url).toBe('u2');
+
+    const missing = service.findPatternByTitle('Cheetah');
+    (await request('patterns')).flush({ total: 1, patterns: [{ url: 'u4', title: 'Cheetah 35' }] });
+    expect(await missing).toBeUndefined();
+  });
+
   it('keeps an opened pattern for offline use', async () => {
     const pattern = { url: 'https://patternlibrary.kegel.net/pattern/abc', title: 'Badger', forwards_data: [], reverse_data: [] };
     const first = service.getPatternData(pattern.url);

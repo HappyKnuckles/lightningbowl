@@ -63,8 +63,7 @@ export class AppFacade {
         this.gamesStore.migrateBallWeights(this.ballsStore.arsenal(), this.ballsStore.knownBalls()),
       );
       await Promise.all([
-        this.patternsStore.loadAllPatterns(),
-        this.patternsStore.loadPatternImageMap(),
+        this.patternsStore.loadPatternCache(),
         ballData,
         this.leaguesStore.loadLeagues(),
         this.settingsStore.loadFit(),

@@ -18,12 +18,12 @@ import { createSpyObj } from '../../../testing/spy-obj';
 describe('PatternPage', () => {
   let component: PatternPage;
   let fixture: ComponentFixture<PatternPage>;
-  let allPatterns: ReturnType<typeof signal<Partial<Pattern>[]>>;
+  let myPatterns: ReturnType<typeof signal<Partial<Pattern>[]>>;
   let patternService: ReturnType<typeof createSpyObj<PatternService>>;
 
   beforeEach(async () => {
-    allPatterns = signal<Partial<Pattern>[]>([]);
-    const mockPatternsStore = { allPatterns };
+    myPatterns = signal<Partial<Pattern>[]>([]);
+    const mockPatternsStore = { myPatterns };
     const patternServiceSpy = createSpyObj<PatternService>(['getPatterns', 'searchPattern', 'getPatternData']);
     patternService = patternServiceSpy;
     const toastServiceSpy = createSpyObj(['showToast']);
@@ -63,16 +63,8 @@ describe('PatternPage', () => {
     expect(component).toBeTruthy();
   });
 
-  it('disables the search until the pattern library has loaded', () => {
-    expect(component.searchDisabled()).toBe(true);
-
-    allPatterns.set([{ title: 'PBA Shark' }]);
-
-    expect(component.searchDisabled()).toBe(false);
-  });
-
-  it('builds search suggestions from the loaded pattern titles', () => {
-    allPatterns.set([{ title: 'PBA Shark' }, { title: 'Kegel Main Street' }, { title: 'PBA Cheetah 35' }]);
+  it("builds search suggestions from the bowler's pattern titles", () => {
+    myPatterns.set([{ title: 'PBA Shark' }, { title: 'Kegel Main Street' }, { title: 'PBA Cheetah 35' }]);
 
     component.searchTerm.set('pba');
 

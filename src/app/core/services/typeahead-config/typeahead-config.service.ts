@@ -25,5 +25,5 @@ export class TypeaheadConfigService {
   // readonly league = LEAGUE_TYPEAHEAD_CONFIG;
 
   readonly pattern = createPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));
-  readonly partialPattern = createPartialPatternTypeaheadConfig((term) => this.patternService.searchPattern(term));
+  readonly partialPattern = createPartialPatternTypeaheadConfig((term, page) => this.patternService.findPatternsPage(term, page));
 }

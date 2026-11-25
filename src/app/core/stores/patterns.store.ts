@@ -1,128 +1,132 @@
-import { Injectable, signal } from '@angular/core';
-import { Pattern } from 'src/app/core/models/pattern.model';
+import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { Pattern, PatternSummary } from 'src/app/core/models/pattern.model';
 import { CacheService } from 'src/app/core/services/cache/cache.service';
 import { NetworkService } from 'src/app/core/services/network/network.service';
 import { PatternService } from 'src/app/core/services/pattern/pattern.service';
+import { StorageKeys } from 'src/app/core/services/storage/storage-keys';
+import { StorageRepository } from 'src/app/core/services/storage/storage.repository';
+import { countPatternUsage, rankByUsage } from 'src/app/core/utils/game-utils/usage.utils';
+import { isResolvedPattern, patternTitleKey, titleOnlyPattern, toPatternSummary } from 'src/app/core/utils/pattern-utils/known-pattern.utils';
+import { GamesStore } from './games.store';
 
+/** Parallel API searches while resolving the patterns named in games. */
+const RESOLVE_CONCURRENCY = 4;
+
+/** Caches of the full pattern list and chart map, which the app no longer loads. */
+const LEGACY_CACHE_KEYS = ['all_patterns', 'pattern_image_map'];
+
+/**
+ * Patterns the app works with offline. There is no full catalog on the device: the pattern page and
+ * the pickers page through the pattern API, and everything else uses the known patterns: patterns
+ * picked in pickers and patterns named in games (resolved on demand), which are persisted.
+ */
 @Injectable({ providedIn: 'root' })
 export class PatternsStore {
-  readonly allPatterns = signal<Partial<Pattern>[]>([]);
-  readonly patternImageMap = signal<Record<string, string>>({});
-  readonly isUsingCache = signal<boolean>(false);
+  readonly #storageRepository = inject(StorageRepository);
+  readonly #patternService = inject(PatternService);
+  readonly #networkService = inject(NetworkService);
+  readonly #cacheService = inject(CacheService);
+  readonly #gamesStore = inject(GamesStore);
 
-  constructor(
-    private patternService: PatternService,
-    private cacheService: CacheService,
-    private networkService: NetworkService,
-  ) {}
+  readonly #known = signal<PatternSummary[]>([]);
+  readonly #knownByTitle = computed(() => new Map(this.#known().map((pattern) => [patternTitleKey(pattern.title), pattern])));
 
-  async loadAllPatterns(forceRefresh = false): Promise<void> {
-    const cacheKey = 'all_patterns';
+  /** Titles of the patterns played in games, most played first (ties: most recently played). */
+  readonly #playedTitles = computed(() => {
+    const usage = countPatternUsage(this.#gamesStore.games());
+    return rankByUsage([...usage.keys()], usage, (title) => title);
+  });
 
-    try {
-      if (!forceRefresh) {
-        const cachedPatterns = await this.cacheService.get<Pattern[]>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
+  /**
+   * The bowler's patterns for pickers and suggestions: the ones played in games, most played first, then
+   * the other known ones (e.g. just picked for a game not saved yet). A played pattern that isn't resolved
+   * yet comes as its title alone.
+   */
+  readonly myPatterns = computed<Partial<Pattern>[]>(() => {
+    const known = this.#knownByTitle();
+    const played = this.#playedTitles().map((title) => known.get(patternTitleKey(title)) ?? titleOnlyPattern(title));
+    const playedKeys = new Set(played.map((pattern) => patternTitleKey(pattern.title!)));
+    return [...played, ...this.#known().filter((pattern) => !playedKeys.has(patternTitleKey(pattern.title)))];
+  });
 
-        if (cachedPatterns && (isCacheValid || this.networkService.isOffline)) {
-          this.allPatterns.set(cachedPatterns);
-          this.isUsingCache.set(true);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
-            this.refreshPatternsInBackground(cacheKey);
-          }
-          return;
-        }
-      }
+  /** Chart image per title, for the known patterns. */
+  readonly patternImageMap = computed<Record<string, string>>(() =>
+    Object.fromEntries(
+      this.#known()
+        .filter((pattern) => pattern.chart_standard)
+        .map((pattern) => [pattern.title, pattern.chart_standard]),
+    ),
+  );
 
-      if (this.networkService.isOffline) {
-        console.warn('Cannot fetch patterns: offline and no valid cache available');
+  readonly #loaded = signal(false);
+
+  /** Titles searched on the API since the app was last online, found or not, so they aren't searched again. */
+  readonly #searched = new Set<string>();
+
+  constructor() {
+    // Resolve the patterns named in games once loaded, again when games name new ones, and after reconnecting.
+    effect(() => {
+      if (!this.#loaded()) return;
+      const titles = this.#playedTitles();
+      if (this.#networkService.isOffline) {
+        this.#searched.clear();
         return;
       }
+      untracked(() => void this.resolvePatternTitles(titles));
+    });
+  }
 
-      const response = await this.patternService.getAllPatternsStripped();
-      this.allPatterns.set(response);
-      this.isUsingCache.set(false);
-      await this.cacheService.set(cacheKey, response);
+  async loadPatternCache(): Promise<void> {
+    try {
+      const cached = await this.#storageRepository.get<PatternSummary[]>(StorageKeys.patternCache);
+      this.#known.set(cached ?? []);
+      await Promise.all(LEGACY_CACHE_KEYS.map((key) => this.#cacheService.delete(key)));
     } catch (error) {
-      console.error('Error fetching patterns:', error);
-
-      const cachedPatterns = await this.cacheService.get<Pattern[]>(cacheKey);
-      if (cachedPatterns) {
-        this.allPatterns.set(cachedPatterns);
-        this.isUsingCache.set(true);
-      }
+      console.error('Error loading pattern cache:', error);
+    } finally {
+      this.#loaded.set(true);
     }
   }
 
-  async loadPatternImageMap(forceRefresh = false): Promise<void> {
-    const cacheKey = 'pattern_image_map';
-
+  /**
+   * Adds patterns to the persisted known patterns (replacing older copies of the same title), without
+   * their oil rows. Patterns that are only a title (not resolved yet) are skipped.
+   */
+  async rememberPatterns(patterns: readonly Partial<Pattern>[]): Promise<void> {
+    const fresh = patterns.filter(isResolvedPattern).map(toPatternSummary);
+    if (fresh.length === 0) return;
+    const freshKeys = new Set(fresh.map((pattern) => patternTitleKey(pattern.title)));
+    const merged = [...fresh, ...this.#known().filter((pattern) => !freshKeys.has(patternTitleKey(pattern.title)))];
+    this.#known.set(merged);
     try {
-      if (!forceRefresh) {
-        const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
-        const isCacheValid = await this.cacheService.isValid(cacheKey);
-        const arePatternsValid = await this.cacheService.isValid('all_patterns');
-
-        if (cached && (isCacheValid || this.networkService.isOffline) && (arePatternsValid || this.networkService.isOffline)) {
-          this.patternImageMap.set(cached);
-          if (this.networkService.isOnline && (await this.cacheService.isStale(cacheKey))) {
-            this.refreshPatternImageMapInBackground(cacheKey);
-          }
-          return;
-        }
-      }
-
-      if (this.networkService.isOffline) {
-        return;
-      }
-
-      const response = await this.patternService.getAllPatternCharts();
-      const patterns = response.patterns;
-      const imageMap: Record<string, string> = {};
-      for (const pattern of patterns) {
-        if (pattern.title && pattern.chart_standard) {
-          imageMap[pattern.title] = pattern.chart_standard;
-        }
-      }
-      this.patternImageMap.set(imageMap);
-      await this.cacheService.set(cacheKey, imageMap);
+      await this.#storageRepository.set(StorageKeys.patternCache, merged);
     } catch (error) {
-      console.error('Error loading pattern image map:', error);
-      const cached = await this.cacheService.get<Record<string, string>>(cacheKey);
-      if (cached) {
-        this.patternImageMap.set(cached);
-      }
+      console.error('Error saving pattern cache:', error);
     }
   }
 
-  private async refreshPatternsInBackground(cacheKey?: string): Promise<void> {
-    try {
-      const response = await this.patternService.getAllPatternsStripped();
-      this.allPatterns.set(response);
-      this.isUsingCache.set(false);
-      if (cacheKey) {
-        await this.cacheService.set(cacheKey, response);
-      }
-    } catch (error) {
-      console.error('Background refresh failed for patterns:', error);
-    }
-  }
+  /**
+   * Looks up titles that aren't known yet on the pattern API (exact title) and remembers what it finds,
+   * so pickers and charts have them, also offline afterwards. Each title is searched once while online.
+   */
+  async resolvePatternTitles(titles: readonly string[]): Promise<void> {
+    if (this.#networkService.isOffline) return;
+    const known = this.#knownByTitle();
+    const missing = [...new Set(titles.filter((title) => title?.trim()))].filter(
+      (title) => !known.has(patternTitleKey(title)) && !this.#searched.has(patternTitleKey(title)),
+    );
+    if (missing.length === 0) return;
+    missing.forEach((title) => this.#searched.add(patternTitleKey(title)));
 
-  private async refreshPatternImageMapInBackground(cacheKey: string): Promise<void> {
-    try {
-      const response = await this.patternService.getAllPatternCharts();
-      const patterns = response.patterns;
-
-      const imageMap: Record<string, string> = {};
-      for (const pattern of patterns) {
-        if (pattern.title && pattern.chart_standard) {
-          imageMap[pattern.title] = pattern.chart_standard;
-        }
+    const found: PatternSummary[] = [];
+    let next = 0;
+    const worker = async () => {
+      while (next < missing.length) {
+        const pattern = await this.#patternService.findPatternByTitle(missing[next++]);
+        if (pattern) found.push(pattern);
       }
-      this.patternImageMap.set(imageMap);
-      await this.cacheService.set(cacheKey, imageMap);
-    } catch (error) {
-      console.error('Background refresh failed for pattern image map:', error);
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(RESOLVE_CONCURRENCY, missing.length) }, worker));
+    await this.rememberPatterns(found);
   }
 }

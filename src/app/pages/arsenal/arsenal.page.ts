@@ -47,6 +47,7 @@ import {
   ellipsisVerticalOutline,
   handLeftOutline,
   openOutline,
+  shareOutline,
   trashOutline,
 } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
@@ -82,6 +83,7 @@ import { BallListComponent } from 'src/app/shared/components/ball-list/ball-list
 import { GenericTypeaheadComponent } from 'src/app/shared/components/generic-typeahead/generic-typeahead.component';
 import { TypeaheadConfig } from 'src/app/core/models/typeahead-config.model';
 import { TypeaheadConfigService } from 'src/app/core/services/typeahead-config/typeahead-config.service';
+import { ShareService } from 'src/app/core/services/share/share.service';
 import { ballImageUrl } from 'src/app/core/utils/ball-utils/ball-image.utils';
 
 @Component({
@@ -217,6 +219,7 @@ export class ArsenalPage implements OnInit {
     private gamesStore: GamesStore,
     private statsService: GameStatsService,
     private settingsStore: SettingsStore,
+    private shareService: ShareService,
   ) {
     addIcons({
       add,
@@ -228,6 +231,7 @@ export class ArsenalPage implements OnInit {
       handLeftOutline,
       closeCircle,
       arrowUndoOutline,
+      shareOutline,
     });
     effect(() => {
       if (this.selectedSegment() === 'compare') {
@@ -238,6 +242,12 @@ export class ArsenalPage implements OnInit {
 
   ngOnInit() {
     this.presentingElement = document.querySelector('.ion-page');
+  }
+
+  /** Shares the ball's row (picture, weight, layout chips) as a picture, with its specs, weight and layout as text. */
+  shareBall(event: Event, ball: Ball): void {
+    const item = (event.target as HTMLElement).closest('ion-item-sliding')?.querySelector('ion-item');
+    void this.shareService.shareBall(ball, item instanceof HTMLElement ? item : undefined, true);
   }
 
   private generateBallDistributionChart(): void {

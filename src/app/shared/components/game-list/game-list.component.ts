@@ -44,7 +44,7 @@ import { Game, ThrowBall } from 'src/app/core/models/game.model';
 import { formatThrowBall, getBallTracking, getGameBallLabels, getGameBallNames } from 'src/app/core/utils/game-utils/game-ball.utils';
 import { Pattern } from 'src/app/core/models/pattern.model';
 import { GameEditService } from 'src/app/core/services/game-edit/game-edit.service';
-import { GameShareService } from 'src/app/core/services/game-share/game-share.service';
+import { ShareService } from 'src/app/core/services/share/share.service';
 import { HapticService } from 'src/app/core/services/haptic/haptic.service';
 import { ToastService } from 'src/app/core/services/toast/toast.service';
 import { BallsStore } from 'src/app/core/stores/balls.store';
@@ -169,7 +169,7 @@ export class GameListComponent implements OnInit {
   private utilsService = inject(UtilsService);
   private router = inject(Router);
   private modalCtrl = inject(ModalController);
-  private shareService = inject(GameShareService);
+  private shareService = inject(ShareService);
   private typeaheadConfigService = inject(TypeaheadConfigService);
 
   // Computed

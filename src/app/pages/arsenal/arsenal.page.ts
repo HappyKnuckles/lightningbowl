@@ -2,7 +2,7 @@ import { BallImagePipe } from 'src/app/shared/pipes/ball-image-pipe/ball-image.p
 import { Component, ElementRef, Signal, ViewChild, computed, effect, model, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular';
+import { AlertController, ItemReorderCustomEvent, ModalController } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -35,7 +35,7 @@ import {
   IonThumbnail,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { Chart } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {

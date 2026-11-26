@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular/lazy';
 import { TimeRange } from 'src/app/core/models/filter.model';
 import { GameFilterComponent } from './game-filter.component';
 import { GameFilterService } from 'src/app/core/services/game-filter/game-filter.service';

@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, model, OnInit, output, signal } from '@angular/core';
-import { AlertController } from '@ionic/angular';
+import { AlertController } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -17,7 +17,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { addOutline, checkmarkOutline, chevronExpandOutline, createOutline, trashOutline, trophyOutline } from 'ionicons/icons';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';

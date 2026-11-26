@@ -1,5 +1,5 @@
 import { Directive, HostListener, input, output, signal } from '@angular/core';
-import { SearchbarCustomEvent } from '@ionic/angular';
+import { SearchbarCustomEvent } from '@ionic/angular/lazy';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';
 
 /**

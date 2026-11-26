@@ -11,7 +11,7 @@ import {
   IonNote,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { ImpactStyle } from '@capacitor/haptics';

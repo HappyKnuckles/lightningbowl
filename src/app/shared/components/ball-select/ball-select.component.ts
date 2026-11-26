@@ -13,7 +13,7 @@ import {
   IonList,
   IonAvatar,
   IonItem,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { BallsStore } from 'src/app/core/stores/balls.store';
 import { GamesStore } from 'src/app/core/stores/games.store';
 import { ThrowBall } from 'src/app/core/models/game.model';

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Camera, CameraPermissionState, CameraResultType, CameraSource } from '@capacitor/camera';
-import { AlertController, isPlatform } from '@ionic/angular/standalone';
+import { AlertController, isPlatform } from '@ionic/angular';
 import { TOAST_MESSAGES } from 'src/app/core/constants/toast-messages.constants';
 import { AnalyticsService } from 'src/app/core/services/analytics/analytics.service';
 import { GameDataTransformerService } from 'src/app/core/services/game-transform/game-data-transform.service';

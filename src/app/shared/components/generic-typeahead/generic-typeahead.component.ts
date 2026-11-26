@@ -1,5 +1,5 @@
 import { Component, computed, EventEmitter, input, Output, signal, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular';
+import { InfiniteScrollCustomEvent, ModalController } from '@ionic/angular/lazy';
 import Fuse from 'fuse.js';
 import {
   IonToolbar,
@@ -18,7 +18,7 @@ import {
   IonAvatar,
   IonImg,
   IonText,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { NgClass } from '@angular/common';
 import { SearchBlurDirective } from 'src/app/core/directives/search-blur/search-blur.directive';
 import { LoadingService } from 'src/app/core/services/loader/loading.service';

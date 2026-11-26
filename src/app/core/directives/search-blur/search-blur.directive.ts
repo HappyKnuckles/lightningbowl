@@ -1,6 +1,6 @@
 import { Directive, ElementRef, HostListener } from '@angular/core';
 import { Keyboard } from '@capacitor/keyboard';
-import { IonSearchbar } from '@ionic/angular';
+import { IonSearchbar } from '@ionic/angular/lazy';
 
 @Directive({
   selector: '[appSearchBlur]',

@@ -14,7 +14,7 @@ import {
   IonSegment,
   IonSegmentButton,
   IonLabel,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { close, flash, wifiOutline, notifications, phonePortrait, download, shareOutline, checkmark, add, checkmarkCircle } from 'ionicons/icons';
 

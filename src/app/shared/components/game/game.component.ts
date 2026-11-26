@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { AccordionGroupCustomEvent, InputCustomEvent } from '@ionic/angular';
+import { AccordionGroupCustomEvent, InputCustomEvent } from '@ionic/angular/lazy';
 import {
   AlertController,
   IonAccordion,
@@ -31,7 +31,7 @@ import {
   IonModal,
   IonRow,
   IonTextarea,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline, chevronExpandOutline } from 'ionicons/icons';
 import { PINS } from 'src/app/core/constants/app.constants';

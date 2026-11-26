@@ -17,7 +17,7 @@ import {
   IonTitle,
   IonToolbar,
   MenuController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline, cameraOutline, cloudDownloadOutline, cloudUploadOutline, handRightOutline, personCircleOutline } from 'ionicons/icons';
 import { filter } from 'rxjs/operators';
@@ -32,7 +32,7 @@ import { SettingsStore } from 'src/app/core/stores/settings.store';
 import { GameOcrImportComponent } from '../game-ocr-import/game-ocr-import.component';
 import { LeagueSelectorComponent } from '../league-selector/league-selector.component';
 import { UserService } from 'src/app/core/services/user/user.service';
-import { InputCustomEvent } from '@ionic/angular';
+import { InputCustomEvent } from '@ionic/angular/lazy';
 
 /** Pages that own their toolbar start slot and therefore get no menu. */
 const MENULESS_ROUTES = ['/tabs/arsenal', '/tabs/balls'];

@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, model, ViewChild, ElementRef } from '@angular/core';
-import { IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox } from '@ionic/angular/standalone';
+import { IonButton, IonIcon, IonPopover, IonList, IonItem, IonLabel, IonRadioGroup, IonRadio, IonCheckbox } from '@ionic/angular';
 
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
-import { isPlatform } from '@ionic/angular';
+import { isPlatform } from '@ionic/angular/lazy';
 import type { Workbook, Worksheet } from 'exceljs';
 import { Game, Throw, ThrowBall } from 'src/app/core/models/game.model';
 import { HighlightItemStats, LeaveStats, Stats } from 'src/app/core/models/stats.model';

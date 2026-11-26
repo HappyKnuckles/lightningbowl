@@ -16,7 +16,7 @@ import {
 import { BehaviorSubject } from 'rxjs';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular/standalone';
+import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonContent, IonList, IonItem, IonModal } from '@ionic/angular';
 import { AsyncPipe } from '@angular/common';
 interface MoreTab {
   path: string;

@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, Signal, signal, ViewChild } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImpactStyle } from '@capacitor/haptics';
-import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular';
+import { AlertController, RefresherCustomEvent, SegmentCustomEvent } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -25,7 +25,7 @@ import {
   IonTitle,
   IonMenuButton,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import Chart from 'chart.js/auto';
 import { addIcons } from 'ionicons';
 import {

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { ImpactStyle } from '@capacitor/haptics';
-import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular';
+import { InfiniteScrollCustomEvent, RefresherCustomEvent } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonButtons,
@@ -30,7 +30,7 @@ import {
   IonMenuButton,
   IonToolbar,
   ModalController,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   add,

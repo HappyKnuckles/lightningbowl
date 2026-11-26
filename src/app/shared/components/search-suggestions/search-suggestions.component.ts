@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Keyboard } from '@capacitor/keyboard';
-import { IonButton, IonIcon, IonItem, IonLabel } from '@ionic/angular/standalone';
+import { IonButton, IonIcon, IonItem, IonLabel } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { closeOutline, searchOutline, timeOutline } from 'ionicons/icons';
 import { SearchHistoryService } from 'src/app/core/services/search-history/search-history.service';

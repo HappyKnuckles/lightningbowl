@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Geolocation } from '@capacitor/geolocation';
-import { SearchbarCustomEvent } from '@ionic/angular';
+import { SearchbarCustomEvent } from '@ionic/angular/lazy';
 import {
   IonButton,
   IonChip,
@@ -16,7 +16,7 @@ import {
   IonButtons,
   IonMenuButton,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bowlingBall, cloudOfflineOutline, heart, listOutline, locateOutline, refreshOutline, searchOutline } from 'ionicons/icons';
 import * as L from 'leaflet';

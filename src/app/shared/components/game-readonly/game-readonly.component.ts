@@ -1,5 +1,5 @@
 import { Component, ElementRef, ViewChild, computed, inject, input } from '@angular/core';
-import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular/standalone';
+import { IonCol, IonGrid, IonIcon, IonRow } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { bowlingBallOutline } from 'ionicons/icons';
 import { PinDeckComponent } from '../pin-deck/pin-deck.component';

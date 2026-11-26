@@ -32,6 +32,32 @@ test.describe('leagues', () => {
     await expect(modal.locator('ion-segment-button', { hasText: 'Overall' })).toBeVisible();
   });
 
+  test("moves a series to another league only once it's saved (#727)", async ({ app }) => {
+    await app.boot('/tabs/league');
+    const league = new LeaguePage(app.page);
+    await league.openFirstLeague();
+    await league.openModalTab('Games');
+    const modal = app.page.locator('ion-modal.show-modal').first();
+    const series = modal.locator('.series-container');
+    const before = await series.count();
+    expect(before).toBeGreaterThan(1);
+
+    await league.longPress(series.first().locator('ion-item').first());
+    const fields = modal.locator('.series-edit-fields');
+    await fields.locator('app-league-selector ion-item').first().click();
+    const picker = app.page.locator('ion-modal.show-modal').last();
+    await picker.locator('ion-item', { hasText: 'City Classic' }).first().click();
+
+    // still listed and still editable after picking the league
+    await expect(fields.locator('app-league-selector')).toContainText('City Classic');
+    await expect(series).toHaveCount(before);
+
+    await fields.getByRole('button', { name: 'Save' }).click();
+
+    await expect(series).toHaveCount(before - 1);
+    await expect(fields).toHaveCount(0);
+  });
+
   test('shows the empty state when there are no games', async ({ app }) => {
     await app.boot('/tabs/league', { seed: 'empty' });
 

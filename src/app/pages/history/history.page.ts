@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, signal, ViewChild } from '@angular/
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Filesystem } from '@capacitor/filesystem';
 import { ImpactStyle } from '@capacitor/haptics';
-import { ModalController, RefresherCustomEvent } from '@ionic/angular';
+import { ModalController, RefresherCustomEvent } from '@ionic/angular/lazy';
 import {
   AlertController,
   IonAccordionGroup,
@@ -18,7 +18,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { createOutline, documentTextOutline, filterOutline, shareOutline, swapVertical, trashOutline, trophyOutline } from 'ionicons/icons';
 import { GAME_FILTER_CONFIGS } from 'src/app/core/configs/filter/game-filter.config';

@@ -16,7 +16,7 @@ import {
   IonModal,
   IonTitle,
   IonToolbar,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import {

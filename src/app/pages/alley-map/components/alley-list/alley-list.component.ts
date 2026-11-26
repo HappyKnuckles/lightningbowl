@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, output } from '@angular/core';
-import { IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, IonBadge } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, IonBadge } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { heart, timeOutline } from 'ionicons/icons';
 import { Alley } from 'src/app/core/models/alley.model';

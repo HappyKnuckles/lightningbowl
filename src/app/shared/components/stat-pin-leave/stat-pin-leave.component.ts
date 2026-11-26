@@ -10,7 +10,7 @@ import {
   IonTitle,
   IonToolbar,
   IonText,
-} from '@ionic/angular/standalone';
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForwardOutline } from 'ionicons/icons';
 import { LeaveStats } from 'src/app/core/models/stats.model';

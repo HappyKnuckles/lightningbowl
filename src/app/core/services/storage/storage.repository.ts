@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { STORAGE_PREFIX } from './storage-keys';
 
@@ -6,7 +6,10 @@ import { STORAGE_PREFIX } from './storage-keys';
 export class StorageRepository {
   #scanInflight: Promise<Map<string, unknown[]>> | null = null;
 
-  constructor(private storage: Storage) {}
+  constructor(
+    private storage: Storage,
+    private ngZone: NgZone,
+  ) {}
 
   async create(): Promise<void> {
     await this.storage.create();
@@ -45,7 +48,7 @@ export class StorageRepository {
 
     const scan = (async () => {
       const buckets = new Map<string, unknown[]>(prefixes.map((prefix) => [prefix, []]));
-      await this.storage.forEach((value, key) => {
+      await this.scanOutsideAngular((value, key) => {
         for (const prefix of prefixes) {
           if (key.startsWith(prefix)) {
             buckets.get(prefix)!.push(value);
@@ -63,7 +66,7 @@ export class StorageRepository {
 
   private async scanSinglePrefix<T>(prefix: string): Promise<T[]> {
     const data: T[] = [];
-    await this.storage.forEach((value, key) => {
+    await this.scanOutsideAngular((value, key) => {
       if (key.startsWith(prefix)) {
         data.push(value as T);
       }
@@ -73,5 +76,14 @@ export class StorageRepository {
 
   async clear(): Promise<void> {
     await this.storage.clear();
+  }
+
+  /**
+   * Walks every stored entry outside Angular's zone. Each IndexedDB cursor step is its own event, and inside the
+   * zone every one of them ran app-wide change detection: ~2,000 runs while loading 2,000 games. The callbacks only
+   * collect values; awaiting the result re-enters the zone once.
+   */
+  private scanOutsideAngular(callback: (value: unknown, key: string) => void): Promise<void> {
+    return this.ngZone.runOutsideAngular(() => this.storage.forEach(callback));
   }
 }

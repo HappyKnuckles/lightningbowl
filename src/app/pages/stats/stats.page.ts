@@ -273,9 +273,10 @@ export class StatsPage implements OnInit {
       allPatterns: this.sessionAllPatternStats(),
     }),
   );
+  /** The segment on screen; the chart effect draws its charts. */
+  readonly selectedSegment = signal('Overall');
   chartViewMode: 'week' | 'game' | 'session' | 'monthly' | 'yearly' = 'week';
   averageChartViewMode: 'session' | 'weekly' | 'monthly' | 'yearly' = 'monthly';
-  selectedSegment = 'Overall';
   segments: string[] = ['Overall', 'Throws', 'Spares', 'Pins', 'Balls', 'Sessions'];
 
   // ViewChild signal queries — undefined when the @if block is not rendered
@@ -322,7 +323,9 @@ export class StatsPage implements OnInit {
 
     effect(() => {
       const hasGames = this.gameFilterService.filteredGames().length > 0;
-      // The tabs besides Overall render when first shown (@defer), so their canvases appear later: redraw then.
+      // Draw the charts of the segment on screen, and again whenever a deferred canvas appears (the other segments
+      // and the charts below the fold render when first shown).
+      this.selectedSegment();
       this.chartCanvases();
       if (hasGames) {
         // Update the existing charts in place instead of rebuilding them.
@@ -373,8 +376,7 @@ export class StatsPage implements OnInit {
   }
 
   onSegmentChanged(event: SegmentCustomEvent): void {
-    this.selectedSegment = event.detail.value?.toString() || 'Overall';
-    this.generateCharts();
+    this.selectedSegment.set(event.detail.value?.toString() || 'Overall');
     setTimeout(() => {
       this.content().scrollToTop(300);
     }, 300);
@@ -382,14 +384,14 @@ export class StatsPage implements OnInit {
 
   private generateCharts(isReload?: boolean): void {
     if (this.gameFilterService.filteredGames().length > 0) {
-      if (this.selectedSegment === 'Overall') {
+      if (this.selectedSegment() === 'Overall') {
         this.generateScoreChart(isReload);
         this.generateAverageScoreChart(isReload);
         this.generateScoreDistributionChart(isReload);
-      } else if (this.selectedSegment === 'Spares') {
+      } else if (this.selectedSegment() === 'Spares') {
         this.generatePinChart(isReload);
         this.generateSpareDistributionChart(isReload);
-      } else if (this.selectedSegment === 'Throws') {
+      } else if (this.selectedSegment() === 'Throws') {
         this.generateThrowChart(isReload);
       }
     }

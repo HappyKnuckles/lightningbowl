@@ -298,3 +298,8 @@
 .segment-placeholder {
   min-height: 50vh;
 }
+
+/* Same 2:1 shape as the chart it stands in for, so nothing jumps when the chart appears */
+.chart-placeholder {
+  aspect-ratio: 2 / 1;
+}

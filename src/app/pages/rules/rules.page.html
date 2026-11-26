@@ -1,0 +1,108 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="main-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Rulebooks</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      [value]="searchTerm()"
+      (ionInput)="onSearchInput($event)"
+      placeholder="Search rules, e.g. foul line"
+      showCancelButton="focus"
+      debounce="300"></ion-searchbar>
+  </ion-toolbar>
+  @if (chips().length > 1) {
+    <ion-toolbar class="chip-toolbar">
+      <div class="chips">
+        <ion-chip [outline]="pickedAssociation() !== null" (click)="pickAssociation(null)">All</ion-chip>
+        @for (association of chips(); track association.id) {
+          <ion-chip [outline]="pickedAssociation() !== association.id" (click)="pickAssociation(association.id)">
+            {{ association.short_name }}
+          </ion-chip>
+        }
+      </div>
+    </ion-toolbar>
+  }
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <app-bowling-refresher [refreshing]="isLoading()"></app-bowling-refresher>
+  </ion-refresher>
+
+  @if (isSearchActive()) {
+    <ion-list>
+      <ion-list-header>
+        <ion-label>{{ isSearching() ? "Searching…" : hitCount() }}</ion-label>
+      </ion-list-header>
+      @for (hit of hits(); track hit.source + hit.key) {
+        <ion-item button detail="false" (click)="openRule(hit)">
+          <ion-label>
+            <h2>
+              @if (hit.number) {
+                <span class="rule-number">{{ hit.number }}</span>
+              }
+              <span [class.untitled]="hit.untitled">{{ hit.title }}</span>
+            </h2>
+            <p>{{ hit.source }} · {{ hit.page }}</p>
+          </ion-label>
+          <ion-icon slot="end" name="open-outline" aria-hidden="true"></ion-icon>
+        </ion-item>
+      } @empty {
+        @if (!isSearching()) {
+          <ion-item lines="none">
+            <ion-label class="ion-text-wrap">
+              <p>No rule matches "{{ searchTerm() }}".</p>
+            </ion-label>
+          </ion-item>
+        }
+      }
+    </ion-list>
+    <ion-infinite-scroll [disabled]="!hasMoreHits()" (ionInfinite)="loadMoreHits($event)">
+      <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  } @else if (isLoading() && associations().length === 0) {
+    <ion-list>
+      @for (item of [1, 2, 3, 4, 5, 6]; track $index) {
+        <ion-item>
+          <ion-label>
+            <h2><ion-skeleton-text [animated]="true" class="skeleton-title"></ion-skeleton-text></h2>
+            <p><ion-skeleton-text [animated]="true" class="skeleton-line"></ion-skeleton-text></p>
+          </ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  } @else if (loadFailed() && associations().length === 0) {
+    <div class="empty-state">
+      <ion-icon class="empty-icon" name="book-outline" aria-hidden="true"></ion-icon>
+      <ion-text>
+        <h2>Rulebooks unavailable</h2>
+        <p>The rulebooks couldn't be loaded. Check your connection and try again.</p>
+      </ion-text>
+      <ion-button fill="outline" (click)="loadAssociations()">Try again</ion-button>
+    </div>
+  } @else {
+    @for (section of sections(); track section.id) {
+      <ion-list>
+        <ion-list-header>
+          <ion-label>
+            {{ section.shortName }}
+            <span class="association-name">{{ section.name }}</span>
+          </ion-label>
+        </ion-list-header>
+        @for (rulebook of section.rulebooks; track rulebook.id) {
+          <ion-item [routerLink]="['/tabs/rules', rulebook.id]" [disabled]="!rulebook.available" detail="true">
+            <ion-icon slot="start" name="book-outline" aria-hidden="true"></ion-icon>
+            <ion-label>
+              <h2>{{ rulebook.title }}</h2>
+              <p>{{ rulebook.summary }}</p>
+            </ion-label>
+            <ion-badge slot="end" color="medium">{{ rulebook.language }}</ion-badge>
+          </ion-item>
+        }
+      </ion-list>
+    }
+  }
+</ion-content>

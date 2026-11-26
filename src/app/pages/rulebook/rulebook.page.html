@@ -1,0 +1,74 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/rules"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ title() }}</ion-title>
+    @if (rulebook()?.edition) {
+      <ion-buttons slot="end">
+        <ion-button (click)="openDocument()" aria-label="Open the official document">
+          <ion-icon slot="icon-only" name="document-text-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    }
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      [value]="searchTerm()"
+      (ionInput)="onSearchInput($event)"
+      placeholder="Search in this rulebook"
+      showCancelButton="focus"
+      debounce="300"></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  @if (isLoading()) {
+    <ion-list>
+      @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track $index) {
+        <ion-item>
+          <ion-label><ion-skeleton-text [animated]="true" class="skeleton-line"></ion-skeleton-text></ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  } @else if (loadFailed()) {
+    <div class="empty-state">
+      <ion-icon class="empty-icon" name="book-outline" aria-hidden="true"></ion-icon>
+      <ion-text>
+        <h2>Rulebook unavailable</h2>
+        <p>This rulebook couldn't be loaded. Check your connection and try again.</p>
+      </ion-text>
+      <ion-button fill="outline" (click)="load()">Try again</ion-button>
+    </div>
+  } @else {
+    @if (subtitle()) {
+      <ion-text color="medium">
+        <p class="subtitle">{{ subtitle() }}</p>
+      </ion-text>
+    }
+    <ion-list>
+      <ion-list-header>
+        <ion-label>{{ listHeader() }}</ion-label>
+      </ion-list-header>
+      @for (row of rows(); track row.key) {
+        <ion-item button detail="false" (click)="openRule(row)" [style.--padding-start.px]="16 + row.indent">
+          <ion-label class="ion-text-wrap">
+            @if (row.number) {
+              <span class="rule-number">{{ row.number }}</span>
+            }
+            <span [class.untitled]="row.untitled">{{ row.title }}</span>
+          </ion-label>
+          <ion-note slot="end">{{ row.page }}</ion-note>
+        </ion-item>
+      } @empty {
+        @if (!isSearching()) {
+          <ion-item lines="none">
+            <ion-label class="ion-text-wrap">
+              <p>No rule matches "{{ searchTerm() }}".</p>
+            </ion-label>
+          </ion-item>
+        }
+      }
+    </ion-list>
+  }
+</ion-content>

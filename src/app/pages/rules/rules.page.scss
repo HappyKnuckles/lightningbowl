@@ -1,0 +1,71 @@
+.chip-toolbar {
+  --min-height: 0;
+}
+
+.chips {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 8px 8px;
+  scrollbar-width: none;
+
+  ion-chip {
+    flex-shrink: 0;
+    margin: 0;
+  }
+}
+
+.association-name {
+  margin-left: 8px;
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: var(--ion-color-medium);
+}
+
+.rule-number {
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.untitled {
+  font-style: italic;
+  color: var(--ion-color-medium);
+}
+
+.skeleton-title {
+  width: 60%;
+  height: 16px;
+}
+
+.skeleton-line {
+  width: 40%;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60dvh;
+  text-align: center;
+  padding: 24px;
+
+  .empty-icon {
+    font-size: 72px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    max-width: 280px;
+  }
+}

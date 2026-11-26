@@ -12,6 +12,7 @@ import {
   gameControllerOutline,
   scaleOutline,
   trophyOutline,
+  bookOutline,
 } from 'ionicons/icons';
 import { BehaviorSubject } from 'rxjs';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -54,6 +55,11 @@ export class TabsPage {
       src: 'assets/svg/lane.svg',
     },
     {
+      path: '/tabs/rules',
+      label: 'Rulebooks',
+      icon: 'book-outline',
+    },
+    {
       path: '/tabs/map',
       label: 'Map',
       icon: 'map-outline',
@@ -84,6 +90,7 @@ export class TabsPage {
       bagAddOutline,
       gameControllerOutline,
       scaleOutline,
+      bookOutline,
     });
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {

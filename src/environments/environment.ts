@@ -6,6 +6,8 @@ export const environment = {
   emailServiceID: 'service_4zwqeji',
   emailUserID: 'mkI2Kqg6m34U7GL8m',
   patternEndpoint: 'https://pattern.lightningbowl.de/api/',
+  // `npm run local` in lightningbowl-rulebooks http://localhost:3004/api/
+  rulebookApiEndpoint: 'https://rules.lightningbowl.de/api/',
   analyticsEndpoint: 'https://analytics.nicolas-hoffmann.dev/api/',
   imagesUrl: 'https://images.lightningbowl.de/',
   branch: 'development',

@@ -53,4 +53,6 @@ export const TOAST_MESSAGES = {
   layoutPresetExists: 'This layout is already a preset.',
   layoutPresetIncomplete: 'Fill in all layout values to save it as a preset.',
   invalidMeasurement: 'Invalid measurement. Use inches like 4 1/2, 4.5 or 41/64.',
+  rulebooksLoadError: 'Error loading rulebooks.',
+  rulebookSearchError: 'Error searching rules.',
 };

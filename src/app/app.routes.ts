@@ -39,6 +39,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/pattern/pattern.page').then((m) => m.PatternPage),
       },
       {
+        path: 'rules',
+        loadComponent: () => import('./pages/rules/rules.page').then((m) => m.RulesPage),
+      },
+      {
+        path: 'rules/:id',
+        loadComponent: () => import('./pages/rulebook/rulebook.page').then((m) => m.RulebookPage),
+      },
+      {
         path: 'map',
         loadComponent: () => import('./pages/alley-map/alley-map.page').then((m) => m.AlleyMapPage),
       },
